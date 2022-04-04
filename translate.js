@@ -22,15 +22,15 @@ var translate = {
 	localLanguage:'en',
 	
 	/**
-	 * 加载js、css等相关资源
-	 */
-	loadResource:function(){
-		
-	},
-	/**
 	 * google翻译执行的
 	 */
 	googleTranslateElementInit:function(){
+		var selectId = 'translate';
+		if(document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0){
+			//已经创建过了，那就不在创建了
+			selectId = '';
+		}
+		
 		translate.translate = new google.translate.TranslateElement(
 			{
 				//这参数没用，请忽略
@@ -45,7 +45,7 @@ var translate = {
 				//disableAutoTranslation:false,
 				//还有些其他参数，由于原插件不再维护，找不到详细api了，将就了，实在不行直接上dom操作
 			}, 
-			'translate'//触发按钮的id
+			selectId //触发按钮的id
 		);
 	},
 	
@@ -59,14 +59,22 @@ var translate = {
 			//本地的，那就用http
 			protocol = 'http:';
 		}
-		this.resourcesUrl = protocol + this.resourcesUrl;
+		if(this.resourcesUrl.indexOf('://') == -1){
+			//还没设置过，进行设置
+			this.resourcesUrl = protocol + this.resourcesUrl;
+		}
 		
+		//this.resourcesUrl = 'file:///Users/apple/git/translate';
 		
 		/*********** 判断translate 的id是否存在，不存在就创建一个  */
 		if(document.getElementById('translate') == null){
 			document.write('<div id="translate"></div>');
 		}
-		
+	},
+	/**
+	 * 执行翻译操作
+	 */
+	execute:function(){
 		/****** 先加载资源  ******/
 		var head0 = document.getElementsByTagName('head')[0];
 		var script = document.createElement("script");  //创建一个script标签
@@ -75,15 +83,10 @@ var translate = {
 		script.src = this.resourcesUrl+'/js/element.js';
 		head0.appendChild(script);
 	},
-	/**
-	 * 执行翻译操作
-	 */
-	trans:function(){
-		this.googleTranslateElementInit();
-	},
 }
 
 
 try{
 	translate.init();
+	translate.execute();
 }catch(e){ console.log(e); }

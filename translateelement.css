@@ -8,10 +8,6 @@
 	-moz-box-shadow: 0 0px 0px rgba(0, 0, 0, 0)!important;
 	box-shadow: 0 0px 0px rgba(0, 0, 0, 0)!important;
 }
-.goog-tooltip{
-	opacity: 0;  /* Opacity for Modern Browsers */
-    filter: alpha(opacity=0);  /* Opacity for IE8 and lower */
-}
 
 /*解决底部拉伸的问题，注意需要同时一起移除顶部的翻译状态栏，否则状态栏会把第一行内容遮住*/
 body{

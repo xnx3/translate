@@ -40,6 +40,23 @@ translate.execute();
 ````
 这就是控制切换语言的 ``<select>`` 标签
 
+#### 设定当前支持哪些语言可切换
+
+````
+<script>
+	translate.includedLanguages = 'zh-CN,zh-TW,en';  //注意要放到 translate.execute(); 上面
+	translate.execute();
+</script>
+````
+
+默认不设置此，则支持 简体中文、繁体中文、英语 三种。
+可设置的语言包括：
+
+````
+de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr
+````
+
+
 #### 手动执行页面翻译
 
 

@@ -72,7 +72,10 @@ var translate = {
 		
 		/*********** 判断translate 的id是否存在，不存在就创建一个  */
 		if(document.getElementById('translate') == null){
-			document.write('<div id="translate"></div>');
+			var body_trans = document.getElementsByTagName('body')[0];
+			var div = document.createElement("div");  //创建一个script标签
+			div.id="translate";
+			body_trans.appendChild(div);
 		}
 	},
 	/**

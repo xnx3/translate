@@ -18,7 +18,7 @@ var translate = {
 	/*
 	 * 资源文件url的路径
  	 */
-	resourcesUrl:'//res.zvo.cn.obs.cn-north-4.myhuaweicloud.com/translate',
+	resourcesUrl:'//res.zvo.cn/translate',
 	/*
 	 * 当前的版本
 	 */

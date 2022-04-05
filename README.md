@@ -16,6 +16,10 @@
 
 ````
 <script src="http://res.zvo.cn/translate/translate.js"></script>
+<script>
+//进行翻译
+translate.execute();
+</script>
 ````
 
 比如加到 `` </body> `` 跟 `` </html> `` 中间

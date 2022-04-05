@@ -18,7 +18,7 @@
 <script src="http://res.zvo.cn/translate/translate.js"></script>
 ````
 
-比如加到 </body> 跟 </html> 中间
+比如加到 `` </body> `` 跟 `` </html> `` 中间
 
 ## 更多扩展用法
 
@@ -34,7 +34,7 @@
 }
 </style>
 ````
-这就是控制切换语言的 <select> 标签
+这就是控制切换语言的 ``<select>`` 标签
 
 #### 手动执行页面翻译
 

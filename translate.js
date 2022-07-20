@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:1.0,
+	version:1.1,
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
 	 */
@@ -20,10 +20,10 @@ var translate = {
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
 	/*
-	 * 当前的版本
+	 * 当前本地语言
 	 */
 	//localLanguage:'zh-CN',
-	localLanguage:'en',
+	localLanguage:'zh-CN',
 	
 	/**
 	 * google翻译执行的
@@ -90,6 +90,52 @@ var translate = {
 		script.src = this.resourcesUrl+'/js/element.js';
 		head0.appendChild(script);
 	},
+	
+	/**
+	 * 设置Cookie，失效时间一年。
+	 * @param name
+	 * @param value
+	 */
+	setCookie:function (name,value){
+		var cookieString=name+"="+escape(value); 
+		document.cookie=cookieString; 
+	},
+
+	//获取Cookie。若是不存再，返回空字符串
+	getCookie:function (name){ 
+		var strCookie=document.cookie; 
+		var arrCookie=strCookie.split("; "); 
+		for(var i=0;i<arrCookie.length;i++){ 
+			var arr=arrCookie[i].split("="); 
+			if(arr[0]==name){
+				return unescape(arr[1]);
+			}
+		}
+		return "";
+	},
+	
+	/**
+	 * 获取当前页面采用的是什么语言
+	 * 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
+	 */
+	currentLanguage:function(){
+		var cookieValue = translate.getCookie('googtrans');
+		if(cookieValue.length > 0){
+			return cookieValue.substr(cookieValue.lastIndexOf('/')+1,cookieValue.length-1);
+		}else{
+			return translate.localLanguage;
+		}
+	},
+	
+	/**
+	 * 切换语言，比如切换为英语、法语
+ 	 * @param languageName 要切换的语言语种。传入如 en、zh-CN
+	 */
+	changeLanguage:function(languageName){
+		translate.setCookie('googtrans', '/'+translate.localLanguage+'/'+languageName);
+		location.reload();
+	}
+	
 }
 
 

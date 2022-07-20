@@ -13,12 +13,29 @@ var translate = {
 	translate:null,
 	/*
 	 * 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr
+	 * 已废弃，请使用 translate.selectLanguageTag.languages 
 	 */
 	includedLanguages:'zh-CN,zh-TW,en',
 	/*
 	 * 资源文件url的路径
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
+	
+	/**
+	 * 默认出现选择语言的 select 选择框，可以通过这个选择切换语言。
+	 */
+	showSelectLanguage:true,
+	
+	/**
+	 * 默认出现的选择语言的 select 选择框，可以通过这个选择切换语言。
+	 */
+	selectLanguageTag:{
+		/* 是否显示 select选择语言的选择框，true显示； false不显示。默认为true */
+		show:true,
+		/* 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr */
+		languages:'zh-CN,zh-TW,en',
+	},
+	
 	/*
 	 * 当前本地语言
 	 */
@@ -30,7 +47,7 @@ var translate = {
 	 */
 	googleTranslateElementInit:function(){
 		var selectId = 'translate';
-		if(document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0){
+		if(document.getElementById('translate') != null && document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0){
 			//已经创建过了，那就不在创建了
 			selectId = '';
 		}
@@ -41,7 +58,7 @@ var translate = {
 				pageLanguage: 'zh-CN',
 				//一共80种语言选择，这个是你需要翻译的语言，比如你只需要翻译成越南和英语，这里就只写en,vi
 				//includedLanguages: 'de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr',
-	            includedLanguages: translate.includedLanguages,
+	            includedLanguages: translate.selectLanguageTag.languages,
 				//选择语言的样式，这个是面板，还有下拉框的样式，具体的记不到了，找不到api~~  
 				layout: 0,
 				//自动显示翻译横幅，就是翻译后顶部出现的那个，有点丑，设置这个属性不起作用的话，请看文章底部的其他方法
@@ -82,6 +99,15 @@ var translate = {
 	 * 执行翻译操作
 	 */
 	execute:function(){
+		
+		/* 处理1.0 - 1.1 升级的 */
+		if(translate.includedLanguages != 'zh-CN,zh-TW,en'){
+			/* 用户1.0版本设置过这个，那么就以这个为主 */
+			translate.selectLanguageTag.languages = translate.includedLanguages;
+			console.log('translate.js tip: translate.includedLanguages obsolete, please use the translate.selectLanguageTag.languages are set');
+		}
+		
+		
 		/****** 先加载资源  ******/
 		var head0 = document.getElementsByTagName('head')[0];
 		var script = document.createElement("script");  //创建一个script标签
@@ -119,6 +145,7 @@ var translate = {
 	 * 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
 	 */
 	currentLanguage:function(){
+		translate.check();
 		var cookieValue = translate.getCookie('googtrans');
 		if(cookieValue.length > 0){
 			return cookieValue.substr(cookieValue.lastIndexOf('/')+1,cookieValue.length-1);
@@ -132,8 +159,26 @@ var translate = {
  	 * @param languageName 要切换的语言语种。传入如 en、zh-CN
 	 */
 	changeLanguage:function(languageName){
+		translate.check();
+		
+		//先清空泛解析域名的设置
+		var s = document.location.host.split('.');
+		if(s.length > 2){
+			var fanDomain = s[s.length-2]+'.'+s[s.length-1];
+			document.cookie = 'googtrans=;expires='+(new Date(1))+';domain='+fanDomain+';path=/';
+		}
+		
 		translate.setCookie('googtrans', '/'+translate.localLanguage+'/'+languageName);
 		location.reload();
+	},
+	
+	/**
+	 * 自检提示
+	 */
+	check:function(){
+		if(window.location.protocol == 'file:'){
+			console.log('\r\n---WARNING----\r\ntranslate.js 主动翻译组件自检异常，当前协议是file协议，翻译组件要在正常的线上http、https协议下才能正常使用翻译功能\r\n------------');
+		}
 	}
 	
 }

@@ -1,5 +1,9 @@
 <html>
+<head> 
+  <meta charset="UTF-8"> 
+</head>
 <body>
+<script src="./translate.js"></script>
 
 国际化，网页自动翻译，同谷歌浏览器自动翻译的效果，适用于网站。
 
@@ -9,6 +13,17 @@
 	<li><a href="index.html">联系我们</a></li>
 </ul>
 
+<div>
+	当前语言：<script>document.write(translate.currentLanguage());</script>
+	<br/>
+	
+	切换为:
+	<a href="javascript:translate.changeLanguage('en');">英语</a> | 
+	<a href="javascript:translate.changeLanguage('zh-CN');">简体中文</a> | 
+	<a href="javascript:translate.changeLanguage('zh-TW');">繁体中文</a>
+</div>
+
+
 <!-- 调整切换语言的按钮示例 -->
 <style>
 #translate{
@@ -17,11 +32,14 @@
 	right:10px;
 }
 </style>
-<!-- <script src="http://res.zvo.cn.obs.myhuaweicloud.com/translate/translate.js"></script> -->
-<script src="./translate.js"></script>
+
 <script>
     translate.execute();
 </script>
-</body>
 
+<div style="padding-top:100px;">
+	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate">https://gitee.com/mail_osc/translate</a>
+</div>
+
+</body>
 </html>

@@ -61,11 +61,42 @@ translate.execute();//进行翻译
 </script>
 ````
 
+
 默认不设置此，则支持 简体中文、繁体中文、英语 三种。
 可设置的语言包括：
 
 ````
 de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr
+````
+
+#### 设定是否自动出现 select 切换语言
+
+````
+<script>
+	/*
+	 * 是否显示 select选择语言的选择框，true显示； false不显示。默认为true
+	 * 注意,这行要放到 translate.execute(); 上面
+	 */
+	translate.selectLanguageTag.show = false;
+	translate.execute();
+</script>
+````
+
+使用场景是，如果使用了:  
+
+````
+<a href="javascript:translate.changeLanguage('en');">切换为英语</a>
+````
+
+这种切换方式，那么 select下拉选择的就用不到了，就可以用此方式来不显示。  
+当然你也可以使用css的方式来控制其不显示。比如：   
+
+````
+<style>
+#translate{
+	display:none;
+}
+</style>
 ````
 
 

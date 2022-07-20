@@ -5,25 +5,36 @@
 ## 在线体验
 http://res.zvo.cn/translate/demo.html
 
-## 快速使用
-#### 第一步，在想显示切换语言按钮的位置加入这个
+## 快速使用体验
+#### 第一步，在 ````<head>```` 中引入js
+
+````
+<script src="//res.zvo.cn/translate/translate.js"></script>
+````
+
+#### 第二步，在想显示切换语言按钮的位置加入这个
 
 ````
 <div id="translate"></div>
 ````
 
-主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面
-
-#### 第二步，在网页最末尾引入js
+主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面。当然你也不一定时非要是div的，也可以这样 
 
 ````
-<script src="http://res.zvo.cn/translate/translate.js"></script>
+<span id="translate"></span>
+````
+
+#### 第三步，在 ````</html>````  之前加入一行js
+
+````
 <script>
-//进行翻译
-translate.execute();
+translate.execute();//进行翻译
 </script>
 ````
-建议加到html页面的末尾
+如果没加这个，则不会执行翻译操作
+
+#### 完成，体验一下吧
+语言选择框（select选择框）如果没有额外调整，一般会在页面最底部，可以从最底部找找
 
 ## 更多扩展用法
 
@@ -41,11 +52,11 @@ translate.execute();
 ````
 这就是控制切换语言的 ``<select>`` 标签
 
-#### 设定当前支持哪些语言可切换
+#### 设定 select 切换语言，支持哪些语言可切换
 
 ````
 <script>
-	translate.includedLanguages = 'zh-CN,zh-TW,en';  //注意要放到 translate.execute(); 上面
+	translate.selectLanguageTag.languages = 'zh-CN,zh-TW,en';  //注意要放到 translate.execute(); 上面
 	translate.execute();
 </script>
 ````
@@ -68,4 +79,9 @@ de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es
 ````
 对于一些网页需要通过ajax请求来加载数据的情况，当加载完数据时，手动执行此方法，使刚加载的信息也进行翻译
 
+#### js主动切换语言
+比如点击某个链接显示英文界面
 
+````
+<a href="javascript:translate.changeLanguage('en');">切换为英语</a>
+````

@@ -9,16 +9,10 @@
 http://res.zvo.cn/translate/demo.html
 
 ## 快速使用体验
-#### 第一步，在 ````<head>```` 中引入js
+在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
 <script src="//res.zvo.cn/translate/translate.js"></script>
-````
-
-
-#### 第二步，在 ````</html>````  之前加入一行js
-
-````
 <script> translate.execute();//进行翻译 </script>
 ````
 

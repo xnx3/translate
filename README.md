@@ -1,6 +1,9 @@
 
 ## 介绍
-国际化，网页自动翻译，在谷歌翻译的基础上进行了优化，同谷歌浏览器自动翻译的效果，适用于html网页
+国际化，网页自动翻译，在谷歌翻译的基础上进行了优化，同谷歌浏览器自动翻译的效果，适用于html网页。  
+网页无需另行改造，增加两行js即可实现多国语言切换的能力。  
+
+<video controls="controls" src="//down.zvo.cn/video/translate_inspector_demo.mov?t=20220721" style="height:auto; max-width:80%" width="80%">&nbsp;</video>
 
 ## 在线体验
 http://res.zvo.cn/translate/demo.html
@@ -12,26 +15,12 @@ http://res.zvo.cn/translate/demo.html
 <script src="//res.zvo.cn/translate/translate.js"></script>
 ````
 
-#### 第二步，在想显示切换语言按钮的位置加入这个
+
+#### 第二步，在 ````</html>````  之前加入一行js
 
 ````
-<div id="translate"></div>
+<script> translate.execute();//进行翻译 </script>
 ````
-
-主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面。当然你也不一定时非要是div的，也可以这样 
-
-````
-<span id="translate"></span>
-````
-
-#### 第三步，在 ````</html>````  之前加入一行js
-
-````
-<script>
-translate.execute();//进行翻译
-</script>
-````
-如果没加这个，则不会执行翻译操作
 
 #### 完成，体验一下吧
 语言选择框（select选择框）如果没有额外调整，一般会在页面最底部，可以从最底部找找

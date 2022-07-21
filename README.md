@@ -16,9 +16,6 @@ http://res.zvo.cn/translate/demo.html
 <script> translate.execute();//进行翻译 </script>
 ````
 
-#### 完成，体验一下吧
-语言选择框（select选择框）如果没有额外调整，一般会在页面最底部，可以从最底部找找
-
 ## 更多扩展用法
 
 #### 指定切换语言的select选择框的位置

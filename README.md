@@ -27,6 +27,18 @@ http://res.zvo.cn/translate/demo.html
 
 ## 更多扩展用法
 
+#### 指定切换语言的select选择框的位置
+你想在你页面什么地方显示，就吧下面这个放到哪即可。
+````
+<div id="translate"></div>
+````
+
+主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面。当然你也不一定时非要是div的，也可以这样
+
+````
+<span id="translate"></span>
+````
+
 #### CSS美化切换语言按钮
 可使用css来控制切换语言选择的显示位置及美观。如：
 

@@ -122,9 +122,6 @@ var translate = {
 	setCookie:function (name,value){
 		var cookieString=name+"="+escape(value); 
 		document.cookie=cookieString; 
-		
-		//跟域名，比如当前www.zrb.zvo.cn ，这个设置的时 zvo.cn
-		document.cookie = 'googtrans=;domain='+fanDomain+';path=/';
 	},
 
 	//获取Cookie。若是不存再，返回空字符串
@@ -161,14 +158,17 @@ var translate = {
 	changeLanguage:function(languageName){
 		translate.check();
 		
+		var googtrans = '/'+translate.localLanguage+'/'+languageName;
+		
 		//先清空泛解析域名的设置
 		var s = document.location.host.split('.');
 		if(s.length > 2){
 			var fanDomain = s[s.length-2]+'.'+s[s.length-1];
 			document.cookie = 'googtrans=;expires='+(new Date(1))+';domain='+fanDomain+';path=/';
+			document.cookie = 'googtrans='+googtrans+';domain='+fanDomain+';path=/';
 		}
 		
-		translate.setCookie('googtrans', '/'+translate.localLanguage+'/'+languageName);
+		translate.setCookie('googtrans', ''+googtrans);
 		location.reload();
 	},
 	

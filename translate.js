@@ -42,7 +42,7 @@ var translate = {
 	 */
 	googleTranslateElementInit:function(){
 		var selectId = '';
-		if(document.getElementById('translate') != null && document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0){
+		if(document.getElementById('translate') != null){	// && document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0
 			//已经创建过了,存在
 			selectId = 'translate';
 		}

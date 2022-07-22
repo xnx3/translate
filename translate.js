@@ -20,12 +20,7 @@ var translate = {
 	 * 资源文件url的路径
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
-	
-	/**
-	 * 默认出现选择语言的 select 选择框，可以通过这个选择切换语言。
-	 */
-	showSelectLanguage:true,
-	
+
 	/**
 	 * 默认出现的选择语言的 select 选择框，可以通过这个选择切换语言。
 	 */
@@ -46,10 +41,10 @@ var translate = {
 	 * google翻译执行的
 	 */
 	googleTranslateElementInit:function(){
-		var selectId = 'translate';
+		var selectId = '';
 		if(document.getElementById('translate') != null && document.getElementById('translate').innerHTML.indexOf('translateSelectLanguage') > 0){
-			//已经创建过了，那就不在创建了
-			selectId = '';
+			//已经创建过了,存在
+			selectId = 'translate';
 		}
 		
 		translate.translate = new google.translate.TranslateElement(
@@ -87,18 +82,20 @@ var translate = {
 		
 		//this.resourcesUrl = 'file:///Users/apple/git/translate';
 		
-		/*********** 判断translate 的id是否存在，不存在就创建一个  */
-		if(document.getElementById('translate') == null){
-			var body_trans = document.getElementsByTagName('body')[0];
-			var div = document.createElement("div");  //创建一个script标签
-			div.id="translate";
-			body_trans.appendChild(div);
-		}
 	},
 	/**
 	 * 执行翻译操作
 	 */
 	execute:function(){
+		/*********** 判断translate 的id是否存在，不存在就创建一个  */
+		if(document.getElementById('translate') == null){
+			if(translate.selectLanguageTag.show){
+				var body_trans = document.getElementsByTagName('body')[0];
+				var div = document.createElement("div");  //创建一个script标签
+				div.id="translate";
+				body_trans.appendChild(div);
+			}
+		}
 		
 		/* 处理1.0 - 1.1 升级的 */
 		if(translate.includedLanguages != 'zh-CN,zh-TW,en'){
@@ -125,6 +122,9 @@ var translate = {
 	setCookie:function (name,value){
 		var cookieString=name+"="+escape(value); 
 		document.cookie=cookieString; 
+		
+		//跟域名，比如当前www.zrb.zvo.cn ，这个设置的时 zvo.cn
+		document.cookie = 'googtrans=;domain='+fanDomain+';path=/';
 	},
 
 	//获取Cookie。若是不存再，返回空字符串

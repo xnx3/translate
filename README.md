@@ -3,7 +3,15 @@
 国际化，网页自动翻译，在谷歌翻译的基础上进行了优化，同谷歌浏览器自动翻译的效果，适用于html网页。  
 网页无需另行改造，增加两行js即可实现多国语言切换的能力。  
 
-<video controls="controls" src="//down.zvo.cn/video/translate_inspector_demo.mov?t=20220721" style="height:auto; max-width:80%" width="80%">&nbsp;</video>
+## 体验-在网页上几秒增加多语言切换能力：
+![效果](http://cdn.weiunity.com/site/341/news/9a7228aaae28475996da9026b93356c8.gif "")
+
+1. 随便打开一个网页
+2. 右键 - 审查元素
+3. 粘贴入以下代码：	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector.js';  head.appendChild(script);  ````
+
+4. Enter 回车键 ， 执行
+5. 在当前网页的左上角，就出现了一个大大的切换语言，切换试试看。
 
 ## 在线体验
 http://res.zvo.cn/translate/demo.html

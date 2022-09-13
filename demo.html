@@ -16,13 +16,23 @@
 <div>
 	当前语言：<script>document.write(translate.currentLanguage());</script>
 	<br/>
-	
-	切换为:
-	<a href="javascript:translate.changeLanguage('en');">英语</a> | 
-	<a href="javascript:translate.changeLanguage('zh-CN');">简体中文</a> | 
-	<a href="javascript:translate.changeLanguage('zh-TW');">繁体中文</a>
 </div>
 
+<hr/>
+
+这个一般是网站中右上角会有切换语言的效果，让网站支持多语言功能。效果：
+<div>
+	<a class="translate_english" href="javascript:translate.changeLanguage('en');"><!-- 英语 --></a> | 
+	<a class="translate_chinese" href="javascript:translate.changeLanguage('zh-CN');"><!-- 简体中文 --></a> | 
+	<a class="translate_chinese_tw" href="javascript:translate.changeLanguage('zh-TW');"><!-- 繁体中文 --></a>
+	<!-- 采用css的content 来赋予显示的语言文字，目的是防止这个被自动翻译给一块翻译了 -->
+	<style>
+		.translate_english:after{ content:'English' }
+		.translate_chinese:after{ content:'简体中文' }
+		.translate_chinese_tw:after{ content:'繁体中文' }
+	</style>
+</div>
+<hr/>
 
 <!-- 调整切换语言的按钮示例 -->
 <style>

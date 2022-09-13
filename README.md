@@ -118,10 +118,10 @@ de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es
 ````
 
 ## 实际使用场景示例
-##### 普通网站中点击某个语言进行切换
-如上图所示，网站中的某个位置要有几种语言切换  
+#### 普通网站中点击某个语言进行切换
+如下图所示，网站中的某个位置要有几种语言切换  
 ![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
-实现代码如下：  
+直接在其html代码的位置加入以下代码：  
 
 ````
 <!-- 引入多语言切换的js -->

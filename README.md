@@ -146,3 +146,6 @@ de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es
 </style>
 ````
 
+## 交流
+作者微信：xnx3com  
+交流QQ群:181781514  （建议加群，使用中问题，以及异常可以在群里随时交流）

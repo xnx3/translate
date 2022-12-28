@@ -16,30 +16,41 @@
 <div>
 	当前语言：<script>document.write(translate.currentLanguage());</script>
 	<br/>
-	
-	切换为:
-	<a href="javascript:translate.changeLanguage('en');">英语</a> | 
-	<a href="javascript:translate.changeLanguage('zh-CN');">简体中文</a> | 
-	<a href="javascript:translate.changeLanguage('zh-TW');">繁体中文</a>
 </div>
 
+<hr/>
 
-<!-- 调整切换语言的按钮示例 -->
+<h3>切换示例一：这个一般是网站中右上角会有切换语言的效果，让网站支持多语言功能。效果：</h3>
+<!-- 增加某种语言切换的按钮 -->
+<ul class="translate_switch">
+	<li><a class="english" href="javascript:translate.changeLanguage('en');"><!-- 英语 --></a></li>|
+	<li><a class="chinese" href="javascript:translate.changeLanguage('zh-CN');"><!-- 简体中文 --></a></li>|
+	<li><a class="chinese_tw" href="javascript:translate.changeLanguage('zh-TW');"><!-- 繁体中文 --></a></li>
+</ul>
+<!-- 采用css的content 来赋予显示的语言文字，目的是防止自动翻译时，这里也被一块翻译了 -->
 <style>
-#translate{
-	position: absolute;
-	top:10px;
-	right:10px;
-}
+	.translate_switch li{ display: inline;padding-right: 4px; }
+	.translate_switch .english:after{ content:'English' }
+	.translate_switch .chinese:after{ content:'简体中文' }
+	.translate_switch .chinese_tw:after{ content:'繁体中文' }
 </style>
 
-<script>
-    translate.execute();
-</script>
+<hr/>
+
+<h3>切换示例二：出现select下拉选择的方式选择当前切换的语言：</h3>
+<!-- 这个div就是select所在 -->
+<div id="translate"></div>
+
+
+<hr/>
 
 <div style="padding-top:100px;">
 	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate">https://gitee.com/mail_osc/translate</a>
 </div>
 
+<script>
+	translate.resourcesUrl = './';
+    translate.execute();
+</script>
 </body>
 </html>

@@ -48,7 +48,8 @@
         c._cac = '';
         c._cam = '';
         c._ctkk = '435939.3261298948';
-        var h = 'translate.googleapis.com';
+        //var h = 'translate.googleapis.com';
+		var h = 'api.translate.zvo.cn';
         var s = (true ? 'https': window.location.protocol == 'https:' ? 'https': 'http') + '://';
         var b = s + h;
         c._pah = h;

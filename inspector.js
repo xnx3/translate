@@ -6,6 +6,8 @@
 		var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector.js';  head.appendChild(script); 
 	4. Enter 回车键 ， 执行
 	5. 在当前网页的左上角，就出现了一个大大的切换语言了	
+	
+	使用的是 v1.x 版本进行的翻译
  */
 var head= document.getElementsByTagName('head')[0]; 
 var script= document.createElement('script'); 

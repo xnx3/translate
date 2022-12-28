@@ -98,7 +98,7 @@ translate.ignore.tag.push('span'); //翻译时追加上自己想忽略不进行�
 translate.ignore.class.push('test');	//翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。
 ````
 翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看
+如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看  
 **注意，这行要放到 translate.execute(); 上面**
 
 #### 翻译指定的区域
@@ -154,6 +154,26 @@ translate.execute();
 	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
 </ul>
 ````
+
+## 版本
+注意，v1.x 跟 v2.x 使用上略有差别，可使用 ````console.log(translate.version);```` 查看当前使用的版本。  
+另外 v1.x 版本的相关说明参见： [使用说明](v1.md) | [在线demo](https://res.zvo.cn/translate/demo_v1.html)
+
+#### v1.0
+2022.2月发布，提供多语言支持能力，使网页无需改动快速具备多语言切换能力。
+
+#### v2.0
+2022.12月发布，增加更多的扩展方法。  
+1. 可自定义忽略的Tag标签，进行翻译时会忽略之
+2. 可自定义忽略的class，进行翻译时会忽略之
+3. 默认内置 class="ignore" 为忽略的class，可在某个标签上增加此属性，即可使其跳过不进行翻译。
+4. 增加缓存机制，翻译一次后会将结果进行缓存，翻译过后，再查看，会达到秒翻译的结果，极大提高体验度。
+5. 增加局部翻译的能力，可支持自定义翻译的区域。
+6. 优化 input 输入框的 placeholder 的内容不翻译的问题
+7. 优化本地使用（file协议）时无法测试的问题。现在本地也能正常使用及测试了。
+8. 修复翻译时会莫名其妙多了无数层font标签的问题
+9. 修复翻译时，像是中文翻译为韩语，鼠标多经过几次会将其翻译的韩语重复翻译导致翻译结果不准确的问题。
+
 
 ## 交流
 作者微信：xnx3com  

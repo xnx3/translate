@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:1.1,
+	version:1.2,
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
 	 */

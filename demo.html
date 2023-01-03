@@ -1,56 +1,75 @@
 <html>
 <head> 
   <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 </head>
 <body>
 <script src="./translate.js"></script>
 
-国际化，网页自动翻译，同谷歌浏览器自动翻译的效果，适用于网站。
+<div class="title">简介:</div>
+<div>测试一下 translate</div>
+<div>国际化，网页自动翻译，同谷歌浏览器自动翻译的效果，适用于网站。</div>
+<div>当前为v2版本，v1版本参见：<a href="demo_v1.html" target="_black">demo_v1.html</a></div>
 
-<ul>
-	<li><a href="index.html">首页</a></li>
-	<li><a href="index.html">公司简介</a></li>
-	<li><a href="index.html">联系我们</a></li>
-</ul>
-
+<hr/>
+<div class="title">使用方式:</div>
+<h4>1. 引入js库</h4>
 <div>
-	当前语言：<script>document.write(translate.currentLanguage());</script>
-	<br/>
+	<pre>	
+&lt;script src="https://res.zvo.cn/translate/translate.js"&gt;&lt;/script&gt;
+	</pre>
+</div>
+<h4>2. 在页面最底部加入js代码</h4>
+<div>
+	<pre>
+//translate.ignore.tag.push('span'); //翻译时追加上自己想指定忽略的tag标签，凡是在这里面的，都不进行翻译。
+//translate.ignore.class.push('test');	//翻译时指定忽略的class name，凡是class name 在这里面的，都不进行翻译。如果不设置默认只有 ignore 这一个
+translate.setUseVersion2(); //设置使用v2.x 版本
+translate.execute(); //执行翻译初始化操作，显示出select语言选择
+	</pre>
+	<p>注意，要在页面最底部加。如果你在页面顶部加，那下面的是不会被翻译的</p>
+	<p>如果你网页中有ajax请求更新了数据，要对其更新的数据进行翻译时，可直接执行 <code style="padding-left:10px; padding-right:10px;">translate.execute();</code> 进行翻译</p>
+</div>
+<hr/>
+
+
+<div class="title">语言切换示例：</div>
+<div>
+	按钮切换语言:
+	<a class="ignore" href="javascript:translate.changeLanguage('english');">English</a> | 
+	<a class="ignore" href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a> | 
+	<a class="ignore" href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a>
 </div>
 
-<hr/>
-
-<h3>切换示例一：这个一般是网站中右上角会有切换语言的效果，让网站支持多语言功能。效果：</h3>
-<!-- 增加某种语言切换的按钮 -->
-<ul class="translate_switch">
-	<li><a class="english" href="javascript:translate.changeLanguage('en');"><!-- 英语 --></a></li>|
-	<li><a class="chinese" href="javascript:translate.changeLanguage('zh-CN');"><!-- 简体中文 --></a></li>|
-	<li><a class="chinese_tw" href="javascript:translate.changeLanguage('zh-TW');"><!-- 繁体中文 --></a></li>
-</ul>
-<!-- 采用css的content 来赋予显示的语言文字，目的是防止自动翻译时，这里也被一块翻译了 -->
-<style>
-	.translate_switch li{ display: inline;padding-right: 4px; }
-	.translate_switch .english:after{ content:'English' }
-	.translate_switch .chinese:after{ content:'简体中文' }
-	.translate_switch .chinese_tw:after{ content:'繁体中文' }
-</style>
-
-<hr/>
-
-<h3>切换示例二：出现select下拉选择的方式选择当前切换的语言：</h3>
-<!-- 这个div就是select所在 -->
-<div id="translate"></div>
-
-
-<hr/>
-
-<div style="padding-top:100px;">
-	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate">https://gitee.com/mail_osc/translate</a>
+<div id="translate">
+	select选择框切换语言:
 </div>
 
 <script>
-	translate.resourcesUrl = './';
-    translate.execute();
+//translate.ignore.tag.push('img'); //翻译时追加上自己想指定忽略的tag标签，凡是在这里面的，都不进行翻译。
+//translate.ignore.class.push('test');	//翻译时指定忽略的class name，凡是class name 在这里面的，都不进行翻译。如果不设置默认只有 ignore 这一个
+//var documents = [];
+//documents.push(document.getElementById('test1'));
+//documents.push(document.getElementById('test2'));
+//documents.push(document.getElementById('test3'));
+//translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+translate.setUseVersion2(); //设置使用v2.x 版本
+translate.execute(); //执行翻译初始化操作，显示出select语言选择
 </script>
+
+
+<div style="position:absolute; bottom:10px; text-align:center; width: 100%;font-size: 18px;">
+	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate">https://gitee.com/mail_osc/translate</a>
+</div>
+
+
+<style>
+.title{
+	font-size:24px;
+	padding-top:15px;
+	padding-bottom:10px;
+	
+}
+</style>
 </body>
 </html>

@@ -378,14 +378,14 @@ var translate = {
 				if(cache != null && cache.length > 0){
 					//有缓存了
 					//console.log('find cache：'+cache);
-					console.log(this.nodeQueue[lang][hash]['nodes']);
+					//console.log(this.nodeQueue[lang][hash]['nodes']);
 					//直接将缓存赋予
 					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
 						//this.nodeQueue[lang][hash][index].nodeValue = cache;
 						
 						for(var node_index = 0; node_index < this.nodeQueue[lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
-							console.log(originalWord);
+							//console.log(originalWord);
 							this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
@@ -424,7 +424,7 @@ var translate = {
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
 			this.request.post(url, data, function(data){
-				console.log(data); 
+				//console.log(data); 
 				if(data.result == 0){
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
@@ -528,13 +528,13 @@ var translate = {
 		//console.log(node.nodeName+', '+node.nodeValue);
 		if(node.nodeName == 'INPUT' || node.nodeName == 'TEXTAREA'){
 			//input 输入框，要对 placeholder 做翻译
-			console.log('input---'+node.attributes);
+			//console.log('input---'+node.attributes);
 			if(node.attributes == null || typeof(node.attributes) == 'undefined'){
 				return;
 			}
 
 			if(typeof(node.attributes['placeholder']) != 'undefined'){
-				console.log(node.attributes['placeholder'].nodeValue);
+				//console.log(node.attributes['placeholder'].nodeValue);
 				//加入要翻译的node队列
 				//translate.nodeQueue[translate.hash(node.nodeValue)] = node.attributes['placeholder'];
 				//加入要翻译的node队列
@@ -575,8 +575,8 @@ var translate = {
 
 		//获取当前是什么语种
 		var langs = this.language.get(node.nodeValue);
-		console.log('langs');
-		console.log(langs);
+		//console.log('langs');
+		//console.log(langs);
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
 		if(typeof(langs[translate.to]) != 'undefined'){
@@ -658,7 +658,7 @@ var translate = {
 			}
 			
 			//console.log(langs);
-			console.log(langStrs);
+			//console.log(langStrs);
 
 /*
 			//从数组中取出现频率最高的
@@ -828,7 +828,7 @@ var translate = {
 	//如果使用后，第二次在用，那就优先以用户所选择的为主
 	executeByLocalLanguage:function(){
 		this.request.post('https://api.translate.zvo.cn/ip.json', {}, function(data){
-			console.log(data); 
+			//console.log(data); 
 			if(data.result == 0){
 				console.log('==== ERROR 获取当前用户所在区域异常 ====');
 				console.log(data.info);

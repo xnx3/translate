@@ -149,6 +149,13 @@ translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，�
 直接在其html代码末尾的位置加入以下代码：  
 
 ````
+<!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
+<ul class="ignore">
+	<li><a href="javascript:translate.changeLanguage('english');">English</a></li>|
+	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
+	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
+</ul>
+
 <!-- 引入多语言切换的js -->
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
@@ -156,13 +163,6 @@ translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，�
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
 	translate.execute();
 </script>
-
-<!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
-<ul class="ignore">
-	<li><a href="javascript:translate.changeLanguage('english');">English</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
-</ul>
 ````
 
 ## 版本

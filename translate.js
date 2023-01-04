@@ -1121,7 +1121,7 @@ var translate = {
 			    }
 			}
 
-			for(let item in numbers){
+			for(var item in numbers){
 			    if(numbers[item]===maxNum){
 			        maxStr.push(item)
 			    }
@@ -1147,7 +1147,7 @@ var translate = {
 			return hash+'';
 		},
 		//去除一些指定字符，如换行符。 如果传入的是null，则返回空字符串
-		charReplace(str){
+		charReplace:function(str){
 
 			if(str == null){
 				return '';
@@ -1236,10 +1236,10 @@ var translate = {
 	},
 	//存储，本地缓存
 	storage:{
-		set(key,value){
+		set:function(key,value){
 			localStorage.setItem(key,value);
 		},
-		get(key){
+		get:function(key){
 			return localStorage.getItem(key);
 		}
 	}

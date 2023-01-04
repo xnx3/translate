@@ -131,6 +131,16 @@ translate.execute();
 只需传入翻译的目标语言，即可快速切换到指定语种。具体有哪些语言，可查阅： [http://api.translate.zvo.cn/htmldoc/language.json.html](http://api.translate.zvo.cn/htmldoc/language.json.html)  
 其中 ````class="ignore"```` 加了这个class，代表这个a标签将不会被翻译 
 
+#### 自动根据用户所在的国家切换其语种
+
+用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。  
+如果用户手动切换了别的语种，再使用时，那就优先以用户所选择的为主，这个就不管用了。  
+
+````
+translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
+````
+
+**注意，这行要放到 translate.execute(); 上面**
 
 ## 实际使用场景示例
 #### 普通网站中点击某个语言进行切换

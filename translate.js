@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:2.20230103,
+	version:2.20230104,
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		this.useVersion = 'v2';
@@ -263,13 +263,20 @@ var translate = {
 	
 	/**************************** v2.0 */
 	to:'', //翻译为的目标语言，如 english 、chinese_simplified
+	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
+	//如果使用后，第二次在用，那就优先以用户所选择的为主，这个就不管用了
+	//默认是false，不使用，可设置true：使用
+	//使用 setAutoDiscriminateLocalLanguage 进行设置
+	autoDiscriminateLocalLanguage:false,
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'img', 'head', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage']
 	},
-
+	setAutoDiscriminateLocalLanguage:function(){
+		this.autoDiscriminateLocalLanguage = true;
+	},
 	//待翻译的页面的node队列，key为 english、chinese  value[ hash，value为node对象的数组 ]
 	nodeQueue:{},
 	//指定要翻译的元素的集合,可传入一个元素或多个元素
@@ -319,7 +326,12 @@ var translate = {
 		
 		//判断是否还未指定翻译的目标语言
 		if(this.to == null || typeof(this.to) == 'undefined' || this.to.length == 0){
-			//未指定，则不翻译
+			//未指定，判断如果指定了自动获取用户本国语种了，那么进行获取
+			if(this.autoDiscriminateLocalLanguage){
+				this.executeByLocalLanguage();
+			}
+			
+			//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
 			return;
 		}
 		
@@ -811,6 +823,24 @@ var translate = {
 			
 			return false;
 		}
+	},
+	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
+	//如果使用后，第二次在用，那就优先以用户所选择的为主
+	executeByLocalLanguage:function(){
+		this.request.post('https://api.translate.zvo.cn/ip.json', {}, function(data){
+			console.log(data); 
+			if(data.result == 0){
+				console.log('==== ERROR 获取当前用户所在区域异常 ====');
+				console.log(data.info);
+				console.log('==== ERROR END ====');
+			}else{
+				translate.setUseVersion2();
+				translate.storage.set('to',data.language);	//设置目标翻译语言
+				translate.to = data.language; //设置目标语言
+				translate.selectLanguageTag
+				translate.execute(); //执行翻译
+			}
+		});
 	},
 	
 	util:{

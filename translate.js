@@ -392,6 +392,7 @@ var translate = {
 				this.nodeQueue[hash] = new Array();
 			}
 			this.nodeQueue[hash].push(node);
+			//console.log(node)
 			
 			/****** 加入翻译的任务队列  */
 			var tasks = this.taskQueue[hash];
@@ -417,8 +418,10 @@ var translate = {
 	         	});
 				this.taskQueue[hash] = tasks;
 			}
+			
 			//console.log(this.taskQueue);
 			//console.log(this.nodeQueue);
+			
 			//对nodeQueue进行翻译
 			for(var hash in this.nodeQueue){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
@@ -426,7 +429,7 @@ var translate = {
 					//对这个node元素进行替换翻译字符
 					for(var task_index=0; task_index<tasks.length; task_index++){
 						var task = tasks[task_index];
-						this.nodeQueue[hash][node_index].nodeValue = this.nodeQueue[hash][node_index].nodeValue.replace(new RegExp(task.originalText,'g'), task.resultText);
+						this.nodeQueue[hash][task_index].nodeValue = this.nodeQueue[hash][task_index].nodeValue.replace(new RegExp(task.originalText,'g'), task.resultText);
 					}
 				}
 			}
@@ -618,13 +621,12 @@ var translate = {
 					//取原始的词，还未经过翻译的，需要进行翻译的词
 					var originalWord = translate.nodeQueue[lang][hash]['original'];	
 					
-					//加入任务
-					task.add(translate.nodeQueue[lang][hash]['nodes'][0], originalWord, text);
 					//for(var index = 0; index < translate.nodeQueue[lang][hash].length; index++){
-					/*for(var node_index = 0; node_index < translate.nodeQueue[lang][hash]['nodes'].length; node_index++){
+					for(var node_index = 0; node_index < translate.nodeQueue[lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
-						
-					}*/
+						//加入任务
+						task.add(translate.nodeQueue[lang][hash]['nodes'][node_index], originalWord, text);
+					}
 					//}
 					/*
 					for(var index = 0; index < translate.nodeQueue[data.from][hash].length; index++){
@@ -746,7 +748,7 @@ var translate = {
 		}
 		var key = this.util.hash(node.nodeValue);
 		if(this.util.findTag(node.nodeValue)){
-			console.log('find tag ignore : '+node.nodeValue);
+			//console.log('find tag ignore : '+node.nodeValue);
 			return;
 		}
 

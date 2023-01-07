@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.4.20230104',
+	version:'2.1.5.20230107',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		this.useVersion = 'v2';
@@ -297,7 +297,142 @@ var translate = {
 		//清空翻译队列，下次翻译时重新检索
 		this.nodeQueue = {};
 	},
-
+	listener:{
+		//当前页面打开后，是否已经执行完execute() 方法进行翻译了，只要执行完一次，这里便是true。 （多种语言的API请求完毕并已渲染html）
+		isExecuteFinish:false,
+		//是否已经使用了 translate.listener.start() 了，如果使用了，那这里为true，多次调用 translate.listener.start() 只有第一次有效
+		isStart:false,
+		//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化部分，是指当 translate.execute(); 已经完全执行完毕之后，如果页面再有变化的部分，才会对其进行翻译。
+		start:function(){
+			if(translate.listener.isStart){
+				//已开启了
+				return;
+			}
+			
+			//判断是否是执行完一次了
+	        translate.temp_linstenerStartInterval = setInterval(function(){
+				if(translate.listener.isExecuteFinish){ //执行完过一次，那才能使用
+					if(translate.listener.isStart){
+						//已开启了
+						return;
+					}
+					clearInterval(translate.temp_linstenerStartInterval);//停止
+					translate.listener.isStart = true;
+					translate.listener.addListener();
+					//console.log('translate.temp_linstenerStartInterval Finish!');
+				}
+	        }, 50);
+		},
+		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
+		addListener:function(){
+			//选择需要观察变动的节点
+			//const targetNode = document.getElementById('some-id');
+			const targetNode = document;
+			// 观察器的配置（需要观察什么变动）
+			const config = { attributes: true, childList: true, subtree: true };
+			// 当观察到变动时执行的回调函数
+			const callback = function(mutationsList, observer) {
+				var documents = []; //有变动的元素
+				
+			    // Use traditional 'for loops' for IE 11
+			    for(let mutation of mutationsList) {
+			        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+						//多了个组件
+						documents.push.apply(documents,mutation.addedNodes);
+			            //console.log(mutation.addedNodes.nodeValue);
+			        }
+			        //else if (mutation.type === 'attributes') {
+			         //  console.log('The ' + mutation.attributeName + ' attribute was modified.');
+			        //}
+			    }
+			    
+				//console.log(documents);
+				if(documents.length > 0){
+					//有变动，需要看看是否需要翻译
+					translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+					translate.execute();
+				}
+			};
+			// 创建一个观察器实例并传入回调函数
+			const observer = new MutationObserver(callback);
+			// 以上述配置开始观察目标节点
+			observer.observe(targetNode, config);
+		}
+	},
+	//对翻译结果进行替换渲染的任务，将待翻译内容替换为翻译内容的过程
+	renderTask:class{
+		constructor(){
+			/*
+			 * 任务列表
+			 * 一维数组 [hash] = tasks;  tasks 是多个task的数组集合
+			 * 二维数组 [task,task,...]，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
+			 * 三维数组 task['originalText'] 、 task['resultText'] 存放要替换的字符串
+			 */
+			this.taskQueue = [];
+			
+			/*
+			 * 要进行翻译的node元素，
+			 * 一维数组 key:node.nodeValue 的 hash ， value:node的元素数组
+			 * 二维数组，也就是value中包含的node集合 [node,node,...]
+	 		 */
+			this.nodeQueue = [];
+		}
+		
+		/**
+		 * 向替换队列中增加替换任务
+		 * node:要替换的字符属于那个node元素
+		 * originalText:待翻译的字符
+		 * resultText:翻译后的结果字符
+		 */
+		add(node, originalText, resultText){
+			var hash = translate.util.hash(node.nodeValue); 	//node中内容的hash
+			
+			/****** 加入翻译的元素队列  */
+			if(typeof(this.nodeQueue[hash]) == 'undefined'){
+				this.nodeQueue[hash] = new Array();
+			}
+			this.nodeQueue[hash].push(node);
+			
+			/****** 加入翻译的任务队列  */
+			var tasks = this.taskQueue[hash];
+			if(tasks == null || typeof(tasks) == 'undefined'){
+				//console.log(node.nodeValue);
+				tasks = new Array(); //任务列表，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
+			}
+			var task = new Array();
+			task['originalText'] = originalText;
+			task['resultText'] = resultText;
+			tasks.push(task);
+			this.taskQueue[hash] = tasks;
+			/****** 加入翻译的任务队列 end  */
+		}
+		//进行替换渲染任务，对页面进行渲染替换翻译
+		execute(){
+			
+			//先对tasks任务队列的替换词进行排序，将同一个node的替换词有大到小排列，避免先替换了小的，大的替换时找不到
+			for(var hash in this.taskQueue){
+				var tasks = this.taskQueue[hash];
+				tasks.sort(function(a,b){
+					return b.originalText.length - a.originalText.length;
+	         	});
+				this.taskQueue[hash] = tasks;
+			}
+			//console.log(this.taskQueue);
+			//console.log(this.nodeQueue);
+			//对nodeQueue进行翻译
+			for(var hash in this.nodeQueue){
+				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
+				for(var node_index = 0; node_index < this.nodeQueue[hash].length; node_index++){
+					//对这个node元素进行替换翻译字符
+					for(var task_index=0; task_index<tasks.length; task_index++){
+						var task = tasks[task_index];
+						this.nodeQueue[hash][node_index].nodeValue = this.nodeQueue[hash][node_index].nodeValue.replace(new RegExp(task.originalText,'g'), task.resultText);
+					}
+				}
+			}
+		}
+	},
+	
 	//执行翻译操作。翻译的是 nodeQueue 中的
 	execute:function(){
 		if(this.useVersion == 'v1'){
@@ -356,7 +491,6 @@ var translate = {
 		//translateTextArray[lang][0]
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
-			
 		
 		for(var lang in this.nodeQueue){ //一维数组，取语言
 			//console.log('lang:'+lang); //lang为english这种语言标识
@@ -367,7 +501,8 @@ var translate = {
 
 			translateTextArray[lang] = [];
 			translateHashArray[lang] = [];
-
+			
+			let task = new translate.renderTask();
 			//二维数组，取hash、value
 			for(var hash in this.nodeQueue[lang]){	
 				//取原始的词，还未经过翻译的，需要进行翻译的词
@@ -386,7 +521,8 @@ var translate = {
 						for(var node_index = 0; node_index < this.nodeQueue[lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
-							this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
+							task.add(this.nodeQueue[lang][hash]['nodes'][node_index], originalWord, cache);
+							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
 
@@ -410,11 +546,45 @@ var translate = {
 				translateTextArray[lang].push(originalWord);
 				translateHashArray[lang].push(hash);
 			}
+			task.execute(); //执行渲染任务
+		}
+		
+		
+		//统计出要翻译哪些语种 ，这里面的语种会调用接口进行翻译。其内格式如 english
+		var fanyiLangs = []; 
+		for(var lang in this.nodeQueue){ //一维数组，取语言
+			if(translateTextArray[lang].length < 1){
+				continue;
+			}
+			fanyiLangs.push(lang);
+		}
+		
+		/******* 用以记录当前是否进行完第一次翻译了 *******/
+		if(!translate.listener.isExecuteFinish){
+			translate.temp_executeFinishNumber = 0;	//下面请求接口渲染，翻译执行完成的次数	
+			//判断是否是执行完一次了
+	        translate.temp_executeFinishInterval = setInterval(function(){
+				if(translate.temp_executeFinishNumber == fanyiLangs.length){
+					translate.listener.isExecuteFinish = true; //记录当前已执行完第一次了
+					clearInterval(translate.temp_executeFinishInterval);//停止
+					//console.log('translate.execute() Finish!');
+				}
+	        }, 50);
+		}
 
+		if(fanyiLangs.length == 0){
+			//没有需要翻译的，直接退出
+			return;
+		}
+		
+		//进行掉接口翻译
+		for(var lang_index in fanyiLangs){ //一维数组，取语言
+			var lang = fanyiLangs[lang_index];
+			//console.log(lang)
 			if(translateTextArray[lang].length < 1){
 				return;
 			}
-
+			
 			/*** 翻译开始 ***/
 			var url = 'https://api.translate.zvo.cn/translate.json';
 			var data = {
@@ -432,10 +602,11 @@ var translate = {
 					
 					console.log('response : '+data.info);
 					console.log('=======ERROR END  =======');
+					translate.temp_executeFinishNumber++; //记录执行完的次数
 					return;
 				}
-
-
+				
+				let task = new translate.renderTask();
 				//遍历 translateHashArray
 				for(var i=0; i<translateHashArray[data.from].length; i++){
 					//翻译后的内容
@@ -447,11 +618,13 @@ var translate = {
 					//取原始的词，还未经过翻译的，需要进行翻译的词
 					var originalWord = translate.nodeQueue[lang][hash]['original'];	
 					
-					//赋予翻译后的内容
+					//加入任务
+					task.add(translate.nodeQueue[lang][hash]['nodes'][0], originalWord, text);
 					//for(var index = 0; index < translate.nodeQueue[lang][hash].length; index++){
-						for(var node_index = 0; node_index < translate.nodeQueue[lang][hash]['nodes'].length; node_index++){
-							translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
-						}
+					/*for(var node_index = 0; node_index < translate.nodeQueue[lang][hash]['nodes'].length; node_index++){
+						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
+						
+					}*/
 					//}
 					/*
 					for(var index = 0; index < translate.nodeQueue[data.from][hash].length; index++){
@@ -462,13 +635,14 @@ var translate = {
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
 					translate.storage.set('hash_'+data.to+'_'+hash,text);
 				}
+				task.execute(); //执行渲染任务
+				translate.temp_executeFinishNumber++; //记录执行完的次数
 
 			});
 			/*** 翻译end ***/
 
-
+			
 		}
-
 	},
 
 	//向下遍历node
@@ -567,6 +741,9 @@ var translate = {
 	},
 	//将发现的元素节点加入待翻译队列
 	addNodeToQueue:function(node){
+		if(node.nodeValue == null || node.nodeValue.length == 0){
+			return;
+		}
 		var key = this.util.hash(node.nodeValue);
 		if(this.util.findTag(node.nodeValue)){
 			console.log('find tag ignore : '+node.nodeValue);

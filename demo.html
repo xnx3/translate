@@ -12,7 +12,7 @@
 <div>当前为 v2 版本，v1 版本参见：<a href="demo_v1.html" target="_black">demo_v1.html</a></div>
 
 <!-- ajax示例 -->
-<div id="ajax">哈喽，我这里是通过ajax请求获取的内容在此显示。ajax翻译的内容也会实时被翻译，放心，拉不下的</div>
+<div id="ajax">我这里是通过ajax请求获取的内容在此显示。ajax翻译的内容也会实时被翻译，放心，拉不下的</div>
 <script>
 var ajax_num = 0;
 setInterval(function(){
@@ -22,7 +22,7 @@ setInterval(function(){
 <!-- ajax示例 end -->
 
 <hr/>
-<div class="title">使用方式:</div>
+<div class="title">hello, 使用方式:</div>
 <h4>1. 引入 js 库</h4>
 <div>
 	<pre>	
@@ -57,20 +57,20 @@ translate.execute(); //执行翻译初始化操作，显示出select语言选择
 </div>
 
 <div style="position:absolute; bottom:10px; text-align:center; width: 100%;font-size: 18px;">
-	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate">https://gitee.com/mail_osc/translate</a>
+	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate" class="ignore">https://gitee.com/mail_osc/translate</a>
 </div>
 
 <script>
 //translate.ignore.tag.push('img'); //翻译时追加上自己想指定忽略的tag标签，凡是在这里面的，都不进行翻译。
 //translate.ignore.class.push('test');	//翻译时指定忽略的class name，凡是class name 在这里面的，都不进行翻译。如果不设置默认只有 ignore 这一个
 //var documents = [];
-//documents.push(document.getElementById('test1'));
+//documents.push(document.getElementById('ajax'));
 //documents.push(document.getElementById('test2'));
 //documents.push(document.getElementById('test3'));
 //translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
 translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
 translate.setUseVersion2(); //设置使用v2.x 版本
-translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化部分，是指当 translate.execute(); 已经完全执行完毕之后，如果页面再有变化的部分，才会对其进行翻译。
+translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 translate.execute(); //执行翻译初始化操作，显示出select语言选择
 </script>
 
@@ -82,9 +82,5 @@ translate.execute(); //执行翻译初始化操作，显示出select语言选择
 	padding-bottom:10px;
 }
 </style>
-
-
-
-
 </body>
 </html>

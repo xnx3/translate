@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.6.20230108',
+	version:'2.1.7.20230109',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -253,7 +253,9 @@ var translate = {
 		translate.setUseVersion2();
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
+		
 		location.reload(); //刷新页面
+		//translate.execute(); //翻译
 	},
 	
 	/**
@@ -284,13 +286,18 @@ var translate = {
 	},
 	/*
 		待翻译的页面的node队列
-		一维：key:uuid，也就是execute每次执行都会创建一个翻译队列，这个是翻译队列的唯一标识。   value:待翻译的页面的node队列
-		二维：针对一维的value，  key:english、chinese_simplified等语种    value: k/v
-		三维：针对二维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
-		四维：针对三维的value，  这是个对象， 其中
+		一维：key:uuid，也就是execute每次执行都会创建一个翻译队列，这个是翻译队列的唯一标识。   
+			 value:
+				k/v 
+		二维：对象形态，具体有：
+			 key:expireTime 当前一维数组key的过期时间，到达过期时间会自动删除掉这个一维数组。如果<0则代表永不删除，常驻内存
+			 key:list 待翻译的页面的node队列
+		三维：针对二维的value，  key:english、chinese_simplified等语种    value: k/v
+		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
+		五维：针对四维的value，  这是个对象， 其中
 				original: 是三维的key的hash的原始文字，也就是翻译前的文本词
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
-		五维：针对四维的 nodes，将各个 node 列出来，如 [node,node,....]		
+		六维：针对五维的 nodes，将各个 node 列出来，如 [node,node,....]		
 		
 		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
 	*/
@@ -497,6 +504,8 @@ var translate = {
 		//console.log('=====')
 		//console.log(translate.nodeQueue);
 		translate.nodeQueue[uuid] = new Array(); //创建
+		translate.nodeQueue[uuid]['expireTime'] = Date.now() + 120*1000; //删除时间，10分钟后删除
+		translate.nodeQueue[uuid]['list'] = new Array(); 
 		//console.log(translate.nodeQueue);
 		//console.log('=====end')
 		
@@ -574,7 +583,7 @@ var translate = {
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
 		
-		for(var lang in translate.nodeQueue[uuid]){ //一维数组，取语言
+		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中，取语言
 			//console.log('lang:'+lang); //lang为english这种语言标识
 			if(lang == null || typeof(lang) == 'undefined' || lang.length == 0 || lang == 'undefined'){
 				//console.log('lang is null : '+lang);
@@ -587,9 +596,9 @@ var translate = {
 			let task = new translate.renderTask();
 			//console.log(translate.nodeQueue);
 			//二维数组，取hash、value
-			for(var hash in translate.nodeQueue[uuid][lang]){	
+			for(var hash in translate.nodeQueue[uuid]['list'][lang]){	
 				//取原始的词，还未经过翻译的，需要进行翻译的词
-				var originalWord = translate.nodeQueue[uuid][lang][hash]['original'];	
+				var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
 				//根据hash，判断本地是否有缓存了
 				var cache = translate.storage.get('hash_'+translate.to+'_'+hash);
 				//console.log(key+', '+cache);
@@ -601,10 +610,10 @@ var translate = {
 					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
 						//this.nodeQueue[lang][hash][index].nodeValue = cache;
 						
-						for(var node_index = 0; node_index < translate.nodeQueue[uuid][lang][hash]['nodes'].length; node_index++){
+						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
-							task.add(translate.nodeQueue[uuid][lang][hash]['nodes'][node_index], originalWord, cache);
+							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, cache);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
@@ -635,7 +644,7 @@ var translate = {
 		
 		//统计出要翻译哪些语种 ，这里面的语种会调用接口进行翻译。其内格式如 english
 		var fanyiLangs = []; 
-		for(var lang in translate.nodeQueue[uuid]){ //一维数组，取语言
+		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中取语言
 			if(translateTextArray[lang].length < 1){
 				continue;
 			}
@@ -705,7 +714,7 @@ var translate = {
 					//取原始的词，还未经过翻译的，需要进行翻译的词
 					var originalWord = '';
 					try{
-						originalWord = translate.nodeQueue[uuid][lang][hash]['original'];
+						originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];
 					}catch(e){
 						console.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
 						console.log(e);
@@ -713,10 +722,10 @@ var translate = {
 					}
 					
 					//for(var index = 0; index < translate.nodeQueue[lang][hash].length; index++){
-					for(var node_index = 0; node_index < translate.nodeQueue[uuid][lang][hash]['nodes'].length; node_index++){
+					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
 						//加入任务
-						task.add(translate.nodeQueue[uuid][lang][hash]['nodes'][node_index], originalWord, text);
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, text);
 					}
 					//}
 					/*
@@ -866,8 +875,8 @@ var translate = {
 		for(var lang in langs) {
 			
 			//创建二维数组， key为语种，如 english
-			if(translate.nodeQueue[uuid][lang] == null || typeof(translate.nodeQueue[uuid][lang]) == 'undefined'){
-				translate.nodeQueue[uuid][lang] = new Array();
+			if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
+				translate.nodeQueue[uuid]['list'][lang] = new Array();
 			}
 			
 			//遍历出该语种下有哪些词需要翻译
@@ -877,23 +886,23 @@ var translate = {
 				
 				
 				//创建三维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
-				if(translate.nodeQueue[uuid][lang][hash] == null || typeof(translate.nodeQueue[uuid][lang][hash]) == 'undefined'){
-					translate.nodeQueue[uuid][lang][hash] = new Array();
+				if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
+					translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
 					
 					/*
 					 * 创建四维数组，存放具体数据
 					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个
 					 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
 					 */
-					translate.nodeQueue[uuid][lang][hash]['nodes'] = new Array();
-					translate.nodeQueue[uuid][lang][hash]['original'] = word;
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
+					translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 					
 				}
 				
 				//往五维数组nodes中追加node元素
-				translate.nodeQueue[uuid][lang][hash]['nodes'][translate.nodeQueue[uuid][lang][hash]['nodes'].length]=node; 
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length]=node; 
 			}
 			
 		}

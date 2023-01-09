@@ -494,11 +494,11 @@ var translate = {
 		
 		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
 		var uuid = translate.util.uuid();
-		console.log('=====')
-		console.log(translate.nodeQueue);
+		//console.log('=====')
+		//console.log(translate.nodeQueue);
 		translate.nodeQueue[uuid] = new Array(); //创建
-		console.log(translate.nodeQueue);
-		console.log('=====end')
+		//console.log(translate.nodeQueue);
+		//console.log('=====end')
 		
 		//如果页面打开第一次使用，先判断缓存中有没有上次使用的语种，从缓存中取出
 		if(translate.to == null || translate.to == ''){
@@ -567,8 +567,8 @@ var translate = {
 			translate.whileNodes(uuid, node);	
 		}
 		
-		console.log('-----待翻译：----');
-		console.log(translate.nodeQueue);
+		//console.log('-----待翻译：----');
+		//console.log(translate.nodeQueue);
 		
 		//translateTextArray[lang][0]
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
@@ -689,8 +689,8 @@ var translate = {
 					return;
 				}
 				
-				console.log('-----待翻译3：----');
-		console.log(translate.nodeQueue);
+				//console.log('-----待翻译3：----');
+				//console.log(translate.nodeQueue);
 				
 				//console.log('response:'+uuid);
 				let task = new translate.renderTask();

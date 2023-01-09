@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.5.20230107',
+	version:'2.1.6.20230108',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		this.useVersion = 'v2';
@@ -33,8 +33,13 @@ var translate = {
 		show:true,
 		/* 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr */
 		languages:'zh-CN,zh-TW,en',
+		alreadyRender:false, //当前是否已渲染过了 true为是 v2.2增加
 		render:function(){ //v2增加
-				
+			if(translate.selectLanguageTag.alreadyRender){
+				return;
+			}
+			translate.selectLanguageTag.alreadyRender = true;
+			
 			//判断如果不显示select选择语言，直接就隐藏掉
 			if(!translate.selectLanguageTag.show){
 				return;
@@ -304,24 +309,28 @@ var translate = {
 		isStart:false,
 		//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化部分，是指当 translate.execute(); 已经完全执行完毕之后，如果页面再有变化的部分，才会对其进行翻译。
 		start:function(){
-			if(translate.listener.isStart){
-				//已开启了
-				return;
+			window.onload = function(){
+				/* if(translate.listener.isStart){
+					//已开启了
+					return;
+				} */
+				
+				//判断是否是执行完一次了
+		        translate.temp_linstenerStartInterval = setInterval(function(){
+					if(translate.listener.isExecuteFinish){ //执行完过一次，那才能使用
+						/*if(translate.listener.isStart){
+							//已开启了
+							return;
+						}*/
+						clearInterval(translate.temp_linstenerStartInterval);//停止
+						translate.listener.isStart = true;
+						translate.listener.addListener();
+						//console.log('translate.temp_linstenerStartInterval Finish!');
+					}
+		        }, 50);
 			}
 			
-			//判断是否是执行完一次了
-	        translate.temp_linstenerStartInterval = setInterval(function(){
-				if(translate.listener.isExecuteFinish){ //执行完过一次，那才能使用
-					if(translate.listener.isStart){
-						//已开启了
-						return;
-					}
-					clearInterval(translate.temp_linstenerStartInterval);//停止
-					translate.listener.isStart = true;
-					translate.listener.addListener();
-					//console.log('translate.temp_linstenerStartInterval Finish!');
-				}
-	        }, 50);
+			
 		},
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
@@ -437,7 +446,7 @@ var translate = {
 	},
 	
 	//执行翻译操作。翻译的是 nodeQueue 中的
-	execute:function(){
+	execute:function(documents){
 		if(this.useVersion == 'v1'){
 		//if(this.to == null || this.to == ''){
 			//采用1.x版本的翻译，使用google翻译

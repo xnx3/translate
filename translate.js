@@ -282,7 +282,18 @@ var translate = {
 	setAutoDiscriminateLocalLanguage:function(){
 		this.autoDiscriminateLocalLanguage = true;
 	},
-	//待翻译的页面的node队列，key为 english、chinese  value[ hash，value为node对象的数组 ]
+	/*
+		待翻译的页面的node队列
+		一维：key:uuid，也就是execute每次执行都会创建一个翻译队列，这个是翻译队列的唯一标识。   value:待翻译的页面的node队列
+		二维：针对一维的value，  key:english、chinese_simplified等语种    value: k/v
+		三维：针对二维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
+		四维：针对三维的value，  这是个对象， 其中
+				original: 是三维的key的hash的原始文字，也就是翻译前的文本词
+				nodes: 有哪些node元素中包含了这个词，都会在这里记录
+		五维：针对四维的 nodes，将各个 node 列出来，如 [node,node,....]		
+		
+		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
+	*/
 	nodeQueue:{},
 	//指定要翻译的元素的集合,可传入一个元素或多个元素
 	//如设置一个元素，可传入如： document.getElementsById('test')
@@ -446,7 +457,13 @@ var translate = {
 	},
 	
 	//执行翻译操作。翻译的是 nodeQueue 中的
-	execute:function(documents){
+	//docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
+	execute:function(docs){
+		if(typeof(doc) != 'undefined'){
+			//execute传入参数，只有v2版本才支持
+			this.useVersion = 'v2';
+		}
+		
 		if(this.useVersion == 'v1'){
 		//if(this.to == null || this.to == ''){
 			//采用1.x版本的翻译，使用google翻译
@@ -454,7 +471,12 @@ var translate = {
 			return;
 		}
 		
-		//采用 2.x 版本的翻译，使用自有翻译算法
+		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
+		
+		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
+		var uuid = translate.util.uuid();
+		this.nodeQueue[uuid] = new Array(); //创建
+		console.log(uuid);
 		
 		//如果页面打开第一次使用，先判断缓存中有没有上次使用的语种，从缓存中取出
 		if(this.to == null || this.to == ''){
@@ -482,29 +504,50 @@ var translate = {
 			return;
 		}
 		
-		//进行翻译操作
-		
-		//检索当前是否已经检索过翻译目标了
-		if(this.nodeQueue == null || typeof(this.nodeQueue.length) == 'undefined' || this.nodeQueue.length == 0){
-			var all;
-			if(this.documents == null || this.documents.length == 0){
-				all = document.all; //如果未设置，那么翻译所有的
-			}else{
-				//设置了翻译指定的元素，那么赋予
-				all = this.documents;
+		/*
+			进行翻译指定的node操作。优先级为：
+			1. 这个方法已经指定的翻译 nodes
+			2. setDocuments 指定的
+			3. 整个网页
+		*/
+		var all;
+		if(typeof(docs) != 'undefined'){
+			//1. 这个方法已经指定的翻译 nodes
+			
+			if(docs == null){
+				//要翻译的目标区域不存在
+				cnosole.log('translate.execute(...) 中传入的要翻译的目标区域不存在。');
+				return;
 			}
 			
-			for(var i = 0; i< all.length & i < 20; i++){
-				var node = all[i];
-				this.whileNodes(node);	
+			if(typeof(docs.length) == 'undefined'){
+				//不是数组，是单个元素
+				all = new Array();
+				all[0] = docs;
+			}else{
+				//是数组，直接赋予
+				all = documents;
 			}
+			
+		}else if(this.documents != null && typeof(this.documents) != 'undefined' && this.documents.length > 0){
+			//2. setDocuments 指定的
+			all = this.documents;
+		}else{
+			//3. 整个网页
+			all = document.all; //翻译所有的
+		}
+		
+		//检索目标内的node元素
+		for(var i = 0; i< all.length & i < 20; i++){
+			var node = all[i];
+			this.whileNodes(uuid, node);	
 		}
 		
 		//translateTextArray[lang][0]
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
 		
-		for(var lang in this.nodeQueue){ //一维数组，取语言
+		for(var lang in this.nodeQueue[uuid]){ //一维数组，取语言
 			//console.log('lang:'+lang); //lang为english这种语言标识
 			if(lang == null || typeof(lang) == 'undefined' || lang.length == 0 || lang == 'undefined'){
 				//console.log('lang is null : '+lang);
@@ -516,9 +559,9 @@ var translate = {
 			
 			let task = new translate.renderTask();
 			//二维数组，取hash、value
-			for(var hash in this.nodeQueue[lang]){	
+			for(var hash in this.nodeQueue[uuid][lang]){	
 				//取原始的词，还未经过翻译的，需要进行翻译的词
-				var originalWord = this.nodeQueue[lang][hash]['original'];	
+				var originalWord = this.nodeQueue[uuid][lang][hash]['original'];	
 				//根据hash，判断本地是否有缓存了
 				var cache = this.storage.get('hash_'+translate.to+'_'+hash);
 				//console.log(key+', '+cache);
@@ -530,10 +573,10 @@ var translate = {
 					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
 						//this.nodeQueue[lang][hash][index].nodeValue = cache;
 						
-						for(var node_index = 0; node_index < this.nodeQueue[lang][hash]['nodes'].length; node_index++){
+						for(var node_index = 0; node_index < this.nodeQueue[uuid][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
-							task.add(this.nodeQueue[lang][hash]['nodes'][node_index], originalWord, cache);
+							task.add(this.nodeQueue[uuid][lang][hash]['nodes'][node_index], originalWord, cache);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
@@ -564,7 +607,7 @@ var translate = {
 		
 		//统计出要翻译哪些语种 ，这里面的语种会调用接口进行翻译。其内格式如 english
 		var fanyiLangs = []; 
-		for(var lang in this.nodeQueue){ //一维数组，取语言
+		for(var lang in this.nodeQueue[uuid]){ //一维数组，取语言
 			if(translateTextArray[lang].length < 1){
 				continue;
 			}
@@ -617,7 +660,7 @@ var translate = {
 					translate.temp_executeFinishNumber++; //记录执行完的次数
 					return;
 				}
-				
+				console.log('response:'+uuid);
 				let task = new translate.renderTask();
 				//遍历 translateHashArray
 				for(var i=0; i<translateHashArray[data.from].length; i++){
@@ -628,13 +671,13 @@ var translate = {
 					//翻译前的语种，如 english
 					var lang = data.from;	
 					//取原始的词，还未经过翻译的，需要进行翻译的词
-					var originalWord = translate.nodeQueue[lang][hash]['original'];	
+					var originalWord = translate.nodeQueue[uuid][lang][hash]['original'];	
 					
 					//for(var index = 0; index < translate.nodeQueue[lang][hash].length; index++){
-					for(var node_index = 0; node_index < translate.nodeQueue[lang][hash]['nodes'].length; node_index++){
+					for(var node_index = 0; node_index < translate.nodeQueue[uuid][lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
 						//加入任务
-						task.add(translate.nodeQueue[lang][hash]['nodes'][node_index], originalWord, text);
+						task.add(translate.nodeQueue[uuid][lang][hash]['nodes'][node_index], originalWord, text);
 					}
 					//}
 					/*
@@ -657,23 +700,23 @@ var translate = {
 	},
 
 	//向下遍历node
-	whileNodes:function(node){
+	whileNodes:function(uuid, node){
 		if(node == null || typeof(node) == 'undefined'){
 			return;
 		}
 		var childNodes = node.childNodes;
 		if(childNodes.length > 0){
 			for(var i = 0; i<childNodes.length; i++){
-				this.whileNodes(childNodes[i]);
+				this.whileNodes(uuid, childNodes[i]);
 			}
 		}else{
 			//单个了
-			this.findNode(node);
+			this.findNode(uuid, node);
 		}
 	},
 
 
-	findNode:function(node){
+	findNode:function(uuid, node){
 		if(node == null || typeof(node) == 'undefined'){
 			return;
 		}
@@ -724,7 +767,7 @@ var translate = {
 				//translate.nodeQueue[translate.hash(node.nodeValue)] = node.attributes['placeholder'];
 				//加入要翻译的node队列
 				//translate.addNodeToQueue(translate.hash(node.attributes['placeholder'].nodeValue), node.attributes['placeholder']);
-				this.addNodeToQueue(node.attributes['placeholder']);
+				this.addNodeToQueue(uuid, node.attributes['placeholder']);
 			}
 			
 			//console.log(node.getAttribute("placeholder"));
@@ -742,7 +785,7 @@ var translate = {
 			//console.log(node.parentNode.nodeName);
 			//console.log(node.nodeValue);
 			//加入要翻译的node队列
-			this.addNodeToQueue(node);	
+			this.addNodeToQueue(uuid, node);	
 			//translate.addNodeToQueue(translate.hash(node.nodeValue), node);
 			//translate.nodeQueue[translate.hash(node.nodeValue)] = node;
 			//translate.nodeQueue[translate.hash(node.nodeValue)] = node.nodeValue;
@@ -751,7 +794,7 @@ var translate = {
 		}
 	},
 	//将发现的元素节点加入待翻译队列
-	addNodeToQueue:function(node){
+	addNodeToQueue:function(uuid, node){
 		if(node.nodeValue == null || node.nodeValue.length == 0){
 			return;
 		}
@@ -782,9 +825,9 @@ var translate = {
 		
 		for(var lang in langs) {
 			
-			//创建一维数组， key为语种，如 english
-			if(this.nodeQueue[lang] == null || typeof(this.nodeQueue[lang]) == 'undefined'){
-				this.nodeQueue[lang] = new Array();
+			//创建二维数组， key为语种，如 english
+			if(this.nodeQueue[uuid][lang] == null || typeof(this.nodeQueue[uuid][lang]) == 'undefined'){
+				this.nodeQueue[uuid][lang] = new Array();
 			}
 			
 			//遍历出该语种下有哪些词需要翻译
@@ -793,24 +836,24 @@ var translate = {
 				var hash = this.util.hash(word); 	//要翻译的词的hash
 				
 				
-				//创建二维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
-				if(this.nodeQueue[lang][hash] == null || typeof(this.nodeQueue[lang][hash]) == 'undefined'){
-					this.nodeQueue[lang][hash] = new Array();
+				//创建三维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
+				if(this.nodeQueue[uuid][lang][hash] == null || typeof(this.nodeQueue[uuid][lang][hash]) == 'undefined'){
+					this.nodeQueue[uuid][lang][hash] = new Array();
 					
 					/*
-					 * 创建三维数组，存放具体数据
+					 * 创建四维数组，存放具体数据
 					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个
 					 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
 					 */
-					this.nodeQueue[lang][hash]['nodes'] = new Array();
-					this.nodeQueue[lang][hash]['original'] = word;
+					this.nodeQueue[uuid][lang][hash]['nodes'] = new Array();
+					this.nodeQueue[uuid][lang][hash]['original'] = word;
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 					
 				}
 				
-				//往四维数组nodes中追加node元素
-				this.nodeQueue[lang][hash]['nodes'][this.nodeQueue[lang][hash]['nodes'].length]=node; 
+				//往五维数组nodes中追加node元素
+				this.nodeQueue[uuid][lang][hash]['nodes'][this.nodeQueue[uuid][lang][hash]['nodes'].length]=node; 
 			}
 			
 		}
@@ -1280,6 +1323,20 @@ var translate = {
 	},
 	
 	util:{
+		/* 生成一个随机UUID，复制于 https://gitee.com/mail_osc/kefu.js */
+		uuid:function() {
+		    var d = new Date().getTime();
+		    if (window.performance && typeof window.performance.now === "function") {
+		        d += performance.now(); //use high-precision timer if available
+		    }
+		    var uuid = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+		        var r = (d + Math.random() * 16) % 16 | 0;
+		        d = Math.floor(d / 16);
+		        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+		    });
+		    return uuid;
+		},
+
 		//判断字符串中是否存在tag标签。 true存在
 		findTag:function(str) {
 			var reg = /<[^>]+>/g;

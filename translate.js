@@ -321,12 +321,23 @@ var translate = {
 		translate.nodeQueue = {};
 		console.log('set documents , clear translate.nodeQueue');
 	},
+	//获取当前指定翻译的元素（数组形式 [document,document,...]）
+	//如果用户未使用setDocuments 指定的，那么返回整个网页
+	getDocuments:function(){
+		if(translate.documents != null && typeof(translate.documents) != 'undefined' && translate.documents.length > 0){
+			// setDocuments 指定的
+			return translate.documents;
+		}else{
+			//未使用 setDocuments指定，那就是整个网页了
+			return document.all; //翻译所有的
+		}
+	},
 	listener:{
 		//当前页面打开后，是否已经执行完execute() 方法进行翻译了，只要执行完一次，这里便是true。 （多种语言的API请求完毕并已渲染html）
 		isExecuteFinish:false,
 		//是否已经使用了 translate.listener.start() 了，如果使用了，那这里为true，多次调用 translate.listener.start() 只有第一次有效
 		isStart:false,
-		//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化部分，是指当 translate.execute(); 已经完全执行完毕之后，如果页面再有变化的部分，才会对其进行翻译。
+		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
 			
 			translate.temp_linstenerStartInterval = setInterval(function(){
@@ -373,9 +384,6 @@ var translate = {
 		addListener:function(){
 			translate.listener.isStart = true; //记录已执行过启动方法了
 			
-			//选择需要观察变动的节点
-			//const targetNode = document.getElementById('some-id');
-			const targetNode = document;
 			// 观察器的配置（需要观察什么变动）
 			const config = { attributes: true, childList: true, subtree: true };
 			// 当观察到变动时执行的回调函数
@@ -402,7 +410,13 @@ var translate = {
 			// 创建一个观察器实例并传入回调函数
 			const observer = new MutationObserver(callback);
 			// 以上述配置开始观察目标节点
-			observer.observe(targetNode, config);
+			var docs = translate.getDocuments();
+			for(var docs_index = 0; docs_index < docs.length; docs_index++){
+				var doc = docs[docs_index];
+				if(doc != null){
+					observer.observe(doc, config);
+				}
+			}  
 		}
 	},
 	//对翻译结果进行替换渲染的任务，将待翻译内容替换为翻译内容的过程
@@ -538,8 +552,9 @@ var translate = {
 		/*
 			进行翻译指定的node操作。优先级为：
 			1. 这个方法已经指定的翻译 nodes
-			2. setDocuments 指定的
-			3. 整个网页
+			2. setDocuments 指定的 
+			3. 整个网页 
+			其实2、3都是通过 getDocuments() 取，在getDocuments() 就对2、3进行了判断
 		*/
 		var all;
 		if(typeof(docs) != 'undefined'){
@@ -560,12 +575,9 @@ var translate = {
 				all = docs;
 			}
 			
-		}else if(translate.documents != null && typeof(translate.documents) != 'undefined' && translate.documents.length > 0){
-			//2. setDocuments 指定的
-			all = translate.documents;
 		}else{
-			//3. 整个网页
-			all = document.all; //翻译所有的
+			//2、3
+			all = translate.getDocuments();
 		}
 		//console.log('----要翻译的目标元素-----');
 		//console.log(all)

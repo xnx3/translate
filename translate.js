@@ -79,10 +79,21 @@ var translate = {
 				for(var i = 0; i<data.list.length; i++){
 					var option = document.createElement("option"); 
 				    option.setAttribute("value",data.list[i].id);
-				    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to == data.list[i].id){
-				    	option.setAttribute("selected",'selected');
-				    }
-			
+					
+					//判断是否设置默认选中
+				    if(translate.to != null && typeof(translate.to) != 'undefined'){
+						//设置了目标语言，那就进行判断显示目标语言
+						
+						if(translate.to == data.list[i].id){
+							option.setAttribute("selected",'selected');
+						}
+				    }else{
+						//没设置目标语言，那默认选中当前本地的语种
+						if(data.list[i].id == translate.language.local){
+							option.setAttribute("selected",'selected');
+						}
+					}
+					
 				    option.appendChild(document.createTextNode(data.list[i].name)); 
 				    selectLanguage.appendChild(option);
 				}
@@ -925,6 +936,12 @@ var translate = {
 	},
 
 	language:{
+		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)
+		local:'chinese_simplified',
+		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
+		setLocal:function(languageName){
+			translate.language.local = languageName;
+		},
 		//获取当前字符是什么语种。返回值是一个语言标识，有  chinese_simplified简体中文、japanese日语、korean韩语、
 		// //会自动将特殊字符、要翻译的目标语种给过滤掉
 		get:function(str){

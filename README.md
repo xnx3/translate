@@ -150,6 +150,15 @@ translate.execute();
 translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
 ````
 
+### 设置本地语种（当前网页的语种）
+
+````
+translate.language.setLocal(option.translate.currentLanguage); //设置本地语种（当前网页的语种）
+````
+具体有哪些语言，可查阅： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
+如果不设置，默认是简体中文 : chinese_simplified  
+这个会在出现 select 选择语言时，如果第一次使用，默认选中的就是这里设置的本地语种。
+
 **注意，这行要放到 translate.execute(); 上面**
 
 ### 为ajax动态加载的数据渲染展示情况进行适配

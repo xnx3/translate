@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.7.20230109',
+	version:'2.1.8.20230110',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';

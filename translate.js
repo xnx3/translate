@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.8.20230110',
+	version:'2.1.9.20230111',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -80,8 +80,8 @@ var translate = {
 					var option = document.createElement("option"); 
 				    option.setAttribute("value",data.list[i].id);
 					
-					//判断是否设置默认选中
-				    if(translate.to != null && typeof(translate.to) != 'undefined'){
+					/*判断默认要选中哪个语言*/
+				    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
 						//设置了目标语言，那就进行判断显示目标语言
 						
 						if(translate.to == data.list[i].id){
@@ -290,7 +290,11 @@ var translate = {
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'img', 'head', 'link', 'i', 'pre', 'code'],
-		class:['ignore','translateSelectLanguage']
+		class:['ignore','translateSelectLanguage'],
+		//传入一个元素，
+		isIgnore:function(ele){
+			
+		}
 	},
 	setAutoDiscriminateLocalLanguage:function(){
 		translate.autoDiscriminateLocalLanguage = true;
@@ -596,7 +600,7 @@ var translate = {
 		//检索目标内的node元素
 		for(var i = 0; i< all.length & i < 20; i++){
 			var node = all[i];
-			translate.whileNodes(uuid, node);	
+			translate.element.whileNodes(uuid, node);	
 		}
 		
 		//console.log('-----待翻译：----');
@@ -769,101 +773,105 @@ var translate = {
 			
 		}
 	},
-
-	//向下遍历node
-	whileNodes:function(uuid, node){
-		if(node == null || typeof(node) == 'undefined'){
-			return;
-		}
-		var childNodes = node.childNodes;
-		if(childNodes.length > 0){
-			for(var i = 0; i<childNodes.length; i++){
-				translate.whileNodes(uuid, childNodes[i]);
+	element:{
+		//向下遍历node
+		whileNodes:function(uuid, node){
+			if(node == null || typeof(node) == 'undefined'){
+				return;
 			}
-		}else{
-			//单个了
-			translate.findNode(uuid, node);
-		}
-	},
-
-
-	findNode:function(uuid, node){
-		if(node == null || typeof(node) == 'undefined'){
-			return;
-		}
-		if(node.parentNode == null){
-			return;
-		}
-		var parentNodeName = node.parentNode.nodeName;
-		if(parentNodeName == null){
-			return;
-		}
-		if(translate.ignore.tag.indexOf(parentNodeName.toLowerCase()) > -1){
-			//忽略tag
-			//console.log('忽略tag：'+parentNodeName);
-			return;
-		}
-
-		/****** 判断忽略的class ******/
-		var ignoreClass = false;	//是否是被忽略的class，true是
-		var parentNode = node.parentNode;
-		while(node != parentNode && parentNode != null){
-			//console.log('node:'+node+', parentNode:'+parentNode);
-			if(parentNode.className != null){
-				if(translate.ignore.class.indexOf(parentNode.className) > -1){
-					//发现ignore.class 当前是处于被忽略的 class
-					ignoreClass = true;
+			var childNodes = node.childNodes;
+			if(childNodes.length > 0){
+				for(var i = 0; i<childNodes.length; i++){
+					translate.element.whileNodes(uuid, childNodes[i]);
 				}
-			}
-			
-			parentNode = parentNode.parentNode;
-		}
-		if(ignoreClass){
-			//console.log('ignore class :  node:'+node.nodeValue);
-			return;
-		}
-		/**** 判断忽略的class结束 ******/
-		
-		//console.log(node.nodeName+', '+node.nodeValue);
-		if(node.nodeName == 'INPUT' || node.nodeName == 'TEXTAREA'){
-			//input 输入框，要对 placeholder 做翻译
-			//console.log('input---'+node.attributes);
-			if(node.attributes == null || typeof(node.attributes) == 'undefined'){
-				return;
-			}
-
-			if(typeof(node.attributes['placeholder']) != 'undefined'){
-				//console.log(node.attributes['placeholder'].nodeValue);
-				//加入要翻译的node队列
-				//translate.nodeQueue[translate.hash(node.nodeValue)] = node.attributes['placeholder'];
-				//加入要翻译的node队列
-				//translate.addNodeToQueue(translate.hash(node.attributes['placeholder'].nodeValue), node.attributes['placeholder']);
-				translate.addNodeToQueue(uuid, node.attributes['placeholder']);
-			}
-			
-			//console.log(node.getAttribute("placeholder"));
-		}else if(node.nodeValue != null && node.nodeValue.trim().length > 0){
-
-			//过滤掉无效的值
-			if(node.nodeValue != null && typeof(node.nodeValue) == 'string' && node.nodeValue.length > 0){
 			}else{
+				//单个了
+				translate.element.findNode(uuid, node);
+			}
+		},
+		findNode:function(uuid, node){
+			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
-
-			//console.log(node.nodeValue+' --- ' + translate.language.get(node.nodeValue));
+			if(node.parentNode == null){
+				return;
+			}
+			var parentNodeName = node.parentNode.nodeName;
+			if(parentNodeName == null){
+				return;
+			}
+			if(translate.ignore.tag.indexOf(parentNodeName.toLowerCase()) > -1){
+				//忽略tag
+				//console.log('忽略tag：'+parentNodeName);
+				return;
+			}
+	
+			/****** 判断忽略的class ******/
+			var ignoreClass = false;	//是否是被忽略的class，true是
+			var parentNode = node.parentNode;
+			while(node != parentNode && parentNode != null){
+				//console.log('node:'+node+', parentNode:'+parentNode);
+				if(parentNode.className != null){
+					if(translate.ignore.class.indexOf(parentNode.className) > -1){
+						//发现ignore.class 当前是处于被忽略的 class
+						ignoreClass = true;
+					}
+				}
+				
+				parentNode = parentNode.parentNode;
+			}
+			if(ignoreClass){
+				//console.log('ignore class :  node:'+node.nodeValue);
+				return;
+			}
+			/**** 判断忽略的class结束 ******/
 			
-			//console.log(node.nodeName);
-			//console.log(node.parentNode.nodeName);
-			//console.log(node.nodeValue);
-			//加入要翻译的node队列
-			translate.addNodeToQueue(uuid, node);	
-			//translate.addNodeToQueue(translate.hash(node.nodeValue), node);
-			//translate.nodeQueue[translate.hash(node.nodeValue)] = node;
-			//translate.nodeQueue[translate.hash(node.nodeValue)] = node.nodeValue;
-			//node.nodeValue = node.nodeValue+'|';
-
-		}
+			//console.log(node.nodeName+', '+node.nodeValue);
+			if(node.nodeName == 'INPUT' || node.nodeName == 'TEXTAREA'){
+				//input 输入框，要对 placeholder 做翻译
+				//console.log('input---'+node.attributes);
+				if(node.attributes == null || typeof(node.attributes) == 'undefined'){
+					return;
+				}
+	
+				if(typeof(node.attributes['placeholder']) != 'undefined'){
+					//console.log(node.attributes['placeholder'].nodeValue);
+					//加入要翻译的node队列
+					//translate.nodeQueue[translate.hash(node.nodeValue)] = node.attributes['placeholder'];
+					//加入要翻译的node队列
+					//translate.addNodeToQueue(translate.hash(node.attributes['placeholder'].nodeValue), node.attributes['placeholder']);
+					translate.addNodeToQueue(uuid, node.attributes['placeholder']);
+				}
+				
+				//console.log(node.getAttribute("placeholder"));
+			}else if(node.nodeValue != null && node.nodeValue.trim().length > 0){
+	
+				//过滤掉无效的值
+				if(node.nodeValue != null && typeof(node.nodeValue) == 'string' && node.nodeValue.length > 0){
+				}else{
+					return;
+				}
+	
+				//console.log(node.nodeValue+' --- ' + translate.language.get(node.nodeValue));
+				
+				//console.log(node.nodeName);
+				//console.log(node.parentNode.nodeName);
+				//console.log(node.nodeValue);
+				//加入要翻译的node队列
+				translate.addNodeToQueue(uuid, node);	
+				//translate.addNodeToQueue(translate.hash(node.nodeValue), node);
+				//translate.nodeQueue[translate.hash(node.nodeValue)] = node;
+				//translate.nodeQueue[translate.hash(node.nodeValue)] = node.nodeValue;
+				//node.nodeValue = node.nodeValue+'|';
+	
+			}
+		},
 	},
+
+	
+
+
+	
 	//将发现的元素节点加入待翻译队列
 	addNodeToQueue:function(uuid, node){
 		if(node.nodeValue == null || node.nodeValue.length == 0){

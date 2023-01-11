@@ -68,7 +68,7 @@ translate.execute(); //执行翻译初始化操作，显示出select语言选择
 //documents.push(document.getElementById('test2'));
 //documents.push(document.getElementById('test3'));
 //translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
-translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
+//translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
 translate.setUseVersion2(); //设置使用v2.x 版本
 translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 translate.execute(); //执行翻译初始化操作，显示出select语言选择

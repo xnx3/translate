@@ -153,7 +153,7 @@ translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，�
 ### 设置本地语种（当前网页的语种）
 
 ````
-translate.language.setLocal(option.translate.currentLanguage); //设置本地语种（当前网页的语种）
+translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认就是 chinese_simplified 简体中文 
 ````
 具体有哪些语言，可查阅： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
 如果不设置，默认是简体中文 : chinese_simplified  

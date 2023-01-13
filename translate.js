@@ -291,7 +291,7 @@ var translate = {
 	ignore:{
 		tag:['style', 'script', 'img', 'head', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage'],
-		//传入一个元素，
+		//传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
 		isIgnore:function(ele){
 			
 		}
@@ -488,6 +488,7 @@ var translate = {
 			//先对tasks任务队列的替换词进行排序，将同一个node的替换词有大到小排列，避免先替换了小的，大的替换时找不到
 			for(var hash in this.taskQueue){
 				var tasks = this.taskQueue[hash];
+				//console.log(tasks);
 				tasks.sort(function(a,b){
 					return b.originalText.length - a.originalText.length;
 	         	});
@@ -561,6 +562,11 @@ var translate = {
 			}
 			
 			//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
+			return;
+		}
+		
+		//判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译
+		if(translate.to == translate.language.local){
 			return;
 		}
 		

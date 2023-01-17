@@ -223,6 +223,12 @@ translate.listener.start();	//开启html页面变化的监控，对变化部分�
 ### v2.1
 ...
 
+# 这些开源项目正在使用
+如下开源项目中已置入自动化翻译的能力：  
+[kefu.js](https://gitee.com/mail_osc/kefu.js) H5在线客服，引入一行js代码拿来即用！支持手机、电脑、APP、小程序。可一键部署自己私有SAAS云客服平台  
+[Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui) Pear Admin 是一款开箱即用的前端开发模板，扩展Layui原生UI样式，整合第三方开源组件，提供便捷快速的开发方式，延续LayuiAdmin  
+...  
+
 # 优秀开源项目及社区推荐
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具
 [LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat 是基于企业微信的开源 SCRM 系统，是企业私域流量管理与营销的综合解决方案。  
@@ -238,4 +244,6 @@ translate.listener.start();	//开启html页面变化的监控，对变化部分�
 # 交流
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
 作者微信：xnx3com  
-交流QQ群:181781514 
+交流QQ群:181781514  
+github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
+gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)

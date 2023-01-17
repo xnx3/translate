@@ -6,19 +6,22 @@
 <h4 align="center">
     Add two lines of js to realize automatic html translation
 </h4> 
-Current English DOC  |  [查阅中文文档](doc/README.cn.md)
+<h4 align="center">
+    Current English DOC  |  <a href="doc/README.cn.md">查阅中文文档</a>
+</h4> 
+
   
 
 # Introduce
 The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
 
 # Characteristic
-* ** Easy to use. ** A few lines of code can have more language switching capabilities
-* ** No additional workload. ** No need to modify the page itself
-* ** Extremely flexible and scalable. ** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
-* ** Automatically match languages. ** Automatically switch the language used in the user's country according to the user's country
-* ** Instant translation ability. ** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
-* ** Free for permanent use. ** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
+* **Easy to use.** A few lines of code can have more language switching capabilities
+* **No additional workload.** No need to modify the page itself
+* **Extremely flexible and scalable.** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
+* **Automatically match languages.** Automatically switch the language used in the user's country according to the user's country
+* **Instant translation ability.** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
+* **Free for permanent use.** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
 
 # Online experience
 [http://res.zvo.cn/translate/demo.html](http://res.zvo.cn/translate/demo.html)

@@ -1,5 +1,15 @@
 <center>English DOC | [中文文档](README.cn.md) </center>
 
+<h1 align="center">
+    translate.js
+  </h1>
+  <h4 align="center">
+    Add two lines of js to realize automatic html translation
+  </h4> 
+
+  Current English DOC  |  [查阅中文文档](doc/README.cn.md)
+  
+
 # Introduce
 The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
 

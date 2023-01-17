@@ -1,4 +1,3 @@
-<center>English DOC | [中文文档](README.cn.md) </center>
 
 <h1 align="center">
     translate.js

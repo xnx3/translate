@@ -1,4 +1,15 @@
 
+<h1 align="center">
+    translate.js
+</h1>
+<h4 align="center">
+    两行js实现html全自动翻译
+</h4> 
+<h4 align="center">
+    当前为中文文档 |  <a href="doc/README.cn.md">see english documents</a>
+</h4> 
+
+
 # 介绍
 网页自动翻译，页面无需另行改造，加入两行js即可让你的网页快速具备多国语言切换能力。   
 

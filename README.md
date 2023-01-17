@@ -246,3 +246,6 @@ Author WeChat:xnx3com
 Communication QQ group:181781514  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
+
+# VIP service
+[Currently, translate.js is based on js to translate the current html, and most scenarios are sufficient. However, if you view the page source code, you will find that the source code does not change and is in an untranslated state. If you want to translate the page source code directly, you can click here to view our extended version](doc/README_SERVICE.md)

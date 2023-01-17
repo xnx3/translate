@@ -222,6 +222,12 @@ It will be released in December 2022, adding more extension methods.
 ### v2.1
 ...
 
+# These open source projects are being used
+The ability of automatic translation has been put into the following open source projects:  
+[kefu.js](https://gitee.com/mail_osc/kefu.js) H5 online customer service, introduce a line of js code to use immediately! Support mobile phones, computers, APP, and applets. One-click deployment of your own private SAAS cloud customer service platform  
+[Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui) Pearl Admin is an out-of-the-box front-end development template that extends the native UI style of Layui, integrates third-party open source components, provides a convenient and rapid development method, and continues LayuiAdmin   
+...  
+
 # Outstanding open source projects and community recommendations
 [Featbit](https://github.com/featbit/featbit) A 100% open-source feature flags management platform
 [LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat It is an open source SCRM system based on enterprise WeChat, and a comprehensive solution for enterprise private domain traffic management and marketing.  
@@ -237,4 +243,6 @@ This cloud server platform can be deployed privately. If you have any needs in t
 # communication
 If you encounter any abnormal situation during use, please mention the issues and write down the problems you encounter in detail. If you can, please also write down your website, so that we can test more fully to quickly locate the problem  
 Author WeChat:xnx3com  
-Communication QQ group:181781514
+Communication QQ group:181781514  
+github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
+gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)

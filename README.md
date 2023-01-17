@@ -3,7 +3,7 @@
     translate.js
 </h1>
 <h4 align="center">
-    Add two lines of js to realize automatic html translation
+    Add two lines of js to realize automatic html translation, No API key need, SEO friendly
 </h4> 
 <h4 align="center">
     Current English DOC  |  <a href="doc/README.cn.md">查阅中文文档</a>

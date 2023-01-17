@@ -243,6 +243,7 @@ This cloud server platform can be deployed privately. If you have any needs in t
 # communication
 If you encounter any abnormal situation during use, please mention the issues and write down the problems you encounter in detail. If you can, please also write down your website, so that we can test more fully to quickly locate the problem  
 Author WeChat:xnx3com  
+Email: 921153866@qq.com
 Communication QQ group:181781514  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)

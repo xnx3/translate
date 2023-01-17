@@ -2,24 +2,23 @@
 
 <h1 align="center">
     translate.js
-  </h1>
-  <h4 align="center">
+</h1>
+<h4 align="center">
     Add two lines of js to realize automatic html translation
-  </h4> 
-
-  Current English DOC  |  [查阅中文文档](doc/README.cn.md)
+</h4> 
+Current English DOC  |  [查阅中文文档](doc/README.cn.md)
   
 
 # Introduce
 The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
 
 # Characteristic
-* ** Easy to use** A few lines of code can have more language switching capabilities
-* ** No additional workload** No need to modify the page itself
-* ** Extremely flexible and scalable** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
-* ** Automatically match languages** Automatically switch the language used in the user's country according to the user's country
-* ** Instant translation ability** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
-* ** Free for permanent use** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
+* ** Easy to use. ** A few lines of code can have more language switching capabilities
+* ** No additional workload. ** No need to modify the page itself
+* ** Extremely flexible and scalable. ** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
+* ** Automatically match languages. ** Automatically switch the language used in the user's country according to the user's country
+* ** Instant translation ability. ** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
+* ** Free for permanent use. ** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
 
 # Online experience
 [http://res.zvo.cn/translate/demo.html](http://res.zvo.cn/translate/demo.html)
@@ -200,7 +199,7 @@ Add the following code directly at the end of its html code:
 
 # Version
 Note that v1.x is slightly different from v2.x. You can use ```` console. log (translate. version)```` View the version currently used.
-In addition, for the relevant description of v1.x version, see: [instructions](v1.md) | [online demo](https://res.zvo.cn/translate/demo_v1.html)
+In addition, for the relevant description of v1.x version, see: [instructions](doc/v1.md) | [online demo](https://res.zvo.cn/translate/demo_v1.html)
 
 ### v1.0
 It will be released in February 2022, providing multilingual support, enabling the webpage to quickly switch languages without changing.
@@ -222,8 +221,8 @@ It will be released in December 2022, adding more extension methods.
 ...
 
 # Outstanding open source projects and community recommendations
-[LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat It is an open source SCRM system based on enterprise WeChat, and a comprehensive solution for enterprise private domain traffic management and marketing.
-[IoTSharp](https://gitee.com/IoTSharp) IoTSharp is an open source Internet of Things basic platform based on. Net Core, supporting HTTP, MQTT and CoAp protocols
+[LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat It is an open source SCRM system based on enterprise WeChat, and a comprehensive solution for enterprise private domain traffic management and marketing.  
+[IoTSharp](https://gitee.com/IoTSharp) IoTSharp is an open source Internet of Things basic platform based on. Net Core, supporting HTTP, MQTT and CoAp protocols  
 [Cloud of flow](https://gitee.com/ntdgg) Information and digital service providers
 
 

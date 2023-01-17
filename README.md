@@ -223,6 +223,7 @@ It will be released in December 2022, adding more extension methods.
 ...
 
 # Outstanding open source projects and community recommendations
+[Featbit](https://github.com/featbit/featbit) A 100% open-source feature flags management platform
 [LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat It is an open source SCRM system based on enterprise WeChat, and a comprehensive solution for enterprise private domain traffic management and marketing.  
 [IoTSharp](https://gitee.com/IoTSharp) IoTSharp is an open source Internet of Things basic platform based on. Net Core, supporting HTTP, MQTT and CoAp protocols  
 [Cloud of flow](https://gitee.com/ntdgg) Information and digital service providers

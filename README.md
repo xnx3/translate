@@ -1,32 +1,30 @@
 
-# 介绍
-网页自动翻译，页面无需另行改造，加入两行js即可让你的网页快速具备多国语言切换能力。   
+# Introduce
+The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
 
-# 特性
-* **使用简单易用。** 几行代码即可拥有多过语言切换能力
-* **不增加工作量。** 无需另行改造页面本身
-* **极其灵活扩展。** 您可指定它只翻译某些指定区域、切换语言时显示下拉框还是通过摆放多个切换语言按钮进行、可指定某些特定的元素不进行翻译忽略……
-* **自动匹配语种。** 自动根据用户所在的国家切换其国家所使用的语种
-* **瞬间翻译能力。** 内置缓存预加载机制，只要翻译过的网页，再次看时会达到瞬间翻译的效果，给用户的感觉就是，这个页面本来就是这种语言的，而不是经过第三方翻译的。
-* **永久免费使用。** 本人热衷开源，有开源项目二三十个，这个项目的初衷也不是捞钱的，所以您无需担心收费问题！当然如果您项目比较大，日访问量到了百万级千万级的，我们还是建议您私有化部署。
+# Characteristic
+* ** Easy to use** A few lines of code can have more language switching capabilities
+* ** No additional workload** No need to modify the page itself
+* ** Extremely flexible and scalable** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
+* ** Automatically match languages** Automatically switch the language used in the user's country according to the user's country
+* ** Instant translation ability** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
+* ** Free for permanent use** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
 
+# Online experience
+[http://res.zvo.cn/translate/demo.html](http://res.zvo.cn/translate/demo.html)
 
-# 在线体验
-http://res.zvo.cn/translate/demo.html
-
-
-# 先拿别人的网站动手试试
+# Try using other people's websites first
 ![效果](http://cdn.weiunity.com/site/341/news/9a7228aaae28475996da9026b93356c8.gif "")
 
-1. 随便打开一个网页
-2. 右键 - 审查元素
-3. 粘贴入以下代码：	  
+1. Open a webpage at random  
+2. Right click - review elements  
+3. Paste the following code:
 	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector.js';  head.appendChild(script);  ````
-4. Enter 回车键 ， 执行
-5. 在当前网页的左上角，就出现了一个大大的切换语言，切换试试看。
+4. Enter to execute  
+5. At the top left corner of the current page, there is a big language switch. Try switching.  
 
-# 快速使用
-在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
+# Quick use
+At the end of the page, ````</html>```` before, Add the following code. Generally, the select switch tab for selecting language appears at the bottom of the page. In fact, it is so simple
 
 ````
 <script src="https://res.zvo.cn/translate/translate.js"></script>
@@ -36,23 +34,23 @@ translate.execute();//进行翻译
 </script>
 ````
 
-# 更多扩展用法
+# More extended usage
 
-### 指定切换语言的select选择框的位置
-你想在你页面什么地方显示，就吧下面这个放到哪即可。
+### Specify the location of the select selection box for switching languages
+Where you want to display on your page, just put the following one.
 
 ````
 <div id="translate"></div>
 ````
 
-主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面。当然你也不一定非要是div的，也可以这样
+Mainly this ```` id="translate" ```` The button for switching languages will be automatically assigned to this ID. Of course, you don't have to be div, you can
 
 ````
 <span id="translate"></span>
 ````
 
-### CSS美化切换语言按钮
-可使用css来控制切换语言选择的显示位置及美观。如：
+### CSS beautification switch language button
+Css can be used to control the display position and beauty of switching language selection. For example:
 
 ````
 <style>
@@ -63,27 +61,27 @@ translate.execute();//进行翻译
 }
 </style>
 ````
-这就是控制切换语言的 ``<select>`` 标签
+This is the ````<select>```` tag that controls the switching language
 
-### 设定是否自动出现 select 切换语言
+### Set whether the select switch language will appear automatically
 
 ````
 /*
- * 是否显示 select选择语言的选择框，true显示； false不显示。默认为true
- * 注意,这行要放到 translate.execute(); 上面
+ * Whether to display the selection box of select language, and true to display; False does not display. Default is true
+ * Note that this line should be placed in translate.execute(); above
  */
 translate.selectLanguageTag.show = false;
 translate.execute();
 ````
 
-使用场景是，如果使用了:  
+The usage scenario is, if you use:  
 
 ````
 <a href="javascript:translate.changeLanguage('en');">切换为英语</a>
 ````
 
-这种切换方式，那么 select下拉选择的就用不到了，就可以用此方式来不显示。  
-当然你也可以使用css的方式来控制其不显示。比如：   
+If this switch mode is used, the selection from the select drop-down box will not be used, and you can use this mode to not display.  
+Of course, you can also use css to control its display. For example: 
 
 ````
 <style>
@@ -93,145 +91,137 @@ translate.execute();
 </style>
 ````
 
-### 翻译时忽略指定的tag标签
+### Ignore the specified tag tag during translation
 
 ````
-translate.ignore.tag.push('span'); //翻译时追加上自己想忽略不进行翻译的tag标签，凡是在这里面的，都不进行翻译。
+translate.ignore.tag.push('span'); //When translating, add the tag that you want to ignore and do not translate. Anything in this tag will not be translated.
 ````
-翻译时追加上自己想忽略不进行翻译的tag标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.tag); ```` 进行查看
-**注意，这行要放到 translate.execute(); 上面**
+When translating, add the tag that you want to ignore and do not translate. Anything in this tag will not be translated.  
+If you want to see which tag tags are currently ignored, you can directly execute ````console. log (translate. ignore. tag)```` View
 
-### 翻译时忽略指定的class值
+**Note that this line should be placed in translate.execute(); above**
+
+### Ignore the specified class value during translation
 
 ````
-translate.ignore.class.push('test');	//翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。
+translate.ignore.class.push('test');	//When translating, add the class tag that you want to ignore and do not translate. Anything in this tag will not be translated.
 ````
-翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看  
-**注意，这行要放到 translate.execute(); 上面**
+When translating, add the class tag that you want to ignore and do not translate. Anything in this tag will not be translated.  
+If you want to see which tag tags are currently ignored, you can directly execute ````console. log (translate. ignore. class)```` View
+**Note that this line should be placed in translate.execute(); above**
 
-### 翻译指定的区域
+### Translate the specified area
 
 ````
 var documents = [];
 documents.push(document.getElementById('test1'));
 documents.push(document.getElementById('test2'));
 documents.push(document.getElementById('test3'));
-translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+translate.setDocuments(documents); //Specifies the collection of elements to be translated. One or more elements can be passed in. If not set, the entire page will be translated by default
 ````
+You can use translate.setDocuments(...) to specify the collection of elements to be translated, and you can pass in one or more elements. If this is not set, the entire page will be translated by default.
+**Note that this line should be placed in translate.execute(); above**
 
-可使用 translate.setDocuments(...) 指定要翻译的元素的集合,可传入一个或多个元素。如果不设置此，默认翻译整个网页。  
-**注意，这行要放到 translate.execute(); 上面**
 
-### ajax请求后进行翻译
-对于一些网页需要通过ajax请求来加载数据的情况，当加载完数据时，手动执行此方法，使刚加载的信息也进行翻译
-
-````
-translate.execute();
-````
-
-### js主动切换语言
-比如点击某个链接显示英文界面
+### Js active language switching
+For example, click a link to display the English interface
 
 ````
-<a href="javascript:translate.changeLanguage('english');" class="ignore">切换为英语</a>
+<a href="javascript:translate.changeLanguage('english');" class="ignore">Switch to English</a>
 ````
 
-只需传入翻译的目标语言，即可快速切换到指定语种。具体有哪些语言，可查阅： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
-其中 ````class="ignore"```` 加了这个class，代表这个a标签将不会被翻译 
+You can quickly switch to the specified language by passing in the target language of the translation. Specific languages can be consulted: [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
+Where ```` class="ignore" ```` adds this class, which means that the a tag will not be translated
 
-### 自动根据用户所在的国家切换其语种
+### Automatically switch users' languages according to their country
 
-用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。  
-如果用户手动切换了别的语种，再使用时，那就优先以用户所选择的为主，这个就不管用了。  
-
-````
-translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
-````
-
-### 设置本地语种（当前网页的语种）
+When the user first opens the web page, the language of the current user's country will be automatically determined to switch to the language of the user's country.  
+If the user manually switches to another language, and then uses it again, the user's choice will prevail.
 
 ````
-translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认就是 chinese_simplified 简体中文 
+translate.setAutoDiscriminateLocalLanguage();	//Set the language of the user's country to switch automatically when the user uses it for the first time
 ````
-具体有哪些语言，可查阅： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
-如果不设置，默认是简体中文 : chinese_simplified  
-这个会在出现 select 选择语言时，如果第一次使用，默认选中的就是这里设置的本地语种。
 
-**注意，这行要放到 translate.execute(); 上面**
-
-### 为ajax动态加载的数据渲染展示情况进行适配
-
-正常情况下，极大可能会有这种需求：
-1. 页面中需要通过ajax请求后端服务器获取数据，然后再将数据渲染展示出来。
-2. 页面中的弹出提示 （就比如 [msg.js](https://gitee.com/mail_osc/msg) 的 ````msg.info('你好');```` ） 这个提示是js加载出来的，提示文字也需要一并进行翻译的情况
-您可加入下面一行代码，来实现以上需求。  
+### Set the local language (the language of the current page)
 
 ````
-translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
+translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the default is "chinese_simplified" Chinese
 ````
-建议放在 translate.execute() 这行之前
+Specific languages can be consulted： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
+If not set, the default is Simplified Chinese : chinese_simplified  
+When selecting a language, if you use it for the first time, the local language set here is selected by default.
 
-# 实际使用场景示例
-### 普通网站中点击某个语言进行切换
-如下图所示，网站中的某个位置要有几种语言切换  
+**Note that this line should be placed in translate.execute(); above**
+
+### Adapt the rendering display of data dynamically loaded by ajax
+
+Under normal circumstances, there is a great possibility of such demand:  
+1. In the page, you need to request the back-end server to obtain data through ajax, and then render and display the data.  
+2. Pop-up prompt in the page （such as [msg.js](https://gitee.com/mail_osc/msg) Medium ````msg.info('Hello');```` ）This prompt is loaded by js. The prompt text also needs to be translated, You can add the following line of code to meet the above requirements.
+
+````
+translate.listener.start();	//Enable the monitoring of html page changes, and automatically translate the changes. Note that the change area here refers to the area set using translate.setDocuments(...) If it is not set, it is necessary to monitor the change of the whole page
+````
+It is recommended to put it before the line translate.execute()
+
+# Examples of actual use scenarios
+### Click a language to switch in a common website
+As shown in the figure below, there should be several language switches at a certain location in the website
 ![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
-直接在其html代码末尾的位置加入以下代码：  
+Add the following code directly at the end of its html code:  
 
 ````
-<!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
+<!-- Add a language switch button. Note that a class="ignore" added to ul means that this code will not be translated -->
 <ul class="ignore">
 	<li><a href="javascript:translate.changeLanguage('english');">English</a></li>|
 	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
 	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
 </ul>
 
-<!-- 引入多语言切换的js -->
+<!-- Js introducing multi-language switching -->
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
-	translate.setUseVersion2(); //设置使用v2.x 版本
-	translate.selectLanguageTag.show = false; //不出现的select的选择语言
+	translate.setUseVersion2(); //Set to use v2. x version
+	translate.selectLanguageTag.show = false; //The selection language of the non-existent select
 	translate.execute();
 </script>
 ````
 
-# 版本
-注意，v1.x 跟 v2.x 使用上略有差别，可使用 ````console.log(translate.version);```` 查看当前使用的版本。  
-另外 v1.x 版本的相关说明参见： [使用说明](v1.md) | [在线demo](https://res.zvo.cn/translate/demo_v1.html)
+# Version
+Note that v1.x is slightly different from v2.x. You can use ```` console. log (translate. version)```` View the version currently used.
+In addition, for the relevant description of v1.x version, see: [instructions](v1.md) | [online demo](https://res.zvo.cn/translate/demo_v1.html)
 
 ### v1.0
-2022.2月发布，提供多语言支持能力，使网页无需改动快速具备多语言切换能力。
+It will be released in February 2022, providing multilingual support, enabling the webpage to quickly switch languages without changing.
 
 ### v2.0
-2022.12月发布，增加更多的扩展方法。  
-1. 可自定义忽略的Tag标签，进行翻译时会忽略之
-2. 可自定义忽略的class，进行翻译时会忽略之
-3. 默认内置 class="ignore" 为忽略的class，可在某个标签上增加此属性，即可使其跳过不进行翻译。
-4. 增加缓存机制，翻译一次后会将结果进行缓存，翻译过后，再查看，会达到秒翻译的结果，极大提高体验度。
-5. 增加局部翻译的能力，可支持自定义翻译的区域。
-6. 优化 input 输入框的 placeholder 的内容不翻译的问题
-7. 优化本地使用（file协议）时无法测试的问题。现在本地也能正常使用及测试了。
-8. 修复翻译时会莫名其妙多了无数层font标签的问题
-9. 修复翻译时，像是中文翻译为韩语，鼠标多经过几次会将其翻译的韩语重复翻译导致翻译结果不准确的问题。
-10. 开放翻译云服务平台接口 http://api.translate.zvo.cn/doc/index.html
+It will be released in December 2022, adding more extension methods.
+1. Ignorable tag tags can be customized and will be ignored during translation  
+2. Ignorable classes can be customized, which will be ignored during translation  
+3. The default built-in class="ignore" is the ignored class. You can add this attribute to a tag to make it skip translation.  
+4. Add a caching mechanism. The results will be cached after a translation. After the translation, the results will be translated in seconds and the experience will be greatly improved.  
+5. Increase the ability of local translation, and support the customized translation area.  
+6. Optimize the problem that the content of the placeholder in the input box is not translated  
+7. Problems that cannot be tested when optimizing local use (file protocol). Now the local can also be used and tested normally.  
+8. Fix the problem that countless layers of font labels will be added during translation  
+9. When repairing translation, such as Chinese translation into Korean, the mouse will repeatedly translate the translated Korean after several times, resulting in inaccurate translation results.
+10. Open translation cloud service platform interface http://api.translate.zvo.cn/doc/index.html
 
 ### v2.1
 ...
 
-# 优秀开源项目及社区推荐
-[LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat 是基于企业微信的开源 SCRM 系统，是企业私域流量管理与营销的综合解决方案。  
-[IoTSharp](https://gitee.com/IoTSharp) IoTSharp 是一个 基于.Net Core 开源的物联网基础平台， 支持 HTTP、MQTT 、CoAp 协议  
-[流之云](https://gitee.com/ntdgg) 信息化、数字化服务提供商  
-[translate.js](https://gitee.com/mail_osc/translate) 网页自动翻译，页面无需另行改造，加入两行js即可让你的网页快速具备多国语言切换能力！  
+# Outstanding open source projects and community recommendations
+[LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat It is an open source SCRM system based on enterprise WeChat, and a comprehensive solution for enterprise private domain traffic management and marketing.
+[IoTSharp](https://gitee.com/IoTSharp) IoTSharp is an open source Internet of Things basic platform based on. Net Core, supporting HTTP, MQTT and CoAp protocols
+[Cloud of flow](https://gitee.com/ntdgg) Information and digital service providers
 
 
+# Other instructions
+The current version of v2.0 is still in the optimization stage and is not a perfect and stable version. Currently, only most websites have been tested for perfect adaptation, but there will be omissions. As the number of websites used increases, the bugs found will be gradually fixed. The stable version is expected to be released in the next three to four months. When you use the v2 version, you can directly use our js source. If you have localization requirements, you can place localization after the stable version is released later.  
+I love open source. If you are the author of an open source framework and want to add this multilingual switching capability to your open source project, but encounter difficulties when accessing it, welcome to join the QQ group below to explain which open source software author you are, and I will fully assist you. Friends who are willing to open source are worthy of respect and support.  
+This cloud server platform can be deployed privately. If you have any needs in this regard, you can also contact me. But this deployment takes several hours to half a day, and we also need to pay our colleagues. The epidemic has been relatively difficult for three years, so there is no way to help with the deployment free of charge. It will cost hundreds of labor costs to provide paid deployment. I hope you can understand.  
 
-# 其他说明
-当前v2.0版本还处于优化期，并非完美稳定版本，当前只测试了大部分网站能完美适配，但肯定会有遗漏，随着使用的网站不断增加，会逐步修复发现的bug。稳定版本预计将会再之后的三到四个月后发布。当前您使用v2版本时，可直接用我们的js源即可，如果您有本地化的需求，可再后面稳定版本发布后再进行本地化放置。  
-本人热爱开源这件事，如果您是某款开源框架的作者，想要在您开源项目中加入此多语言切换能力，但接入时遇到了困难，欢迎加入下面的QQ群，说明您是哪个开源软件的作者，我必将全力协助。愿意开源的朋友，都是值得尊敬且支持的。  
-本云服务器平台可私有化部署，如果您有这方面需求，也可以联系我，但这个部署耗时几小时到半天，我们也需要给同事发工资，疫情三年都比较艰难，所以部署这块没法无偿帮助了，提供有偿部署，收个几百的人工费，还望能理解。  
-
-# 交流
-作者微信：xnx3com  
-交流QQ群:181781514  （建议加群，使用中问题，以及异常可以在群里随时交流）
+# communication
+If you encounter any abnormal situation during use, please mention the issues and write down the problems you encounter in detail. If you can, please also write down your website, so that we can test more fully to quickly locate the problem  
+Author WeChat:xnx3com  
+Communication QQ group:181781514

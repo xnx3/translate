@@ -1,3 +1,4 @@
+<center>English DOC | [中文文档](README.cn.md) </center>
 
 # Introduce
 The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
@@ -29,8 +30,8 @@ At the end of the page, ````</html>```` before, Add the following code. Generall
 ````
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
-translate.setUseVersion2(); //设置使用v2.x 版本
-translate.execute();//进行翻译 
+translate.setUseVersion2(); //Set to use v2.x version
+translate.execute(); // Translate
 </script>
 ````
 
@@ -77,7 +78,7 @@ translate.execute();
 The usage scenario is, if you use:  
 
 ````
-<a href="javascript:translate.changeLanguage('en');">切换为英语</a>
+<a href="javascript:translate.changeLanguage('en');">Switch to English</a>
 ````
 
 If this switch mode is used, the selection from the select drop-down box will not be used, and you can use this mode to not display.  

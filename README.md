@@ -9,7 +9,6 @@
     Current English DOC  |  <a href="doc/README.cn.md">查阅中文文档</a>
 </h4> 
 
-  
 
 # Introduce
 The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 

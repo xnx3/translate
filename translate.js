@@ -948,10 +948,34 @@ var translate = {
 		if(node == null || text == null || text.length == 0){
 			return;
 		}
-		var key = translate.util.hash(text);
-		if(translate.util.findTag(text)){
-			//console.log('find tag ignore : '+node.nodeValue);
+		//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
+		
+		//判断如果是被 <!--  --> 注释的区域，不进行翻译
+		if(typeof(node.nodeName) != 'undefined' && node.nodeName.toLowerCase() == '#comment'){
 			return;
+		}
+		
+		//取要翻译字符的hash
+		var key = translate.util.hash(text);
+		
+		if(translate.util.findTag(text)){
+			//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
+			//console.log(node.parentNode.nodeName);
+			
+			//获取到当前文本是属于那个tag标签中的，如果是script、style 这样的标签中，那也会忽略掉它，不进行翻译
+			if(node.parentNode == null){
+				//没有上级了，忽略
+				return;
+			}
+			//去上级的tag name
+			var parentNodeName = node.parentNode.nodeName;
+			if(parentNodeName == null){
+				return;
+			}
+			if(parentNodeName == 'SCRIPT' || parentNodeName == 'STYLE'){
+				//如果是script、style中发现的，那也忽略
+				return;
+			}
 		}
 		//console.log(node.nodeValue);
 		

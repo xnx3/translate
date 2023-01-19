@@ -1142,7 +1142,7 @@ var translate = {
 			
 			
 			
-			/*
+			*/
 			
 			return langStrs;
 		},
@@ -1192,11 +1192,12 @@ var translate = {
 			
 			return langStrs
 		},
+		
 		/*
 		 * 不同于语言，这个只是单纯的连接符。比如英文单词之间有逗号、句号、空格， 汉字之间有逗号句号书名号的。避免一行完整的句子被分割，导致翻译不准确
 		 * 单独拿他出来，目的是为了更好的判断计算，提高翻译的准确率
 		 */
-		connector:function(str){
+		connectors:function(str){
 			
 			/*
 				通用的有 空格、阿拉伯数字

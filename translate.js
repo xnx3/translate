@@ -500,14 +500,15 @@ var translate = {
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
-				var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
+				//var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
 				
 				for(var node_index = 0; node_index < this.nodes[hash].length; node_index++){
-					var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
 					//对这个node元素进行替换翻译字符
 					for(var task_index=0; task_index<tasks.length; task_index++){
 						var task = tasks[task_index];
+						var tagName = this.nodes[hash][task_index].nodeName; //节点的tag name
 						
+						//console.log(this.nodes[hash][task_index]+', '+task.originalText+', '+task.resultText+', tagName:'+tagName);
 						if(tagName == 'META'){
 							if(typeof(this.nodes[hash][task_index].name) != 'undefined' && this.nodes[hash][task_index].name != null){
 								//var nodeName = this.nodes[hash][task_index].name.toLowerCase();  //取meta 标签的name 属性

@@ -41,6 +41,7 @@ At the end of the page, ````</html>```` before, Add the following code. Generall
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
 translate.setUseVersion2(); //Set to use v2.x version
+translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the default is 'chinese_simplified' . Can be filled in, such as 'english'、'chinese_simplified' , please refer to the description below the document.
 translate.execute(); // Translate
 </script>
 ````

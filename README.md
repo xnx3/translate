@@ -3,23 +3,22 @@
     translate.js
 </h1>
 <h4 align="center">
-    Add two lines of js to realize automatic html translation, No API key need, SEO friendly
+    Two lines of js realize automatic html translation. <br/>
+    No need to change the page, no language configuration file, no API key, SEO friendly!
 </h4> 
 <h4 align="center">
     Current English DOC  |  <a href="doc/README.cn.md">查阅中文文档</a>
 </h4> 
 
 
-# Introduce
-The page is automatically translated, and the page does not need to be modified. Add two lines of js to make your page quickly have the ability to switch multiple languages. 
-
 # Characteristic
-* **Easy to use.** A few lines of code can have more language switching capabilities
-* **No additional workload.** No need to modify the page itself
+* **Easy to use.** Without any preparation, you can have more language switching ability by adding a few lines of code directly.
+* **No additional workload.** There is no need to modify the page itself, no language files that need to be configured separately for all languages, and no need for you to call the code of the text area to be displayed on the page itself. I think that is too unfriendly for technicians. Moreover, it doesn't need you to apply for any key to XXX website. It is open and ready to use.
 * **Extremely flexible and scalable.** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
 * **Automatically match languages.** Automatically switch the language used in the user's country according to the user's country
 * **Instant translation ability.** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
-* **Free for permanent use.** I am passionate about open source. There are twenty or thirty open source projects. The original purpose of this project is not to make money, so you don't need to worry about the problem of charging! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
+* **Free for permanent use.** I am keen on open source. There are twenty or thirty open source projects. The original purpose of this project is to break the language boundary of web communication. The world is one! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
+* **Search engine friendly.** It does not affect the inclusion of your own website search engine. The source code of the webpage crawled by the crawler will not be changed. You can rest assured.
 
 # Online experience
 [http://res.zvo.cn/translate/demo.html](http://res.zvo.cn/translate/demo.html)

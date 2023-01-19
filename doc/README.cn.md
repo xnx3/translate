@@ -4,15 +4,12 @@
 </h1>
 <h4 align="center">
     两行js实现html全自动翻译。 <br/>
-    页面无需改动、无语言配置文件、无API Key、对SEO友好！
+    无需改动页面、无语言配置文件、无API Key、对SEO友好！
 </h4> 
 <h4 align="center">
-    当前为中文文档 |  <a href="../README.md">see english documents</a>
+    当前为中文文档 |  <a href="../README.md">See English Documents</a>
 </h4> 
 
-
-# 介绍
-网页全自动翻译，页面无需另行改造，加入两行js即可让你的网页快速具备多国语言切换能力。   
 
 # 特性
 * **使用极其简单。** 无需任何前期准备，直接加入几行代码即可拥有多过语言切换能力。

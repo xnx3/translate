@@ -823,6 +823,12 @@ var translate = {
 				}
 				return '';
 			}
+			if(node.nodeName == 'IMG'){
+				if(typeof(node.alt) == 'undefined' || node.alt == null){
+					return '';
+				}
+				return node.alt;
+			}
 			
 			return node.nodeValue;
 		},
@@ -1168,6 +1174,66 @@ var translate = {
 			langStrs[language][index] = langStrs[language][index] + charstr;
 			
 			return langStrs
+		},
+		/*
+		 * 不同于语言，这个只是单纯的连接符。比如英文单词之间有逗号、句号、空格， 汉字之间有逗号句号书名号的。避免一行完整的句子被分割，导致翻译不准确
+		 * 单独拿他出来，目的是为了更好的判断计算，提高翻译的准确率
+		 */
+		connector:function(str){
+			
+			/*
+				通用的有 空格、阿拉伯数字
+				1.不间断空格\u00A0,主要用在office中,让一个单词在结尾处不会换行显示,快捷键ctrl+shift+space ;
+				2.半角空格(英文符号)\u0020,代码中常用的;
+				3.全角空格(中文符号)\u3000,中文文章中使用; 
+			*/	
+			if(/.*[\u000a\u0020\u00A0\u202F\u205F\u3000]+.*$/.test(str)){
+				return true;
+			}
+			/*
+				U+0030 0 数字 0
+				U+0031 1 数字 1
+				U+0032 2 数字 2
+				U+0033 3 数字 3
+				U+0034 4 数字 4
+				U+0035 5 数字 5
+				U+0036 6 数字 6
+				U+0037 7 数字 7
+				U+0038 8 数字 8
+				U+0039 9 数字 9
+			*/
+			if(/.*[\u0030-\u0039]+.*$/.test(str)){ 
+				return true
+			}
+			
+		
+			/*
+				英文场景
+				英文逗号、句号
+				这里不包括() 因为这里面的基本属于补充，对语句前后并无强依赖关系
+				
+				U+0021 ! 叹号
+				U+0022 " 双引号
+				U+0023 # 井号
+				U+0024 $ 价钱/货币符号
+				U+0025 % 百分比符号
+				U+0026 & 英文“and”的简写符号
+				U+0027 ' 引号
+				U+002C , 逗号
+				U+002E . 句号
+				U+003A : 冒号
+				U+003B ; 分号
+				U+003F ? 问号
+				U+0040 @ 英文“at”的简写符号
+			*/
+			if(/.*[\u0021\u0022\u0023\u0024\u0025\u0026\u0027\u002C\u002E\u003A\u003B\u003F\u0040]+.*$/.test(str)){
+				return true;
+			}
+			
+			//汉语场景，待补充
+			
+			//不是，返回false
+			return false;
 		},
 		//是否包含中文，true:包含
 		chinese_simplified:function(str){

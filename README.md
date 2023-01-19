@@ -171,9 +171,12 @@ Under normal circumstances, there is a great possibility of such demand:
 2. Pop-up prompt in the page （such as [msg.js](https://gitee.com/mail_osc/msg) Medium ````msg.info('Hello');```` ）This prompt is loaded by js. The prompt text also needs to be translated, You can add the following line of code to meet the above requirements.
 
 ````
-translate.listener.start();	//Enable the monitoring of html page changes, and automatically translate the changes. Note that the change area here refers to the area set using translate.setDocuments(...) If it is not set, it is necessary to monitor the change of the whole page
+translate.listener.start();	//Enable the monitoring of html page changes, and automatically translate the changes. Note that the change area here refers to the area set using translate.setDocuments(...) . If it is not set, it is necessary to monitor the change of the whole page
 ````
 It is recommended to put it before the line translate.execute()
+
+##### matters needing attention
+If you manually set ````translate.setDocuments(...)```` , you will not listen to the entire page, but only listen to changes in the area set by ````setDocuments(...)```` .
 
 # Examples of actual use scenarios
 ### Click a language to switch in a common website
@@ -218,8 +221,18 @@ It will be released in December 2022, adding more extension methods.
 9. When repairing translation, such as Chinese translation into Korean, the mouse will repeatedly translate the translated Korean after several times, resulting in inaccurate translation results.
 10. Open translation cloud service platform interface http://api.translate.zvo.cn/doc/index.html
 
+
 ### v2.1
-...
+1. The local language is assigned to use v2 version translation by default
+1. Add ````translate.language.connector()```` to adapt the connector of the sentence independently
+1. Add an area annotated by ````<!-- -->````  and do not translate it
+1. Add English README document
+1. Increase the translation of alt, meta keywords and descriptions of pictures
+1. Optimize and judge whether the local language is the same as the target language to be translated. If it is the same, then no translation is required
+1. Add ````translate.listener.start()```` It can automatically translate the changed areas of the current page, such as rendering after loading data with ajax
+1. ````translate.execute(...)```` Add a translation area that can be imported. The imported area is only used for one-time translation and will not affect the value of ````setDocuments(...)````
+1. The task queue mechanism is added to completely solve the problem that there is a very small probability of text omission during translation.
+1. Add ````translate.setAutoDiscriminateLocalLanguage();```` When users use it for the first time, they can automatically identify the language of their country for switching
 
 # These open source projects are being used
 The ability of automatic translation has been put into the following open source projects:  

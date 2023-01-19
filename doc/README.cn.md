@@ -165,7 +165,7 @@ translate.language.setLocal('chinese_simplified'); //设置本地语种（当前
 
 **注意，这行要放到 translate.execute(); 上面**
 
-### 为ajax动态加载的数据渲染展示情况进行适配
+### 对页面动态渲染的文本进行自动翻译
 
 正常情况下，极大可能会有这种需求：
 1. 页面中需要通过ajax请求后端服务器获取数据，然后再将数据渲染展示出来。
@@ -175,7 +175,9 @@ translate.language.setLocal('chinese_simplified'); //设置本地语种（当前
 ````
 translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 ````
-建议放在 translate.execute() 这行之前
+建议放在 translate.execute() 这行之前。
+##### 注意事项
+如果你手动设置了 ````translate.setDocuments(...)```` ，那么监听的就不是整个页面了，而是单纯只监听 ````setDocuments(...)````  所设置的区域的改动。
 
 # 实际使用场景示例
 ### 普通网站中点击某个语言进行切换
@@ -221,7 +223,17 @@ translate.listener.start();	//开启html页面变化的监控，对变化部分�
 10. 开放翻译云服务平台接口 http://api.translate.zvo.cn/doc/index.html
 
 ### v2.1
-...
+1. 本地语种时默认赋予使用v2版本翻译
+1. 增加 ````translate.language.connector()```` 对句子的连接符单独进行适配
+1. 增加如果是被 ````<!-- -->```` 注释的区域，不进行翻译
+1. 增加英文 README 文档
+1. 增加对图片alt、meta关键词及描述的翻译
+1. 优化判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译
+1. 增加 ````translate.listener.start()```` 可对当前页面变化的区域进行自动翻译，比如ajax加载数据后进行渲染
+1. ````translate.execute(...)```` 增加可传入翻译区域，传入的区域只是单纯做一次性翻译，不会影响 ````setDocuments(...)```` 的值
+1. 加入任务队列机制，彻底解决翻译时非常小概率有文字遗漏不翻译的问题。
+1. 增加 ````translate.setAutoDiscriminateLocalLanguage();```` 用户第一次用时，可自动识别其所在国家的语种进行切换
+
 
 # 这些开源项目正在使用
 如下开源项目中已置入自动化翻译的能力：  

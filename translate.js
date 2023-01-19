@@ -1049,6 +1049,7 @@ var translate = {
 		local:'chinese_simplified',
 		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
 		setLocal:function(languageName){
+			translate.setUseVersion2(); //Set to use v2.x version
 			translate.language.local = languageName;
 		},
 		//获取当前字符是什么语种。返回值是一个语言标识，有  chinese_simplified简体中文、japanese日语、korean韩语、

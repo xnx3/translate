@@ -1052,8 +1052,12 @@ var translate = {
 			translate.setUseVersion2(); //Set to use v2.x version
 			translate.language.local = languageName;
 		},
-		//获取当前字符是什么语种。返回值是一个语言标识，有  chinese_simplified简体中文、japanese日语、korean韩语、
-		// //会自动将特殊字符、要翻译的目标语种给过滤掉
+		/*
+		 * 获取当前字符是什么语种。返回值是一个语言标识，有  chinese_simplified简体中文、japanese日语、korean韩语、
+		 * str : node.nodeValue 或 图片的 node.alt 等
+		 * 如果语句长，会全句翻译，以保证翻译的准确性，提高可读性。
+		 * 如果语句短，会自动将特殊字符、要翻译的目标语种给过滤掉，只取出具体的要翻译的目标语种文本
+		 */
 		get:function(str){
 			//将str拆分为单个char进行判断
 
@@ -1127,6 +1131,18 @@ var translate = {
 			if(typeof(langStrs['specialCharacter']) != 'undefined'){
 				delete langStrs['specialCharacter'];
 			}
+			
+			/*
+			
+			
+			
+			
+			待优化
+			
+			
+			
+			
+			/*
 			
 			return langStrs;
 		},

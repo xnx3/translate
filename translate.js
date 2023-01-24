@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.10.20230119',
+	version:'2.1.11.20230124',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -291,9 +291,55 @@ var translate = {
 	ignore:{
 		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage'],
-		//传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
+		/*
+			传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
+			return true是在忽略的之中，false不再忽略的之中
+		*/
 		isIgnore:function(ele){
-			
+			if(ele == null || typeof(ele) == 'undefined'){
+				return false;
+			}
+			var parentNode = ele;
+			//console.log(parentNode);
+			while(true){
+				parentNode = parentNode.parentNode;
+
+				if(parentNode == null || typeof(parentNode) == 'undefined'){
+					//没有父元素了
+					return false;
+				}
+				if(parentNode.nodeName == 'BODY'){
+					//上层元素已经是body了，那肯定就不是了
+					return false;
+				}
+
+
+				//判断tag
+				var tagName = parentNode.nodeName.toLowerCase(); //tag名字，小写
+				//console.log(tagName)
+				if(translate.ignore.tag.indexOf(tagName) > -1){
+					//发现ignore.tag 当前是处于被忽略的 tag
+					return true;
+				}
+
+				//判断class name
+				if(parentNode.className != null){
+					if(translate.ignore.class.indexOf(parentNode.className) > -1){
+						//发现ignore.class 当前是处于被忽略的 class
+						/*
+
+
+							如果class 有多个，要分开判断，待优化
+
+
+						*/
+						return true;
+					}
+				}
+				
+
+			}
+
 		}
 	},
 	setAutoDiscriminateLocalLanguage:function(){
@@ -884,6 +930,17 @@ var translate = {
 				return;
 			}
 			/**** 判断忽略的class结束 ******/
+
+
+
+			/**** 避免中途局部翻译，在判断一下 ****/
+			//判断当前元素是否在ignore忽略的tag及class name中
+			if(translate.ignore.isIgnore(node)){
+				//console.log('node包含在要忽略的元素中：');
+				//console.log(node);
+				return;
+			}
+
 			
 			//console.log(node.nodeName+', type:'+node.nodeType+', '+node.nodeValue);
 			
@@ -985,7 +1042,7 @@ var translate = {
 			}
 		}
 		//console.log(node.nodeValue);
-		
+	
 		//获取当前是什么语种
 		var langs = translate.language.get(text);
 		//console.log('langs');

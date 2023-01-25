@@ -24,7 +24,7 @@
 当前只是开放一个测试api地址提供对外的测试。（过年期间没管他，测试服务可能会不稳定或无法使用）
 
 ````
-http://service.translate.zvo.cn/translate.json?language=korean&url=https://www.huaweicloud.com
+http://service.translate.zvo.cn/translate.json?language=english&url=https://www.huaweicloud.com/solution/implementations/build-a-cms-based-on-open-source-wangmarket.html
 ````
 
 ### 参数说明
@@ -35,7 +35,7 @@ http://service.translate.zvo.cn/translate.json?language=korean&url=https://www.h
 
 比如如下几种示例  
 
-http://service.translate.zvo.cn/translate.json?language=korean&url=https://www.huaweicloud.com  
+http://service.translate.zvo.cn/translate.json?language=english&url=https://www.baidu.com
 http://service.translate.zvo.cn/translate.json?language=english&url=https://www.huaweicloud.com/solution/implementations/build-a-cms-based-on-open-source-wangmarket.html
 
 # 其他说明

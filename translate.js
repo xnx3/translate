@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.11.20230124',
+	version:'2.1.12.20230125',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -313,7 +313,6 @@ var translate = {
 					return false;
 				}
 
-
 				//判断tag
 				var tagName = parentNode.nodeName.toLowerCase(); //tag名字，小写
 				//console.log(tagName)
@@ -324,22 +323,20 @@ var translate = {
 
 				//判断class name
 				if(parentNode.className != null){
-					if(translate.ignore.class.indexOf(parentNode.className) > -1){
-						//发现ignore.class 当前是处于被忽略的 class
-						/*
-
-
-							如果class 有多个，要分开判断，待优化
-
-
-						*/
-						return true;
-					}
+					var classNames = parentNode.className.trim().split(' ');
+					for(var c_index = 0; c_index < classNames.length; c_index++){
+						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
+							//有效的class name，进行判断
+							if(translate.ignore.class.indexOf(classNames[c_index]) > -1){
+								//发现ignore.class 当前是处于被忽略的 class
+								return true;
+							}
+						}
+					}					
 				}
-				
-
 			}
 
+			return false;
 		}
 	},
 	setAutoDiscriminateLocalLanguage:function(){

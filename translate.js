@@ -323,7 +323,13 @@ var translate = {
 
 				//判断class name
 				if(parentNode.className != null){
-					var classNames = parentNode.className.trim().split(' ');
+					var classNames = parentNode.className;
+					if(classNames == null || typeof(classNames) != 'string'){
+						continue;
+					}
+					//console.log('className:'+typeof(classNames));
+					//console.log(classNames);
+					classNames = classNames.trim().split(' ');
 					for(var c_index = 0; c_index < classNames.length; c_index++){
 						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
 							//有效的class name，进行判断
@@ -559,18 +565,21 @@ var translate = {
 								/* if(nodeName == 'keyword'){
 									console.log(this.nodes[hash][task_index].content+"\t"+task.resultText+', nodeName:'+nodeName);
 									//关键词、描述
-									this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(task.originalText,'g'), task.resultText);
+									this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 								}else if(nodeName == 'description'){
-									this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(task.originalText,'g'), task.resultText);
+									this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 								} */
 								
-								this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(task.originalText,'g'), task.resultText);
+								this.nodes[hash][task_index].content = this.nodes[hash][task_index].content.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 							}
 						}else if(tagName == 'IMG'){
-							this.nodes[hash][task_index].alt = this.nodes[hash][task_index].alt.replace(new RegExp(task.originalText,'g'), task.resultText);
+							this.nodes[hash][task_index].alt = this.nodes[hash][task_index].alt.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 						}else{
 							//普通的
-							this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(task.originalText,'g'), task.resultText);
+							//console.log('task.originalText : '+task.originalText);
+							//console.log(translate.util.regExp.pattern(task.originalText))
+							//console.log('task.resultText : '+task.resultText);
+							this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 						}
 					}
 				}
@@ -1043,8 +1052,8 @@ var translate = {
 	
 		//获取当前是什么语种
 		var langs = translate.language.get(text);
-		console.log('langs');
-		console.log(langs);
+		//console.log('langs');
+		//console.log(langs);
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
 		if(typeof(langs[translate.to]) != 'undefined'){
@@ -1071,7 +1080,7 @@ var translate = {
 			for(var word_index = 0; word_index < langs[lang].length; word_index++){
 				var word = langs[lang][word_index]['text']; //要翻译的词
 				var beforeText = langs[lang][word_index]['beforeText'];
-				console.log(langs[lang][word_index])
+				//console.log("word:"+word)
 				var hash = translate.util.hash(word); 	//要翻译的词的hash
 				
 				
@@ -1094,6 +1103,8 @@ var translate = {
 					
 				}
 				
+
+
 				//往五维数组nodes中追加node元素
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length]=node; 
 			}
@@ -1124,11 +1135,13 @@ var translate = {
 
 			var langs = new Array(); //当前字符串包含哪些语言的数组，其内如 english
 			var langStrs = new Array();	//存放不同语言的文本，格式如 ['english'][0] = 'hello'
+			var upLangs = []; //上一个字符的语种是什么，当前字符向上数第一个字符。格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。 
+			var upLangsTwo = []; //上二个字符的语种是什么 ，当前字符向上数第二个字符。 格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。
 			
-			var upLangs = ''; //上一个字符的语种是什么，格式如 english
+			//var upLangs = ''; //上一个字符的语种是什么，格式如 english
 			for(var i=0; i<str.length; i++){
 				var charstr = str.charAt(i);
-				
+				//console.log('charstr:'+charstr)
 				var lang = translate.language.getCharLanguage(charstr);
 				if(lang == ''){
 					//未获取到，未发现是什么语言
@@ -1136,8 +1149,21 @@ var translate = {
 					lang = 'unidentification';
 				}
 				
-				langStrs = translate.language.analyse(lang, langStrs, upLangs, charstr);
-				upLangs = lang;
+				var result = translate.language.analyse(lang, langStrs, upLangs, upLangsTwo, charstr);
+				//console.log(result)
+				langStrs = result['langStrs'];
+				//记录上几个字符
+				if(typeof(upLangs['language']) != 'undefined'){
+					upLangsTwo['language'] = upLangs['language'];
+					upLangsTwo['charstr'] = upLangs['charstr'];
+					upLangsTwo['storage_language'] = upLangs['storage_language'];
+				}
+				//upLangs['language'] = lang;
+				upLangs['language'] = result['storage_language'];
+				upLangs['charstr'] = charstr;
+				upLangs['storage_language'] = result['storage_language'];
+				//console.log(result['storage_language'])
+				//console.log(upLangs['language']);
 				langs.push(lang);
 			}
 			
@@ -1204,7 +1230,7 @@ var translate = {
 			
 			
 			*/
-			
+			//console.log('get end');
 			return langStrs;
 		},
 		// 传入一个char，返回这个char属于什么语种，返回如 chinese_simplified、english  如果返回空字符串，那么表示未获取到是什么语种
@@ -1228,21 +1254,83 @@ var translate = {
 				return '';
 			}
 		},
-		//对字符串进行分析，分析字符串是有哪几种语言组成。  language 传入如 english  ， langStrs 操作的，如 langStrs['english'][0] = '你好'   upLangs 上次char替换的，如 english ， chatstr char文本
-		analyse:function(language, langStrs, upLangs, charstr){
+		/*
+		 * 对字符串进行分析，分析字符串是有哪几种语言组成。
+		 * language : 当前字符的语种，传入如 english
+		 * langStrs : 操作的，如 langStrs['english'][0] = '你好'
+		 * upLangs  : 当前字符之前的上一个字符的语种是什么，当前字符向上数第一个字符。格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。
+		 * upLangsTwo : 当前字符之前的上二个字符的语种是什么 ，当前字符向上数第二个字符。 格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。
+		 * chatstr  : 当前字符，如  h
+		 */
+		analyse:function(language, langStrs, upLangs, upLangsTwo, charstr){
 			if(typeof(langStrs[language]) == 'undefined'){
 				langStrs[language] = new Array();
 			}
+			//console.log('char ana : '+charstr);
 			var index = 0; //当前要存入的数组下标
-			if(upLangs == ''){
+			if(typeof(upLangs['language']) == 'undefined'){
 				//第一次，那么还没存入值，index肯定为0
+				//console.log('第一次，那么还没存入值，index肯定为0')
+				//console.log(upLangs['language'])
 			}else{
-				if(upLangs == language){
+				var isEqual = upLangs['language'] == language; //上次跟当前字符是否都是同一个语种（这个字符跟这个字符前一个字符）
+
+				/*
+					英语每个单词之间都会有空格分割. 如果是英文的话，英文跟特殊字符还要单独判断一下，避免拆开，造成翻译不准，单个单词翻译的情况
+					所以如果上次的字符是英文或特殊符号，当前字符是特殊符号(逗号、句号、空格，然后直接笼统就吧特殊符号都算上吧)，那么也将当次的特殊符号变为英文来进行适配
+					示例  
+						hello word  的 "o w"
+						hello  word  的 "  w"
+						hello  word  的 "w  "
+						this is a dog  的 " a "
+				*/
+				//console.log(language == 'specialCharacter');
+				//如果两个字符类型不一致，但当前字符是英文或特殊字符时，进行判断
+				if(!isEqual){
+					if(language == 'english' || (language == 'specialCharacter' && translate.language.connector(charstr))){
+						//console.log('1.'+(language == 'english' || (language == 'specialCharacter' && translate.language.connector(charstr))));
+						//上一个字符是英文或特殊字符
+						//console.log('teshu:'+translate.language.connector(upLangs['charstr'])+', str:'+upLangs['charstr']);
+						if(upLangs['language'] == 'english' || (upLangs['language'] == 'specialCharacter' && translate.language.connector(upLangs['charstr']))) {
+							//console.log('2');
+							//如果上二个字符不存在，那么刚开始，不再上面几种情况之中，直接不用考虑
+							if(typeof(upLangsTwo['language']) != 'undefined'){
+								//console.log('3')
+								//上二个字符是空（字符串刚开始），或者是英文
+								if(upLangsTwo['language'] == 'english' || (upLangsTwo['language'] == 'specialCharacter' && translate.language.connector(upLangsTwo['charstr']))){
+									//满足这三个条件，那就将这三个拼接到一起
+									//console.log('4/5: '+', two lang:'+upLangsTwo['language']+', str:'+upLangsTwo['charstr'])
+									isEqual = true;
+									if(language == 'specialCharacter' && upLangs['language'] == 'specialCharacter' && upLangsTwo['language'] == 'specialCharacter'){
+										//如果三个都是特殊字符，或后两个是特殊字符，第一个是空（刚开始），那就归入特殊字符
+										language = 'specialCharacter';
+										//console.log('4')
+									}else{
+										//不然就都归于英文中。
+										//这里更改是为了让下面能将特殊字符（像是空格逗号等）也一起存入数组
+										language = 'english';
+										//console.log(5)
+									}
+								}
+							}
+						}
+					}
+				}
+
+				//console.log('isEqual:'+isEqual);
+				if(isEqual){
 					//跟上次语言一样，那么直接拼接
 					index = langStrs[language].length-1; 
+					//但是还有别的特殊情况，v2.1针对英文翻译准确度的适配，会有特殊字符的问题
+					if(typeof(upLangs['storage_language']) != 'undefined' && upLangs['storage_language'] != language){
+						//如果上个字符存入的翻译队列跟当前这个要存入的队列不一个的话，那应该是特殊字符像是逗号句号等导致的，那样还要额外一个数组，不能在存入之前的数组了
+						index = langStrs[language].length; 
+					}
 				}else{
-					//不一样，那么再开个数组存放
+					//console.log('新开');
+					//当前字符跟上次语言不样，那么新开一个数组
 					index = langStrs[language].length;
+					//console.log('++, inde:'+index+',lang:'+language+', length:'+langStrs[language].length)
 				}
 			}
 			if(typeof(langStrs[language][index]) == 'undefined'){
@@ -1250,17 +1338,22 @@ var translate = {
 				langStrs[language][index]['beforeText'] = '';
 				langStrs[language][index]['text'] = '';
 			}
-			
 			langStrs[language][index]['text'] = langStrs[language][index]['text'] + charstr;
 			
-			return langStrs
+			var result = new Array();
+			result['langStrs'] = langStrs;
+			result['storage_language'] = language;	//实际存入了哪种语种队列
+			//console.log(result);
+			//console.log(langStrs)
+			//console.log(charstr);
+			return result;
 		},
 		
 		/*
 		 * 不同于语言，这个只是单纯的连接符。比如英文单词之间有逗号、句号、空格， 汉字之间有逗号句号书名号的。避免一行完整的句子被分割，导致翻译不准确
 		 * 单独拿他出来，目的是为了更好的判断计算，提高翻译的准确率
 		 */
-		connectors:function(str){
+		connector:function(str){
 			
 			/*
 				通用的有 空格、阿拉伯数字
@@ -1732,6 +1825,23 @@ var translate = {
 			//str = str.replace(/&/g, "%26"); //因为在提交时已经进行了url编码了
 			return str;
 		},
+		//RegExp相关
+		regExp:{
+			// new RegExp(pattern, resultText); 中的 pattern 字符串的预处理
+			pattern:function(str){
+				//str = str.replace(/'/g,'\\\'');
+				str = str.replace(/\"/g,'\\\"');
+				//str = str.replace(/./g,'\\\.');
+				str = str.replace(/\?/g,'\\\?');
+				return str;
+			},
+			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理
+			resultText:function(str){
+				str = str.replace(/'/g,"\\\'");
+				str = str.replace(/"/g,"\\\"");
+				return str;
+			}
+		}	
 	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{

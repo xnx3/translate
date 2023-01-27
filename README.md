@@ -29,7 +29,7 @@
 1. Open a webpage at random  
 2. Right click - review elements  
 3. Paste the following code:
-	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector.js';  head.appendChild(script);  ````
+	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector_v2.js';  head.appendChild(script);  ````
 4. Enter to execute  
 5. At the top left corner of the current page, there is a big language switch. Try switching.  
 

@@ -34,6 +34,10 @@ var translate = {
 		/* 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr */
 		languages:'zh-CN,zh-TW,en',
 		alreadyRender:false, //当前是否已渲染过了 true为是 v2.2增加
+		selectOnChange:function(event){
+			var language = event.target.value;
+			translate.changeLanguage(language);
+		},
 		render:function(){ //v2增加
 			if(translate.selectLanguageTag.alreadyRender){
 				return;
@@ -67,10 +71,7 @@ var translate = {
 				}
 			
 				//select的onchange事件
-				var onchange = function(event){
-					var language = event.target.value;
-					translate.changeLanguage(language);
-				}
+				var onchange = function(event){ translate.selectLanguageTag.selectOnChange(event); }
 				
 				//创建 select 标签
 				var selectLanguage = document.createElement("select"); 
@@ -89,7 +90,7 @@ var translate = {
 						}
 				    }else{
 						//没设置目标语言，那默认选中当前本地的语种
-						if(data.list[i].id == translate.language.local){
+						if(data.list[i].id == translate.language.getLocal()){
 							option.setAttribute("selected",'selected');
 						}
 					}
@@ -262,11 +263,18 @@ var translate = {
 		
 		//用的是v2.x或更高
 		translate.setUseVersion2();
+		//判断是否是第一次翻译，如果是，那就不用刷新页面了。 true则是需要刷新，不是第一次翻译
+		var isReload = translate.to != null && translate.to.length > 0;
+		
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
 		
-		location.reload(); //刷新页面
-		//translate.execute(); //翻译
+		if(isReload){
+			location.reload(); //刷新页面
+		}else{
+			//不用刷新，直接翻译
+			translate.execute(); //翻译
+		}
 	},
 	
 	/**
@@ -605,10 +613,6 @@ var translate = {
 		
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
 		
-		//初始设置判断
-		//判断是否设置了本地语种，如果没设置，自动给其设置
-		translate.language.autoRecognitionLocalLanguage();
-
 
 		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
 		var uuid = translate.util.uuid();
@@ -647,7 +651,7 @@ var translate = {
 		}
 		
 		//判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译
-		if(translate.to == translate.language.local){
+		if(translate.to == translate.language.getLocal()){
 			return;
 		}
 		
@@ -1126,8 +1130,21 @@ var translate = {
 	},
 
 	language:{
-		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)
+		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
+		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
+		setLocal:function(languageName){
+			translate.setUseVersion2(); //Set to use v2.x version
+			translate.language.local = languageName;
+		},
+		//获取当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)
+		getLocal:function(){
+			//判断是否设置了本地语种，如果没设置，自动给其设置
+			if(translate.language.local == null || translate.language.local.length < 1){
+				translate.language.autoRecognitionLocalLanguage();
+			}
+			return translate.language.local;
+		},
 		//自动识别当前页面是什么语种
 		autoRecognitionLocalLanguage:function(){
 			if(translate.language.local != null && translate.language.local.length > 2){
@@ -1173,11 +1190,7 @@ var translate = {
 				translate.language.local = 'chinese_simplified';
 			}
 		},
-		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
-		setLocal:function(languageName){
-			translate.setUseVersion2(); //Set to use v2.x version
-			translate.language.local = languageName;
-		},
+		
 		/*
 		 * 获取当前字符是什么语种。返回值是一个语言标识，有  chinese_simplified简体中文、japanese日语、korean韩语、
 		 * str : node.nodeValue 或 图片的 node.alt 等
@@ -1398,7 +1411,7 @@ var translate = {
 				中文英文混合时，当中文+英文并没有空格间隔，翻译为英文时，会使中文翻译英文的结果跟原本的英文单词连到一块。这里就是解决这种情况
 				针对当前非英文，但要翻译为英文时的情况进行判断
 			*/
-			if(translate.language.local != 'english' && translate.to == 'english'){
+			if(translate.language.getLocal() != 'english' && translate.to == 'english'){
 				if((upLangs['language'] != null && typeof(upLangs['language']) != 'undefined' && upLangs['language'].length > 0) && upLangs['language'] != 'specialCharacter'){
 					//上个字符存在，且不是特殊字符（是正常的语种）
 

@@ -605,6 +605,11 @@ var translate = {
 		
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
 		
+		//初始设置判断
+		//判断是否设置了本地语种，如果没设置，自动给其设置
+		translate.language.autoRecognitionLocalLanguage();
+
+
 		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
 		var uuid = translate.util.uuid();
 		//console.log('=====')
@@ -824,7 +829,7 @@ var translate = {
 					var originalWord = '';
 					try{
 						originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];
-						console.log('bef:'+translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']);
+						//console.log('bef:'+translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']);
 					}catch(e){
 						console.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
 						console.log(e);
@@ -1122,7 +1127,52 @@ var translate = {
 
 	language:{
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)
-		local:'chinese_simplified',
+		local:'',
+		//自动识别当前页面是什么语种
+		autoRecognitionLocalLanguage:function(){
+			if(translate.language.local != null && translate.language.local.length > 2){
+				//已设置过了，不需要再设置
+				return;
+			}
+
+			var bodyText = document.body.outerText;
+			if(bodyText == null || typeof(bodyText) == 'undefined' || bodyText.length < 1){
+				//未取到，默认赋予简体中文
+				translate.language.local = 'chinese_simplified';
+				return;
+			}
+
+			bodyText = bodyText.replace(/\n|\t|\r/g,''); //将回车换行等去掉
+
+			var langs = new Array(); //上一个字符的语种是什么，当前字符向上数第一个字符。格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。 
+			for(var i=0; i<bodyText.length; i++){
+				var charstr = bodyText.charAt(i);
+				var lang = translate.language.getCharLanguage(charstr);
+				if(lang == ''){
+					//未获取到，未发现是什么语言
+					//continue;
+					lang = 'unidentification';
+				}
+				langs.push(lang);
+			}
+
+			//从数组中取出现频率最高的
+			var newLangs = translate.util.arrayFindMaxNumber(langs);
+
+			//移除数组中的特殊字符
+			var index = newLangs.indexOf('specialCharacter');
+			if(index > -1){
+				newLangs.splice(index,1); //移除数组中的特殊字符
+			}
+
+			if(newLangs.length > 0){
+				//找到排序出现频率最多的
+				translate.language.local = newLangs[0];
+			}else{
+				//没有，默认赋予简体中文
+				translate.language.local = 'chinese_simplified';
+			}
+		},
 		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
 		setLocal:function(languageName){
 			translate.setUseVersion2(); //Set to use v2.x version

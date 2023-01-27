@@ -349,12 +349,13 @@ var translate = {
 				k/v 
 		二维：对象形态，具体有：
 			 key:expireTime 当前一维数组key的过期时间，到达过期时间会自动删除掉这个一维数组。如果<0则代表永不删除，常驻内存
-			 key:list 待翻译的页面的node队列
-		三维：针对二维的value，  key:english、chinese_simplified等语种    value: k/v
+			 value:list 待翻译的页面的node队列
+		三维：针对二维的value，  key:english、chinese_simplified等语种，这里的key便是对value的判断，取value中的要翻译的词是什么语种，对其进行了语种分类    value: k/v
 		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
 		五维：针对四维的value，  这是个对象， 其中
 				original: 是三维的key的hash的原始文字，也就是翻译前的文本词
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
+				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了
 		六维：针对五维的 nodes，将各个 node 列出来，如 [node,node,....]		
 		
 		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
@@ -1042,8 +1043,8 @@ var translate = {
 	
 		//获取当前是什么语种
 		var langs = translate.language.get(text);
-		//console.log('langs');
-		//console.log(langs);
+		console.log('langs');
+		console.log(langs);
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
 		if(typeof(langs[translate.to]) != 'undefined'){
@@ -1068,7 +1069,9 @@ var translate = {
 			
 			//遍历出该语种下有哪些词需要翻译
 			for(var word_index = 0; word_index < langs[lang].length; word_index++){
-				var word = langs[lang][word_index]; //要翻译的词
+				var word = langs[lang][word_index]['text']; //要翻译的词
+				var beforeText = langs[lang][word_index]['beforeText'];
+				console.log(langs[lang][word_index])
 				var hash = translate.util.hash(word); 	//要翻译的词的hash
 				
 				
@@ -1080,9 +1083,12 @@ var translate = {
 					 * 创建四维数组，存放具体数据
 					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个
 					 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
+					 * beforeText:见 translate.nodeQueue 的说明
 					 */
 					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
 					translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
+					translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = '';
+					
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 					
@@ -1240,10 +1246,12 @@ var translate = {
 				}
 			}
 			if(typeof(langStrs[language][index]) == 'undefined'){
-				langStrs[language][index] = '';
+				langStrs[language][index] = new Array();
+				langStrs[language][index]['beforeText'] = '';
+				langStrs[language][index]['text'] = '';
 			}
 			
-			langStrs[language][index] = langStrs[language][index] + charstr;
+			langStrs[language][index]['text'] = langStrs[language][index]['text'] + charstr;
 			
 			return langStrs
 		},

@@ -42,7 +42,7 @@ http://res.zvo.cn/translate/demo.html
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
 translate.setUseVersion2(); //设置使用v2.x 版本
-translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认就是 'chinese_simplified' 简体中文。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
+translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
 translate.execute();//进行翻译 
 </script>
 ````

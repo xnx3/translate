@@ -40,7 +40,7 @@ At the end of the page, ````</html>```` before, Add the following code. Generall
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
 translate.setUseVersion2(); //Set to use v2.x version
-translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the default is 'chinese_simplified' . Can be filled in, such as 'english'、'chinese_simplified' , please refer to the description below the document.
+translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the language of the text displayed on the current page will be automatically recognized by default. Can be filled in, such as 'english'、'chinese_simplified' , please refer to the description below the document.
 translate.execute(); // Translate
 </script>
 ````
@@ -156,7 +156,7 @@ translate.setAutoDiscriminateLocalLanguage();	//Set the language of the user's c
 ### Set the local language (the language of the current page)
 
 ````
-translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the default is "chinese_simplified" Chinese
+translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the language of the text displayed on the current page will be automatically recognized by default.
 ````
 Specific languages can be consulted： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
 If not set, the default is Simplified Chinese : chinese_simplified  

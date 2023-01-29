@@ -882,7 +882,7 @@ var translate = {
 				//meta标签，如是关键词、描述等
 				if(typeof(node.name) != 'undefined' && node.name != null){
 					var nodeName = node.name.toLowerCase();  //取meta 标签的name 属性
-					if(nodeName == 'keyword' || nodeName == 'description'){
+					if(nodeName == 'keywords' || nodeName == 'description'){
 						return node.content;
 					}
 				}
@@ -983,7 +983,8 @@ var translate = {
 				//meta标签，如是关键词、描述等
 				if(typeof(node.name) != 'undefined' && node.name != null){
 					var nodeName = node.name.toLowerCase();  //取meta 标签的name 属性
-					if(nodeName == 'keyword' || nodeName == 'description'){
+					//console.log(nodeName);
+					if(nodeName == 'keywords' || nodeName == 'description'){
 						//关键词、描述
 						translate.addNodeToQueue(uuid, node, node.content);
 					}

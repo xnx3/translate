@@ -201,6 +201,25 @@ Add the following code directly at the end of its html code:
 </script>
 ````
 
+# Participate in
+You can fork the project directly. Note that it is the github warehouse [https://github.com/xnx3/translate](https://github.com/xnx3/translate）, non-gitee warehouse  
+If you have changed any code, please note your name and your personal home page in it, which is your participation and contribution. For example, Mr. Chen participated in the character judgment of Japanese translation, which can be as follows:
+
+````
+/*
+	If it contains Japanese, return true: contains
+	Participant: Chen https://www.chenmouren.com/xxxxx.html
+*/
+japanese:function(str){
+	if(/.*[\u0800-\u4e00]+.*$/.test(str)){ 
+		return true
+	} else {
+		return false;
+	}
+},
+
+````
+
 # Version
 Note that v1.x is slightly different from v2.x. You can use ```` console. log (translate. version)```` View the version currently used.
 In addition, for the relevant description of v1.x version, see: [instructions](doc/v1.md) | [online demo](https://res.zvo.cn/translate/demo_v1.html)
@@ -238,6 +257,7 @@ It will be released in December 2022, adding more extension methods.
 The ability of automatic translation has been put into the following open source projects:  
 [kefu.js](https://gitee.com/mail_osc/kefu.js) H5 online customer service, introduce a line of js code to use immediately! Support mobile phones, computers, APP, and applets. One-click deployment of your own private SAAS cloud customer service platform  
 [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui) Pearl Admin is an out-of-the-box front-end development template that extends the native UI style of Layui, integrates third-party open source components, provides a convenient and rapid development method, and continues LayuiAdmin   
+[Layui](https://gitee.com/mail_osc/translate_layui) Translation component
 ...  
 
 # Outstanding open source projects and community recommendations

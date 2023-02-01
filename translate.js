@@ -299,6 +299,7 @@ var translate = {
 	ignore:{
 		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage'],
+		id:[],
 		/*
 			传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
 			return true是在忽略的之中，false不再忽略的之中
@@ -348,6 +349,16 @@ var translate = {
 						}
 					}					
 				}
+
+				//判断id
+				if(parentNode.id != null && typeof(parentNode.id) != 'undefined'){
+					//有效的class name，进行判断
+					if(translate.ignore.id.indexOf(parentNode.id) > -1){
+						//发现ignore.id 当前是处于被忽略的 id
+						return true;
+					}
+				}
+
 			}
 
 			return false;

@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.1.14.20230128',
+	version:'2.1.15.20230205',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -558,9 +558,14 @@ var translate = {
 			for(var hash in this.taskQueue){
 				var tasks = this.taskQueue[hash];
 				//console.log(tasks);
-				tasks.sort(function(a,b){
-					return b.originalText.length - a.originalText.length;
-	         	});
+				try{
+					tasks.sort(function(a,b){
+						return b.originalText.length - a.originalText.length;
+		         	});
+				}catch(e){
+					console.log(e);
+				}
+				
 				this.taskQueue[hash] = tasks;
 			}
 			
@@ -801,8 +806,9 @@ var translate = {
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			var lang = fanyiLangs[lang_index];
-			//console.log(lang)
-			if(translateTextArray[lang].length < 1){
+			//console.log(typeof(translateTextArray[lang]))
+			
+			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
 				return;
 			}
 			
@@ -1291,24 +1297,18 @@ var translate = {
 			}
 			*/
 			
+			//console.log(langStrs);
 			if(typeof(langStrs['unidentification']) != 'undefined'){
 				delete langStrs['unidentification'];
 			}
 			if(typeof(langStrs['specialCharacter']) != 'undefined'){
 				delete langStrs['specialCharacter'];
 			}
-			
-			/*
-			
-			
-			
-			
-			待优化
+			if(typeof(langStrs['number']) != 'undefined'){
+				delete langStrs['number'];
+			}
 			
 			
-			
-			
-			*/
 			//console.log('get end');
 			return langStrs;
 		},
@@ -1322,6 +1322,8 @@ var translate = {
 				return 'english';
 			}else if(this.specialCharacter(charstr)){
 				return 'specialCharacter';
+			}else if(this.number(charstr)){
+				return 'number';	
 			}else if(this.chinese_simplified(charstr)){
 				return 'chinese_simplified';
 			}else if(this.japanese(charstr)){
@@ -1345,14 +1347,15 @@ var translate = {
 			if(typeof(langStrs[language]) == 'undefined'){
 				langStrs[language] = new Array();
 			}
-			//console.log('char ana : '+charstr);
 			var index = 0; //当前要存入的数组下标
-			if(typeof(upLangs['language']) == 'undefined'){
+			if(typeof(upLangs['storage_language']) == 'undefined'){
 				//第一次，那么还没存入值，index肯定为0
 				//console.log('第一次，那么还没存入值，index肯定为0')
 				//console.log(upLangs['language'])
 			}else{
-				var isEqual = upLangs['language'] == language; //上次跟当前字符是否都是同一个语种（这个字符跟这个字符前一个字符）
+				//console.log('analyse, charstr : '+charstr+', upLangs :');
+				//console.log(upLangs);
+				//var isEqual = upLangs['storage_language'] == language; //上次跟当前字符是否都是同一个语种（这个字符跟这个字符前一个字符）
 
 				/*
 					英语每个单词之间都会有空格分割. 如果是英文的话，英文跟特殊字符还要单独判断一下，避免拆开，造成翻译不准，单个单词翻译的情况
@@ -1364,21 +1367,22 @@ var translate = {
 						this is a dog  的 " a "
 				*/
 				//console.log(language == 'specialCharacter');
-				//如果两个字符类型不一致，但当前字符是英文或特殊字符时，进行判断
+				//如果两个字符类型不一致，但当前字符是英文或连接符时，进行判断
+				/*
 				if(!isEqual){
-					if(language == 'english' || (language == 'specialCharacter' && translate.language.connector(charstr))){
-						//console.log('1.'+(language == 'english' || (language == 'specialCharacter' && translate.language.connector(charstr))));
-						//上一个字符是英文或特殊字符
+					if(language == 'english' || translate.language.connector(charstr)){
+						console.log('1.'+(language == 'english' || translate.language.connector(charstr))+', upLangs str:'+upLangs['charstr']);
+						//上一个字符是英文或连接符
 						//console.log('teshu:'+translate.language.connector(upLangs['charstr'])+', str:'+upLangs['charstr']);
-						if(upLangs['language'] == 'english' || (upLangs['language'] == 'specialCharacter' && translate.language.connector(upLangs['charstr']))) {
-							//console.log('2');
+						if(upLangs['language'] == 'english' || translate.language.connector(upLangs['charstr'])) {
+							console.log('2');
 							//如果上二个字符不存在，那么刚开始，不再上面几种情况之中，直接不用考虑
 							if(typeof(upLangsTwo['language']) != 'undefined'){
-								//console.log('3')
+								console.log('3')
 								//上二个字符是空（字符串刚开始），或者是英文
-								if(upLangsTwo['language'] == 'english' || (upLangsTwo['language'] == 'specialCharacter' && translate.language.connector(upLangsTwo['charstr']))){
+								if(upLangsTwo['language'] == 'english' || translate.language.connector(upLangsTwo['charstr'])){
 									//满足这三个条件，那就将这三个拼接到一起
-									//console.log('4/5: '+', two lang:'+upLangsTwo['language']+', str:'+upLangsTwo['charstr'])
+									console.log('4/5: '+', two lang:'+upLangsTwo['language']+', str:'+upLangsTwo['charstr'])
 									isEqual = true;
 									if(language == 'specialCharacter' && upLangs['language'] == 'specialCharacter' && upLangsTwo['language'] == 'specialCharacter'){
 										//如果三个都是特殊字符，或后两个是特殊字符，第一个是空（刚开始），那就归入特殊字符
@@ -1388,15 +1392,37 @@ var translate = {
 										//不然就都归于英文中。
 										//这里更改是为了让下面能将特殊字符（像是空格逗号等）也一起存入数组
 										language = 'english';
-										//console.log(5)
+										console.log(5)
 									}
 								}
 							}
 						}
 					}
 				}
+				*/
+
+				/*
+					不判断当前字符，而判断上个字符，是因为当前字符没法获取未知的下个字符。
+				*/
+				//if(!isEqual){
+
+					//如果当前字符是连接符
+					if(translate.language.connector(charstr)){
+						language = upLangs['storage_language'];
+						/*
+						//判断上个字符是否存入了待翻译字符，如要将中文翻译为英文，而上个字符是中文，待翻译，那将连接符一并加入待翻译字符中去，保持句子完整性
+						//判断依据是上个字符存储至的翻译字符语种序列，不是特殊字符，而且也不是要翻译的目标语种，那肯定就是待翻译的，将连接符加入待翻译中一起进行翻译
+						if(upLangs['storage_language'] != 'specialCharacter' && upLangs['storage_language'] != translate.to){
+							
+							language = upLangs['storage_language'];
+							console.log('teshu:'+charstr+', 当前字符并入上个字符存储翻译语种:'+upLangs['storage_language']);
+						}
+						*/
+					}
+				//}
 
 				//console.log('isEqual:'+isEqual);
+				/*
 				if(isEqual){
 					//跟上次语言一样，那么直接拼接
 					index = langStrs[language].length-1; 
@@ -1411,6 +1437,16 @@ var translate = {
 					index = langStrs[language].length;
 					//console.log('++, inde:'+index+',lang:'+language+', length:'+langStrs[language].length)
 				}
+				*/
+
+				//当前要翻译的语种跟上个字符要翻译的语种一样，那么直接拼接
+				if(upLangs['storage_language'] == language){
+					index = langStrs[language].length-1; 
+				}else{
+					//console.log('新开');
+					//当前字符跟上次语言不样，那么新开一个数组
+					index = langStrs[language].length;
+				}
 			}
 			if(typeof(langStrs[language][index]) == 'undefined'){
 				langStrs[language][index] = new Array();
@@ -1424,17 +1460,25 @@ var translate = {
 				针对当前非英文，但要翻译为英文时的情况进行判断
 			*/
 			if(translate.language.getLocal() != 'english' && translate.to == 'english'){
-				if((upLangs['language'] != null && typeof(upLangs['language']) != 'undefined' && upLangs['language'].length > 0) && upLangs['language'] != 'specialCharacter'){
-					//上个字符存在，且不是特殊字符（是正常的语种）
+				if((upLangs['storage_language'] != null && typeof(upLangs['storage_language']) != 'undefined' && upLangs['storage_language'].length > 0)){
+					//上个字符存在
+					//console.log(upLangs['storage_language']);
+					if(upLangs['storage_language'] != 'specialCharacter'){
+						//上个字符不是特殊字符 （是正常语种。且不会是连接符，连接符都并入了正常语种）
 
-					if( upLangs['language'] != 'english' && language == 'english'){
-						//上个字符不是英语，当前字符是英语，这种情况要在上个字符后面追加空格，因为当前字符是英文，就不会在执行翻译操作了
-						//console.log(upLangs['language']);
-						langStrs[upLangs['language']][langStrs[upLangs['language']].length-1]['afterText'] = ' ';
-					}else if(upLangs['language'] == 'english' && language != 'english'){
-						//上个字符是英语，当前字符不是英语，直接在当前字符前面追加空格
-						langStrs[language][index]['beforeText'] = ' ';
+						if( upLangs['storage_language'] != 'english' && language == 'english'){
+							//上个字符不是英语，当前字符是英语，这种情况要在上个字符后面追加空格，因为当前字符是英文，就不会在执行翻译操作了
+							//console.log(upLangs['language']);
+							langStrs[upLangs['storage_language']][langStrs[upLangs['storage_language']].length-1]['afterText'] = ' ';
+						}else if(upLangs['storage_language'] == 'english' && language != 'english'){
+							//上个字符是英语，当前字符不是英语，直接在当前字符前面追加空格
+							langStrs[language][index]['beforeText'] = ' ';
+						}
 					}
+
+					
+
+					
 				}
 			}
 
@@ -1492,17 +1536,58 @@ var translate = {
 				U+0026 & 英文“and”的简写符号
 				U+0027 ' 引号
 				U+002C , 逗号
+				U+002D - 连字号/减号
 				U+002E . 句号
 				U+003A : 冒号
 				U+003B ; 分号
 				U+003F ? 问号
 				U+0040 @ 英文“at”的简写符号
+
+
 			*/
-			if(/.*[\u0021\u0022\u0023\u0024\u0025\u0026\u0027\u002C\u002E\u003A\u003B\u003F\u0040]+.*$/.test(str)){
+			if(/.*[\u0021\u0022\u0023\u0024\u0025\u0026\u0027\u002C\u002D\u002E\u003A\u003B\u003F\u0040]+.*$/.test(str)){
 				return true;
 			}
 			
-			//汉语场景，待补充
+			/*
+				中文标点符号
+				名称	Unicode	符号
+				句号	3002	。
+				问号	FF1F	？
+				叹号	FF01	！
+				逗号	FF0C	，
+				顿号	3001	、
+				分号	FF1B	；
+				冒号	FF1A	：
+				引号	300C	「
+				 	300D	」
+				引号	300E	『
+				 	300F	』
+				引号	2018	‘
+				 	2019	’
+				引号	201C	“
+				 	201D	”
+				括号	FF08	（
+				 	FF09	）
+				括号	3014	〔
+				 	3015	〕
+				括号	3010	【
+				 	3011	】
+				破折号	2014	—
+				省略号	2026	…
+				连接号	2013	–
+				间隔号	FF0E	．
+				书名号	300A	《
+				 	300B	》
+				书名号	3008	〈
+				 	3009	〉
+			*/
+			if(/.*[\u3002\uFF1F\uFF01\uFF0C\u3001\uFF1B\uFF1A\u300C\u300D\u300E\u300F\u2018\u2019\u201C\u201D\uFF08\uFF09\u3014\u3015\u3010\u3011\u2014\u2026\u2013\uFF0E\u300A\u300B\u3008\u3009]+.*$/.test(str)){
+				return true;
+			}
+
+
+
 			
 			//不是，返回false
 			return false;
@@ -1541,6 +1626,13 @@ var translate = {
 				return false;
 			}
 		},
+		//0-9 阿拉伯数字
+		number:function(str){
+			if(/.*[\u0030-\u0039]+.*$/.test(str)){
+				return true;
+			}
+			return false;
+		},
 		//是否包含特殊字符
 		specialCharacter:function(str){
 			//如：① ⑴ ⒈ 
@@ -1572,7 +1664,7 @@ var translate = {
 			if(/.*[\u3001-\u3036]+.*$/.test(str)){
 				return true;
 			}
-			
+
 			/*
 			//阿拉伯数字 0-9
 			if(/.*[\u0030-\u0039]+.*$/.test(str)){
@@ -1597,87 +1689,83 @@ var translate = {
 			U+002D - 连字号/减号
 			U+002E . 句号
 			U+002F / 左斜杠
-			U+0030 0 数字 0
-			U+0031 1 数字 1
-			U+0032 2 数字 2
-			U+0033 3 数字 3
-			U+0034 4 数字 4
-			U+0035 5 数字 5
-			U+0036 6 数字 6
-			U+0037 7 数字 7
-			U+0038 8 数字 8
-			U+0039 9 数字 9
-			U+003A : 冒号
-			U+003B ; 分号
-			U+003C < 小于符号
-			U+003D = 等于号
-			U+003E > 大于符号
-			U+003F ? 问号
-			U+0040 @ 英文“at”的简写符号
-			U+0041 A 拉丁字母 A
-			U+0042 B 拉丁字母 B
-			U+0043 C 拉丁字母 C
-			U+0044 D 拉丁字母 D
-			U+0045 E 拉丁字母 E
-			U+0046 F 拉丁字母 F
-			U+0047 G 拉丁字母 G
-			U+0048 H 拉丁字母 H
-			U+0049 I 拉丁字母 I
-			U+004A J 拉丁字母 J
-			U+004B K 拉丁字母 K
-			U+004C L 拉丁字母 L
-			U+004D M 拉丁字母 M
-			U+004E N 拉丁字母 N
-			U+004F O 拉丁字母 O
-			U+0050 P 拉丁字母 P
-			U+0051 Q 拉丁字母 Q
-			U+0052 R 拉丁字母 R
-			U+0053 S 拉丁字母 S
-			U+0054 T 拉丁字母 T
-			U+0055 U 拉丁字母 U
-			U+0056 V 拉丁字母 V
-			U+0057 W 拉丁字母 W
-			U+0058 X 拉丁字母 X
-			U+0059 Y 拉丁字母 Y
-			U+005A Z 拉丁字母 Z
-			U+005B [ 开 方括号
-			U+005C \ 右斜杠
-			U+005D ] 关 方括号
-			U+005E ^ 抑扬（重音）符号
-			U+005F _ 底线
-			U+0060 ` 重音符
-			U+0061 a 拉丁字母 a
-			U+0062 b 拉丁字母 b
-			U+0063 c 拉丁字母 c
-			U+0064 d 拉丁字母 d
-			U+0065 e 拉丁字母 e
-			U+0066 f 拉丁字母 f
-			U+0067 g 拉丁字母 g
-			U+0068 h 拉丁字母 h
-			U+0069 i 拉丁字母 i
-			U+006A j 拉丁字母 j
-			U+006B k 拉丁字母 k
-			U+006C l 拉丁字母 l（L的小写）
-			U+006D m 拉丁字母 m
-			U+006E n 拉丁字母 n
-			U+006F o 拉丁字母 o
-			U+0070 p 拉丁字母 p
-			U+0071 q 拉丁字母 q
-			U+0072 r 拉丁字母 r
-			U+0073 s 拉丁字母 s
-			U+0074 t 拉丁字母 t
-			U+0075 u 拉丁字母 u
-			U+0076 v 拉丁字母 v
-			U+0077 w 拉丁字母 w
-			U+0078 x 拉丁字母 x
-			U+0079 y 拉丁字母 y
-			U+007A z 拉丁字母 z
-			U+007B { 开 左花括号
-			U+007C | 直线
-			U+007D } 关 右花括号
-			U+007E ~ 波浪纹
 			*/
-			if(/.*[\u0020-\u007e]+.*$/.test(str)){
+			if(/.*[\u0020-\u002F]+.*$/.test(str)){
+				return true;
+			}
+
+			/*
+				U+003A : 冒号
+				U+003B ; 分号
+				U+003C < 小于符号
+				U+003D = 等于号
+				U+003E > 大于符号
+				U+003F ? 问号
+				U+0040 @ 英文“at”的简写符号
+				U+0041 A 拉丁字母 A
+				U+0042 B 拉丁字母 B
+				U+0043 C 拉丁字母 C
+				U+0044 D 拉丁字母 D
+				U+0045 E 拉丁字母 E
+				U+0046 F 拉丁字母 F
+				U+0047 G 拉丁字母 G
+				U+0048 H 拉丁字母 H
+				U+0049 I 拉丁字母 I
+				U+004A J 拉丁字母 J
+				U+004B K 拉丁字母 K
+				U+004C L 拉丁字母 L
+				U+004D M 拉丁字母 M
+				U+004E N 拉丁字母 N
+				U+004F O 拉丁字母 O
+				U+0050 P 拉丁字母 P
+				U+0051 Q 拉丁字母 Q
+				U+0052 R 拉丁字母 R
+				U+0053 S 拉丁字母 S
+				U+0054 T 拉丁字母 T
+				U+0055 U 拉丁字母 U
+				U+0056 V 拉丁字母 V
+				U+0057 W 拉丁字母 W
+				U+0058 X 拉丁字母 X
+				U+0059 Y 拉丁字母 Y
+				U+005A Z 拉丁字母 Z
+				U+005B [ 开 方括号
+				U+005C \ 右斜杠
+				U+005D ] 关 方括号
+				U+005E ^ 抑扬（重音）符号
+				U+005F _ 底线
+				U+0060 ` 重音符
+				U+0061 a 拉丁字母 a
+				U+0062 b 拉丁字母 b
+				U+0063 c 拉丁字母 c
+				U+0064 d 拉丁字母 d
+				U+0065 e 拉丁字母 e
+				U+0066 f 拉丁字母 f
+				U+0067 g 拉丁字母 g
+				U+0068 h 拉丁字母 h
+				U+0069 i 拉丁字母 i
+				U+006A j 拉丁字母 j
+				U+006B k 拉丁字母 k
+				U+006C l 拉丁字母 l（L的小写）
+				U+006D m 拉丁字母 m
+				U+006E n 拉丁字母 n
+				U+006F o 拉丁字母 o
+				U+0070 p 拉丁字母 p
+				U+0071 q 拉丁字母 q
+				U+0072 r 拉丁字母 r
+				U+0073 s 拉丁字母 s
+				U+0074 t 拉丁字母 t
+				U+0075 u 拉丁字母 u
+				U+0076 v 拉丁字母 v
+				U+0077 w 拉丁字母 w
+				U+0078 x 拉丁字母 x
+				U+0079 y 拉丁字母 y
+				U+007A z 拉丁字母 z
+				U+007B { 开 左花括号
+				U+007C | 直线
+				U+007D } 关 右花括号
+				U+007E ~ 波浪纹
+			*/
+			if(/.*[\u003A-\u007E]+.*$/.test(str)){
 				return true;
 			}
 			
@@ -1935,8 +2023,9 @@ var translate = {
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理
 			resultText:function(str){
+				//str = str.replace(/&quot;/g,"\"");
 				//str = str.replace(/'/g,"\\\'");
-				str = str.replace(/"/g,"\\\"");
+				//str = str.replace(/"/g,"\\\"");
 				return str;
 			}
 		}	

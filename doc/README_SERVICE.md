@@ -20,7 +20,14 @@
 ### 案例三：xxxxx
 就不在一一举例了
 
-# 开放服务
+# 实际示例
+这里以一个很普通的企业网站来做示例演示，企业网站本身是中文的，通过本服务，可自动生成其多国语言的版本。这里只是生成了英语、韩语两种网站，以供演示。打开网站后，您可查看其网页源代码，它是基于源码层进行的翻译，翻译过后可直接应用于SEO优化。  
+* 中文站（原始网站）： [http://chinese-simplified.demo.service.translate.zvo.cn](http://chinese-simplified.demo.service.translate.zvo.cn)  
+* 英文站（翻译网站）： [http://english.demo.service.translate.zvo.cn](http://english.demo.service.translate.zvo.cn)  
+* 韩文站（翻译网站）： [http://korean.demo.service.translate.zvo.cn](http://korean.demo.service.translate.zvo.cn)  
+
+# 开放服务API（测试暂停）
+**【当前API测试接口暂停请求，完善后将会以私有化部署方式交付】**
 当前只是开放一个测试api地址提供对外的测试。（过年期间没管他，测试服务可能会不稳定或无法使用）
 
 ````

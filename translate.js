@@ -64,7 +64,7 @@ var translate = {
 			}
 			
 			//从服务器加载支持的语言库
-			translate.request.post(translate.request.apiHost+'language.json', {}, function(data){
+			translate.request.post(translate.request.api.host+translate.request.api.language, {}, function(data){
 				if(data.result == 0){
 					console.log('load language list error : '+data.info);
 					return;
@@ -813,7 +813,7 @@ var translate = {
 			}
 			
 			/*** 翻译开始 ***/
-			var url = translate.request.apiHost+'translate.json';
+			var url = translate.request.api.host+translate.request.api.translate;
 			var data = {
 				from:lang,
 				to:translate.to,
@@ -1915,7 +1915,7 @@ var translate = {
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
 	//如果使用后，第二次在用，那就优先以用户所选择的为主
 	executeByLocalLanguage:function(){
-		translate.request.post(translate.request.apiHost+'ip.json', {}, function(data){
+		translate.request.post(translate.request.api.host+translate.request.api.ip, {}, function(data){
 			//console.log(data); 
 			if(data.result == 0){
 				console.log('==== ERROR 获取当前用户所在区域异常 ====');
@@ -2032,11 +2032,17 @@ var translate = {
 	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{
-		/**
-		 * 翻译接口请求的域名主机 host
-		 * 格式注意前面要带上协议如 https:// 域名后要加 /
-		 */
-		apiHost:'https://api.translate.zvo.cn/',
+		//相关API接口方面
+		api:{
+			/**
+			 * 翻译接口请求的域名主机 host
+			 * 格式注意前面要带上协议如 https:// 域名后要加 /
+			 */
+			host:'https://api.translate.zvo.cn/',
+			language:'language.json', //获取支持的语种列表接口
+			translate:'translate.json', //翻译接口
+			ip:'ip.json' //根据用户当前ip获取其所在地的语种
+		},
 		/**
 		 * post请求
 		 * @param url 请求的接口URL，传入如 http://www.xxx.com/a.php

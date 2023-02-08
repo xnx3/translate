@@ -12,7 +12,7 @@
 
 
 # Characteristic
-* **Easy to use.** Without any preparation, you can have more language switching ability by adding a few lines of code directly.
+* **Easy to use.** Without any preliminary preparation, you can directly add a few lines of code to have the ability to automatically switch multiple languages.
 * **No additional workload.** There is no need to modify the page itself, no language files that need to be configured separately for all languages, and no need for you to call the code of the text area to be displayed on the page itself. I think that is too unfriendly for technicians. Moreover, it doesn't need you to apply for any key to XXX website. It is open and ready to use.
 * **Extremely flexible and scalable.** You can specify whether it will only translate certain specified areas, display the drop-down box when switching languages, or place multiple language switching buttons, and specify that certain specific elements will not be translated and ignored
 * **Automatically match languages.** Automatically switch the language used in the user's country according to the user's country

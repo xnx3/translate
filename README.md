@@ -178,6 +178,19 @@ It is recommended to put it before the line translate.execute()
 ##### matters needing attention
 If you manually set ````translate.setDocuments(...)```` , you will not listen to the entire page, but only listen to changes in the area set by ````setDocuments(...)```` .
 
+
+### Privatization deployment translation service interface
+In some government agencies and internal projects of large groups, when there are strong requirements for data privacy and security, and you want to provide highly reliable translation services for your own customers, you can privatize the translation service interface and do not go through our open translation interface, so as to achieve full control of security and back-end services.      
+For the actual deployment method, please refer to: [https://github.com/xnx3/translate_service](https://github.com/xnx3/translate_service)  
+After deployment, click ````translate.execute();```` Before, add a line of code as follows:
+
+````
+translate.apiHost='http://121.121.121.121/'; //Replace the IP address in this with the IP address of your server. Pay attention to the beginning and the end
+translate.execute();
+````
+
+In this way, the translation request interface will go to your own server.
+
 # Examples of actual use scenarios
 ### Click a language to switch in a common website
 As shown in the figure below, there should be several language switches at a certain location in the website

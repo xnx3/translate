@@ -266,6 +266,24 @@ It will be released in December 2022, adding more extension methods.
 1. The task queue mechanism is added to completely solve the problem that there is a very small probability of text omission during translation.
 1. Add ````translate.setAutoDiscriminateLocalLanguage();```` When users use it for the first time, they can automatically identify the language of their country for switching
 
+### v2.2
+1. Open the private one-click deployment of the back-end translation service interface and open source.  
+2. Greatly optimize the accuracy of sentence translation to the extent of Baidu Translation and Google Translation  
+3. Add a configurable id for an element, ignore it and do not translate it  
+4. Add separate judgment for connector recognition to improve translation accuracy  
+5. Add the ability to configure separately for translate.request.api.host for private deployment
+6. Add inspector_v2.js is used for the quick conversion experience of v2 version, and the quick experience in readme is to use this v2 version by default.
+8. Add translate.language.autoRecognitionLocalLanguage(); If the language of the current page is not set manually, the language will be recognized automatically
+9. Add translate.language.getLocal() The user obtains the language of the current page (if not set, the language will be automatically recognized according to the text currently displayed on the page)  
+10. Add translate.selectLanguageTag.selectOnChange Used to provide override of select onchange event for better extension  
+11. Some unexpected problems in translation when optimizing Chinese-English mixing
+12. optimization meta、keywords Replacement problems
+13. If there is', such as let's' in English when optimizing to English
+14. Optimize ignore's judgment on how many cases the class name is ignored
+15. Open the back-end translation service interface document for better expansion and use
+16. Fix the problem that tag sometimes fails, such as local translation in listening status
+
+
 # These open source projects are being used
 The ability of automatic translation has been put into the following open source projects:  
 [kefu.js](https://gitee.com/mail_osc/kefu.js) H5 online customer service, introduce a line of js code to use immediately! Support mobile phones, computers, APP, and applets. One-click deployment of your own private SAAS cloud customer service platform  

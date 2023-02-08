@@ -265,7 +265,22 @@ japanese:function(str){
 1. 加入任务队列机制，彻底解决翻译时非常小概率有文字遗漏不翻译的问题。
 1. 增加 ````translate.setAutoDiscriminateLocalLanguage();```` 用户第一次用时，可自动识别其所在国家的语种进行切换
 
-
+### v2.2
+1. 开放后端翻译服务接口的私有化一键部署，并开源。
+2. 大幅优化句子翻译的准确性，达到百度翻译、谷歌翻译的程度
+3. 增加可配置对某个元素指定id忽略其不进行翻译
+4. 增加单独针对连接符识别判断，以提高翻译准确度
+5. 增加可针对 translate.request.api.host 单独配置，以私有化部署
+6. 增加 inspector_v2.js ，用于v2版本的快速转换体验，并将readme中的快速体验默认便是使用此v2版本。
+8. 增加 translate.language.autoRecognitionLocalLanguage(); 如果未手动设置当前网页的语种，会自动识别语种
+9. 增加 translate.language.getLocal() 用户获取当前网页的语种（如果未设置，自动根据网页当前显示的文字进行识别语种）
+10. 增加 translate.selectLanguageTag.selectOnChange 用于提供重写select onchange 事件，以便更好扩展
+11. 优化中英文混合时翻译的一些意外问题
+12. 优化meta - keywords 替换的问题
+13. 优化转英文时如果英文有'，比如 let's 这种的情况
+14. 优化 ignore 对忽略class name有多情况下的判断
+15. 开放后端翻译服务接口文档，以便更好自有扩展及使用
+16. 修复tag有时失效的问题，比如监听状态下局部翻译情况
 
 # 这些开源项目正在使用
 如下开源项目中已置入自动化翻译的能力：  

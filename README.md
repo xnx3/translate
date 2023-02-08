@@ -185,7 +185,7 @@ For the actual deployment method, please refer to: [https://github.com/xnx3/tran
 After deployment, click ````translate.execute();```` Before, add a line of code as follows:
 
 ````
-translate.apiHost='http://121.121.121.121/'; //Replace the IP address in this with the IP address of your server. Pay attention to the beginning and the end
+translate.request.api.host='http://121.121.121.121/'; //Replace the IP address in this with the IP address of your server. Pay attention to the beginning and the end
 translate.execute();
 ````
 

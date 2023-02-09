@@ -309,4 +309,4 @@ github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
 # 高级服务
-[当前translate.js是基于js来对当前html进行翻译，绝大多数场景足够使用。但如果你查看页面源代码，会发现源代码并不会变，处于未翻译状态。如果你想针对页面源代码本身直接进行翻译，可以点此查阅我们这个扩展版本](doc/README_SERVICE.md)
+[当前translate.js是基于js来对当前html进行翻译，绝大多数场景足够使用。但如果你查看页面源代码，会发现源代码并不会变，处于未翻译状态。如果你想针对页面源代码本身直接进行翻译，可以点此查阅我们这个扩展版本](README_SERVICE.md)

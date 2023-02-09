@@ -19,6 +19,7 @@
 * **Instant translation ability.** Built-in cache preloading mechanism, as long as the translated page is viewed again, it will achieve instant translation effect, giving the user the impression that the page is originally in this language, not translated by a third party.
 * **Free for permanent use.** I am keen on open source. There are twenty or thirty open source projects. The original purpose of this project is to break the language boundary of web communication. The world is one! Of course, if your project is relatively large, and the daily visits reach millions or tens of millions, we still recommend that you deploy it privately.
 * **Search engine friendly.** It does not affect the inclusion of your own website search engine. The source code of the webpage crawled by the crawler will not be changed. You can rest assured.
+* **Back-end translation is open source.** In some government agencies and internal projects of large groups, when there are strong requirements for data privacy and security, or you want to provide self-built highly reliable translation services for your own customers, you can privatize the deployment of the back-end translation interface instead of our open translation interface, so as to achieve full control of security and back-end services.
 
 # Online experience
 [http://res.zvo.cn/translate/demo.html](http://res.zvo.cn/translate/demo.html)

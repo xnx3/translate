@@ -303,7 +303,7 @@ var translate = {
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
-		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code'],
+		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code','textarea'],
 		class:['ignore','translateSelectLanguage'],
 		id:[],
 		/*

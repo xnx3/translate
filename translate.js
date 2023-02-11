@@ -623,7 +623,11 @@ var translate = {
 					}
 				}
 			}
-			translate.listener.renderTaskFinish(this);
+
+			//监听
+			if(typeof(this.taskQueue) != 'undefined' && this.taskQueue.length > 0){
+				translate.listener.renderTaskFinish(this);
+			}
 		}
 	},
 	

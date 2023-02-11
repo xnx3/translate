@@ -122,6 +122,17 @@ When translating, add the class tag that you want to ignore and do not translate
 If you want to see which tag tags are currently ignored, you can directly execute ````console. log (translate. ignore. class)```` View
 **Note that this line should be placed in translate.execute(); above**
 
+
+
+### Ignore the specified id value during translation
+
+````
+translate.ignore.id.push('test');	//When translating, add the value of the id that you want to ignore and do not translate.
+````
+When translating, add the value of the id that you want to ignore and do not translate.  
+If you want to see which ids are currently ignored, you can directly execute ```` console.log(translate.ignore.id); ```` View  
+**Note that this line should be placed in translate.execute(); above**
+
 ### Translate the specified area
 
 ````

@@ -203,6 +203,21 @@ translate.execute();
 
 In this way, the translation request interface will go to your own server.
 
+
+### Automatically execute after translation
+When the translation is completed, a method will be automatically triggered for you to customize the extension. such as [Translation component of layui](https://gitee.com/mail_osc/translate_layui) This ability is used to redraw the selected item after translation.
+
+````
+translate.listener.renderTaskFinish = function(task){
+	console.log('执行完一次');
+}
+````
+  
+This is triggered every time a rendering task (translation) is completed during translation. Note that one page translation will trigger multiple rendering tasks. Generally, one page translation may trigger two or three rendering tasks. (Because there may be multiple languages on a web page, each language is a translation task.)  
+In addition, if there is ajax interaction information in the page, each time the ajax information is refreshed, it will also be translated, which is also a translation task.  
+Of course, the translation task here is triggered only after the implementation of the translation task.
+
+
 # Examples of actual use scenarios
 ### Click a language to switch in a common website
 As shown in the figure below, there should be several language switches at a certain location in the website

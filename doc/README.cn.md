@@ -117,11 +117,21 @@ translate.ignore.tag.push('span'); //翻译时追加上自己想忽略不进行�
 ### 翻译时忽略指定的class值
 
 ````
-translate.ignore.class.push('test');	//翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。
+translate.ignore.class.push('test');	//翻译时追加上自己想忽略不进行翻译的class name的值，凡是在这里面的，都不进行翻译。
 ````
 翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看  
+如果你想查看当前忽略哪些class，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看  
 **注意，这行要放到 translate.execute(); 上面**
+
+### 翻译时忽略指定的id值
+
+````
+translate.ignore.id.push('test');	//翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译。
+````
+翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译。  
+如果你想查看当前忽略哪些id，可直接执行 ```` console.log(translate.ignore.id); ```` 进行查看  
+**注意，这行要放到 translate.execute(); 上面**
+
 
 ### 翻译指定的区域
 

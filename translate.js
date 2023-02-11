@@ -507,7 +507,15 @@ var translate = {
 				if(doc != null){
 					observer.observe(doc, config);
 				}
-			}  
+			}
+		},
+		/*
+			每当执行完一次渲染任务（翻译）时会触发此。注意页面一次翻译会触发多个渲染任务。普通情况下，一次页面的翻译可能会触发两三次渲染任务。
+			另外如果页面中有ajax交互方面的信息，时，每次ajax信息刷新后，也会进行翻译，也是一次渲染任务。
+			这个是为了方便扩展使用。比如在layui中扩展，监控 select 的渲染
+		*/
+		renderTaskFinish:function(renderTask){
+			//console.log(renderTask);
 		}
 	},
 	//对翻译结果进行替换渲染的任务，将待翻译内容替换为翻译内容的过程
@@ -615,6 +623,7 @@ var translate = {
 					}
 				}
 			}
+			translate.listener.renderTaskFinish(this);
 		}
 	},
 	

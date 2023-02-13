@@ -314,33 +314,30 @@ var translate = {
 			if(ele == null || typeof(ele) == 'undefined'){
 				return false;
 			}
+
 			var parentNode = ele;
 			//console.log(parentNode);
 			while(true){
-				parentNode = parentNode.parentNode;
-
 				if(parentNode == null || typeof(parentNode) == 'undefined'){
 					//没有父元素了
 					return false;
 				}
 
+				//判断Tag
 				//var tagName = parentNode.nodeName.toLowerCase(); //tag名字，小写
-				var nodename = translate.element.getNodeName(parentNode.nodeName).toLowerCase(); //tag名字，小写
-				if(nodename == ''){
-					return false;
+				var nodename = translate.element.getNodeName(parentNode).toLowerCase(); //tag名字，小写
+				if(nodename.length > 0){
+					//有nodename
+					if(nodename == 'body' || nodename == 'html' || nodename == '#document'){
+						//上层元素已经是顶级元素了，那肯定就不是了
+						return false;
+					}
+					if(translate.ignore.tag.indexOf(nodename) > -1){
+						//发现ignore.tag 当前是处于被忽略的 tag
+						return true;
+					}
 				}
-				if(nodename == 'body'){
-					//上层元素已经是body了，那肯定就不是了
-					return false;
-				}
-
-				//判断tag
-				//var tagName = parentNode.nodeName.toLowerCase(); //tag名字，小写
-				//console.log(tagName)
-				if(translate.ignore.tag.indexOf(nodename) > -1){
-					//发现ignore.tag 当前是处于被忽略的 tag
-					return true;
-				}
+				
 
 				//判断class name
 				if(parentNode.className != null){
@@ -371,6 +368,8 @@ var translate = {
 					}
 				}
 
+				//赋予判断的元素向上一级
+				parentNode = parentNode.parentNode;
 			}
 
 			return false;

@@ -1316,6 +1316,16 @@ var translate = {
 				}
 				
 
+				if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
+					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
+						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index])){
+							//相同，那就不用在存入了
+							//console.log('相同，那就不用在存入了')
+							//console.log(node)
+							return;
+						}
+					}
+				}
 
 				//往五维数组nodes中追加node元素
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length]=node; 
@@ -2320,4 +2330,3 @@ try{
 	translate.init();
 	//translate.execute();
 }catch(e){ console.log(e); }
-

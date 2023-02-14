@@ -224,7 +224,25 @@ translate.listener.renderTaskFinish = function(task){
 另外如果页面中有ajax交互方面的信息时，每次ajax信息刷新后，也会进行翻译，也是一次翻译任务。  
 当然，这里的翻译任务是确实有进行了翻译的前提下，执行完才会触发此。  
 
+### 自定义翻译术语
+如果你感觉某些翻译不准确，可进行针对性的定义某些词的翻译结果。  
+比如，要自定义 “版本” 、 “国际化” 这两个词翻译为英文、韩文的结果，可以这么写：  
 
+````
+var data = new Array();
+data['版本'] = {			//其中的 data['...'] 里面字符便是原本的，待翻译的词或句子
+	english : 'banben',	//english 是指要翻译为的语种， 值便是定义翻译为该语种的结果
+	korean : 'BanBen'
+};
+data['国际化'] = {
+	english : 'guojihua',
+	korean : 'GuoJiHua'
+};
+translate.nomenclature.set(data);
+````
+
+当前正在优化中，汉语还行，别的语种会不准，正在优化中...  
+**注意，这行要放到 translate.execute(); 上面**
 
 # 实际使用场景示例
 ### 普通网站中点击某个语言进行切换

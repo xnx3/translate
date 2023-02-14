@@ -445,7 +445,7 @@ var translate = {
 
 				//var hash = translate.util.hash(originalText);
 
-				console.log(originalText+',\t'+str);
+				//console.log(originalText+',\t'+str);
 				if(str.indexOf(originalText) > -1){
 					//console.log('find -- '+originalText+', \t'+languageResult[translate.to]);
 					str = str.replace(new RegExp(originalText,'g'),languageResult[translate.to]);

@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.1.20230213',
+	version:'2.2.1.20230214',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -31,8 +31,12 @@ var translate = {
 	selectLanguageTag:{
 		/* 是否显示 select选择语言的选择框，true显示； false不显示。默认为true */
 		show:true,
-		/* 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr */
-		languages:'zh-CN,zh-TW,en',
+		/* 
+			支持哪些语言切换
+			v1.x 版本包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr 
+			v2.x 版本根据后端翻译服务不同，支持的语言也不同。具体支持哪些，可通过 http://api.translate.zvo.cn/doc/language.json.html 获取 （如果您私有部署的，将请求域名换为您自己私有部署的域名）
+		*/
+		languages:'',
 		alreadyRender:false, //当前是否已渲染过了 true为是 v2.2增加
 		selectOnChange:function(event){
 			var language = event.target.value;
@@ -64,7 +68,7 @@ var translate = {
 			}
 			
 			//从服务器加载支持的语言库
-			translate.request.post(translate.request.api.host+translate.request.api.language, {}, function(data){
+			translate.request.post(translate.request.api.host+translate.request.api.language+'?v='+translate.version, {}, function(data){
 				if(data.result == 0){
 					console.log('load language list error : '+data.info);
 					return;
@@ -80,7 +84,21 @@ var translate = {
 				for(var i = 0; i<data.list.length; i++){
 					var option = document.createElement("option"); 
 				    option.setAttribute("value",data.list[i].id);
-					
+
+				    //判断 selectLanguageTag.languages 中允许使用哪些
+
+					if(translate.selectLanguageTag.languages.length > 0){
+						//设置了自定义显示的语言
+
+						//都转小写判断
+						var langs_indexof = (','+translate.selectLanguageTag.languages+',').toLowerCase();
+						console.log(langs_indexof)
+						if(langs_indexof.indexOf(','+data.list[i].id.toLowerCase()+',') < 0){
+							//没发现，那不显示这个语种，调出
+							continue
+						}
+					}
+
 					/*判断默认要选中哪个语言*/
 				    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
 						//设置了目标语言，那就进行判断显示目标语言
@@ -179,11 +197,12 @@ var translate = {
 		}
 		
 		/* 处理1.0 - 1.1 升级的 */
-		if(translate.includedLanguages != 'zh-CN,zh-TW,en'){
-			/* 用户1.0版本设置过这个，那么就以这个为主 */
+		if(translate.includedLanguages == ''){
+			//如果未设置，用默认的
 			translate.selectLanguageTag.languages = translate.includedLanguages;
-			console.log('translate.js tip: translate.includedLanguages obsolete, please use the translate.selectLanguageTag.languages are set');
 		}
+		/* 用户1.0版本设置过这个，那么就以这个为主 */
+		console.log('translate.js tip: translate.includedLanguages obsolete, please use the translate.selectLanguageTag.languages are set');
 		
 		
 		/****** 先加载资源  ******/
@@ -846,7 +865,7 @@ var translate = {
 			}
 			
 			/*** 翻译开始 ***/
-			var url = translate.request.api.host+translate.request.api.translate;
+			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
 			var data = {
 				from:lang,
 				to:translate.to,
@@ -2105,7 +2124,7 @@ var translate = {
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
 	//如果使用后，第二次在用，那就优先以用户所选择的为主
 	executeByLocalLanguage:function(){
-		translate.request.post(translate.request.api.host+translate.request.api.ip, {}, function(data){
+		translate.request.post(translate.request.api.host+translate.request.api.ip+'?v='+translate.version, {}, function(data){
 			//console.log(data); 
 			if(data.result == 0){
 				console.log('==== ERROR 获取当前用户所在区域异常 ====');

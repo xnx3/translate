@@ -219,13 +219,33 @@ When the translation is completed, a method will be automatically triggered for 
 
 ````
 translate.listener.renderTaskFinish = function(task){
-	console.log('执行完一次');
+	console.log('Execute once');
 }
 ````
   
 This is triggered every time a rendering task (translation) is completed during translation. Note that one page translation will trigger multiple rendering tasks. Generally, one page translation may trigger two or three rendering tasks. (Because there may be multiple languages on a web page, each language is a translation task.)  
 In addition, if there is ajax interaction information in the page, each time the ajax information is refreshed, it will also be translated, which is also a translation task.  
 Of course, the translation task here is triggered only after the implementation of the translation task.
+
+### Custom translation terms
+If you feel that some translations are inaccurate, you can define the translation results of some words.  
+For example, to customize the translation results of the words "版本" and "国际化" into English and Korean, you can write as follows:    
+
+````
+var data = new Array();
+data['版本'] = {			//Of which data['...'] The characters inside are the original words or sentences to be translated
+	english : 'banben',	//english\korean  It refers to the language to be translated, and the value is the result of defining the translation to that language.
+	korean : 'BanBen'
+};
+data['国际化'] = {
+	english : 'guojihua',
+	korean : 'GuoJiHua'
+};
+translate.nomenclature.set(data);
+````
+
+Currently under optimization, Chinese is OK, other languages will be inaccurate, and under optimization.  
+**Note that this line should be placed in translate.execute(); above**
 
 
 # Examples of actual use scenarios

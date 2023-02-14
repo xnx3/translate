@@ -103,6 +103,16 @@ Of course, you can also use css to control its display. For example:
 </style>
 ````
 
+### Customize the language supported by the selected switch language
+
+````
+translate.selectLanguageTag.languages = 'english,chinese_simplified,korean'; //Each language is divided in English. For example, it supports the switching of English, Simplified Chinese and Korean. Different languages are supported according to different back-end translation services. Specific support can be obtained through http://api.translate.zvo.cn/doc/language.json.html obtain (If you are privately deployed, replace the requested domain name with your own privately deployed domain name)
+````
+Each language is divided in English. For example, it supports the switching of English, Simplified Chinese and Korean. Different languages are supported according to different back-end translation services.  
+Specific support can be obtained through http://api.translate.zvo.cn/doc/language.json.html obtain (If you are privately deployed, replace the requested domain name with your own privately deployed domain name)   
+**Note that this line should be placed in translate.execute(); above**
+  
+
 ### Ignore the specified tag tag during translation
 
 ````

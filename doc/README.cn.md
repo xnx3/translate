@@ -105,6 +105,15 @@ translate.execute();
 </style>
 ````
 
+### 自定义出现的 select 切换语言所支持的语种
+
+````
+translate.selectLanguageTag.languages = 'english,chinese_simplified,korean'; //每个语种之间用英文,分割。比如这里设置的是支持英语、简体中文、韩语 的切换。根据后端翻译服务不同，支持的语言也不同。具体支持哪些，可通过 http://api.translate.zvo.cn/doc/language.json.html 获取 （如果您私有部署的，将请求域名换为您自己私有部署的域名）
+````
+每个语种之间用英文,分割。比如这里设置的是支持英语、简体中文、韩语 的切换。根据后端翻译服务不同，支持的语言也不同。  
+具体支持哪些，可通过 http://api.translate.zvo.cn/doc/language.json.html 获取 （如果您私有部署的，将请求域名换为您自己私有部署的域名）  
+**注意，这行要放到 translate.execute(); 上面**
+
 ### 翻译时忽略指定的tag标签
 
 ````
@@ -214,6 +223,7 @@ translate.listener.renderTaskFinish = function(task){
 进行翻译时每当执行完一次渲染任务（翻译）时会触发此。注意页面一次翻译会触发多个渲染任务。普通情况下，一次页面的翻译可能会触发两三次渲染任务。（因为一个网页上可能有多种语言，每种语言都是一次翻译任务。）  
 另外如果页面中有ajax交互方面的信息时，每次ajax信息刷新后，也会进行翻译，也是一次翻译任务。  
 当然，这里的翻译任务是确实有进行了翻译的前提下，执行完才会触发此。  
+
 
 
 # 实际使用场景示例

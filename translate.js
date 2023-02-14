@@ -394,6 +394,67 @@ var translate = {
 			return false;
 		}
 	},
+	//自定义翻译术语
+	nomenclature:{
+		/*
+			原始术语表，可编辑的
+			一维：要自定义目标词
+			二维：针对的是哪个语种
+			值：要翻译为什么内容
+
+			其设置如 
+			var data = new Array();
+			data['版本'] = {
+				english : 'banben',
+				korean : 'BanBen'
+			};
+			data['国际化'] = {
+				english : 'guojihua',
+				korean : 'GuoJiHua'
+			};
+
+		*/
+		data:new Array(),
+		set:function(data){
+			translate.nomenclature.data = data;
+		},
+		get:function(){
+			return translate.nomenclature.data;
+		},
+		//对传入的str字符进行替换，将其中的自定义属于提前进行替换，然后将替换后的结果返回
+		dispose:function(str){
+			if(str == null || str.length == 0){
+				return str;
+			}
+			//if(translate.nomenclature.data.length == 0){
+			//	return str;
+			//}
+
+			//遍历一维
+			for(var originalText in translate.nomenclature.data){
+				var languageResult = translate.nomenclature.data[originalText];
+				if(typeof(languageResult) == 'function'){
+					//进行异常的预处理调出
+					continue;
+				}
+
+				if(typeof(languageResult[translate.to]) == 'undefined'){
+					//console.log('und');
+					continue;
+				}
+
+				//var hash = translate.util.hash(originalText);
+
+				console.log(originalText+',\t'+str);
+				if(str.indexOf(originalText) > -1){
+					//console.log('find -- '+originalText+', \t'+languageResult[translate.to]);
+					str = str.replace(new RegExp(originalText,'g'),languageResult[translate.to]);
+				}
+			}
+
+			return str;
+		}
+	},
 	setAutoDiscriminateLocalLanguage:function(){
 		translate.autoDiscriminateLocalLanguage = true;
 	},
@@ -408,7 +469,8 @@ var translate = {
 		三维：针对二维的value，  key:english、chinese_simplified等语种，这里的key便是对value的判断，取value中的要翻译的词是什么语种，对其进行了语种分类    value: k/v
 		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
 		五维：针对四维的value，  这是个对象， 其中
-				original: 是三维的key的hash的原始文字，也就是翻译前的文本词
+				original: 是三维的key的hash的原始文字，也就是 node 中的原始文字。
+				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语操作后的，待翻译的文字。
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
 				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
 				afterText:  node元素中进行翻译结果赋予时，额外在翻译结果的后面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
@@ -776,16 +838,29 @@ var translate = {
 			let task = new translate.renderTask();
 			//console.log(translate.nodeQueue);
 			//二维数组，取hash、value
-			for(var hash in translate.nodeQueue[uuid]['list'][lang]){	
+			for(var hash in translate.nodeQueue[uuid]['list'][lang]){
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'function'){
 					//跳出，增加容错率。  正常情况下应该不会这样
 					continue;
 				}
 
 				//取原始的词，还未经过翻译的，需要进行翻译的词
+				//var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
+
+				//原始的node中的词
 				var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
+				//要翻译的词
+				var translateText = translate.nodeQueue[uuid]['list'][lang][hash]['translateText'];
+
+/*
+				//自定义术语后的。如果
+				var nomenclatureOriginalWord = translate.nomenclature.dispose(cache);
+				if(nomenclatureOriginalWord != originalWord){
+					has
+				}
+*/
 				//根据hash，判断本地是否有缓存了
-				var cache = translate.storage.get('hash_'+translate.to+'_'+hash);
+				var cache = translate.storage.get('hash_'+translate.to+'_'+(originalWord == translateText ? hash:translate.util.hash(translateText)));
 				//console.log(key+', '+cache);
 				if(cache != null && cache.length > 0){
 					//有缓存了
@@ -794,7 +869,7 @@ var translate = {
 					//直接将缓存赋予
 					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
 						//this.nodeQueue[lang][hash][index].nodeValue = cache;
-						
+
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
@@ -820,7 +895,7 @@ var translate = {
 				*/
 				
 				//加入待翻译数组
-				translateTextArray[lang].push(originalWord);
+				translateTextArray[lang].push(translateText);
 				translateHashArray[lang].push(hash);
 			}
 			task.execute(); //执行渲染任务
@@ -863,7 +938,13 @@ var translate = {
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
 				return;
 			}
-			
+
+			//自定义术语
+			/*var nomenclatureCache = translate.nomenclature.dispose(cache);
+			for(var ttr_index = 0; ttr_index<translateTextArray[lang].length; ttr_index++){
+				console.log(translateTextArray[lang][ttr_index])
+			}*/
+
 			/*** 翻译开始 ***/
 			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
 			var data = {
@@ -1309,6 +1390,8 @@ var translate = {
 				var word = langs[lang][word_index]['text']; //要翻译的词
 				var beforeText = langs[lang][word_index]['beforeText'];
 				var afterText = langs[lang][word_index]['afterText'];
+
+
 				//console.log("word:"+word+', bef:'+beforeText+', after:'+afterText)
 				var hash = translate.util.hash(word); 	//要翻译的词的hash
 				
@@ -1325,6 +1408,7 @@ var translate = {
 					 */
 					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
 					translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
+					translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
 					translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
 					translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
 					

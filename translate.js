@@ -496,7 +496,7 @@ var translate = {
 			//}
 			//判断当前翻译的两种语种是否有自定义术语库
 			//console.log(typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]))
-			if(typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) == 'undefined'){
+			if(typeof(translate.nomenclature.data[translate.language.getLocal()]) == 'undefined' || typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) == 'undefined'){
 				return str;
 			}
 

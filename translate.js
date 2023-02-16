@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.1.20230214',
+	version:'2.2.2.20230216',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -397,6 +397,15 @@ var translate = {
 	//自定义翻译术语
 	nomenclature:{
 		/*
+			术语表
+			一维：要转换的语种，如 english
+			二维：翻译至的目标语种，如 english
+			三维：要转换的字符串，如 "你好"
+			结果：自定义的翻译结果，如 “Hallo”
+		*/
+		data:new Array(),
+		
+		/*
 			原始术语表，可编辑的
 			一维：要自定义目标词
 			二维：针对的是哪个语种
@@ -412,12 +421,68 @@ var translate = {
 				english : 'guojihua',
 				korean : 'GuoJiHua'
 			};
-
+			
+			【已过时】
 		*/
-		data:new Array(),
+		old_Data:[],
+		/*
 		set:function(data){
 			translate.nomenclature.data = data;
 		},
+		*/
+		set:function(data){
+			alert('请将 translate.nomenclature.set 更换为 append，具体使用可参考： https://github.com/xnx3/translate ');
+		},
+		/*
+			向当前术语库中追加自定义术语。如果追加的数据重复，会自动去重
+			传入参数：
+				from 要转换的语种
+				to 翻译至的目标语种
+				properties 属于配置表，格式如：
+						你好=Hello
+						世界=ShiJie
+
+		*/
+		append:function(from, to, properties){
+			if(typeof(translate.nomenclature.data[from]) == 'undefined'){
+				translate.nomenclature.data[from] = new Array();
+			}
+			if(typeof(translate.nomenclature.data[from][to]) == 'undefined'){
+				translate.nomenclature.data[from][to] = new Array();
+			}
+			
+			//将properties进行分析
+			//按行拆分
+			var line = properties.split('\n');
+			//console.log(line)
+			for(var line_index = 0; line_index < line.length; line_index++){
+				var item = line[line_index].trim();
+				if(item.length < 1){
+					//空行，忽略
+					continue;
+				}
+				var kvs = item.split('=');
+				//console.log(kvs)
+				if(kvs.length != 2){
+					//不是key、value构成的，忽略
+					continue;
+				}
+				var key = kvs[0].trim();
+				var value = kvs[1].trim();
+				//console.log(key)
+				if(key.length == 0 || value.length == 0){
+					//其中某个有空，则忽略
+					continue;
+				}
+
+
+				//加入，如果之前有加入，则会覆盖
+				translate.nomenclature.data[from][to][key] = value;
+				//console.log(local+', '+target+', key:'+key+', value:'+value);
+			}
+
+		},
+		//获取当前定义的术语表
 		get:function(){
 			return translate.nomenclature.data;
 		},
@@ -429,7 +494,28 @@ var translate = {
 			//if(translate.nomenclature.data.length == 0){
 			//	return str;
 			//}
+			//判断当前翻译的两种语种是否有自定义术语库
+			//console.log(typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]))
+			if(typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) == 'undefined'){
+				return str;
+			}
 
+			for(var originalText in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
+				var translateText = translate.nomenclature.data[translate.language.getLocal()][translate.to][originalText];
+				if(typeof(translateText) == 'function'){
+					//进行异常的预处理调出
+					continue;
+				}
+
+				if(str.indexOf(originalText) > -1){
+					//console.log('find -- '+originalText+', \t'+translateText);
+					str = str.replace(new RegExp(originalText,'g'), translateText);
+				}
+			}
+
+			return str;
+
+			/*
 			//遍历一维
 			for(var originalText in translate.nomenclature.data){
 				var languageResult = translate.nomenclature.data[originalText];
@@ -451,8 +537,10 @@ var translate = {
 					str = str.replace(new RegExp(originalText,'g'),languageResult[translate.to]);
 				}
 			}
-
+			
+			
 			return str;
+			*/
 		}
 	},
 	setAutoDiscriminateLocalLanguage:function(){
@@ -470,6 +558,7 @@ var translate = {
 		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
 		五维：针对四维的value，  这是个对象， 其中
 				original: 是三维的key的hash的原始文字，也就是 node 中的原始文字。
+				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，二是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
 				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语操作后的，待翻译的文字。
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
 				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
@@ -858,9 +947,12 @@ var translate = {
 				if(nomenclatureOriginalWord != originalWord){
 					has
 				}
-*/
+*/				
+				//console.log(originalWord == translateText ? '1':'xin：'+translateText);
 				//根据hash，判断本地是否有缓存了
-				var cache = translate.storage.get('hash_'+translate.to+'_'+(originalWord == translateText ? hash:translate.util.hash(translateText)));
+				var cacheHash = originalWord == translateText ? hash:translate.util.hash(translateText); //如果匹配到了自定义术语库，那翻译前的hash是被改变了
+				translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'] = cacheHash; //缓存的hash。 缓存时，其hash跟翻译的语言是完全对应的，缓存的hash就是翻译的语言转换来的
+				var cache = translate.storage.get('hash_'+translate.to+'_'+cacheHash);
 				//console.log(key+', '+cache);
 				if(cache != null && cache.length > 0){
 					//有缓存了
@@ -896,7 +988,7 @@ var translate = {
 				
 				//加入待翻译数组
 				translateTextArray[lang].push(translateText);
-				translateHashArray[lang].push(hash);
+				translateHashArray[lang].push(hash); //这里存入的依旧还是用原始hash，未使用自定义术语库前的hash，目的是不破坏 nodeQueue 的 key
 			}
 			task.execute(); //执行渲染任务
 		}
@@ -973,12 +1065,16 @@ var translate = {
 				let task = new translate.renderTask();
 				//遍历 translateHashArray
 				for(var i=0; i<translateHashArray[data.from].length; i++){
+					//翻译前的语种，如 english
+					var lang = data.from;	
 					//翻译后的内容
 					var text = data.text[i];	
 					//翻译前的hash对应下标
 					var hash = translateHashArray[data.from][i];	
-					//翻译前的语种，如 english
-					var lang = data.from;	
+					var cacheHash = translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'];
+
+
+					
 					//取原始的词，还未经过翻译的，需要进行翻译的词
 					var originalWord = '';
 					try{
@@ -1004,7 +1100,7 @@ var translate = {
 					*/
 					
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
-					translate.storage.set('hash_'+data.to+'_'+hash,text);
+					translate.storage.set('hash_'+data.to+'_'+cacheHash,text);
 				}
 				task.execute(); //执行渲染任务
 				translate.temp_executeFinishNumber++; //记录执行完的次数

@@ -322,7 +322,7 @@ var translate = {
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
-		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code','textarea'],
+		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage'],
 		id:[],
 		/*
@@ -335,8 +335,8 @@ var translate = {
 			}
 
 			var parentNode = ele;
-			//console.log(parentNode);
-			while(true){
+			var maxnumber = 100;	//最大循环次数，避免死循环
+			while(maxnumber-- > 0){
 				if(parentNode == null || typeof(parentNode) == 'undefined'){
 					//没有父元素了
 					return false;
@@ -499,7 +499,7 @@ var translate = {
 			if(typeof(translate.nomenclature.data[translate.language.getLocal()]) == 'undefined' || typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) == 'undefined'){
 				return str;
 			}
-
+			//console.log(str)
 			for(var originalText in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
 				var translateText = translate.nomenclature.data[translate.language.getLocal()][translate.to][originalText];
 				if(typeof(translateText) == 'function'){
@@ -661,7 +661,7 @@ var translate = {
 			        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
 						//多了个组件
 						documents.push.apply(documents,mutation.addedNodes);
-			            //console.log(mutation.addedNodes);
+			        //    console.log(mutation.addedNodes);
 			        //}else if (mutation.type === 'attributes') {
 			        //   console.log('The ' + mutation.attributeName + ' attribute was modified.');
 			        }
@@ -1151,8 +1151,24 @@ var translate = {
 				result['text'] = '';
 
 				var nodename = translate.element.getNodeName(node);
+				if(nodename == '#text'){
+					//如果是普通文本，判断一下上层是否是包含在textarea标签中
+					if(typeof(node.parentNode) != 'undefined'){
+						var parentNodename = translate.element.getNodeName(node.parentNode);
+						//console.log(parentNodename)
+						if(parentNodename == 'TEXTAREA'){
+							//是textarea标签，那将nodename 纳入 textarea的判断中，同时将判断对象交于上级，也就是textarea标签
+							nodename = 'TEXTAREA';
+							node = node.parentNode;
+						}
+					}
+				}
 
+				//console.log(nodename)
+				//console.log(translate.element.getNodeName(node.parentNode))
+				//console.log(node)
 				if(nodename == 'INPUT' || nodename == 'TEXTAREA'){
+					//console.log(node.attributes)
 					/*
 						1. input、textarea 输入框，要对 placeholder 做翻译
 						2. input 要对 type=button 的情况进行翻译
@@ -1181,9 +1197,11 @@ var translate = {
 							}
 						}
 					}
+					//console.log(node)
 
 					//input textarea 的 placeholder 情况
 					if(typeof(node.attributes['placeholder']) != 'undefined'){
+						//console.log(node);
 						//替换渲染
 						if(typeof(originalText) != 'undefined' && originalText.length > 0){
 							//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
@@ -1195,7 +1213,7 @@ var translate = {
 						return result;
 						//return node.attributes['placeholder'].nodeValue;
 					}
-
+					//console.log(node)
 					result['text'] = '';
 					return result;
 				}
@@ -1970,8 +1988,9 @@ var translate = {
 				 	300B	》
 				书名号	3008	〈
 				 	3009	〉
+				键盘123前面的那个符号 · 00b7
 			*/
-			if(/.*[\u3002\uFF1F\uFF01\uFF0C\u3001\uFF1B\uFF1A\u300C\u300D\u300E\u300F\u2018\u2019\u201C\u201D\uFF08\uFF09\u3014\u3015\u3010\u3011\u2014\u2026\u2013\uFF0E\u300A\u300B\u3008\u3009]+.*$/.test(str)){
+			if(/.*[\u3002\uFF1F\uFF01\uFF0C\u3001\uFF1B\uFF1A\u300C\u300D\u300E\u300F\u2018\u2019\u201C\u201D\uFF08\uFF09\u3014\u3015\u3010\u3011\u2014\u2026\u2013\uFF0E\u300A\u300B\u3008\u3009\u00b7]+.*$/.test(str)){
 				return true;
 			}
 

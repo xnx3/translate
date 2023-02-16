@@ -239,10 +239,11 @@ Explanation of incoming parameters:
 * **from** The language to be converted, pass in such as "chinese_simplified"
 * **to** Translate to the target language, pass in such as "english"
 * **properties** Configure the table, the format is the format of properties, one rule per line, each before and after is separated by an equal sign, before the equal sign is the word or sentence to be translated, after the equal sign is the custom translation result. Incoming such as:  
-	````
+
+````
 你好=Hello
 世界=ShiJie	
-	````
+````
 
 For example, to customize the results of the words "online market cloud website building system" and "internationalization" Chinese Simplified translated into English, you can write like this:  
 

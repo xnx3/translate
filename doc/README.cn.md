@@ -234,10 +234,11 @@ translate.nomenclature.append(from, to, properties);
 * **from** 要转换的语种，传入如 chinese_simplified
 * **to** 翻译至的目标语种，传入如 english
 * **properties** 配置表，格式便是properties的格式，每行一个规则，每个前后用等号分割，等号前是要翻译的词或句子，等号后是自定义的翻译结果。传入如:  
-	````
+
+````
 你好=Hello
 世界=ShiJie	
-	````
+````
 
 比如，要自定义 “网市场云建站系统” 、 “国际化” 这两个词有简体中文翻译为英文的结果，可以这么写：  
 

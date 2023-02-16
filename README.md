@@ -227,24 +227,33 @@ This is triggered every time a rendering task (translation) is completed during 
 In addition, if there is ajax interaction information in the page, each time the ajax information is refreshed, it will also be translated, which is also a translation task.  
 Of course, the translation task here is triggered only after the implementation of the translation task.
 
+
 ### Custom translation terms
-If you feel that some translations are inaccurate, you can define the translation results of some words.  
-For example, to customize the translation results of the words "版本" and "国际化" into English and Korean, you can write as follows:    
+If you feel that some translations are inaccurate, you can define the translation results of certain words and customize the termbase. The methods used are:  
 
 ````
-var data = new Array();
-data['版本'] = {			//Of which data['...'] The characters inside are the original words or sentences to be translated
-	english : 'banben',	//english\korean  It refers to the language to be translated, and the value is the result of defining the translation to that language.
-	korean : 'BanBen'
-};
-data['国际化'] = {
-	english : 'guojihua',
-	korean : 'GuoJiHua'
-};
-translate.nomenclature.set(data);
+translate.nomenclature.append(from, to, properties);
 ````
 
-Currently under optimization, Chinese is OK, other languages will be inaccurate, and under optimization.  
+Explanation of incoming parameters:
+* **from** The language to be converted, pass in such as "chinese_simplified"
+* **to** Translate to the target language, pass in such as "english"
+* **properties** Configure the table, the format is the format of properties, one rule per line, each before and after is separated by an equal sign, before the equal sign is the word or sentence to be translated, after the equal sign is the custom translation result. Incoming such as:  
+	````
+你好=Hello
+世界=ShiJie	
+	````
+
+For example, to customize the results of the words "online market cloud website building system" and "internationalization" Chinese Simplified translated into English, you can write like this:  
+
+````
+translate.nomenclature.append('chinese_simplified','english',`
+网市场云建站系统=wangmarket CMS
+国际化=GuoJiHua
+`);
+````
+
+Currently under optimization, if the original language is Chinese, Korean is okay, such as English results will be inaccurate, if you use it in the project, when you find an abnormality, you can contact me, free of charge to help you debug the good while improving the project.  
 **Note that this line should be placed in translate.execute(); above**
 
 

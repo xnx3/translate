@@ -225,23 +225,30 @@ translate.listener.renderTaskFinish = function(task){
 当然，这里的翻译任务是确实有进行了翻译的前提下，执行完才会触发此。  
 
 ### 自定义翻译术语
-如果你感觉某些翻译不准确，可进行针对性的定义某些词的翻译结果。  
-比如，要自定义 “版本” 、 “国际化” 这两个词翻译为英文、韩文的结果，可以这么写：  
+如果你感觉某些翻译不准确，可进行针对性的定义某些词的翻译结果，进行自定义术语库。使用的方法为：
 
 ````
-var data = new Array();
-data['版本'] = {			//其中的 data['...'] 里面字符便是原本的，待翻译的词或句子
-	english : 'banben',	//english 是指要翻译为的语种， 值便是定义翻译为该语种的结果
-	korean : 'BanBen'
-};
-data['国际化'] = {
-	english : 'guojihua',
-	korean : 'GuoJiHua'
-};
-translate.nomenclature.set(data);
+translate.nomenclature.append(from, to, properties);
+````
+传入参数解释：  
+* **from** 要转换的语种，传入如 chinese_simplified
+* **to** 翻译至的目标语种，传入如 english
+* **properties** 配置表，格式便是properties的格式，每行一个规则，每个前后用等号分割，等号前是要翻译的词或句子，等号后是自定义的翻译结果。传入如:  
+	````
+你好=Hello
+世界=ShiJie	
+	````
+
+比如，要自定义 “网市场云建站系统” 、 “国际化” 这两个词有简体中文翻译为英文的结果，可以这么写：  
+
+````
+translate.nomenclature.append('chinese_simplified','english',`
+网市场云建站系统=wangmarket CMS
+国际化=GuoJiHua
+`);
 ````
 
-当前正在优化中，汉语还行，别的语种会不准，正在优化中...  
+当前正在优化中，如果原语种是中文、韩文还可以，像是英语结果会不准，如果您项目中用到了，发现异常时，可联系我，免费帮您调试好的同时还能完善本项目。
 **注意，这行要放到 translate.execute(); 上面**
 
 # 实际使用场景示例

@@ -1178,9 +1178,9 @@ var translate = {
 						return result;
 					}
 
-					//input，要对 type=button 的情况进行翻译
+					//input，要对 type=button、submit 的情况进行翻译
 					if(nodename == 'INPUT'){
-						if(typeof(node.attributes.type) != 'undefined' && typeof(node.attributes.type.nodeValue) != null && node.attributes.type.nodeValue.toLowerCase() == 'button'){
+						if(typeof(node.attributes.type) != 'undefined' && typeof(node.attributes.type.nodeValue) != null && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
 							//console.log('----是 <input type="button"');
 							//取它的value
 							var input_value_node = node.attributes.value;

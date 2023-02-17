@@ -1,0 +1,32 @@
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+</head>
+<body>
+<script src="https://res.zvo.cn/translate/translate.js"></script>
+
+<h1 class="ignore">下面是演示中文转英文时，自定义术语的示例，你可查看网页源代码进行查看</h1>
+<div>
+<p>是管雷鸣创造了我，我的第一个版本是发布于2022年初，采用的谷歌网页翻译的封装。</p>
+<p>但谷歌网页翻译太过庞大了，修改也异常艰难，于是2022年下半年开始，我进行了全部的重构。</p>
+<p>在2022年年底时，第二个版本发布，它完全脱离了谷歌而存在，可以这么理解，你如果按照我们私有化部署的步骤，部署到华为，你所使用的整个翻译体系跟谷歌没有任何关系。</p>
+</div>
+
+<script>
+//设置术语库，这里设置的是将 简体中文 转为 英文 的术语库。 所以传入的参数第一个是chinese_simplified，第二个是english 。第三个参数为了看上去好区分，直接用拼音大写赋予。
+//注意的是，这里设置的是简体中文转英文，那第三个参数的设置就应该是 简体中文=英文 的形式
+translate.nomenclature.append('chinese_simplified','english',`
+	管雷鸣=GUANLEIMING
+	谷歌=GUGE
+`);
+//设置不显示语言选择的select下拉框
+translate.selectLanguageTag.show = false
+//设置本地语种为简体中文
+translate.language.setLocal('chinese_simplified'); 
+//设置要转换为英文
+translate.changeLanguage('english');
+</script>
+
+</body>
+</html>

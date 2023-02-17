@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.2.20230216',
+	version:'2.2.3.20230217',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -486,7 +486,7 @@ var translate = {
 		get:function(){
 			return translate.nomenclature.data;
 		},
-		//对传入的str字符进行替换，将其中的自定义属于提前进行替换，然后将替换后的结果返回
+		//对传入的str字符进行替换，将其中的自定义术语提前进行替换，然后将替换后的结果返回
 		dispose:function(str){
 			if(str == null || str.length == 0){
 				return str;
@@ -507,9 +507,49 @@ var translate = {
 					continue;
 				}
 
-				if(str.indexOf(originalText) > -1){
+				var index = str.indexOf(originalText);
+				if(index > -1){
 					//console.log('find -- '+originalText+', \t'+translateText);
-					str = str.replace(new RegExp(originalText,'g'), translateText);
+					if(translate.language.getLocal() == 'english'){
+						//如果本地语种是英文，那么还要判断它的前后，避免比如要替换 is 将 display 中的is给替换，将单词给强行拆分了
+						
+						//判断这个词前面是否符合
+						var beforeChar = '';	//前面的字符
+						if(index == 0){
+							//前面没别的字符了，那前面合适
+						}else{
+							//前面有别的字符,判断是什么字符，如果是英文，那么这个是不能被拆分的，要忽略
+							beforeChar = str.substr(index-1,1);
+							//console.log('beforeChar:'+beforeChar+', str:'+str)
+							var lang = translate.language.getCharLanguage(beforeChar);
+							//console.log(lang);
+							if(lang == 'english'){
+								//调出，不能强拆
+								continue;
+							}
+						}
+
+						//判断这个词的后面是否符合
+						var afterChar = ''; //后面的字符
+						if(index + originalText.length == str.length ){
+							//后面没别的字符了，那前面合适
+							//console.log(originalText+'， meile '+str)
+						}else{
+							//后面有别的字符,判断是什么字符，如果是英文，那么这个是不能被拆分的，要忽略
+							afterChar = str.substr(index+originalText.length,1);
+							var lang = translate.language.getCharLanguage(afterChar);
+							if(lang == 'english'){
+								//跳出，不能强拆
+								continue;
+							}
+						}
+
+						str = str.replace(new RegExp(beforeChar+originalText+afterChar,'g'), beforeChar+translateText+afterChar);
+					}else{
+						//其他情况，如汉语、汉语等语种
+						str = str.replace(new RegExp(originalText,'g'), translateText);
+					}
+
 				}
 			}
 

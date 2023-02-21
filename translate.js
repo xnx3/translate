@@ -1904,16 +1904,20 @@ var translate = {
 			langStrs[language][index]['text'] = langStrs[language][index]['text'] + charstr;
 			/*
 				中文英文混合时，当中文+英文并没有空格间隔，翻译为英文时，会使中文翻译英文的结果跟原本的英文单词连到一块。这里就是解决这种情况
-				针对当前非英文，但要翻译为英文时的情况进行判断
+				针对当前非英文(不需要空格分隔符，像是中文、韩语)，但要翻译为英文（需要空格作为分割符号，像是法语等）时的情况进行判断
 			*/
-			if(translate.language.getLocal() != 'english' && translate.to == 'english'){
+			//if(translate.language.getLocal() != 'english' && translate.to == 'english'){
+			//当前本地语种的语言是连续的，但翻译的目标语言不是连续的（空格间隔）
+			if( translate.language.wordBlankConnector(translate.language.getLocal()) == false && translate.language.wordBlankConnector(translate.to)){	
 				if((upLangs['storage_language'] != null && typeof(upLangs['storage_language']) != 'undefined' && upLangs['storage_language'].length > 0)){
 					//上个字符存在
 					//console.log(upLangs['storage_language']);
 					if(upLangs['storage_language'] != 'specialCharacter'){
 						//上个字符不是特殊字符 （是正常语种。且不会是连接符，连接符都并入了正常语种）
 
-						if( upLangs['storage_language'] != 'english' && language == 'english'){
+						//if( upLangs['storage_language'] != 'english' && language == 'english'){
+						//上个字符的语言是连续的，但当前字符的语言不是连续的（空格间隔）
+						if( translate.language.wordBlankConnector(upLangs['storage_language']) == false && translate.language.wordBlankConnector(language) ){
 							//上个字符不是英语，当前字符是英语，这种情况要在上个字符后面追加空格，因为当前字符是英文，就不会在执行翻译操作了
 							//console.log(upLangs['language']);
 							langStrs[upLangs['storage_language']][langStrs[upLangs['storage_language']].length-1]['afterText'] = ' ';
@@ -1922,8 +1926,6 @@ var translate = {
 							langStrs[language][index]['beforeText'] = ' ';
 						}
 					}
-
-					
 
 					
 				}
@@ -2039,6 +2041,26 @@ var translate = {
 			
 			//不是，返回false
 			return false;
+		},
+		//语种的单词连接符是否需要空格，比如中文、韩文、日语都不需要空格，则返回false, 但是像是英文的单词间需要空格进行隔开，则返回true
+		//如果未匹配到，默认返回true
+		//language：语种，传入如  english
+		wordBlankConnector:function(language){
+			if(language == null || typeof(language) == 'undefined'){
+				return true;
+			}
+			switch (language.trim().toLowerCase()){
+		  		case 'chinese_simplified':
+		  			return false;
+		  		case 'chinese_traditional':
+		  			return false;
+		  		case 'korean':
+		  			return false;
+		  		case 'japanese':
+		  			return false;
+		  	}
+		  	//其他情况则返回true
+		  	return true;
 		},
 		//是否包含中文，true:包含
 		chinese_simplified:function(str){

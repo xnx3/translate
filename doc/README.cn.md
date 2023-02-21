@@ -253,6 +253,10 @@ translate.nomenclature.append('chinese_simplified','english',`
 当前正在优化中，如果原语种是中文、韩文还可以，像是英语结果会不准，如果您项目中用到了，发现异常时，可联系我，免费帮您调试好的同时还能完善本项目。  
 **注意，这行要放到 translate.execute(); 上面**
 
+##### 示例
+这里给出一个示例用于参考，链接地址： [https://res.zvo.cn/translate/doc/demo_nomenclature.html](https://res.zvo.cn/translate/doc/demo_nomenclature.html)  
+您可打开后查看页面源代码，即可看到它是如何设置的。  
+
 # 实际使用场景示例
 ### 普通网站中点击某个语言进行切换
 如下图所示，网站中的某个位置要有几种语言切换  

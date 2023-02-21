@@ -256,8 +256,11 @@ translate.nomenclature.append('chinese_simplified','english',`
 
 This custom termbase can be defined by a separate js file, so defined once, used in similar projects, you can directly copy the previously defined js termbase file to introduce it for convenience.  
 Currently under optimization, if the original language is Chinese, Korean is okay, such as English results will be inaccurate, if you use it in the project, when you find an abnormality, you can contact me, free of charge to help you debug the good while improving the project.  
-**Note that this line should be placed in translate.execute(); above**
+**Note that this line should be placed in translate.execute(); above**  
 
+##### DEMO
+Here is an example for reference, link address: [https://res.zvo.cn/translate/doc/demo_nomenclature.html](https://res.zvo.cn/translate/doc/demo_nomenclature.html)  
+You can view the page source code after opening it to see how it is set.
 
 # Examples of actual use scenarios
 ### Click a language to switch in a common website

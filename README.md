@@ -180,9 +180,12 @@ translate.setAutoDiscriminateLocalLanguage();	//Set the language of the user's c
 ````
 translate.language.setLocal('chinese_simplified'); //Set the local language (the language of the current page). If not set, the language of the text displayed on the current page will be automatically recognized by default.
 ````
-Specific languages can be consulted： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
-If not set, the default is Simplified Chinese : chinese_simplified  
-When selecting a language, if you use it for the first time, the local language set here is selected by default.
+The local languages currently supported are:  
+* **chinese_simplified** Simplified Chinese
+* **chinese_traditional** Traditional Chinese
+* **english** English  
+If not set, the text of the current web page will be automatically recognized by default, and the language with the highest frequency of occurrence in the current web page text will be taken as the default language.   
+This will default to the selected language when the select language appears.  
 
 **Note that this line should be placed in translate.execute(); above**
 

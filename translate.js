@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.3.20230217',
+	version:'2.2.4.20230224',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -921,7 +921,7 @@ var translate = {
 			
 			if(docs == null){
 				//要翻译的目标区域不存在
-				cnosole.log('translate.execute(...) 中传入的要翻译的目标区域不存在。');
+				console.log('translate.execute(...) 中传入的要翻译的目标区域不存在。');
 				return;
 			}
 			
@@ -2602,7 +2602,7 @@ var translate = {
 	/**************************** v2.0 end */
 	
 }
-
+console.log('Two lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate');
 
 //这个只是v1使用到
 try{

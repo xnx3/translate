@@ -26,12 +26,11 @@
 * 英文站（翻译网站）： [http://english.demo.service.translate.zvo.cn](http://english.demo.service.translate.zvo.cn)  
 * 韩文站（翻译网站）： [http://korean.demo.service.translate.zvo.cn](http://korean.demo.service.translate.zvo.cn)  
 
-# 开放服务API（测试暂停）
-**【当前API测试接口暂停请求，完善后将会以私有化部署方式交付】**
-当前只是开放一个测试api地址提供对外的测试。（过年期间没管他，测试服务可能会不稳定或无法使用）
+# 开放服务平台
+当前只是开放一个测试api地址提供对外的测试
 
 ````
-http://service.translate.zvo.cn/translate.json?language=english&url=https://www.huaweicloud.com/solution/implementations/build-a-cms-based-on-open-source-wangmarket.html
+http://service.translate.zvo.cn/translate.json?language=english&dynamic=true&url=http://www.leimingyun.com
 ````
 
 ### 参数说明
@@ -43,7 +42,7 @@ http://service.translate.zvo.cn/translate.json?language=english&url=https://www.
 比如如下几种示例  
 
 http://service.translate.zvo.cn/translate.json?language=english&url=https://www.baidu.com
-http://service.translate.zvo.cn/translate.json?language=english&url=https://www.huaweicloud.com/solution/implementations/build-a-cms-based-on-open-source-wangmarket.html
+http://service.translate.zvo.cn/translate.json?language=english&url=http://www.zhongbing.zvo.cn
 
 # 其他说明
 该能力是不同于 [translate.js](https://github.com/xnx3/translate) 的另一款产品服务。  

@@ -6,7 +6,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.4.20230224',
+	version:'2.2.5.20230227',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -322,7 +322,7 @@ var translate = {
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
-		tag:['style', 'script', 'img', 'link', 'i', 'pre', 'code'],
+		tag:['style', 'script', 'link', 'i', 'pre', 'code'],
 		class:['ignore','translateSelectLanguage'],
 		id:[],
 		/*

@@ -18,7 +18,7 @@
    npm i i18n-jsautotranslate		
    ```
 
-   > npm仓库地址：[](https://www.npmjs.com/package/i18n-jsautotranslate)
+   > npm仓库地址：[https://www.npmjs.com/package/i18n-jsautotranslate](https://www.npmjs.com/package/i18n-jsautotranslate)
 
 3. 在需要的页面引入
 

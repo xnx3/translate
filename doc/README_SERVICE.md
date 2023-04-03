@@ -30,19 +30,14 @@
 当前只是开放一个测试api地址提供对外的测试
 
 ````
-http://service.translate.zvo.cn/translate.json?language=english&dynamic=true&url=http://www.leimingyun.com
+http://service.translate.zvo.cn/api?language=english&dynamic=true&url=http://www.zhongbing.zvo.cn/index.html
 ````
 
 ### 参数说明
-* **language** 要将其翻译为哪种语种，可传入如：  english、korean、chinese_simplified、chinese_traditional
-* **url** 目标页面，要翻译的页面，传入完整带协议的格式，如 https://www.leimingyun.com/index.html
+* **language** 要将其翻译为哪种语种，可传入如：  english、korean、chinese_simplified、chinese_traditional  
+* **dynamic** 对翻译的结果（html页面）是否追加入动态翻译能力，当遇到使用js、ajax请求渲染文本数据时，也自动将这些动态数据进行翻译。  
+* **url** 目标页面，要翻译的页面，传入完整带协议的格式，如 http://www.zhongbing.zvo.cn/index.html
 
-### 示例
-
-比如如下几种示例  
-
-http://service.translate.zvo.cn/translate.json?language=english&url=https://www.baidu.com
-http://service.translate.zvo.cn/translate.json?language=english&url=http://www.zhongbing.zvo.cn
 
 # 其他说明
 该能力是不同于 [translate.js](https://github.com/xnx3/translate) 的另一款产品服务。  

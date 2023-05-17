@@ -1,12 +1,15 @@
-/**
- * 国际化，网页自动翻译。
- * 整理人：管雷鸣
+/*
+
+	国际化，网页自动翻译。
+	作者：管雷鸣
+	开原仓库：https://github.com/xnx3/translate
+
  */
 var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.5.20230227',
+	version:'2.2.6.20230517',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -792,6 +795,9 @@ var translate = {
 					//进行异常的预处理调出
 					continue;
 				}
+
+				//进行排序,将原字符串长的放前面，避免造成有部分不翻译的情况（bug是先翻译了短的，导致长的被打断而无法进行适配）
+				tasks.sort((a, b) => b.originalText.length - a.originalText.length);
 				
 				this.taskQueue[hash] = tasks;
 			}
@@ -803,6 +809,8 @@ var translate = {
 			for(var hash in this.nodes){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
 				//var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
+				
+
 				
 				for(var node_index = 0; node_index < this.nodes[hash].length; node_index++){
 					//对这个node元素进行替换翻译字符

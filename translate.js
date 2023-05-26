@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.2.6.20230517',
+	version:'2.2.7.20230526',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1482,7 +1482,7 @@ var translate = {
 		if(nodename.toLowerCase() == '#comment'){
 			return;
 		}
-		//console.log(node.nodeName);
+		//console.log(text);
 		//取要翻译字符的hash
 		var key = translate.util.hash(text);
 		/*
@@ -1533,17 +1533,17 @@ var translate = {
 			this.nodeQueue[lang][key] = new Array();
 		}
 		*/
-		//console.log(node.);
+		//console.log(langs);
 		
 		for(var lang in langs) {
-			
 			//创建二维数组， key为语种，如 english
 			if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
 				translate.nodeQueue[uuid]['list'][lang] = new Array();
 			}
-			
+			//console.log('|'+langs[lang].length);
 			//遍历出该语种下有哪些词需要翻译
 			for(var word_index = 0; word_index < langs[lang].length; word_index++){
+				//console.log('start:'+word_index)
 				//console.log(langs[lang][word_index]);
 				if(typeof(langs[lang][word_index]) == 'undefined' || typeof(langs[lang][word_index]['text']) == 'undefined'){
 					//理论上应该不会，但多加个判断
@@ -1552,7 +1552,6 @@ var translate = {
 				var word = langs[lang][word_index]['text']; //要翻译的词
 				var beforeText = langs[lang][word_index]['beforeText'];
 				var afterText = langs[lang][word_index]['afterText'];
-
 
 				//console.log("word:"+word+', bef:'+beforeText+', after:'+afterText)
 				var hash = translate.util.hash(word); 	//要翻译的词的hash
@@ -1579,20 +1578,20 @@ var translate = {
 					
 				}
 				
-
 				if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index])){
 							//相同，那就不用在存入了
 							//console.log('相同，那就不用在存入了')
 							//console.log(node)
-							return;
+							continue;
 						}
 					}
 				}
 
 				//往五维数组nodes中追加node元素
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length]=node; 
+				//console.log('end:'+word_index)
 			}
 			
 		}

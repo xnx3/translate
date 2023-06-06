@@ -744,6 +744,7 @@ var translate = {
 			 * 一维数组 [hash] = tasks;  tasks 是多个task的数组集合
 			 * 二维数组 [task,task,...]，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
 			 * 三维数组 task['originalText'] 、 task['resultText'] 存放要替换的字符串
+			 		   task['attribute'] 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
 			 */
 			this.taskQueue = [];
 			
@@ -760,8 +761,9 @@ var translate = {
 		 * node:要替换的字符属于那个node元素
 		 * originalText:待翻译的字符
 		 * resultText:翻译后的结果字符
+		 * attribute: 要替换的是哪个属性，比如 a标签的title属性，这里便是传入title。如果不是替换属性，这里不用传入，或者传入null
 		 */
-		add(node, originalText, resultText){
+		add(node, originalText, resultText, attribute){
 			var nodeAnaly = translate.element.nodeAnalyse.get(node); //node解析
 			//var hash = translate.util.hash(translate.element.getTextByNode(node)); 	//node中内容的hash
 			var hash = translate.util.hash(nodeAnaly['text']);
@@ -782,6 +784,7 @@ var translate = {
 			var task = new Array();
 			task['originalText'] = originalText;
 			task['resultText'] = resultText;
+			task['attribute'] = attribute;
 			tasks.push(task);
 			this.taskQueue[hash] = tasks;
 			/****** 加入翻译的任务队列 end  */
@@ -803,15 +806,13 @@ var translate = {
 			}
 			
 			//console.log(this.taskQueue);
-			//console.log(this.nodeQueue);
+			//console.log(this.nodes);
 			
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
 				//var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
-				
-
-				
+				//console.log(tasks);
 				for(var node_index = 0; node_index < this.nodes[hash].length; node_index++){
 					//对这个node元素进行替换翻译字符
 					for(var task_index=0; task_index<tasks.length; task_index++){
@@ -821,7 +822,8 @@ var translate = {
 							continue;
 						}
 						
-						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText);
+						//console.log(this.nodes[hash][task_index]);
+						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 						/*
 						//var tagName = translate.element.getTagNameByNode(this.nodes[hash][task_index]);//节点的tag name
 						//console.log(tagName)
@@ -1013,7 +1015,7 @@ var translate = {
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
-							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText']);
+							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
@@ -1138,7 +1140,7 @@ var translate = {
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
 						//加入任务
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['afterText']);
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['attribute']);
 					}
 					//}
 					/*
@@ -1177,9 +1179,10 @@ var translate = {
 					node 当前翻译的node元素
 					originalText 翻译之前的内容文本
 					resultText 翻译之后的内容文本
+					attribute 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
 			*/
-			set:function(node, originalText, resultText){
-				translate.element.nodeAnalyse.analyse(node,originalText,resultText);
+			set:function(node, originalText, resultText, attribute){
+				translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
 			},
 			/*	
 				
@@ -1192,13 +1195,30 @@ var translate = {
 						['node']:要进行翻译的目标node
 				2. 传入 node、originalText、 resultText
 					则是进行翻译之后的渲染显示
+
+				attribute : 进行替换渲染时使用，存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
 			*/
-			analyse:function(node, originalText, resultText){
+			analyse:function(node, originalText, resultText, attribute){
 				var result = new Array(); //返回的结果
 				result['node'] = node;
 				result['text'] = '';
 
 				var nodename = translate.element.getNodeName(node);
+
+				if(attribute != null && typeof(attribute) != 'undefined'){
+					//这个node有属性，替换的是node的属性，而不是nodeValue
+					result['text'] = node[attribute];
+
+					//替换渲染
+					if(typeof(originalText) != 'undefined' && originalText.length > 0){
+						node[attribute] = resultText;
+					}
+					return result;
+				}
+
+				//正常的node ，typeof 都是 object
+
+				//console.log(typeof(node)+node);
 				if(nodename == '#text'){
 					//如果是普通文本，判断一下上层是否是包含在textarea标签中
 					if(typeof(node.parentNode) != 'undefined'){
@@ -1211,6 +1231,8 @@ var translate = {
 						}
 					}
 				}
+
+
 
 				//console.log(nodename)
 				//console.log(translate.element.getNodeName(node.parentNode))
@@ -1299,6 +1321,7 @@ var translate = {
 					return result;
 				}
 				
+				
 				//其他的
 				if(node.nodeValue == null || typeof(node.nodeValue) == 'undefined'){
 					result['text'] = '';
@@ -1335,6 +1358,13 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
+			//判断是否是A标签，如果是A标签，那判断是否有title属性，title属性也要翻译
+			if(translate.element.getNodeName(node).toLowerCase() == 'a' && node.title != null && typeof(node.title) != 'undefined'){
+				//将title加入翻译队列
+				//console.log(typeof(node.title));
+				translate.addNodeToQueue(uuid, node, node.title, 'title');
+			}
+			
 			var childNodes = node.childNodes;
 			if(childNodes.length > 0){
 				for(var i = 0; i<childNodes.length; i++){
@@ -1349,9 +1379,11 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
+			//console.log(node)
 			if(node.parentNode == null){
 				return;
 			}
+			//console.log('-----parent')
 			var parentNodeName = translate.element.getNodeName(node.parentNode);
 			//node.parentNode.nodeName;
 			if(parentNodeName == ''){
@@ -1469,8 +1501,9 @@ var translate = {
 	 * uuid execute方法执行的唯一id
 	 * node 当前text所在的node
 	 * text 当前要翻译的目标文本
+	 * attribute 是否是元素的某个属性。比如 a标签中的title属性， a.title 再以node参数传入时是string类型的，本身并不是node类型，所以就要传入这个 attribute=title 来代表这是a标签的title属性。同样第二个参数node传入的也不能是a.title，而是传入a这个node元素
 	 */
-	addNodeToQueue:function(uuid, node, text){
+	addNodeToQueue:function(uuid, node, text, attribute){
 		if(node == null || text == null || text.length == 0){
 			return;
 		}
@@ -1482,7 +1515,7 @@ var translate = {
 		if(nodename.toLowerCase() == '#comment'){
 			return;
 		}
-		//console.log(text);
+		//console.log('\t\t'+text);
 		//取要翻译字符的hash
 		var key = translate.util.hash(text);
 		/*
@@ -1555,7 +1588,7 @@ var translate = {
 
 				//console.log("word:"+word+', bef:'+beforeText+', after:'+afterText)
 				var hash = translate.util.hash(word); 	//要翻译的词的hash
-				
+				//console.log(hash);
 				
 				//创建三维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
 				if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
@@ -1572,7 +1605,7 @@ var translate = {
 					translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
 					translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
 					translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
-					
+					translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute;
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 					

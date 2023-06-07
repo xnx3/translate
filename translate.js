@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.3.0.20230607',
+	version:'2.3.1.20230607',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -606,7 +606,10 @@ var translate = {
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
 				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
 				afterText:  node元素中进行翻译结果赋予时，额外在翻译结果的后面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
-		六维：针对五维的 nodes，将各个 node 列出来，如 [node,node,....]		
+		六维：针对五维的 nodes，将各个具体的 node 以及 其操作的 attribute 以数组形式列出
+		七维：针对六维列出的nodes数组，其中包含：
+				node: 具体操作的node元素
+				attribute: 也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性，这则是设置为 "title"。如果这里不为空，那就是针对的属性操作的。 如果这里为空或者undefined ，那就是针对node本身，也就是 nodeValue 的字符串操作的
 		
 		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
 	*/
@@ -764,10 +767,13 @@ var translate = {
 		 * attribute: 要替换的是哪个属性，比如 a标签的title属性，这里便是传入title。如果不是替换属性，这里不用传入，或者传入null
 		 */
 		add(node, originalText, resultText, attribute){
-			var nodeAnaly = translate.element.nodeAnalyse.get(node); //node解析
+			var nodeAnaly = translate.element.nodeAnalyse.get(node, attribute); //node解析
 			//var hash = translate.util.hash(translate.element.getTextByNode(node)); 	//node中内容的hash
 			var hash = translate.util.hash(nodeAnaly['text']);
-			
+			//console.log('--------------'+hash);
+			//console.log(nodeAnaly);
+			//console.log(node);
+			//console.log('originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute);
 			/****** 加入翻译的元素队列  */
 			if(typeof(this.nodes[hash]) == 'undefined'){
 				this.nodes[hash] = new Array();
@@ -805,9 +811,11 @@ var translate = {
 				this.taskQueue[hash] = tasks;
 			}
 			
+			//console.log('===========task=========');
 			//console.log(this.taskQueue);
 			//console.log(this.nodes);
-			
+			//console.log('===========task======end===');
+
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
@@ -1015,7 +1023,7 @@ var translate = {
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(originalWord);
-							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['attribute']);
+							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						}
 					//}
@@ -1140,7 +1148,7 @@ var translate = {
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
 						//加入任务
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['attribute']);
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 					}
 					//}
 					/*
@@ -1166,12 +1174,16 @@ var translate = {
 		nodeAnalyse:{
 			/*
 				获取node中的要进行翻译的文本内容、以及要操作的实际node对象（这个node对象很可能是传入的node中的某个子node）
+				node 
+				attribute 要获取的是某个属性的值，还是node本身的值。比如 a标签的title属性的值，则传入 title。  如果是直接获取node.nodeValue ，那这个没有
+
 				返回结果是一个数组。其中：
 					['text']:要进行翻译的text内容文本
 					['node']:要进行翻译的目标node
+
 			*/
-			get:function(node){
-				return translate.element.nodeAnalyse.analyse(node,'','');
+			get:function(node, attribute){
+				return translate.element.nodeAnalyse.analyse(node,'','', attribute);
 			},
 			/*
 				进行翻译之后的渲染显示
@@ -1205,13 +1217,18 @@ var translate = {
 
 				var nodename = translate.element.getNodeName(node);
 
-				if(attribute != null && typeof(attribute) != 'undefined'){
+				if(attribute != null && typeof(attribute) == 'string' && attribute.length > 0){
 					//这个node有属性，替换的是node的属性，而不是nodeValue
 					result['text'] = node[attribute];
 
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
-						node[attribute] = resultText;
+						if(typeof(node[attribute]) != 'undefined'){
+							node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
+						}else{
+							console.log(node);
+						}
+						
 					}
 					return result;
 				}
@@ -1358,11 +1375,14 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
-			//判断是否是A标签，如果是A标签，那判断是否有title属性，title属性也要翻译
-			if(translate.element.getNodeName(node).toLowerCase() == 'a' && node.title != null && typeof(node.title) != 'undefined'){
+			//console.log('---'+typeof(node)+', ');
+			//判断是否是有title属性，title属性也要翻译
+			if(typeof(node) == 'object' && typeof(node['title']) == 'string' && node['title'].length > 0){
 				//将title加入翻译队列
-				//console.log(typeof(node.title));
-				translate.addNodeToQueue(uuid, node, node.title, 'title');
+				//console.log('---'+node.title+'\t'+node.tagName);
+				//console.log(node)
+				//console.log('------------');
+				translate.addNodeToQueue(uuid, node, node['title'], 'title');
 			}
 			
 			var childNodes = node.childNodes;
@@ -1429,6 +1449,7 @@ var translate = {
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);
 			if(nodeAnaly['text'].length > 0){
 				//有要翻译的目标内容，加入翻译队列
+				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
 				translate.addNodeToQueue(uuid, nodeAnaly['node'], nodeAnaly['text']);
 			}
 			
@@ -1508,7 +1529,7 @@ var translate = {
 			return;
 		}
 		//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
-
+		//console.log('addNodeToQueue into -- node:'+node+', text:'+text+', attribute:'+attribute);
 		var nodename = translate.element.getNodeName(node);
 		
 		//判断如果是被 <!--  --> 注释的区域，不进行翻译
@@ -1596,7 +1617,9 @@ var translate = {
 					
 					/*
 					 * 创建四维数组，存放具体数据
-					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个
+					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个。其中
+					 		nodes[index]['node'] 存放当前的node元素
+					 		nodes[index]['attribute'] 存放当前hash，也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性。如果这里不为空，那就是针对的属性操作的
 					 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
 					 * beforeText、afterText:见 translate.nodeQueue 的说明
 					 */
@@ -1605,15 +1628,17 @@ var translate = {
 					translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
 					translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
 					translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
-					translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute;
+					//translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute; //放入 nodes[index][attribute] 元素中
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 					
+
+					//console.log(translate.nodeQueue[uuid]['list'][lang][hash]);
 				}
 				
 				if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index])){
+						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
 							//相同，那就不用在存入了
 							//console.log('相同，那就不用在存入了')
 							//console.log(node)
@@ -1623,7 +1648,10 @@ var translate = {
 				}
 
 				//往五维数组nodes中追加node元素
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length]=node; 
+				var nodesIndex = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length;
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] = new Array();
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['node']=node; 
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['attribute']=attribute;
 				//console.log('end:'+word_index)
 			}
 			

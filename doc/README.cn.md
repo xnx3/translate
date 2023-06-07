@@ -351,6 +351,30 @@ japanese:function(str){
 15. 开放后端翻译服务接口文档，以便更好自有扩展及使用
 16. 修复tag有时失效的问题，比如监听状态下局部翻译情况
 
+### v2.3
+1. 增加 translate.nomenclature 用于自定义术语支持
+1. 增加 translate.listener.renderTaskFinish(renderTask); 以便更好的扩展
+1. 增加 translate.language.wordBlankConnector() 适配语言是否需要空格作为连词符，增加十余种语言的适配
+1. 增加 translate.element.getNodeName 以供全局使用
+1. 增加vue、uniapp中使用的说明
+3. 增加 translate.element.nodeAnalyse 用于元素分析及渲染
+4. 增加对 input 标签的 type=button 类型的支持
+1. 增加对 input 标签的 type="submit" 类型的支持
+1. 增加 a 标签 title 属性的翻译适配
+1. 优化忽略类、tag、id等的判断，使之更精准
+1. 针对v2.0增加 translate.selectLanguageTag.languages 的设置
+1. 优化，当前语种在未翻译时，切换其他语种，不重新加载当前页面
+2. 修改 nodeQueue 第五维增加 translateText 
+1. 优化英文转其他语种时自定义术语异常的问题
+1. 优化忽略翻译的标签，增加 textarea
+2. 针对新潮传媒反馈的某些页面无法使用问题增加相关判断进行容错，避免阻塞整体运行。
+1. 将默认的忽略tag标签中的img标签去除。也对img的alt进行翻译
+1. 对翻译队列进行排序,将原字符串长的放前面，避免造成有部分不翻译的情况（bug是先翻译了短的，导致长的被打断而无法进行适配）
+1. 修复如果一个句子中有多个被特殊字符间隔的汉字时，会导致漏掉末尾一些汉字不翻译的问题
+
+
+
+
 # 这些开源项目正在使用
 如下开源项目中已置入自动化翻译的能力：  
 [kefu.js](https://gitee.com/mail_osc/kefu.js) H5在线客服，引入一行js代码拿来即用！支持手机、电脑、APP、小程序。可一键部署自己私有SAAS云客服平台  

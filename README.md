@@ -357,6 +357,26 @@ It will be released in December 2022, adding more extension methods.
 15. Open the back-end translation service interface document for better expansion and use
 16. Fix the problem that tag sometimes fails, such as local translation in listening status
 
+### v2.3
+1. Add translate.nomenclature for custom terminology support
+1. Add translate.listener.renderTaskFinish (renderTask); For better expansion
+1. Add translate.language.wordBlankConnector() to determine whether a space is required as a conjunction for language adaptation, and add adaptations for more than ten languages
+1. Add translate.element.getNodeName for global use
+1. Add instructions for using Vue and Uniapp
+3. Add translate.element.nodeAnalysis for element analysis and rendering
+4. Increase support for input tags with type=button type
+1. Increase support for input tags with type="submit"
+1. Add translation adaptation for the title attribute of the a tag
+1. Optimize the judgment of ignoring classes, tags, IDs, etc. to make it more accurate
+1. Add the setting of translate. selectLanguageTag. languages for v2.0
+1. Optimization: When the current language is not translated, switch to another language without reloading the current page
+2. Modify the fifth dimension of nodeQueue and add translateText
+1. Optimizing the issue of custom terminology exceptions when converting English to other languages
+1. Optimize tags that ignore translation and add textarea
+2. In response to feedback from trendy media that certain pages cannot be used, relevant judgments should be added for fault tolerance to avoid blocking the overall operation.
+1. Remove the img tag from the default ignore tag tag tag. Also translate IMG's alt
+1. Sort the translation queue and place the original string with the longer ones first to avoid situations where some parts are not translated (a bug is when the shorter ones are translated first, causing the longer ones to be interrupted and unable to be adapted)
+1. Fix the issue of missing some Chinese characters at the end and not translating them if there are multiple Chinese characters separated by special characters in a sentence
 
 # These open source projects are being used
 The ability of automatic translation has been put into the following open source projects:  

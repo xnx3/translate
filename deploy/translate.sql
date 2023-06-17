@@ -1,17 +1,17 @@
 /*
  Navicat Premium Data Transfer
 
- Source Server         : 192.168.31.242-novel
+ Source Server         : 124.70.23.135
  Source Server Type    : MySQL
- Source Server Version : 50741
- Source Host           : 192.168.31.242
- Source Database       : translate_mirrorImage
+ Source Server Version : 50742
+ Source Host           : 124.70.23.135
+ Source Database       : translate
 
  Target Server Type    : MySQL
- Target Server Version : 50741
+ Target Server Version : 50742
  File Encoding         : utf-8
 
- Date: 06/17/2023 14:58:40 PM
+ Date: 06/17/2023 16:50:01 PM
 */
 
 SET NAMES utf8;
@@ -128,13 +128,13 @@ CREATE TABLE `translate_site` (
   `language` char(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '当前语种，当前站点的语种是什么，如 english ，跟 http://api.translate.zvo.cn/doc/language.json.html 这里的值对应',
   `url` char(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '站点网址，格式如 http://www.zvo.cn 注意一定要带上前面的协议',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='翻译的站点';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='翻译的站点';
 
 -- ----------------------------
 --  Records of `translate_site`
 -- ----------------------------
 BEGIN;
-INSERT INTO `translate_site` VALUES ('1', '中兵测试网站', 'chinesesimplified', 'http://cms.zvo.cn'), ('3', '英文小说', 'english', 'http://qiye9.wang.market');
+INSERT INTO `translate_site` VALUES ('1', '中兵测试网站', 'chinesesimplified', 'http://www.zhongbing.zvo.cn');
 COMMIT;
 
 -- ----------------------------
@@ -153,7 +153,7 @@ CREATE TABLE `translate_site_domain` (
 --  Records of `translate_site_domain`
 -- ----------------------------
 BEGIN;
-INSERT INTO `translate_site_domain` VALUES ('5', '192.168.31.193', 'dogrid', '1'), ('2', '1', '2', '2');
+INSERT INTO `translate_site_domain` VALUES ('5', '124.70.23.135', 'english', '1'), ('2', '1', '2', '2');
 COMMIT;
 
 -- ----------------------------
@@ -172,7 +172,7 @@ CREATE TABLE `translate_site_set` (
 --  Records of `translate_site_set`
 -- ----------------------------
 BEGIN;
-INSERT INTO `translate_site_set` VALUES ('1', 'alert(\'1234\');', '	', ''), ('2', '', null, null), ('3', '', null, null);
+INSERT INTO `translate_site_set` VALUES ('1', 'alert(\'1234\');', '', ''), ('2', '', null, null), ('3', '', null, null);
 COMMIT;
 
 -- ----------------------------
@@ -210,7 +210,7 @@ CREATE TABLE `user` (
 --  Records of `user`
 -- ----------------------------
 BEGIN;
-INSERT INTO `user` VALUES ('1', 'admin', '', '94940b4491a87f15333ed68cc0cdf833', 'default.png', '总管理', '9', '1512818402', '1686984951', '127.0.0.1', '9738', '17000000002', '0', '0', '0', '192.168.31.95', '0', '0', null, null, '0');
+INSERT INTO `user` VALUES ('1', 'admin', '', '94940b4491a87f15333ed68cc0cdf833', 'default.png', '总管理', '9', '1512818402', '1686990948', '127.0.0.1', '9738', '17000000002', '0', '0', '0', '182.46.3.84', '0', '0', null, null, '0');
 COMMIT;
 
 -- ----------------------------

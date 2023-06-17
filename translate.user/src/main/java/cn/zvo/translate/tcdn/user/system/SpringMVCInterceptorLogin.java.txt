@@ -1,0 +1,157 @@
+package cn.zvo.translate.tcdn.user.system;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xnx3.BaseVO;
+import com.xnx3.DateUtil;
+import com.xnx3.Log;
+import com.xnx3.j2ee.pluginManage.interfaces.SpringMVCInterceptorInterface;
+import com.xnx3.j2ee.service.SqlCacheService;
+import com.xnx3.j2ee.util.ConsoleUtil;
+import com.xnx3.j2ee.util.SpringUtil;
+
+import cn.zvo.translate.tcdn.core.entity.TranslateSite;
+import cn.zvo.translate.tcdn.user.util.DomainUtil;
+import cn.zvo.translate.tcdn.user.util.TranslateUtil;
+import cn.zvo.translate.tcdn.user.vo.SiteVO;
+import net.sf.json.JSONObject;
+
+/**
+ * shop项目,拦截器，拦截是否已登陆，未登录，跳转到登录页面
+ * @author 管雷鸣
+ *
+ */
+public class SpringMVCInterceptorLogin implements SpringMVCInterceptorInterface{
+	@Resource
+	public SqlCacheService sqlCacheService;
+
+	@Override
+	public List<String> pathPatterns() {
+		List<String> list = new ArrayList<String>();
+ 		list.add("/**");
+ 		return list;
+	}
+
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		ConsoleUtil.info("uri: "+request.getRequestURI().toLowerCase());
+		ConsoleUtil.info(""+request.getRequestURI().toLowerCase().indexOf("/translate/mirrorimage/"));
+		String html;
+		long startTime = DateUtil.timeForUnix13();
+//		if(request.getRequestURI().equalsIgnoreCase("/translate.json")) {
+//			html = TranslateUtil.trans(request.getParameter("url"), request.getParameter("dynamic"),request.getParameter("language"), request).getInfo();
+//		}else if(
+		if(
+					request.getRequestURI().toLowerCase().indexOf("/translate/mirrorimage/") > -1 ||
+					request.getRequestURI().toLowerCase().indexOf("/module/") > -1 ||
+					request.getRequestURI().toLowerCase().indexOf("login.do") > -1 ||
+					request.getRequestURI().toLowerCase().indexOf("translate.json") > -1
+				) {
+			//管理后台
+			ConsoleUtil.info("guanlihoutai");
+			return true;
+//			return SpringMVCInterceptorInterface.super.preHandle(request, response, handler);
+		}else {
+			//别的资源重定向
+			
+			//取当前访问的是哪个站点
+//			SiteVO siteVO = DomainUtil.getSite(request);
+//			if(siteVO.getResult() - SiteVO.FAILURE == 0) {
+//				response.setHeader("Access-Control-Allow-Origin", "*");
+//				response.getWriter().write("{"
+//						+ "\"result\":\"" + BaseVO.FAILURE + "\","
+//						+ "\"info\":\"403, "+siteVO.getInfo()+"\""
+//					+ "}");
+//				return false;
+//			}
+//			int sid = siteVO.getTranslateSiteId(); 
+//			TranslateSite translateSite = sqlCacheService.findById(TranslateSite.class, sid);
+//			ConsoleUtil.info(translateSite.toString());
+//			TranslateSiteDomain translateSiteDomain = sqlCacheService.findById(TranslateSiteDomain.class, sid);
+			
+//			int sid = 1;
+//			String localLanguage = "chinese_simplified";
+//			String targetLanguage = "english";
+			
+//			TranslateSiteDomain domain = sqlCacheService.findAloneByProperty(TranslateSiteDomain.class, "domain", "dd");
+//			if(domain == null) {
+//				error(response, "访问的域名未发现");
+//				return false;
+//			}
+			SiteVO vo = DomainUtil.getSite(request);
+			if(vo.getResult() - SiteVO.FAILURE == 0) {
+				error(response, vo.getInfo());
+				return false;
+			}
+			TranslateSite site = SpringUtil.getSqlCacheService().findById(TranslateSite.class, vo.getTranslateSiteDomain().getSiteid());
+			if(site == null) {
+				error(response, "源站点未发现");
+				return false;
+			}
+			
+			String localLanguage = site.getLanguage();
+			String targetLanguage = vo.getTranslateSiteDomain().getLanguage();
+			
+			
+			String sourceDomain = site.getUrl(); //源站点，格式如 "http://www.zbyjzb.com"
+			String newDomain = vo.getDomain();
+			
+			Log.info("当前访问域名："+newDomain+", 源站："+sourceDomain+", 将 "+localLanguage+"转为"+targetLanguage);
+			
+			//Log.info("target url : "+TranslateUtil.targetUrl(sourceDomain, request));
+			String staticUrl = request.getRequestURI();
+			//如果是静态资源，不作处理，直接返回
+			if(TranslateUtil.isStaticFile(staticUrl)) {
+				response.sendRedirect(TranslateUtil.targetUrl(sourceDomain, request));
+				return false;
+			}
+			
+			html = TranslateUtil.trans(sourceDomain, newDomain, "", "",targetLanguage, request).getInfo();
+			
+			String htmlLower = html.toLowerCase();
+			if(htmlLower.indexOf("</html>") > -1 || htmlLower.indexOf("</body>") > -1) {
+				//如果是html文件，才会追加
+				String dynamicStr = "<script src=\"https://res.zvo.cn/translate/translate.js\"></script><script> translate.setUseVersion2(); translate.selectLanguageTag.show = false; translate.language.setLocal('"+localLanguage+"'); translate.to = '"+targetLanguage+"'; translate.execute(); setTimeout(function(){translate.execute(); translate.listener.start(); },1500);</script>";
+//				html = html + dynamicStr;
+			}
+			
+			
+			response.setCharacterEncoding("UTF-8");
+			response.setContentType("text/html;charset=UTF-8");
+			response.setHeader("Content-Type", "text/html;charset=UTF-8");
+			response.getWriter().write(html);
+			//ConsoleUtil.info(html);
+			long endTime = DateUtil.timeForUnix13();
+			Log.info("time : "+(endTime-startTime)+"mm");
+			return false;
+		}
+	}
+	
+	private void error(HttpServletResponse response, String info) throws IOException {
+		response.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html;charset=UTF-8");
+		response.setHeader("Content-Type", "text/html;charset=UTF-8");
+		response.getWriter().write("<html><body>"+info+"</body></html>");
+	}
+
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+			ModelAndView modelAndView) throws Exception {
+		SpringMVCInterceptorInterface.super.postHandle(request, response, handler, modelAndView);
+	}
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		SpringMVCInterceptorInterface.super.afterCompletion(request, response, handler, ex);
+	}
+	
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>/language.json</title>
+	<script>
+	var requestParam = {};	//传入参数
+	var responseReturn = {"list":[{"commentText":"支持的语言列表","name":"list","sub":{"list":[{"commentText":"语言标识","name":"id","sub":null,"type":"字符串"},{"commentText":"语言的文字描述","name":"name","sub":null,"type":"字符串"}]},"type":"JSON数组"},{"commentText":"执行结果。<ul><li>0:失败</li><li>1:成功</li><li>2:未登录，需要登录</li></ul>","name":"result","sub":null,"type":"整数"},{"commentText":"执行信息。<ul><li>执行成功，会返回执行成功的信息</li><li>执行失败，会返回为什么会失败的信息</li></ul>","name":"info","sub":null,"type":"字符串"}]};	//响应结果
+	var isLogin = 'false';	//当前接口是否是登录相关的接口，需要进行设置token
+	</script>
+	<link rel="stylesheet" href="./style.css" />
+	<script src="http://res.zvo.cn/wm/wm.js"></script>
+	<script src="./javadoc.js"></script>
+</head>
+<body>
+<div class="bgbox">
+	<div id="alllist"></div>
+	<div class="ctn" style="margin: 0 0 50px 0;">
+		<div class="title">接口URL</div>
+		<div  class="content" id="api.url">/language.json</div>
+
+		<div class="title">说明</div>
+		<div class="content" id="api.commentText">当前支持的语言</div>
+
+		<div class="title">作者</div>
+		<div class="content" id="api.author">管雷鸣</div>
+
+		<div class="title">请求方式</div>
+		<div class="content" id="api.method">POST</div>
+
+		<div class="title">模拟请求接口</div>
+		<!--<div class="content" id="mni"></div>-->
+
+		<div class="simulation">模拟请求接口</div>
+		
+		<div class="simulation_box">
+			<div class="simulation_title">请求url：</div>
+			<div class="domainbox">
+				<div id="domain" onclick="wm.javadoc.popupDomainInput();" style="font-size: 0.9rem; cursor: text; min-width:4rem; line-height: 1rem; height: 1rem;">请输入域名，格式如 http://api.zvo.cn</div>
+				<input type="text" id="demoApiUrl" style="padding-left: 0px;" />
+			</div>
+		</div>
+		<form id="demoForm">
+
+			<div class="simulation_box">
+				<div class="simulation_title">传入参数：</div>
+				<div id="demoRequestParams"></div>
+			</div>
+		</form>
+		<div class="btnbox">
+			<button class="btn" onclick="wm.javadoc.request();">请求</button>
+		</div>
+		<div class="result">
+			<pre id="demoResponseResult">响应结果</pre>
+		</div>
+
+		<div class="title">传入参数</div>
+		<div class="content chuancan" id="api.params"></div>
+
+		<div class="title">接口响应</div>
+		<div style="padding:10px;">支持的语言列表</div>
+		<div class="content chuancan" id="responseTable"></div>
+
+	</div>
+</div>
+
+
+</body>
+</html>

@@ -53,6 +53,12 @@
 </table>
 <!-- 通用分页跳转 -->
 <jsp:include page="/wm/common/page.jsp"></jsp:include>
+
+<div style="padding: 20px;color: gray;">
+	<div>提示:</div>
+	<div>比如你在此绑定一个英文的二级域名，翻译语种的属性设置为英文，那么你访问这个绑定的英文二级域名时，所出现的页面便是被翻译为英文的网页。注意，域名绑定后，您需要将绑定的域名解析到本服务器ip，访问时才能访问到</div>
+</div>
+
 <script type="text/javascript">
 
 // 刚进入这个页面，加载第一页的数据

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.3.1.20230607',
+	version:'2.3.2.20230620',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1382,7 +1382,12 @@ var translate = {
 				//console.log('---'+node.title+'\t'+node.tagName);
 				//console.log(node)
 				//console.log('------------');
-				translate.addNodeToQueue(uuid, node, node['title'], 'title');
+				
+				//判断当前元素是否在ignore忽略的tag、id、class name中
+				if(!translate.ignore.isIgnore(node)){
+					//不在忽略的里面，才会加入翻译
+					translate.addNodeToQueue(uuid, node, node['title'], 'title');
+				}
 			}
 			
 			var childNodes = node.childNodes;
@@ -1416,6 +1421,8 @@ var translate = {
 			}
 	
 			/****** 判断忽略的class ******/
+			/*
+			这段理论上不需要了，因为在  translate.ignore.isIgnore 判断了
 			var ignoreClass = false;	//是否是被忽略的class，true是
 			var parentNode = node.parentNode;
 			while(node != parentNode && parentNode != null){
@@ -1433,12 +1440,13 @@ var translate = {
 				//console.log('ignore class :  node:'+node.nodeValue);
 				return;
 			}
+			*/
 			/**** 判断忽略的class结束 ******/
 
 
 
 			/**** 避免中途局部翻译，在判断一下 ****/
-			//判断当前元素是否在ignore忽略的tag及class name中
+			//判断当前元素是否在ignore忽略的tag、id、class name中
 			if(translate.ignore.isIgnore(node)){
 				//console.log('node包含在要忽略的元素中：');
 				//console.log(node);

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.3.2.20230620',
+	version:'2.3.3.20230621',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -127,6 +127,11 @@ var translate = {
 				} 
 				//将select加入进网页显示
 				document.getElementById('translate').appendChild(selectLanguage);
+				/*
+				try{
+					document.getElementById('translateSelectLanguage').style.width = '94px';
+				}catch(e){ console.log(e);} 
+				*/
 			});
 			
 			
@@ -788,9 +793,30 @@ var translate = {
 				tasks = new Array(); //任务列表，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
 			}
 			var task = new Array();
+			
+			//v2.3.3 增加 -- 开始
+			//这里要进行处理，因为有时候翻译前，它前或者后是有空格的，但是翻译后会把前或者后的空格给自动弄没了，如果是这种情况，要手动补上
+			if (originalText.substr(0, 1) == ' ') {
+				console.log('第一个字符是空格');
+				if(resultText.substr(0, 1) != ' '){
+					//翻译结果的第一个字符不是空格，那么补上
+					resultText = ' ' + resultText;
+				}
+			}
+			if (originalText.substr(originalText.length - 1, 1) === ' ') {
+				console.log('最后一个字符是空格');
+				if(resultText.substr(0, 1) != ' '){
+					//翻译结果的最后一个字符不是空格，那么补上
+					resultText = resultText + ' ';
+				}
+			}
+			//v2.3.3 增加 -- 结束
+
 			task['originalText'] = originalText;
 			task['resultText'] = resultText;
 			task['attribute'] = attribute;
+
+			console.log(task);
 			tasks.push(task);
 			this.taskQueue[hash] = tasks;
 			/****** 加入翻译的任务队列 end  */
@@ -811,10 +837,10 @@ var translate = {
 				this.taskQueue[hash] = tasks;
 			}
 			
-			//console.log('===========task=========');
-			//console.log(this.taskQueue);
-			//console.log(this.nodes);
-			//console.log('===========task======end===');
+			console.log('===========task=========');
+			console.log(this.taskQueue);
+			console.log(this.nodes);
+			console.log('===========task======end===');
 
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){

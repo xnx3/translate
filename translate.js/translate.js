@@ -797,14 +797,14 @@ var translate = {
 			//v2.3.3 增加 -- 开始
 			//这里要进行处理，因为有时候翻译前，它前或者后是有空格的，但是翻译后会把前或者后的空格给自动弄没了，如果是这种情况，要手动补上
 			if (originalText.substr(0, 1) == ' ') {
-				console.log('第一个字符是空格');
+				//console.log('第一个字符是空格');
 				if(resultText.substr(0, 1) != ' '){
 					//翻译结果的第一个字符不是空格，那么补上
 					resultText = ' ' + resultText;
 				}
 			}
 			if (originalText.substr(originalText.length - 1, 1) === ' ') {
-				console.log('最后一个字符是空格');
+				//console.log('最后一个字符是空格');
 				if(resultText.substr(0, 1) != ' '){
 					//翻译结果的最后一个字符不是空格，那么补上
 					resultText = resultText + ' ';
@@ -816,7 +816,7 @@ var translate = {
 			task['resultText'] = resultText;
 			task['attribute'] = attribute;
 
-			console.log(task);
+			//console.log(task);
 			tasks.push(task);
 			this.taskQueue[hash] = tasks;
 			/****** 加入翻译的任务队列 end  */
@@ -837,10 +837,10 @@ var translate = {
 				this.taskQueue[hash] = tasks;
 			}
 			
-			console.log('===========task=========');
-			console.log(this.taskQueue);
-			console.log(this.nodes);
-			console.log('===========task======end===');
+			//console.log('===========task=========');
+			//console.log(this.taskQueue);
+			//console.log(this.nodes);
+			//console.log('===========task======end===');
 
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){

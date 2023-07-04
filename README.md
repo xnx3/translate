@@ -206,7 +206,7 @@ If you manually set ````translate.setDocuments(...)```` , you will not listen to
 
 ### Privatization deployment translation service interface
 In some government agencies and internal projects of large groups, when there are strong requirements for data privacy and security, and you want to provide highly reliable translation services for your own customers, you can privatize the translation service interface and do not go through our open translation interface, so as to achieve full control of security and back-end services.      
-For the actual deployment method, please refer to: [https://github.com/xnx3/translate_service](https://github.com/xnx3/translate_service)  
+For the actual deployment method, please refer to: [translate.service](./translate.service/)  
 After deployment, click ````translate.execute();```` Before, add a line of code as follows:
 
 ````

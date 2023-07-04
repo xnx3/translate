@@ -204,7 +204,7 @@ translate.listener.start();	//开启html页面变化的监控，对变化部分�
 
 ### 私有化部署翻译服务接口
 在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、以及您对自有客户希望提供高可靠翻译服务场景时，您可将翻译服务接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。    
-实际部署方式，可参考：[https://github.com/xnx3/translate_service](https://github.com/xnx3/translate_service)  
+实际部署方式，可参考：[translate.service](./translate.service/)  
 部署好后，在 ````translate.execute();```` 之前，加入一行代码，如下所示：
 
 ````

@@ -372,6 +372,17 @@ japanese:function(str){
 1. 对翻译队列进行排序,将原字符串长的放前面，避免造成有部分不翻译的情况（bug是先翻译了短的，导致长的被打断而无法进行适配）
 1. 修复如果一个句子中有多个被特殊字符间隔的汉字时，会导致漏掉末尾一些汉字不翻译的问题
 
+### v2.4
+1. 增加对标签属性的翻译扩展。翻译队列中，增加第七维度，node跟随attribute属性，用于判断是node本身翻译，还是node的某个属性进行翻译
+1. 增加对标签title属性的翻译，并同样适配于ignore忽略标签的规则。
+1. 优化某些情况翻译前有空格，翻译后空格丢失问题
+1. translate 仓库整体结构优化，将不再只存放 translate.js ，将原本的放入了根目录的  /translate.js/ 文件中
+1. 将 translate.service 合并入 translate 仓库，跟 translate.js 仓库共存。
+1. 增加 translate.admin 项目，其作用为添加源站，对源站进行翻译控制、对翻译后的网站进行单独绑定域名、管理绑定域名、对翻译之后的网页支持使用javascript脚本进行控制其输出的源码。当源站内容有变动时，还可以根据域名进行刷新翻译内容的分发，进行重新翻译，以保证翻译内容处于最新。 已加入 translate 仓库，跟 translate.js 仓库共存。
+1. 增加 translate.user 项目，用于用户访问，当用户访问通过 translate.admin 绑定的某个域名时，会在此自动解析取得要响应的语种以及要展示的翻译结果页面，从 translate.api 中将这个html页面的翻译之后的源码取回，进行缓存。然后将结果进行返回，继而在浏览器中显示，以做到用户访问某个语种的域名后，会自动打开这个翻译之后的页面，并且查看网页源代码时，其也是翻译后的源码。已加入 translate 仓库，跟 translate.js 仓库共存。
+1. 增加 translate.api 项目，用于html源码层翻译，并开放此接口。它提供了你传入一个html源码，指定要翻译的目标语种，它会给你返回翻译之后的html源码。
+1. 增加 TCDN （translate.admin 、translate.api 、translate.user ）基于CentOS 7.4一键部署的Shell命令, 位于 translate 仓库中的 deploy 部署目录下。
+
 
 
 

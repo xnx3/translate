@@ -230,7 +230,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		Language.append("bengali", "bn", "বাংলা");	//孟加拉语
 		Language.append("bosnian", "bs", "bosanski");	//波斯尼亚语
 		Language.append("catalan", "ca", "català");	//加泰罗尼亚语
-		Language.append("Cebuano", "ceb", "Cebuano");	//宿务语
+		Language.append("cebuano", "ceb", "Cebuano");	//宿务语
 		Language.append("kurdish_sorani", "ckb", "کوردی-سۆرانی");	//库尔德语（索拉尼）
 		Language.append("corsican", "co", "Corsu");	//科西嘉语
 		Language.append("czech", "cs", "čeština");	//捷克语
@@ -261,12 +261,14 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		Language.append("hungarian", "hu", "Magyar");	//匈牙利语
 		Language.append("armenian", "hy", "հայերեն");	//亚美尼亚语
 		Language.append("dutch", "nl", "Nederlands");	//荷兰语
+		Language.append("italian", "it", "Italiano");	//意大利语
+		
 		/*
 		Language.append("", "id", "");	//印尼语
 		Language.append("", "ig", "");	//伊博语
 		Language.append("", "ilo", "");	//伊洛卡诺语
 		Language.append("", "is", "");	//冰岛语
-		Language.append("", "it", "");	//意大利语
+		
 		Language.append("", "iw", "");	//希伯来语
 		Language.append("", "jw", "");	//印尼爪哇语
 		Language.append("", "ka", "");	//格鲁吉亚语

@@ -3,6 +3,9 @@ package cn.zvo.translate.service.api.controller;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,6 +82,14 @@ public class TranslateController{
 		vo.setFrom(from);
 		vo.setTo(to);
 		
+		//过滤换行符,如果有的话
+		Pattern p = Pattern.compile("\r|\n");
+		Matcher m = p.matcher(text);
+		if(m.find()) {
+			text = m.replaceAll("");
+		}
+		
+		
 		if(text == null || text.length() == 0) {
 			vo.setBaseVO(BaseVO.FAILURE, "请传入 text 值");
 			return vo;
@@ -88,11 +99,13 @@ public class TranslateController{
 			return vo;
 		}
 		
+		
 		//日志
 		String referer = request.getHeader("referer"); 
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("referer", referer);
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
+		params.put("method", "translate.json");
 		LogUtil.add(params);
 		
 		//先从缓存中取

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.4.0.20230705',
+	version:'2.4.1.20230713',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1711,6 +1711,18 @@ var translate = {
 				translate.language.autoRecognitionLocalLanguage();
 			}
 			return translate.language.local;
+		},
+		//如果第一次用，默认以什么语种显示。
+		//比如本地当前语种是简体中文，这里设置为english，那么用户第一次使用时，会自动翻译为english进行显示。如果用户手动切换为其他语种比如韩语，那么就遵循用户手动切换的为主，显示韩语。
+		setDefaultTo:function(languageName){
+			var to_storage = translate.storage.get('to');
+			if(to_storage != null && typeof(to_storage) != 'undefined' && to_storage.length > 0){
+				//之前有过使用，并且主动设置过目标语种，那么不进行处理
+			}else{
+				//没有设置过，进行处理
+				translate.storage.set('to', languageName);
+				translate.to = languageName;
+			}
 		},
 		//自动识别当前页面是什么语种
 		autoRecognitionLocalLanguage:function(){

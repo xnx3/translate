@@ -1,0 +1,135 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>cn.zvo.translate</groupId>
+  <artifactId>translate.service.deploy</artifactId>
+  <packaging>war</packaging>
+  <name>translate_service_deploy</name>
+  <version>1.0</version>
+  <description>translate.service 翻译服务 http://translate.zvo.cn/41164.html</description>
+  
+   <properties>
+	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- 编译时的编码 -->  
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>  
+	    <java.version>1.8</java.version>
+	    <maven.javadoc.skip>true</maven.javadoc.skip>
+	  </properties>
+  
+	<!-- 定义公共资源版本 -->
+  <parent>
+    <groupId>com.xnx3.wangmarket.wm</groupId>
+    <artifactId>parent</artifactId>
+    <version>3.0</version>
+  </parent>
+  
+  	<repositories>
+		<repository>
+            <id>maven-ali</id>
+            <url>https://maven.aliyun.com/repository/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+        <repository>
+		    <snapshots>
+		        <enabled>false</enabled>
+		    </snapshots>
+		    <id>central</id>
+		    <name>bintray</name>
+		    <url>http://jcenter.bintray.com</url>
+		</repository>
+		<repository>
+            <id>maven-guanfang</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+	</repositories>
+	
+<!--    
+   <build>
+	    <plugins>
+                    <plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<excludes>
+		            			<exclude>**/com/Application*</exclude>
+		            			<exclude>**/*.xml</exclude>
+		            			<exclude>/*.properties</exclude>
+		            			<exclude>**/*.json</exclude>
+		            			<exclude>**/*.db</exclude>
+		            			<exclude>**/static/**</exclude>
+		          			</excludes>
+							<archive>  
+								<manifest>  
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>  
+									<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+								</manifest>
+							</archive>
+						</configuration>
+					</plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+	    </plugins>
+	     <resources>  
+	     	<resource>  
+                <directory>src/main/resources</directory>  
+                <targetPath>./</targetPath>  
+                <includes>  
+                    <include>META-INF/**</include>
+                </includes>
+            </resource> 
+            <resource>  
+                <directory>src/main/resources/static/</directory>  
+                <targetPath>META-INF/resources/</targetPath>  
+                <includes>  
+                    <include>plugin/**</include>
+                </includes>
+            </resource> 
+            <resource>  
+                <directory>src/main/webapp</directory>  
+                <targetPath>META-INF/resources</targetPath>
+                <includes>  
+                    <include>plugin/**</include>  
+                </includes>  
+            </resource>
+            <resource>  
+                <directory>src/main/webapp/WEB-INF</directory>  
+                <targetPath>META-INF/resources/WEB-INF/</targetPath>  
+                <includes>  
+                    <include>view/**</include>  
+                </includes>  
+            </resource>  
+        </resources>  
+	</build>
+  -->
+  
+  <dependencies>  
+	   	
+  </dependencies>  
+  
+</project>

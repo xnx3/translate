@@ -136,10 +136,10 @@ public class TranslateUtil {
 			params.put("executeJs", executeJs);
 			ConsoleUtil.debug(JSONObject.fromObject(params).toString()+", api:"+apiDomain+"api");
 			Response res = http.post(apiDomain+"api", params);
-//			ConsoleUtil.debug(res.toString());
+			ConsoleUtil.debug(res.toString());
 			if(res.getCode() != 200) {
 				//失败
-				return BaseVO.failure("http code:"+res.getCode()+", content:"+res.getContent());
+				return BaseVO.failure("request translate.api http code:"+res.getCode()+", content:"+res.getContent());
 			}
 			
 			vo.setResult(BaseVO.SUCCESS);

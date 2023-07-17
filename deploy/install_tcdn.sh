@@ -201,6 +201,45 @@ echo "启动user - tomcat"
 /mnt/user/bin/startup.sh
 
 
+# 6. 部署 service
+# 复制tomcat
+cd /mnt/
+cp -r tomcat8/ service/
+# 更改tomcat 端口
+sed -i "s#^<Server port=\"8005\" shutdown=\"SHUTDOWN\">#<Server port=\"8160\" shutdown=\"SHUTDOWN\">#g" /mnt/admin/conf/server.xml
+sed -i "s#^.*port=\"80\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"# port=\"8060\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"#g" /mnt/admin/conf/server.xml
+sed -i "s#^.*redirectPort=\"8443\"# redirectPort=\"8460\" #g" /mnt/admin/conf/server.xml
+
+# 安装translate.user应用
+cd /mnt/service/webapps/ROOT/
+rm -rf ./*
+wget http://down.zvo.cn/translate/translate.service.war -O translate.service.war
+unzip translate.service.war
+rm -rf translate.service.war
+
+# 初始化创建相关文件夹
+mkdir /mnt/service/fileupload/
+# 设置application.properties配置
+java -cp ~/properties.jar Properties -path=/mnt/service/webapps/ROOT/WEB-INF/classes/application.properties -set log.datasource.file.path=/mnt/service/logs/
+java -cp ~/properties.jar Properties -path=/mnt/service/webapps/ROOT/WEB-INF/classes/application.properties -set fileupload.storage.local.path=/mnt/service/fileupload/
+
+# 防火墙打开8060端口
+firewall-cmd --zone=public --add-port=8060/tcp --permanent
+firewall-cmd --reload
+
+# 加入开机启动文件
+echo '/mnt/service/bin/startup.sh'>>/etc/rc.d/rc.local
+# 赋予可执行权限
+chmod +x /mnt/service/bin/startup.sh
+chmod +x /etc/rc.d/rc.local
+
+# 启动tomcat
+echo "启动service - tomcat"
+/mnt/service/bin/startup.sh
+
+# translate.admin 设置它的配置文件
+# java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://api.translate.zvo.cn/
+
 #### 最后，安装完成后的一些清理
 # 删除默认加入的 /mnt/tomcat8
 rm -rf /mnt/tomcat8/

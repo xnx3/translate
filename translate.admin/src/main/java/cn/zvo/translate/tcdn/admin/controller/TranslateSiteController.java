@@ -12,6 +12,7 @@ import com.xnx3.j2ee.controller.BaseController;
 import com.xnx3.j2ee.service.SqlCacheService;
 import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.util.ActionLogUtil;
+import com.xnx3.j2ee.util.ConsoleUtil;
 import com.xnx3.j2ee.util.Page;
 import com.xnx3.j2ee.util.Sql;
 import com.xnx3.j2ee.vo.BaseVO;
@@ -187,7 +188,7 @@ public class TranslateSiteController extends BaseController {
 			
 			//查询是否已经存在，存在了就不能添加了
 			TranslateSite site = sqlService.findAloneByProperty(TranslateSite.class, "url", url);
-			if(site == null) {
+			if(site != null) {
 				return error("源站["+url+"]已存在！请不要重复添加");
 			}
 			
@@ -208,10 +209,13 @@ public class TranslateSiteController extends BaseController {
 		
 		// 日志记录
 		if(id - 0 == 0) {
+			ConsoleUtil.log(entity.toString());
+			
 			TranslateSiteSet siteSet = new TranslateSiteSet();
 			siteSet.setId(entity.getId());
 			siteSet.setExecuteJs("");
 			siteSet.setHtmlAppendJs("");
+			ConsoleUtil.log(siteSet.toString());
 			sqlService.save(siteSet);
 			
 			ActionLogUtil.insertUpdateDatabase(request, "向 translate_site 新增一条记录", entity.toString());

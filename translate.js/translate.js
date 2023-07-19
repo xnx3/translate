@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.4.2.20230717',
+	version:'2.4.2.20230719',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -951,6 +951,11 @@ var translate = {
 		if(translate.to == translate.language.getLocal()){
 			return;
 		}
+		
+		/********** 翻译进行 */
+		
+		//先进行图片的翻译替换，毕竟图片还有加载的过程
+		translate.images.execute();
 		
 		/*
 			进行翻译指定的node操作。优先级为：
@@ -2708,6 +2713,91 @@ var translate = {
 		},
 		get:function(key){
 			return localStorage.getItem(key);
+		}
+	},
+	//针对图片进行相关的语种图片替换
+	images:{
+		/* 要替换的图片队列，数组形态，其中某个数组的：
+			key："/uploads/allimg/160721/2-160H11URA25-lp.jpg"; //旧图片，也就是原网站本身的图片。也可以绝对路径，会自动匹配 img src 的值，匹配时会进行完全匹配
+			value："https://xxx.com/abc_{language}.jpg" //新图片，要被替换为的新图片。新图片路径需要为绝对路径，能直接访问到的。其中 {language} 会自动替换为当前要显示的语种。比如你要将你中文网站翻译为繁体中文，那这里会自动替换为：https://xxx.com/abc_chinese_traditional.jpg  有关{language}的取值，可查阅 http://api.translate.zvo.cn/doc/language.json.html 其中的语言标识id便是
+		*/
+		queues:[], 
+		
+		/*
+			向图片替换队列中追加要替换的图片
+			传入格式如：
+			
+			translate.images.add{
+				"/uploads/a.jpg":"https://www.zvo.cn/a_{language}.jpg",
+				"/uploads/b.jpg":"https://www.zvo.cn/b_{language}.jpg",
+			}
+			
+			参数说明：
+			key  //旧图片，也就是原网站本身的图片。也可以绝对路径，会自动匹配 img src 的值，匹配时会进行完全匹配
+			value //新图片，要被替换为的新图片。新图片路径需要为绝对路径，能直接访问到的。其中 {language} 会自动替换为当前要显示的语种。比如你要将你中文网站翻译为繁体中文，那这里会自动替换为：https://xxx.com/abc_chinese_traditional.jpg  有关{language}的取值，可查阅 http://api.translate.zvo.cn/doc/language.json.html 其中的语言标识id便是
+		*/
+		add:function(queueArray){
+			/*
+			translate.images.queues[translate.images.queues.length] = {
+				old:oldImage,
+				new:newImage
+			}
+			*/
+			for(var key in queueArray){
+				translate.images.queues[key] = queueArray[key];
+			}
+		},
+		//执行图片替换操作，将原本的图片替换为跟翻译语种一样的图片
+		execute:function(){
+			if(Object.keys(translate.images.queues).length < 1){
+				//如果没有，那么直接取消图片的替换扫描
+				return;
+			}
+			
+			var imgs = document.getElementsByTagName('img');
+			for(var i = 0; i < imgs.length; i ++){
+				var img = imgs[i];
+				if(typeof(img.src) == 'undefined' || img.src == null || img.src.length == 0){
+					continue;
+				}
+				
+				for(var key in translate.images.queues){
+					var oldImage = key; //原本的图片src
+					var newImage = translate.images.queues[key]; //新的图片src，要替换为的
+					//console.log('queue+'+oldImage);
+					if(oldImage == img.src){
+						//console.log('发现匹配图片:'+img.src);
+						/*
+						//判断当前元素是否在ignore忽略的tag、id、class name中
+						if(translate.ignore.isIgnore(node)){
+							console.log('node包含在要忽略的元素中：');
+							console.log(node);
+							continue;
+						}
+						*/
+						
+						//没在忽略元素里，可以替换
+						img.src = newImage.replace(new RegExp('{language}','g'), translate.to);
+					}
+				}
+				
+			}
+			
+			
+			/********** 还要替换style中的背景图 */
+			/*
+			
+				var elements = document.querySelectorAll('[style*="background-image"], [style*="background"]');
+				for (var i = 0; i < elements.length; i++) {
+				    var style = window.getComputedStyle(elements[i]);
+				    var backgroundImage = style.getPropertyValue('background-image');
+				    if (backgroundImage !== 'none') {
+				        console.log(backgroundImage);
+				    }
+				}
+
+			*/
+			
 		}
 	}
 

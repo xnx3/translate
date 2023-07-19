@@ -2727,10 +2727,10 @@ var translate = {
 			向图片替换队列中追加要替换的图片
 			传入格式如：
 			
-			translate.images.add{
+			translate.images.add({
 				"/uploads/a.jpg":"https://www.zvo.cn/a_{language}.jpg",
 				"/uploads/b.jpg":"https://www.zvo.cn/b_{language}.jpg",
-			}
+			});
 			
 			参数说明：
 			key  //旧图片，也就是原网站本身的图片。也可以绝对路径，会自动匹配 img src 的值，匹配时会进行完全匹配
@@ -2798,6 +2798,53 @@ var translate = {
 
 			*/
 			
+		}
+	},
+	
+	/*
+		划词翻译，鼠标在网页中选中一段文字，会自动出现对应翻译后的文本
+		有网友 https://gitee.com/huangguishen 提供。
+		详细使用说明参见：http://translate.zvo.cn/41557.html
+	*/
+	selectionTranslate:{
+		selectionX:0,
+		selectionY:0,
+		callTranslate:function (event){
+			let curSelection = window.getSelection();
+			//相等认为没有划词
+			if (curSelection.anchorOffset == curSelection.focusOffset) return;
+			let translateText = window.getSelection().toString();
+
+			//简单Copy原有代码了
+			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
+			var data = {
+				from:translate.language.getLocal(),
+				to:translate.to,
+				text:encodeURIComponent(JSON.stringify([translateText]))
+			};
+			translate.request.post(url, data, function(data) {
+				if (data.result == 0) return;
+				let curTooltipEle = document.querySelector('#translateTooltip')
+				curTooltipEle.innerText = data.text[0];
+				curTooltipEle.style.top =selectionY+20+"px";
+				curTooltipEle.style.left = selectionX+50+"px" ;
+				curTooltipEle.style.display = "";
+			});
+		},
+		start:function () {
+			//新建一个tooltip元素节点用于显示翻译
+			let tooltipEle = document.createElement('span');
+			tooltipEle.innerText = '';
+			tooltipEle.setAttribute('id', 'translateTooltip');
+			tooltipEle.setAttribute('style', 'background-color:black;color:#fff;text-align:center;border-radius:6px;padding:5px;position:absolute;z-index:999;top:150%;left:50%; ');
+			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
+			document.body.appendChild(tooltipEle);
+			//监听鼠标按下事件，点击起始点位置作为显示翻译的位置点
+			document.addEventListener('mousedown', (event)=>{ selectionX= event.pageX;selectionY= event.pageY ;}, false);			
+			//监听鼠标弹起事件，便于判断是否处于划词
+			document.addEventListener('mouseup', translate.selectionTranslate.callTranslate, false);
+			//监听鼠标点击事件，隐藏tooltip，此处可优化
+			document.addEventListener('click', (event)=>{  document.querySelector('#translateTooltip').style.display = "none"}, false);
 		}
 	}
 

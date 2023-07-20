@@ -9,7 +9,7 @@ import com.xnx3.doc.JavaDoc;
  */
 public class ApiDoc {
 	public static void main(String[] args) {
-		JavaDoc doc = new com.xnx3.doc.JavaDoc("cn.zvo.translate.api.controller");
+		JavaDoc doc = new com.xnx3.doc.JavaDoc("cn.zvo.translate.service.api.controller");
 //		doc.templatePath = "/Users/apple/Downloads/javadoc/";		//本地模板所在磁盘的路径
 		doc.name = "translate.js 接口文档";				//文档的名字
 		doc.domain = "https://api.translate.zvo.cn";				//文档中默认的接口请求域名

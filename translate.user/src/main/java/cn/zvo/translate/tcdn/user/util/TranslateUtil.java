@@ -163,14 +163,14 @@ public class TranslateUtil {
 		return vo;
 	}
 	
-	public static String[] noStaticFileSuffixs = {"html","htm","do","jsp","php","asp","aspx"}; //非静态资源的后缀
+	public static String[] noStaticFileSuffixs = {"html","htm","do","jsp","php","asp","aspx"}; //非静态资源的后缀，也就是需要翻译的后缀
 	/**
 	 * 如果是静态资源（不需要进行翻译的网页），则返回true
 	 * @param requestUri
 	 * @return
 	 */
 	public static boolean isStaticFile(String requestUri) {
-		System.out.println(requestUri);
+		System.out.println("isStaticFile:"+requestUri);
 		if(requestUri.indexOf("?") > -1) {
 			requestUri = StringUtil.subString(requestUri, "", "?", 2);
 		}

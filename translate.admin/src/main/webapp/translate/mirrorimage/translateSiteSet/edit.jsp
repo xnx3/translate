@@ -26,14 +26,14 @@ html{overflow-x: hidden;}
 	</div>
 	
 	<div class="layui-form-item">
-		<label class="layui-form-label" style=" width: 100%;float: left;display: flex;">Execute JavaScript <i class="layui-icon" style=" color: #626262;font-size: 16px; cursor: pointer; margin-left: 10px;" onclick="showExecuteJs()">&#xe702;</i> &nbsp;：</label>
+		<label class="layui-form-label" style=" width: 100%;float: left;display: flex;">翻译前执行的JavaScript代码 <i class="layui-icon" style=" color: #626262;font-size: 16px; cursor: pointer; margin-left: 10px;" onclick="showExecuteJs()">&#xe702;</i> &nbsp;：</label>
 		<div class="layui-input-block" id="executeJs_div">
 			<textarea name="executeJs" id="executeJs_textarea" style="height:350px;" placeholder="请输入 JavaScript 代码" class="layui-textarea" style="height: 300px"></textarea>
 		</div>
 	</div>
 	
 	<div class="layui-form-item">
-		<label class="layui-form-label" style=" width: 100%;float: left;display: flex;">Html Append JavaScript <i class="layui-icon" style=" color: #626262;font-size: 16px; cursor: pointer; margin-left: 10px;" onclick="showHtmlAppendJs()">&#xe702;</i> &nbsp; ： </label>
+		<label class="layui-form-label" style=" width: 100%;float: left;display: flex;">在完成翻译后的html页面的末尾追加的代码 <i class="layui-icon" style=" color: #626262;font-size: 16px; cursor: pointer; margin-left: 10px;" onclick="showHtmlAppendJs()">&#xe702;</i> &nbsp; ： </label>
 		<div class="layui-input-block" id="htmlAppendJs_div">
 			<textarea name="htmlAppendJs" id="htmlAppendJs_textarea" style="height:350px;" placeholder="请输入 JavaScript 代码" class="layui-textarea" style="height: 300px"></textarea>
 		</div>
@@ -82,7 +82,7 @@ function loadHtmlAppendJsEditor(){
 		toolbar			: false,
 		codeFold		: true,
 		searchReplace	: true,
-		placeholder		: "请输入 JavaScript 代码",
+		placeholder		: "请输入HTML源码最末尾追加的代码",
 		value			: document.getElementById("htmlAppendJs_textarea").value,
 		theme			: "default",
 		mode			: "text/html",
@@ -104,7 +104,7 @@ function save() {
 			parent.msg.success("操作成功")
 			parent.layer.close(index);
 			// 刷新父窗口
-			parent.location.reload();
+			//parent.location.reload();
 		} else if (data.result == '0') {
 			msg.failure(data.info);
 		} else {
@@ -126,7 +126,8 @@ function loadData() {
 			// 将接口获取到的数据自动填充到 form 表单中
 			wm.fillFormValues($('form'), data.translateSiteSet);
 			loadExecuteJsEditor();
-			loadHtmlAppendJsEditor();
+			//如果一起执行诡异错误， executeJs 会被 htmlAppendJs覆盖
+			setTimeout(function(){ loadHtmlAppendJsEditor(); }, 200); 
 		} else if (data.result == '0') {
 			msg.failure(data.info);
 		} else {
@@ -145,7 +146,7 @@ if(id != null && id > 0){
 
 function showExecuteJs(){
 	msg.popups({
-		text:'在进行翻译过程中，执行的js脚本。<br/>这个只是在翻译的过程中进行执行，它本身并不会追加到输出的html上。<br/>它会在实际翻译的 translate.execute() 之前进行执行。',
+		text:'翻译前执行的JavaScript代码。这个只是在翻译的过程中进行执行，它会在整个网页已经打开、translate.js 都已经正常加载完毕后，执行这里设置的js，在之后会再执行 translate.execute() 进行翻译。像是自定义图片了、自定义术语库了、又或者用js操作某个网页增加个div、删除个什么原本网页中的元素了，也都可以在这里加。',
 		width:'360px'
 	});
 }
@@ -153,7 +154,7 @@ function showExecuteJs(){
 
 function showHtmlAppendJs(){
 	msg.popups({
-		text:'翻译完成后，在翻译后的html页面中追加的js。 这个会在翻译后的html最末尾追加',
+		text:'翻译完成后，在翻译后的html页面中追加的代码。 这个会在翻译后的html最末尾追加，也就是在 &lt;/html&gt; 之后追加。<br/>比如你可以追加js脚本、css样式等等。',
 		width:'360px'
 	});
 }

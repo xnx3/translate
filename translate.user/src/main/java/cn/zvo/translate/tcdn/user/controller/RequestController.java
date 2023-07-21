@@ -136,7 +136,7 @@ public class RequestController extends BaseController{
 		
 		//增加 htmlAppendJs
 		if(siteSet.getHtmlAppendJs().length() > 0) {
-			html = html + "<script>"+siteSet.getHtmlAppendJs()+"</script>";
+			html = html + siteSet.getHtmlAppendJs();
 		}
 		return html;
 	}

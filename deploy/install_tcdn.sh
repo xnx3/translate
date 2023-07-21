@@ -239,6 +239,8 @@ echo "启动service - tomcat"
 
 # translate.admin 设置它的配置文件
 # java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://api.translate.zvo.cn/
+# translate.api 设置它的配置文件
+# java -cp ~/properties.jar Properties -path=/mnt/api/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://127.0.0.1:8060/
 
 #### 最后，安装完成后的一些清理
 # 删除默认加入的 /mnt/tomcat8

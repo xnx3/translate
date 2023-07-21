@@ -9,13 +9,13 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import com.xnx3.BaseVO;
-import com.xnx3.DateUtil;
 import com.xnx3.FileUtil;
 import com.xnx3.Log;
 import com.xnx3.MD5Util;
 import com.xnx3.StringUtil;
 import com.xnx3.SystemUtil;
 import com.xnx3.UrlUtil;
+import com.xnx3.j2ee.util.ApplicationPropertiesUtil;
 
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
@@ -30,7 +30,8 @@ public class ChromeUtil {
 	static WebDriver driver;
 	static Map<String, String> headers;
 	
-	public static String translateJs = "var console={ log:function(str){} };";
+	public static String translateJs = "var console={ log:function(str){ var consolelogDiv = document.createElement(\"div\");"
+			+ "consolelogDiv.className=\"translate_consoleLog ignore\"; consolelogDiv.style.display='none'; consolelogDiv.innerHTML = str; try{ document.getElementsByTagName('html')[0].appendChild(consolelogDiv); }catch (ce){ } } };";
 	public static String translateCoverJs = "";
 	static {
 		http = new Http();
@@ -39,10 +40,11 @@ public class ChromeUtil {
 		headers.put("Referer", "translate.js");
 		
 		try {
-			translateJs += http.get("http://res.zvo.cn/translate/translate.js").getContent();
+			translateJs = translateJs + http.get("http://res.zvo.cn/translate/translate.js").getContent();
 //			translateJs += http.get("https://gitee.com/mail_osc/translate/raw/master/translate.js/translate.js").getContent();
 		} catch (IOException e) {
 			e.printStackTrace();
+			translateJs = "document.write('网络加载 translate.js失败，请重启服务器中的 translate.api 项目');";
 		}
 		
 		if(SystemUtil.isWindowsOS()) {
@@ -58,6 +60,7 @@ public class ChromeUtil {
 					+ "	});\r\n"
 					+ "};";
 		}
+		
 	}
 	
 	public static void main(String[] args) throws InterruptedException, IOException {
@@ -86,70 +89,29 @@ public class ChromeUtil {
 		String html = "";
 		
 		
-		
-		if(driver == null) {
-			ChromeOptions options = new ChromeOptions(); // 设置chrome的一些属性
-//			options.setPageLoadStrategy(PageLoadStrategy.NONE);
-			options.addArguments("--disable-gpu"); //谷歌文档提到需要加上这个属性来规避bug
-			options.addArguments("--headless"); //无界面运行 ,开启这个后js会被执行----------
-			options.addArguments("--disable-javascript"); //禁用javascript
-			options.addArguments("--remote-allow-origins=*");//解决 403 出错问题
-			Map<String, Object> prefs = new HashMap<String, Object>();
-			prefs.put("profile.managed_default_content_settings.images",2); //禁止下载加载图片
-			prefs.put("profile.managed_default_content_settings.javascript",2); //禁止下载加载js文件、执行js文件
-			prefs.put("profile.managed_default_content_settings.js",2); //禁止下载加载js文件、执行js文件
-			prefs.put("profile.managed_default_content_settings.css",2); //禁止下载加载js文件、执行js文件
-			
-			
-//			Map<String, Object> contentSettings = new HashMap<String, Object>();
-//			Map<String, Object> exceptions = new HashMap<String, Object>();
-//			exceptions.put("*", "script-src 'none'");
-//			contentSettings.put("javascript_content", exceptions);
-//			prefs.put("profile.content_settings.exceptions", contentSettings);
-			
-			options.setExperimentalOption("prefs", prefs);
-			options.addArguments("disable-infobars");	//正受到自动测试软件的控制
-			
-			if(SystemUtil.isWindowsOS()) {
-				System.setProperty("webdriver.chrome.driver","G:\\git\\chrome\\lib\\chromedriver.exe");
-			}else {
-				//centos中是将它放在了 /mnt/translate/chrome/
-				System.setProperty("webdriver.chrome.driver","/mnt/api/chrome/chromedriver");
-				
-				//(unknown error: DevToolsActivePort file doesn't exist)
-				options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
-				options.addArguments("--no-sandbox"); //数是让Chrome在root权限下跑
-				
-			}
-			//这种方式在无头Headless模式下是生效的， 非无头Headless模式下也是生效的。
-			options.addArguments("blink-settings=imagesEnabled=false");
-			options.addArguments("blink-settings=javascriptEnabled=false");
-			//https://chromedriver.storage.googleapis.com/index.html?path=110.0.5481.30/
-			
-//			options.addArguments("--disable-web-security");
-//			options.addArguments("--allow-running-insecure-content");
-			Log.info(JSONObject.fromObject(options).toString());
-			options.setPageLoadStrategy(PageLoadStrategy.EAGER);
-			Log.info("webdriver.chrome.driver:"+System.getProperty("webdriver.chrome.driver"));
-			driver = new ChromeDriver(options);
-		}
-		driver.get(targetUrl);
-		html = driver.getPageSource(); //获取源代码
+		//不能用这个方式获取源码，会加入动态垃圾代码
+//		if(driver == null) {
+//			driver = createDriver();
+//		}
+//		driver.get(targetUrl);
+//		html = driver.getPageSource(); //获取源代码
+//		driver.quit();
+//		driver = null;
 		
 		/*** 服务器上有时https访问出现 Empty issuer DN not allowed in X509Certificates ****/
-//		try {
-//			Response res = http.get(targetUrl);
-//			if(res.getCode() != 200) {
-//				vo.setBaseVO(BaseVO.FAILURE, "处理异常, http code :"+res.getCode());
-//				return vo;
-//			}
-//			html = res.getContent();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//			vo.setBaseVO(BaseVO.FAILURE, "处理异常,"+e.getMessage());
-//			return vo;
-//		}
+		try {
+			Response res = http.get(targetUrl);
+			if(res.getCode() != 200) {
+				vo.setBaseVO(BaseVO.FAILURE, "处理异常, http code :"+res.getCode());
+				return vo;
+			}
+			html = res.getContent();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			vo.setBaseVO(BaseVO.FAILURE, "处理异常,"+e.getMessage());
+			return vo;
+		}
 		
 		String hash = null; //网页原始源代码的hash
 		hash = MD5Util.MD5(html);
@@ -160,6 +122,7 @@ public class ChromeUtil {
 	
 		String localHtml = "file:///mnt/api/chromehtml/"+hash+".html";
 		Log.info("chrome get url : "+localHtml);
+		driver = createDriver();
 		driver.get(localHtml);
 		
 		/** 先判断缓存 **/
@@ -167,34 +130,35 @@ public class ChromeUtil {
 //		String html = driver.getPageSource();
 //		hash = MD5Util.MD5(html);
 		//String cache = CacheUtil.get(domain, hash, language);
-		String cache = null;
-		Log.info("cache hash:"+hash+", language:"+language);
-		if(cache != null && cache.length() > 0) {
-			
-			JSONObject json = JSONObject.fromObject(cache);
-			vo.setInfo(json.getString("info"));
-			vo.setResult(json.getInt("result"));
-			vo.setLocalLanguage(json.getString("localLanguage"));
-			
-			//添加一条数据到日志
-			Map<String, Object> params = new HashMap<String, Object>();
-			params.put("url", targetUrl);
-			params.put("time", DateUtil.timeForUnix13());
-			params.put("hash", hash);
-			params.put("cache", "true");
-			LogUtil.add(params);
-			
-			driver.quit();
-			driver = null;
-			
-			return vo;
-		}
+//		String cache = null;
+//		Log.info("cache hash:"+hash+", language:"+language);
+//		if(cache != null && cache.length() > 0) {
+//			
+//			JSONObject json = JSONObject.fromObject(cache);
+//			vo.setInfo(json.getString("info"));
+//			vo.setResult(json.getInt("result"));
+//			vo.setLocalLanguage(json.getString("localLanguage"));
+//			
+//			//添加一条数据到日志
+//			Map<String, Object> params = new HashMap<String, Object>();
+//			params.put("url", targetUrl);
+//			params.put("time", DateUtil.timeForUnix13());
+//			params.put("hash", hash);
+//			params.put("cache", "true");
+//			LogUtil.add(params);
+//			
+//			driver.quit();
+//			driver = null;
+//			
+//			return vo;
+//		}
 //		
 		
 		String htmlLower = html.toLowerCase();
 		if(htmlLower.indexOf("</html>") == -1 && htmlLower.indexOf("</body>") == -1) {
 			String pageSource = driver.getPageSource();
-			vo.setInfo(pageSource);
+			vo.setResult(BaseVO.FAILURE);
+			vo.setInfo("源站页面未发现html、body标签，翻译中止。源站目标源码："+pageSource);
 			//缓存
 			CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
 			
@@ -236,7 +200,14 @@ public class ChromeUtil {
 					+ "document.body.appendChild(div);\r\n"
 					+ " }";
 		}
-		execute += "  translate.selectLanguageTag.show = false; translate.to = '"+language+"'; translate.execute(document.all); ";
+		
+		//翻译的请求主机
+		String apiUrl = ApplicationPropertiesUtil.getProperty("translate.tcdn.service.domain");
+		if(apiUrl == null || apiUrl.length() == 0) {
+			apiUrl = "http://api.translate.zvo.cn/";
+		}
+		
+		execute += " translate.request.api.host='"+apiUrl+"'; translate.selectLanguageTag.show = false; translate.to = '"+language+"'; translate.execute(); ";
 		execute += "return translate.requests;";
 		
 		Object objLocalLanguage = js.executeScript(translateJs+" return translate.language.getLocal();");
@@ -251,9 +222,11 @@ public class ChromeUtil {
 		}
 		Log.info("execute:");
 		Log.info(execute);
+		Log.info("translateJs:"+translateJs.length());
+		Log.info("translateCoverJs:"+translateCoverJs);
 		Object obj = js.executeScript(translateJs +translateCoverJs+ execute);
 		if(obj != null) {
-			//Log.info("fanyi first obj : "+JSONArray.fromObject(obj));
+			Log.info("fanyi first obj : "+JSONArray.fromObject(obj));
 			vo.setLocalLanguage((String) objLocalLanguage);
 			fanyi(obj, js);
 		}else {
@@ -326,6 +299,58 @@ public class ChromeUtil {
 	public static String getLocalStorageSet(String key, String value) {
 //		Log.info(value);
 		return "localStorage.setItem(\""+key+"\",\""+value+"\");";
+	}
+	
+	/**
+	 * 创建 chrome 的 driver
+	 * @return
+	 */
+	public ChromeDriver createDriver() {
+		ChromeOptions options = new ChromeOptions(); // 设置chrome的一些属性
+//		options.setPageLoadStrategy(PageLoadStrategy.NONE);
+		options.addArguments("--disable-gpu"); //谷歌文档提到需要加上这个属性来规避bug
+		options.addArguments("--headless"); //无界面运行 ,开启这个后js会被执行----------
+		options.addArguments("--disable-javascript"); //禁用javascript
+		options.addArguments("--remote-allow-origins=*");//解决 403 出错问题
+		Map<String, Object> prefs = new HashMap<String, Object>();
+		prefs.put("profile.managed_default_content_settings.images",2); //禁止下载加载图片
+		prefs.put("profile.managed_default_content_settings.javascript",2); //禁止下载加载js文件、执行js文件
+		prefs.put("profile.managed_default_content_settings.js",2); //禁止下载加载js文件、执行js文件
+		prefs.put("profile.managed_default_content_settings.css",2); //禁止下载加载js文件、执行js文件
+		
+		
+//		Map<String, Object> contentSettings = new HashMap<String, Object>();
+//		Map<String, Object> exceptions = new HashMap<String, Object>();
+//		exceptions.put("*", "script-src 'none'");
+//		contentSettings.put("javascript_content", exceptions);
+//		prefs.put("profile.content_settings.exceptions", contentSettings);
+		
+		options.setExperimentalOption("prefs", prefs);
+		options.addArguments("disable-infobars");	//正受到自动测试软件的控制
+		
+		if(SystemUtil.isWindowsOS()) {
+			System.setProperty("webdriver.chrome.driver","G:\\git\\chrome\\lib\\chromedriver.exe");
+		}else {
+			//centos中是将它放在了 /mnt/translate/chrome/
+			System.setProperty("webdriver.chrome.driver","/mnt/api/chrome/chromedriver");
+			
+			//(unknown error: DevToolsActivePort file doesn't exist)
+			options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
+			options.addArguments("--no-sandbox"); //数是让Chrome在root权限下跑
+			
+		}
+		//这种方式在无头Headless模式下是生效的， 非无头Headless模式下也是生效的。
+		options.addArguments("blink-settings=imagesEnabled=false");
+		options.addArguments("blink-settings=javascriptEnabled=false");
+		//https://chromedriver.storage.googleapis.com/index.html?path=110.0.5481.30/
+		
+//		options.addArguments("--disable-web-security");
+//		options.addArguments("--allow-running-insecure-content");
+		Log.info(JSONObject.fromObject(options).toString());
+		options.setPageLoadStrategy(PageLoadStrategy.EAGER);
+		Log.info("webdriver.chrome.driver:"+System.getProperty("webdriver.chrome.driver"));
+		ChromeDriver driver = new ChromeDriver(options);
+		return driver;
 	}
 	
 	/**

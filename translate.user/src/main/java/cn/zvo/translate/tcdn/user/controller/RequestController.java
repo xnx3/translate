@@ -48,20 +48,8 @@ public class RequestController extends BaseController{
 	 */
 	@RequestMapping(value="**")
 	@ResponseBody
-	public String all(HttpServletRequest request, HttpServletResponse response, Model model){
-//		ConsoleUtil.info("uri: "+request.getServletPath());
-//		ConsoleUtil.info("request.getRequestURI():"+request.getRequestURI());
-//		请求的路径,比如 http://192.168.31.193/ab/b.html?a=3 那么这里便是 /ab/b.html
-		String requestPath = request.getServletPath(); 
-//		ConsoleUtil.info("requestPath:"+requestPath);
-		if(request.getQueryString() != null && request.getQueryString().length() > 0) {
-			requestPath = requestPath + "?" + request.getQueryString();
-		}
-		ConsoleUtil.info("requestPath:"+requestPath);
-		
-		String html;
-		long startTime = DateUtil.timeForUnix13();
-		
+	public String all(HttpServletRequest request, HttpServletResponse response, Model model) throws IOException{
+		//找到源站
 		SiteVO vo = DomainUtil.getSite(request);
 		ConsoleUtil.debug("site:"+vo.toString());
 		if(vo.getResult() - SiteVO.FAILURE == 0) {
@@ -81,6 +69,29 @@ public class RequestController extends BaseController{
 		String newDomain = vo.getDomain();
 		
 		Log.info("当前访问域名："+newDomain+", 源站："+sourceDomain+", 将 "+localLanguage+"转为"+targetLanguage);
+		
+		
+		//如果是静态资源，不作处理，进行重定向操作
+		String staticUrl = request.getRequestURI();
+		if(TranslateUtil.isStaticFile(staticUrl)) {
+			response.sendRedirect(TranslateUtil.targetUrl(sourceDomain, request));
+			return "redirect";
+		}
+		
+		
+		
+//		ConsoleUtil.info("uri: "+request.getServletPath());
+//		ConsoleUtil.info("request.getRequestURI():"+request.getRequestURI());
+//		请求的路径,比如 http://192.168.31.193/ab/b.html?a=3 那么这里便是 /ab/b.html
+		String requestPath = request.getServletPath(); 
+//		ConsoleUtil.info("requestPath:"+requestPath);
+		if(request.getQueryString() != null && request.getQueryString().length() > 0) {
+			requestPath = requestPath + "?" + request.getQueryString();
+		}
+		ConsoleUtil.info("requestPath:"+requestPath);
+		
+		String html;
+		long startTime = DateUtil.timeForUnix13();
 		
 		html = HtmlCacheUtil.get(sourceDomain, targetLanguage, requestPath);
 		

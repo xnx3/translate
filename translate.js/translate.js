@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.4.2.20230719',
+	version:'2.4.3.20230725',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -915,9 +915,13 @@ var translate = {
 		var uuid = translate.util.uuid();
 		//console.log('=====')
 		//console.log(translate.nodeQueue);
+		
+		/* v2.4.3 将初始化放到了 translate.element.whileNodes 中，如果uuid对应的没有，则自动创建
+
 		translate.nodeQueue[uuid] = new Array(); //创建
 		translate.nodeQueue[uuid]['expireTime'] = Date.now() + 120*1000; //删除时间，10分钟后删除
 		translate.nodeQueue[uuid]['list'] = new Array(); 
+		*/
 		//console.log(translate.nodeQueue);
 		//console.log('=====end')
 		
@@ -1406,6 +1410,16 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
+
+			//如果这个uuid没有，则创建
+			if(typeof(translate.nodeQueue[uuid]) == 'undefined' || translate.nodeQueue[uuid] == null){
+				translate.nodeQueue[uuid] = new Array(); //创建
+				translate.nodeQueue[uuid]['expireTime'] = Date.now() + 120*1000; //删除时间，10分钟后删除
+				translate.nodeQueue[uuid]['list'] = new Array(); 
+				console.log('创建 --- ');
+				console.log(uuid)
+			}
+
 			//console.log('---'+typeof(node)+', ');
 			//判断是否是有title属性，title属性也要翻译
 			if(typeof(node) == 'object' && typeof(node['title']) == 'string' && node['title'].length > 0){

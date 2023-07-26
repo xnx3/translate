@@ -3,6 +3,9 @@ package cn.zvo.translate.service.google;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.xnx3.DateUtil;
+
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
 import cn.zvo.translate.service.core.util.StringUtil;
@@ -43,7 +46,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		
 		String domain = "translate.googleapis.com";
 //		domain = "api.translate.zvo.cn";	//本地调试用
-		String url = "https://"+domain+"/translate_a/t?anno=3&client=te&format=html&v=1.0&key&logld=vTE_20200210_00&sl="+from+"&tl="+to+"&sp=nmt&tc=1&ctt=1&sr=1&tk=&mode=1";
+		String url = "https://"+domain+"/translate_a/t?anno=3&client=te_lib&format=html&v=1.0&key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&logld=vTE_"+DateUtil.currentDate("yyyyMMdd")+"&sl="+from+"&tl="+to+"&sp=nmt&tc=1&ctt=1&sr=1&tk=&mode=1";
 		//System.out.println(url);
 //		JSONArray array = JSONArray.fromObject(text);
 		StringBuffer payload = new StringBuffer();

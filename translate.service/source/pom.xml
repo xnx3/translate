@@ -191,13 +191,14 @@
 		  <scope>provided</scope>
 		</dependency>
 		
-		<!-- javadoc -->
+		<!-- javadoc https://gitee.com/leimingyun/javadoc -->
 		<dependency>
 		  <groupId>com.xnx3.doc.javadoc</groupId>
 		  <artifactId>javadoc</artifactId>
-		  <version>1.15</version>
-		  <scope>provided</scope>
+		  <version>1.16</version>
+		  <scope>compile</scope>
 		</dependency>
+
 		
 		<!-- ip https://gitee.com/lionsoul/ip2region/tree/master/binding/java -->
 		<dependency>

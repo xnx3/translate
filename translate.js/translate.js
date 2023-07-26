@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.4.3.20230725',
+	version:'2.4.4.20230726',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1416,8 +1416,8 @@ var translate = {
 				translate.nodeQueue[uuid] = new Array(); //创建
 				translate.nodeQueue[uuid]['expireTime'] = Date.now() + 120*1000; //删除时间，10分钟后删除
 				translate.nodeQueue[uuid]['list'] = new Array(); 
-				console.log('创建 --- ');
-				console.log(uuid)
+				//console.log('创建 --- ');
+				//console.log(uuid)
 			}
 
 			//console.log('---'+typeof(node)+', ');
@@ -2868,6 +2868,11 @@ var translate = {
 	
 }
 console.log('Two lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate');
+console.log('---------------------------');
+console.log('--- translate.js prompt ---');
+console.log('--- translate.js  提 示  ---');
+console.log('翻译能力因为google翻译接口封闭，导致免费翻译接口能力无法使用，如果您私有部署的翻译接口，配置的华为云翻译，那么不收任何影响。 我们针对免费翻译接口正在积极寻找合租方寻找免费解决方案。如果您有建议，欢迎联系我，我微信 xnx3com - 2023.7.26');
+console.log('---------------------------');
 
 //这个只是v1使用到
 try{

@@ -196,7 +196,7 @@
 		  <groupId>com.xnx3.doc.javadoc</groupId>
 		  <artifactId>javadoc</artifactId>
 		  <version>1.16</version>
-		  <scope>compile</scope>
+		  <scope>provided</scope>
 		</dependency>
 
 		

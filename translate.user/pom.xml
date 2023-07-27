@@ -16,7 +16,7 @@
 	<parent>
 	    <groupId>com.xnx3.wangmarket.wm</groupId>
 	    <artifactId>parent</artifactId>
-	    <version>3.5</version>
+	    <version>3.7</version>
 	</parent>
 	
 	<licenses>

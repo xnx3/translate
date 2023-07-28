@@ -6,20 +6,38 @@ package cn.zvo.translate.service.core;
  *
  */
 public enum LanguageEnum {
-	ENGLISH("english", "English"),
-	CHINESE_SIMPLIFIED("chinese_simplified", "简体中文"),
-	CHINESE_TRADITIONAL("chinese_traditional", "繁體中文"),
-	KOREAN("korean", "한어"); //韩语
-//	JAPANESE("japanese", "しろうと"), //日语
-//	RUSSIAN("russian","Русский язык");	//俄语
-//	
+	ENGLISH("english", "English", "英语"),
+	CHINESE_SIMPLIFIED("chinese_simplified", "简体中文", "简体中文"),
+	CHINESE_TRADITIONAL("chinese_traditional", "繁體中文", "繁体中文"),
+	KOREAN("korean", "한어", "韩语"),
+	JAPANESE("japanese", "しろうと", "日语"),
+	RUSSIAN("russian","Русский язык", "俄语"),
+	ARABIC("arabic", "بالعربية", "阿拉伯语");
+	
+	
+	/*
+	 
+	 	待补充
+	 	内容参考 cn.zvo.translate.service.google.ServiceInterfaceImplement
+	 	语种(语种Key)
+	  
+	 */
+	
+	
+	
+	
+	
+	
+	
 	
 	public final String id;		//语言名，如 english、chinese_simplified、chinese_traditional
-	public final String name;		//文字说明，如 english、简体中文、繁体中文
+	public final String name;		//文字说明，对应语种的文字说明，如 english、简体中文、繁体中文、한어
+	public final String chinese_name;	//中文的说明，以中文方式的语种说明
 	
-	private LanguageEnum(String id, String name) { 
+	private LanguageEnum(String id, String name, String chinese_name) { 
 		this.name = name;
 		this.id = id;
+		this.chinese_name = chinese_name;
 	}
 	
 	public static void main(String[] args) {

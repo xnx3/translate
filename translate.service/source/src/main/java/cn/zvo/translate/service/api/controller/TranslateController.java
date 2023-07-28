@@ -48,7 +48,6 @@ public class TranslateController{
 		params.put("method", "language.json");
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
 		LogUtil.add(params);
-		
 		return Language.getLanguageList();
 	}
 	
@@ -99,6 +98,17 @@ public class TranslateController{
 			return vo;
 		}
 		
+		JSONArray textArray = JSONArray.fromObject(text);
+		
+		//统计翻译字数
+		int size = 0;
+		for (int i = 0; i < textArray.size(); i++) {
+			Object obj = textArray.get(i);
+			if(obj != null) {
+				size = size + ((String)obj).length();
+			}
+		}
+		
 		
 		//日志
 		String referer = request.getHeader("referer"); 
@@ -106,14 +116,13 @@ public class TranslateController{
 		params.put("referer", referer);
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
 		params.put("method", "translate.json");
-		LogUtil.add(params);
+		params.put("size", size);
 		
 		//先从缓存中取
 		String hash = MD5Util.MD5(from+"_"+to+"_"+text);
 		vo = CacheUtil.get(hash, to);
 		if(vo == null) {
 			//缓存中没有，那么从api中取
-			JSONArray textArray = JSONArray.fromObject(text);
 			vo = Service.getService().api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
 			vo.setFrom(from);
 			vo.setTo(to);
@@ -121,10 +130,15 @@ public class TranslateController{
 				vo.setInfo("SUCCESS");
 			}
 			
+			params.put("source", "api");  //翻译来源-API翻译接口
+			
 			//取出来后加入缓存
 			CacheUtil.set(hash, to, vo);
+		}else {
+			params.put("source", "cache"); //翻译来源-缓存
 		}
 		
+		LogUtil.add(params);
 		return vo;
 	}
 	

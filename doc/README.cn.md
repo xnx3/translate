@@ -437,11 +437,6 @@ japanese:function(str){
 | Java打印及预览的工具类 | ![](https://gitee.com/leimingyun/printJframe/badge/star.svg?theme=white ) | https://gitee.com/leimingyun/printJframe |
 …………
 
-# 其他
-当前v2.0版本还处于优化期，并非完美稳定版本，当前只测试了大部分网站能完美适配，但肯定会有遗漏，随着使用的网站不断增加，会逐步修复发现的bug。稳定版本预计将会再之后的三到四个月后发布。当前您使用v2版本时，可直接用我们的js源即可，如果您有本地化的需求，可再后面稳定版本发布后再进行本地化放置。  
-本人热爱开源这件事，如果您是某款开源框架的作者，想要在您开源项目中加入此多语言切换能力，但接入时遇到了困难，欢迎加入下面的QQ群，说明您是哪个开源软件的作者，我必将全力协助。愿意开源的朋友，都是值得尊敬且支持的。  
-本云服务器平台可私有化部署，如果您有这方面需求，也可以联系我，但这个部署耗时几小时到半天，我们也需要给同事发工资，疫情三年都比较艰难，所以部署这块没法无偿帮助了，提供有偿部署，收个几百的人工费，还望能理解。  
-
 # 交流
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
 作者微信：xnx3com  
@@ -449,5 +444,5 @@ japanese:function(str){
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
-# 高级服务
-[当前translate.js是基于js来对当前html进行翻译，绝大多数场景足够使用。但如果你查看页面源代码，会发现源代码并不会变，处于未翻译状态。如果你想针对页面源代码本身直接进行翻译，可以点此查阅我们这个扩展版本](README_SERVICE.md)
+# 最新文档
+当前我们只是介绍的 translate.js 相关，我们在 2023 年初开源了其他的几个配套产品 translate.api、translate.user、translate.admin 等，详细最新的文档请查阅 [translate.zvo.cn](http://translate.zvo.cn)

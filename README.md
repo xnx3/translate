@@ -391,12 +391,6 @@ The ability of automatic translation has been put into the following open source
 [IoTSharp](https://gitee.com/IoTSharp) IoTSharp is an open source Internet of Things basic platform based on. Net Core, supporting HTTP, MQTT and CoAp protocols  
 [Cloud of flow](https://gitee.com/ntdgg) Information and digital service providers
 
-
-# Other instructions
-The current version of v2.0 is still in the optimization stage and is not a perfect and stable version. Currently, only most websites have been tested for perfect adaptation, but there will be omissions. As the number of websites used increases, the bugs found will be gradually fixed. The stable version is expected to be released in the next three to four months. When you use the v2 version, you can directly use our js source. If you have localization requirements, you can place localization after the stable version is released later.  
-I love open source. If you are the author of an open source framework and want to add this multilingual switching capability to your open source project, but encounter difficulties when accessing it, welcome to join the QQ group below to explain which open source software author you are, and I will fully assist you. Friends who are willing to open source are worthy of respect and support.  
-This cloud server platform can be deployed privately. If you have any needs in this regard, you can also contact me. But this deployment takes several hours to half a day, and we also need to pay our colleagues. The epidemic has been relatively difficult for three years, so there is no way to help with the deployment free of charge. It will cost hundreds of labor costs to provide paid deployment. I hope you can understand.  
-
 # communication
 If you encounter any abnormal situation during use, please mention the issues and write down the problems you encounter in detail. If you can, please also write down your website, so that we can test more fully to quickly locate the problem  
 Author WeChat:xnx3com  
@@ -405,5 +399,5 @@ Communication QQ group:181781514
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
-# VIP service
-[Currently, translate.js is based on js to translate the current html, and most scenarios are sufficient. However, if you view the page source code, you will find that the source code does not change and is in an untranslated state. If you want to translate the page source code directly, you can click here to view our extended version](doc/README_SERVICE.md)
+# Latest Documents
+Currently, we are only introducing translate.js ，We opened up several other supporting products in early 2023 translate.api、translate.user、translate.admin ，Please refer to the detailed and latest documentation [translate.zvo.cn](http://translate.zvo.cn) 

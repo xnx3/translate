@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 import com.xnx3.MD5Util;
+import com.xnx3.UrlUtil;
+
 import cn.zvo.log.framework.springboot.LogUtil;
 import cn.zvo.translate.service.core.util.CacheUtil;
 import cn.zvo.translate.tcdn.core.service.Language;
@@ -109,23 +111,28 @@ public class TranslateController{
 			}
 		}
 		
+		//来源，是哪个网页在使用
+		String referer = request.getHeader("referer"); 
+		//取这个来源网页的domain
+		String domain = UrlUtil.getDomain(referer);
+		if(domain == null || domain.length() < 1) {
+			domain = "unknow";
+		}
 		
 		//日志
-		String referer = request.getHeader("referer"); 
 		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("referer", referer);
+		params.put("domain", domain);
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
 		params.put("method", "translate.json");
 		params.put("size", size);
 		
 		//先从缓存中取
 		String hash = MD5Util.MD5(from+"_"+to+"_"+text);
-		vo = CacheUtil.get(hash, to);
-		if(vo == null) {
+//		vo = CacheUtil.get(hash, to);
+		JSONArray cacheTextArray = CacheUtil.get(hash, to);
+		if(cacheTextArray == null) {
 			//缓存中没有，那么从api中取
 			vo = Service.getService().api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
-			vo.setFrom(from);
-			vo.setTo(to);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
 				vo.setInfo("SUCCESS");
 			}
@@ -133,8 +140,9 @@ public class TranslateController{
 			params.put("source", "api");  //翻译来源-API翻译接口
 			
 			//取出来后加入缓存
-			CacheUtil.set(hash, to, vo);
+			CacheUtil.set(hash, to, vo.getText());
 		}else {
+			vo.setText(textArray);
 			params.put("source", "cache"); //翻译来源-缓存
 		}
 		

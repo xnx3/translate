@@ -80,8 +80,8 @@ public class TranslateController{
 			@RequestParam(value = "to", defaultValue = "english") String to,
 			@RequestParam(value = "text", defaultValue = "") String text){
 		TranslateResultVO vo = new TranslateResultVO();
-		vo.setFrom(from);
-		vo.setTo(to);
+//		vo.setFrom(from);
+//		vo.setTo(to);
 		
 		//过滤换行符,如果有的话
 		Pattern p = Pattern.compile("\r|\n");
@@ -147,6 +147,9 @@ public class TranslateController{
 		}
 		
 		LogUtil.add(params);
+		
+		vo.setFrom(from);
+		vo.setTo(to);
 		return vo;
 	}
 	

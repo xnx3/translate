@@ -113,6 +113,9 @@ public class TranslateController{
 		
 		//来源，是哪个网页在使用
 		String referer = request.getHeader("referer"); 
+		if(referer == null) {
+			referer = "";
+		}
 		//取这个来源网页的domain
 		String domain = UrlUtil.getDomain(referer);
 		if(domain == null || domain.length() < 1) {
@@ -142,7 +145,7 @@ public class TranslateController{
 			//取出来后加入缓存
 			CacheUtil.set(hash, to, vo.getText());
 		}else {
-			vo.setText(textArray);
+			vo.setText(cacheTextArray);
 			params.put("source", "cache"); //翻译来源-缓存
 		}
 		

@@ -18,7 +18,8 @@ public enum LanguageEnum {
 	/*
 	 
 	 	待补充
-	 	内容参考 cn.zvo.translate.service.google.ServiceInterfaceImplement
+	 	内容参考
+	 	https://gitee.com/mail_osc/translate/blob/master/translate.service/source/src/main/java/cn/zvo/translate/service/google/ServiceInterfaceImplement.java
 	 	语种(语种Key)
 	  
 	 */

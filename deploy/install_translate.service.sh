@@ -16,7 +16,7 @@ echo "加载tomcat.sh完毕"
 
 ####### 安装应用包 #########
 cd /mnt/tomcat8/webapps/ROOT/
-wget https://mail_osc.gitee.io/translate_service/install/translate.war -O translate.war
+wget http://down.zvo.cn/translate/translate.service.war -O translate.war
 unzip translate.war
 rm -rf translate.war
 

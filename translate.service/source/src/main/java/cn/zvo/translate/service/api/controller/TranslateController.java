@@ -1,6 +1,7 @@
 package cn.zvo.translate.service.api.controller;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -18,6 +19,7 @@ import com.xnx3.MD5Util;
 import com.xnx3.UrlUtil;
 
 import cn.zvo.log.framework.springboot.LogUtil;
+import cn.zvo.translate.service.core.pluginManage.interfaces.manage.TranslateManage;
 import cn.zvo.translate.service.core.util.CacheUtil;
 import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.Service;
@@ -120,6 +122,20 @@ public class TranslateController{
 		String domain = UrlUtil.getDomain(referer);
 		if(domain == null || domain.length() < 1) {
 			domain = "unknow";
+		}
+		
+		/***** 翻译之前，插件拦截 *****/
+		try {
+			vo = TranslateManage.before(request, from, to, textArray, size, domain);
+			if(vo.getResult() - TranslateResultVO.FAILURE == 0) {
+				return vo;
+			}
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
+				| IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+			vo.setResult(TranslateResultVO.FAILURE);
+			vo.setInfo(e.getMessage());
+			return vo;
 		}
 		
 		//日志

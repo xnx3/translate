@@ -150,6 +150,7 @@ public class TranslateController{
 		String hash = MD5Util.MD5(from+"_"+to+"_"+text);
 //		vo = CacheUtil.get(hash, to);
 		JSONArray cacheTextArray = CacheUtil.get(hash, to);
+		cacheTextArray = null;
 		if(cacheTextArray == null) {
 			//缓存中没有，那么从api中取
 			
@@ -168,6 +169,7 @@ public class TranslateController{
 				//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
 				service = Service.getService();
 			}
+			System.out.println("service:"+service.getClass().getName());
 			
 			vo = service.api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
@@ -175,6 +177,12 @@ public class TranslateController{
 			}
 			
 			params.put("source", "api");  //翻译来源-API翻译接口
+			
+			if(vo.getResult() - TranslateResultVO.FAILURE == 0) {
+				//失败了，返回失败提示
+				return vo;
+			}
+			/***** 翻译成功 ****/
 			
 			//取出来后加入缓存
 			CacheUtil.set(hash, to, vo.getText());

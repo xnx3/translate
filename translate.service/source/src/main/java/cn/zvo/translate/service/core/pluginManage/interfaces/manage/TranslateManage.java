@@ -26,7 +26,7 @@ public class TranslateManage {
 			classList = new ArrayList<Class<?>>();
 			
 			//当 controller 请求执行到这个类的方法时，才会创建
-			List<Class<?>> cl = ScanClassUtil.getClasses("cn.zvo.translate.service.cloud");
+			List<Class<?>> cl = ScanClassUtil.getClasses("cn.zvo.translate");
 			classList = ScanClassUtil.searchByInterfaceName(cl, "cn.zvo.translate.service.core.pluginManage.interfaces.TranslateInterface");
 			
 			for (int i = 0; i < classList.size(); i++) {

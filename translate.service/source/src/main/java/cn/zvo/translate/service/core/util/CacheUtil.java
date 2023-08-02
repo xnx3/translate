@@ -1,14 +1,8 @@
 package cn.zvo.translate.service.core.util;
 
-import com.xnx3.json.JSONUtil;
-
-import cn.zvo.fileupload.FileUpload;
 import cn.zvo.fileupload.framework.springboot.FileUploadUtil;
-import cn.zvo.fileupload.storage.local.LocalStorage;
 import cn.zvo.http.Response;
-import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 /**
  * 缓存层

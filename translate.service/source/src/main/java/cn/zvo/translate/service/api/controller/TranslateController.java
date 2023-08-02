@@ -127,9 +127,13 @@ public class TranslateController{
 		
 		/***** 翻译之前，插件拦截 *****/
 		try {
-			vo = TranslateManage.before(request, from, to, textArray, size, domain);
-			if(vo.getResult() - TranslateResultVO.FAILURE == 0) {
-				return vo;
+			TranslateResultVO beforeVO = TranslateManage.before(request, from, to, textArray, size, domain);
+			if(beforeVO != null) {
+				if(beforeVO.getResult() - TranslateResultVO.FAILURE == 0) {
+					return beforeVO;
+				}else {
+					vo = beforeVO;
+				}
 			}
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
 				| IllegalArgumentException | InvocationTargetException e) {
@@ -155,7 +159,7 @@ public class TranslateController{
 			//缓存中没有，那么从api中取
 			
 			ServiceInterface service = null; 
-			/***** 翻译之前，插件拦截 *****/
+			/***** 翻译时，插件拦截，获取使用什么翻译 *****/
 			try {
 				service = TranslateManage.getServiceInterface(request);
 			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
@@ -192,6 +196,26 @@ public class TranslateController{
 		}
 		
 		LogUtil.add(params);
+		
+
+		/***** 翻译之后，插件拦截 *****/
+		try {
+			TranslateResultVO afterVO = TranslateManage.after(request, from, to, textArray, size, domain, cacheTextArray!=null, vo.getText());
+			if(afterVO != null) {
+				if(afterVO.getResult() - TranslateResultVO.FAILURE == 0) {
+					return afterVO;
+				}else {
+					vo = afterVO;
+				}
+			}
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
+				| IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+			vo.setResult(TranslateResultVO.FAILURE);
+			vo.setInfo(e.getMessage());
+			return vo;
+		}
+		
 		
 		vo.setFrom(from);
 		vo.setTo(to);

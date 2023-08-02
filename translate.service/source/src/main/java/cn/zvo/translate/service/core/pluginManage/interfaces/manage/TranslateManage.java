@@ -81,7 +81,6 @@ public class TranslateManage {
 	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
 	 */
 	public static TranslateResultVO before(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
-		TranslateResultVO vo = new TranslateResultVO();
 		for (int i = 0; i < classList.size(); i++) {
 			Class<?> c = classList.get(i);
 			Object invokeReply = null;
@@ -89,10 +88,51 @@ public class TranslateManage {
 			//运用newInstance()来生成这个新获取方法的实例
 			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class });	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
-			m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain});
+			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain});
+			if(o != null) {
+				return (TranslateResultVO) o;
+			}
 		}
-		return vo;
+		return null;
 	}
 	
 
+	/**
+	 * 翻译之前，在进行翻译之前触发
+	 * @param from @param from 将什么语言进行转换。<required> 传入如 chinese_simplified 具体可传入有：
+	 * 			<ul>
+	 * 				<li>chinese_simplified : 简体中文</li>
+	 * 				<li>chinese_traditional : 繁體中文</li>
+	 * 				<li>english : English</li>
+	 * 				<li>更多参见：<a href="language.json.html" target="_black">language.json</a></li>
+	 * 			</ul>
+	 * @param to 转换为什么语言输出。<required> 传入如 english 具体可传入有：
+	 * 			<ul>
+	 * 				<li>chinese_simplified : 简体中文</li>
+	 * 				<li>chinese_traditional : 繁體中文</li>
+	 * 				<li>english : English</li>
+	 * 				<li>更多参见：<a href="language.json.html" target="_black">language.json</a></li>
+	 * 			</ul>
+	 * @param textArray 要进行翻译的内容，每个句子都是其中一条
+	 * @param size 要翻译的字符数的统计，比如 10
+	 * @param refererDomain 调用这个接口的来源域名，也就是哪个网页上调用的这个翻译接口，这里传入的如 abc.zvo.cn 域名格式
+	 * @param isCache 当前翻译是否是走的缓存。 ture 是通过缓存， false不是通过缓存，也就是通过api翻译接口
+	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
+	 */
+	public static TranslateResultVO after(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain, boolean isCache, JSONArray translateArray)throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException {
+		for (int i = 0; i < classList.size(); i++) {
+			Class<?> c = classList.get(i);
+			Object invokeReply = null;
+			invokeReply = c.newInstance();
+			//运用newInstance()来生成这个新获取方法的实例
+			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class, JSONArray.class });	//获取要调用的init方法
+			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
+			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain, translateArray});
+			if(o != null) {
+				return (TranslateResultVO) o;
+			}
+		}
+		return null;
+	}
+	
 }

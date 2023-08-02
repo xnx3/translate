@@ -125,9 +125,9 @@ public class TranslateManage {
 			Object invokeReply = null;
 			invokeReply = c.newInstance();
 			//运用newInstance()来生成这个新获取方法的实例
-			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class, JSONArray.class });	//获取要调用的init方法
+			Method m = c.getMethod("after",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class, boolean.class, JSONArray.class });	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
-			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain, translateArray});
+			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain,isCache, translateArray});
 			if(o != null) {
 				return (TranslateResultVO) o;
 			}

@@ -173,7 +173,9 @@ public class TranslateController{
 				//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
 				service = Service.getService();
 			}
-			System.out.println("service:"+service.getClass().getName());
+			//com.xnx3.Log.debug("service:"+service.getClass().getName());
+			
+//			String service_from = service.
 			
 			vo = service.api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {

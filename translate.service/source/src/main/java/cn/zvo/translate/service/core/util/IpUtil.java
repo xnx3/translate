@@ -56,7 +56,7 @@ public class IpUtil{
             long sTime = System.nanoTime();
             String region = getSearcher().search(ip);
             long cost = TimeUnit.NANOSECONDS.toMicros((long) (System.nanoTime() - sTime));
-            System.out.printf("{region: %s, ioCount: %d, took: %d μs}\n", region, searcher.getIOCount(), cost);
+            //System.out.printf("{region: %s, ioCount: %d, took: %d μs}\n", region, searcher.getIOCount(), cost);
             return BaseVO.success(StringUtil.subString(region, null, "|", 2));
         } catch (Exception e) {
             System.out.printf("failed to search(%s): %s\n", ip, e);

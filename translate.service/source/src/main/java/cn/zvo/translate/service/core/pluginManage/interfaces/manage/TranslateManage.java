@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 import com.xnx3.ScanClassUtil;
 
+import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
 import net.sf.json.JSONArray;
 
@@ -36,6 +37,27 @@ public class TranslateManage {
 		
 	}
 	
+	
+
+	/**
+	 * 获取当前在使用的翻译接口
+	 * @return 如果返回null，则是没有使用
+	 */
+	public static ServiceInterface getServiceInterface(HttpServletRequest request) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
+		for (int i = 0; i < classList.size(); i++) {
+			Class<?> c = classList.get(i);
+			Object invokeReply = null;
+			invokeReply = c.newInstance();
+			//运用newInstance()来生成这个新获取方法的实例
+			Method m = c.getMethod("getServiceInterface",new Class[]{HttpServletRequest.class});	//获取要调用的init方法
+			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
+			Object o = m.invoke(invokeReply, new Object[]{request});
+			if(o != null) {
+				return (ServiceInterface) o;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * 翻译之前，在进行翻译之前触发
@@ -65,7 +87,7 @@ public class TranslateManage {
 			Object invokeReply = null;
 			invokeReply = c.newInstance();
 			//运用newInstance()来生成这个新获取方法的实例
-			Method m = c.getMethod("newsSaveBefore",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class });	//获取要调用的init方法
+			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class });	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
 			m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain});
 		}

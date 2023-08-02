@@ -23,6 +23,7 @@ import cn.zvo.translate.service.core.pluginManage.interfaces.manage.TranslateMan
 import cn.zvo.translate.service.core.util.CacheUtil;
 import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.Service;
+import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.LanguageListVO;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
 import net.sf.json.JSONArray;
@@ -151,7 +152,24 @@ public class TranslateController{
 		JSONArray cacheTextArray = CacheUtil.get(hash, to);
 		if(cacheTextArray == null) {
 			//缓存中没有，那么从api中取
-			vo = Service.getService().api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
+			
+			ServiceInterface service = null; 
+			/***** 翻译之前，插件拦截 *****/
+			try {
+				service = TranslateManage.getServiceInterface(request);
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
+					| IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+				vo.setResult(TranslateResultVO.FAILURE);
+				vo.setInfo(e.getMessage());
+				return vo;
+			}
+			if(service == null) {
+				//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
+				service = Service.getService();
+			}
+			
+			vo = service.api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
 				vo.setInfo("SUCCESS");
 			}

@@ -2,6 +2,7 @@ package cn.zvo.translate.service.core.pluginManage.interfaces;
 
 import javax.servlet.http.HttpServletRequest;
 
+import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
 import net.sf.json.JSONArray;
 
@@ -10,6 +11,12 @@ import net.sf.json.JSONArray;
  * @author 管雷鸣
  */
 public interface TranslateInterface {
+	
+	/**
+	 * 获取当前在使用的翻译接口
+	 * @return 如果返回null，则是没有使用,没有进行重写
+	 */
+	public ServiceInterface getServiceInterface(HttpServletRequest request);
 	
 	/**
 	 * 翻译之前，在进行翻译之前触发

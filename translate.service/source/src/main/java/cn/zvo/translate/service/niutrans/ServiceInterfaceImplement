@@ -39,7 +39,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	public static void main(String[] args) {
 
 		Map<String, String> config = new HashMap<String, String>();
-		config.put("apikey", "xxxxx");
+		config.put("apikey", "xxxxxxx");
 
 		ServiceInterfaceImplement service = new ServiceInterfaceImplement(config);
 		service.setLanguage();
@@ -48,7 +48,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		array.add("你好");
 		array.add("世界");
 
-		TranslateResultVO vo = service.api("en", "zh", array);
+		TranslateResultVO vo = service.api("zh", "en", array);
 		System.out.println("vo === "+vo);
 		
 		
@@ -58,9 +58,8 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	public TranslateResultVO api(String from, String to, JSONArray array) {
 		TranslateResultVO vo = new TranslateResultVO();
 		vo.setText(new JSONArray());
-//		from = "auto";
 		
-		List<JSONArray> list = JSONUtil.split(array, 2000); //长度不能超过2000字符，所以针对2000进行截取
+		List<JSONArray> list = JSONUtil.split(array, 5000); //长度不能超过5000字符，所以针对5000进行截取
 		for (int i = 0; i < list.size(); i++) {
 			TranslateResultVO vf = requestApi(from, to, list.get(i));
 			if(vf.getResult() - TranslateResultVO.FAILURE == 0) {
@@ -107,11 +106,22 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 			}
 		}
 		String sourceText = payload.toString();
-
+		
 		try {
-			
 			String encode = URLEncoder.encode(sourceText,"utf-8");
-			Response response = https.post(TRANS_API_URL + "?from=" + from + "&to=" + to + "&apikey=" + apikey + "&src_text=" + encode + "&source=translate-js");
+			
+			Map<String, String> params = new HashMap<String, String>();
+			params.put("from", from);
+			params.put("to", to);
+			params.put("apikey", apikey);
+			params.put("src_text", encode);
+			params.put("source", "translate-js");
+			
+			Map<String, String> heardlers = new HashMap<String, String>();
+			heardlers.put("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+			
+			Response response = https.post(TRANS_API_URL,params,heardlers);
+			
 			
 			if (response.getCode() == 200) {
 				String content = response.getContent();

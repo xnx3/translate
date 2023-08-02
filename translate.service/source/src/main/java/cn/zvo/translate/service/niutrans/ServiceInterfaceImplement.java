@@ -39,7 +39,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	public static void main(String[] args) {
 
 		Map<String, String> config = new HashMap<String, String>();
-		config.put("apikey", "xxxxxxx");
+		config.put("apikey", "1234");
 
 		ServiceInterfaceImplement service = new ServiceInterfaceImplement(config);
 		service.setLanguage();

@@ -128,7 +128,7 @@
 		<dependency> 
 			<groupId>cn.zvo.http</groupId>
 			<artifactId>http</artifactId>
-			<version>1.0</version>
+			<version>1.2</version>
 		</dependency>
 		
 		<!-- 文件上传相关的核心支持 https://github.com/xnx3/FileUpload -->

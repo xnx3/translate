@@ -250,7 +250,7 @@ var translate = {
 	 * 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
 	 */
 	currentLanguage:function(){
-		translate.check();
+		//translate.check();
 		var cookieValue = translate.getCookie('googtrans');
 		if(cookieValue.length > 0){
 			return cookieValue.substr(cookieValue.lastIndexOf('/')+1,cookieValue.length-1);
@@ -270,7 +270,7 @@ var translate = {
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
 			//用的是v1.x
-			
+			console.log('您使用的是v1版本的切换语种方式，v1已在2021年就以废弃，请更换为v2，参考文档： http://translate.zvo.cn/41549.html');
 			translate.check();
 			
 			var googtrans = '/'+translate.localLanguage+'/'+languageName;
@@ -904,8 +904,11 @@ var translate = {
 		if(translate.useVersion == 'v1'){
 		//if(this.to == null || this.to == ''){
 			//采用1.x版本的翻译，使用google翻译
-			translate.execute_v1();
-			return;
+			//translate.execute_v1();
+			//return;
+			//v2.5.1增加
+			console.log('提示：https://github.com/xnx3/translate 在 v2.5 版本之后，由于谷歌翻译调整，免费翻译通道不再支持，所以v1版本的翻译接口不再被支持，v1全线下架。考虑到v1已不能使用，当前已自动切换到v2版本。如果您使用中发现什么异常，请针对v2版本进行适配。');
+			translate.useVersion = 'v2';
 		}
 		
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */

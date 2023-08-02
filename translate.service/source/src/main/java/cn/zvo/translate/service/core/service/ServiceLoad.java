@@ -57,23 +57,35 @@ public class ServiceLoad implements CommandLineRunner{
 				}else {
 					for (int i = 0; i < classList.size(); i++) {
 						com.xnx3.Log.debug("class list item : "+classList.get(i).getName());
+						
+						try {
+							Class serviceClass = classList.get(i);
+							Object newInstance = serviceClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
+							Service.serviceInterface = (ServiceInterface) newInstance;
+							Service.serviceInterface.setLanguage(); //初始化设置语种
+							com.xnx3.Log.info("service use "+serviceClass.getName());
+							return;
+						} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
+							e.printStackTrace();
+						}
+						
 					}
 				}
-				
-				//搜索继承ServiceInterface接口的
-				List<Class<?>> logClassList = ScanClassUtil.searchByInterfaceName(classList, "cn.zvo.translate.core.service.interfaces.ServiceInterface");
-				for (int i = 0; i < logClassList.size(); i++) {
-					Class logClass = logClassList.get(i);
-					com.xnx3.Log.debug("translate service : "+logClass.getName());
-					try {
-						Object newInstance = logClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
-						Service.serviceInterface = (ServiceInterface) newInstance;
-						Service.serviceInterface.setLanguage(); //初始化设置语种
-						return;
-					} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
-						e.printStackTrace();
-					}
-				}
+//				
+//				//搜索继承ServiceInterface接口的
+//				List<Class<?>> logClassList = ScanClassUtil.searchByInterfaceName(classList, "cn.zvo.translate.core.service.interfaces.ServiceInterface");
+//				for (int i = 0; i < logClassList.size(); i++) {
+//					Class logClass = logClassList.get(i);
+//					com.xnx3.Log.debug("translate service : "+logClass.getName());
+//					try {
+//						Object newInstance = logClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
+//						Service.serviceInterface = (ServiceInterface) newInstance;
+//						Service.serviceInterface.setLanguage(); //初始化设置语种
+//						return;
+//					} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
+//						e.printStackTrace();
+//					}
+//				}
 			}
 		}else {
 			System.out.println("未配置 translate.service.xxx.xxx ，使用默认的google翻译");

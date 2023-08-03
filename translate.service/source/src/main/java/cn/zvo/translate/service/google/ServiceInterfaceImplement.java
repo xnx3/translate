@@ -206,145 +206,150 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 
 	@Override
 	public void setLanguage() {
-		Language.append("english", "en", "English");
-		Language.append("chinese_simplified", "zh-CN", "简体中文");
-		Language.append("chinese_traditional", "zh-TW", "繁體中文");
-		Language.append("korean", "ko", "한어");
-		Language.append("japanese", "ja", "日本語");	//日语
-		Language.append("russian", "ru", "Русский язык");
-		Language.append("arabic", "ar", "بالعربية");	//阿拉伯语
-		Language.append("german", "de", "Deutsch");	//德语
-		Language.append("french", "fr", "Français");	//法语
-		Language.append("portuguese", "pt", "Português");	//葡萄牙语
-		Language.append("thai", "th", "ภาษาไทย");	//泰语
-		Language.append("turkish", "tr", "Türkçe");	//土耳其语
-		Language.append("vietnamese", "vi", "Tiếng Việt");	//越南语
-
-		Language.append("afrikaans", "af", "Suid-Afrikaanse Dutch taal");	//南非荷兰语
-		Language.append("twi", "ak", "tur");	//契维语
-		Language.append("amharic", "am", "አማርኛ");	//阿姆哈拉语
-		Language.append("assamese", "as", "অসমীয়া");	//阿萨姆语
-		Language.append("aymara", "ay", "Aymara");	//艾马拉语
-		Language.append("azerbaijani", "az", "Azərbaycan");	//阿塞拜疆语
-		Language.append("belarusian", "be", "беларускі");	//白俄罗斯语
-		Language.append("bulgarian", "bg", "български");	//保加利亚语
-		Language.append("bhojpuri", "bho", "भोजपुरी");	//博杰普尔语
-		Language.append("bambara", "bm", "Bamanankan");	//班巴拉语
-		Language.append("bengali", "bn", "বাংলা");	//孟加拉语
-		Language.append("bosnian", "bs", "bosanski");	//波斯尼亚语
-		Language.append("catalan", "ca", "català");	//加泰罗尼亚语
-		Language.append("cebuano", "ceb", "Cebuano");	//宿务语
-		Language.append("kurdish_sorani", "ckb", "کوردی-سۆرانی");	//库尔德语（索拉尼）
-		Language.append("corsican", "co", "Corsu");	//科西嘉语
-		Language.append("czech", "cs", "čeština");	//捷克语
-		Language.append("welsh", "cy", "Cymraeg");	//威尔士语
-		Language.append("danish", "da", "dansk");	//丹麦语
-		Language.append("dogrid", "doi", "डोग्रिड ने दी");	//多格来语
-		Language.append("dhivehi", "dv", "ދިވެހި");	//迪维希语
-		Language.append("ewe", "ee", "Eʋegbe");	//埃维语
-		Language.append("greek", "el", "Ελληνικά");	//希腊语
-		Language.append("spanish", "es", "español");	//西班牙语
-		Language.append("estonian", "et", "eesti keel");	//爱沙尼亚语
-		Language.append("basque", "eu", "euskara");	//巴斯克语
-		Language.append("persian", "fa", "فارسی");	//波斯语
-		Language.append("finnish", "fi", "Suomalainen");	//芬兰语
-		Language.append("frisian", "fy", "Frysk");	//弗里西语
-		Language.append("irish", "ga", "Gaeilge");	//爱尔兰语
-		Language.append("scottish-gaelic", "gd", "Gàidhlig na h-Alba");	//苏格兰盖尔语
-		Language.append("galician", "gl", "galego");	//加利西亚语
-		Language.append("guarani", "gn", "guarani");	//瓜拉尼语
-		Language.append("gongen", "gom", "गोंगेन हें नांव");	//贡根语
-		Language.append("gujarati", "gu", "ગુજરાતી");	//古吉拉特语
-		Language.append("hausa", "ha", "Hausa");	//豪萨语
-		Language.append("hawaiian", "haw", "ʻŌlelo Hawaiʻi");	//夏威夷语
-		Language.append("hindi", "hi", "हिंदी");	//印地语
-		Language.append("hmong", "hmn", "Hmoob");	//苗语
-		Language.append("croatian", "hr", "Hrvatski");	//克罗地亚语
-		Language.append("haitian_creole", "ht", "Kreyòl ayisyen");	//海地克里奥尔语
-		Language.append("hungarian", "hu", "Magyar");	//匈牙利语
-		Language.append("armenian", "hy", "հայերեն");	//亚美尼亚语
-		Language.append("dutch", "nl", "Nederlands");	//荷兰语
-		Language.append("italian", "it", "Italiano");	//意大利语
+		if(Language.map.get("niutrans") != null) {
+			return;
+		}
+		Language lang = new Language("niutrans");
 		
-		Language.append("indonesian", "id", "IndonesiaName");	//印尼语
-		Language.append("igbo", "ig", "igbo");	//伊博语
-		Language.append("icelandic", "is", "ÍslandName");	//冰岛语
-		Language.append("hebrew", "iw", "היברית");	//希伯来语
-		Language.append("georgian", "ka", "ჯორჯიანიName");	//格鲁吉亚语
-		Language.append("khmer", "km", "ខ្មែរKCharselect unicode block name");	//高棉语
-		Language.append("kannada", "kn", "ಕನ್ನಡ್Name");	//卡纳达语
-		Language.append("creole", "kri", "a n:n");	//克里奥尔语
-		Language.append("kyrgyz", "ky", "Кыргыз тили");	//吉尔吉斯语
-		Language.append("latin", "la", "Latina");	//拉丁语
-		Language.append("luxembourgish", "lb", "LëtzebuergeschName");	//卢森堡语
-		Language.append("luganda", "lg", "luganda");	//卢干达语
-		Language.append("lao", "lo", "ກະຣຸນາ");	//老挝语
-		Language.append("lithuanian", "lt", "Lietuva");	//立陶宛语
-		Language.append("latvian", "lv", "latviešu");	//拉脱维亚语
-		Language.append("maithili", "mai", "मरातिलीName");	//迈蒂利语
-		Language.append("maori", "mi", "Maori");	//毛利语
-		Language.append("macedonian", "mk", "Македонски");	//马其顿语
-		Language.append("malayalam", "ml", "മലമാലം");	//马拉雅拉姆语
-		Language.append("marathi", "mr", "मराठीName");	//马拉地语
-		Language.append("malay", "ms", "Malay");	//马来语
-		Language.append("maltese", "mt", "Malti");	//马耳他语
-		Language.append("burmese", "my", "ဗာရမ်");	//缅甸语
-		Language.append("nepali", "ne", "नेपालीName");	//尼泊尔语
-		Language.append("norwegian", "no", "Norge");	//挪威语
-		Language.append("nyanja", "ny", "potakuyan");	//齐切瓦语
-		Language.append("oromo", "om", "adeta");	//奥罗莫语
-		Language.append("punjabi", "pa", "ਪੰਜਾਬੀName");	//旁遮普语
-		Language.append("polish", "pl", "Polski");	//波兰语
-		Language.append("pashto", "ps", "پښتوName");	//普什图语
-		Language.append("portuguese", "pt", "Português");	//葡萄牙语
-		Language.append("quechua", "qu", "Quechua");	//克丘亚语
-		Language.append("romanian", "ro", "Română");	//罗马尼亚语
-		Language.append("kinyarwanda", "rw", "Kinyarwanda");	//卢旺达语
-		Language.append("sanskrit", "sa", "Sanskrit");	//梵语
-		Language.append("sindhi", "sd", "سنڌي");	//信德语
-		Language.append("singapore", "si", "සිංගාපුර්");	//僧伽罗语
-		Language.append("slovak", "sk", "Slovenská");	//斯洛伐克语
-		Language.append("slovene", "sl", "slovenščina");	//斯洛文尼亚语
-		Language.append("samoan", "sm", "lifiava");	//萨摩亚语
-		Language.append("shona", "sn", "Shona");	//修纳语
-		Language.append("somali", "so", "Soomaali");	//索马里语
-		Language.append("albanian", "sq", "albanian");	//阿尔巴尼亚语
-		Language.append("swedish", "sv", "Svenska");	//瑞典语
-		Language.append("swahili", "sw", "Kiswahili");	//斯瓦希里语
-		Language.append("tamil", "ta", "தாமில்");	//泰米尔语
-		Language.append("telugu", "te", "తెలుగుQFontDatabase");	//泰卢固语
-		Language.append("tajik", "tg", "ТаjikӣName");	//塔吉克语
-		Language.append("turkmen", "tk", "Türkmençe");	//土库曼语
-		Language.append("filipino", "tl", "Pilipino");	//菲律宾语
-		Language.append("tatar", "tt", "Татар");	//鞑靼语
-		Language.append("ukrainian", "uk", "УкраїнськаName");	//乌克兰语
-		Language.append("urdu", "ur", "اوردو");	//乌尔都语
-		Language.append("yiddish", "yi", "ייַדיש");	//意第绪语
-		Language.append("yoruba", "yo", "Yoruba");	//约鲁巴语
-		Language.append("kurdish", "ku", "Kurdî");	//库尔德语（库尔曼吉语）
+		lang.append("english", "en", "English");
+		lang.append("chinese_simplified", "zh-CN", "简体中文");
+		lang.append("chinese_traditional", "zh-TW", "繁體中文");
+		lang.append("korean", "ko", "한어");
+		lang.append("japanese", "ja", "日本語");	//日语
+		lang.append("russian", "ru", "Русский язык");
+		lang.append("arabic", "ar", "بالعربية");	//阿拉伯语
+		lang.append("german", "de", "Deutsch");	//德语
+		lang.append("french", "fr", "Français");	//法语
+		lang.append("portuguese", "pt", "Português");	//葡萄牙语
+		lang.append("thai", "th", "ภาษาไทย");	//泰语
+		lang.append("turkish", "tr", "Türkçe");	//土耳其语
+		lang.append("vietnamese", "vi", "Tiếng Việt");	//越南语
+
+		lang.append("afrikaans", "af", "Suid-Afrikaanse Dutch taal");	//南非荷兰语
+		lang.append("twi", "ak", "tur");	//契维语
+		lang.append("amharic", "am", "አማርኛ");	//阿姆哈拉语
+		lang.append("assamese", "as", "অসমীয়া");	//阿萨姆语
+		lang.append("aymara", "ay", "Aymara");	//艾马拉语
+		lang.append("azerbaijani", "az", "Azərbaycan");	//阿塞拜疆语
+		lang.append("belarusian", "be", "беларускі");	//白俄罗斯语
+		lang.append("bulgarian", "bg", "български");	//保加利亚语
+		lang.append("bhojpuri", "bho", "भोजपुरी");	//博杰普尔语
+		lang.append("bambara", "bm", "Bamanankan");	//班巴拉语
+		lang.append("bengali", "bn", "বাংলা");	//孟加拉语
+		lang.append("bosnian", "bs", "bosanski");	//波斯尼亚语
+		lang.append("catalan", "ca", "català");	//加泰罗尼亚语
+		lang.append("cebuano", "ceb", "Cebuano");	//宿务语
+		lang.append("kurdish_sorani", "ckb", "کوردی-سۆرانی");	//库尔德语（索拉尼）
+		lang.append("corsican", "co", "Corsu");	//科西嘉语
+		lang.append("czech", "cs", "čeština");	//捷克语
+		lang.append("welsh", "cy", "Cymraeg");	//威尔士语
+		lang.append("danish", "da", "dansk");	//丹麦语
+		lang.append("dogrid", "doi", "डोग्रिड ने दी");	//多格来语
+		lang.append("dhivehi", "dv", "ދިވެހި");	//迪维希语
+		lang.append("ewe", "ee", "Eʋegbe");	//埃维语
+		lang.append("greek", "el", "Ελληνικά");	//希腊语
+		lang.append("spanish", "es", "español");	//西班牙语
+		lang.append("estonian", "et", "eesti keel");	//爱沙尼亚语
+		lang.append("basque", "eu", "euskara");	//巴斯克语
+		lang.append("persian", "fa", "فارسی");	//波斯语
+		lang.append("finnish", "fi", "Suomalainen");	//芬兰语
+		lang.append("frisian", "fy", "Frysk");	//弗里西语
+		lang.append("irish", "ga", "Gaeilge");	//爱尔兰语
+		lang.append("scottish-gaelic", "gd", "Gàidhlig na h-Alba");	//苏格兰盖尔语
+		lang.append("galician", "gl", "galego");	//加利西亚语
+		lang.append("guarani", "gn", "guarani");	//瓜拉尼语
+		lang.append("gongen", "gom", "गोंगेन हें नांव");	//贡根语
+		lang.append("gujarati", "gu", "ગુજરાતી");	//古吉拉特语
+		lang.append("hausa", "ha", "Hausa");	//豪萨语
+		lang.append("hawaiian", "haw", "ʻŌlelo Hawaiʻi");	//夏威夷语
+		lang.append("hindi", "hi", "हिंदी");	//印地语
+		lang.append("hmong", "hmn", "Hmoob");	//苗语
+		lang.append("croatian", "hr", "Hrvatski");	//克罗地亚语
+		lang.append("haitian_creole", "ht", "Kreyòl ayisyen");	//海地克里奥尔语
+		lang.append("hungarian", "hu", "Magyar");	//匈牙利语
+		lang.append("armenian", "hy", "հայերեն");	//亚美尼亚语
+		lang.append("dutch", "nl", "Nederlands");	//荷兰语
+		lang.append("italian", "it", "Italiano");	//意大利语
+		
+		lang.append("indonesian", "id", "IndonesiaName");	//印尼语
+		lang.append("igbo", "ig", "igbo");	//伊博语
+		lang.append("icelandic", "is", "ÍslandName");	//冰岛语
+		lang.append("hebrew", "iw", "היברית");	//希伯来语
+		lang.append("georgian", "ka", "ჯორჯიანიName");	//格鲁吉亚语
+		lang.append("khmer", "km", "ខ្មែរKCharselect unicode block name");	//高棉语
+		lang.append("kannada", "kn", "ಕನ್ನಡ್Name");	//卡纳达语
+		lang.append("creole", "kri", "a n:n");	//克里奥尔语
+		lang.append("kyrgyz", "ky", "Кыргыз тили");	//吉尔吉斯语
+		lang.append("latin", "la", "Latina");	//拉丁语
+		lang.append("luxembourgish", "lb", "LëtzebuergeschName");	//卢森堡语
+		lang.append("luganda", "lg", "luganda");	//卢干达语
+		lang.append("lao", "lo", "ກະຣຸນາ");	//老挝语
+		lang.append("lithuanian", "lt", "Lietuva");	//立陶宛语
+		lang.append("latvian", "lv", "latviešu");	//拉脱维亚语
+		lang.append("maithili", "mai", "मरातिलीName");	//迈蒂利语
+		lang.append("maori", "mi", "Maori");	//毛利语
+		lang.append("macedonian", "mk", "Македонски");	//马其顿语
+		lang.append("malayalam", "ml", "മലമാലം");	//马拉雅拉姆语
+		lang.append("marathi", "mr", "मराठीName");	//马拉地语
+		lang.append("malay", "ms", "Malay");	//马来语
+		lang.append("maltese", "mt", "Malti");	//马耳他语
+		lang.append("burmese", "my", "ဗာရမ်");	//缅甸语
+		lang.append("nepali", "ne", "नेपालीName");	//尼泊尔语
+		lang.append("norwegian", "no", "Norge");	//挪威语
+		lang.append("nyanja", "ny", "potakuyan");	//齐切瓦语
+		lang.append("oromo", "om", "adeta");	//奥罗莫语
+		lang.append("punjabi", "pa", "ਪੰਜਾਬੀName");	//旁遮普语
+		lang.append("polish", "pl", "Polski");	//波兰语
+		lang.append("pashto", "ps", "پښتوName");	//普什图语
+		lang.append("portuguese", "pt", "Português");	//葡萄牙语
+		lang.append("quechua", "qu", "Quechua");	//克丘亚语
+		lang.append("romanian", "ro", "Română");	//罗马尼亚语
+		lang.append("kinyarwanda", "rw", "Kinyarwanda");	//卢旺达语
+		lang.append("sanskrit", "sa", "Sanskrit");	//梵语
+		lang.append("sindhi", "sd", "سنڌي");	//信德语
+		lang.append("singapore", "si", "සිංගාපුර්");	//僧伽罗语
+		lang.append("slovak", "sk", "Slovenská");	//斯洛伐克语
+		lang.append("slovene", "sl", "slovenščina");	//斯洛文尼亚语
+		lang.append("samoan", "sm", "lifiava");	//萨摩亚语
+		lang.append("shona", "sn", "Shona");	//修纳语
+		lang.append("somali", "so", "Soomaali");	//索马里语
+		lang.append("albanian", "sq", "albanian");	//阿尔巴尼亚语
+		lang.append("swedish", "sv", "Svenska");	//瑞典语
+		lang.append("swahili", "sw", "Kiswahili");	//斯瓦希里语
+		lang.append("tamil", "ta", "தாமில்");	//泰米尔语
+		lang.append("telugu", "te", "తెలుగుQFontDatabase");	//泰卢固语
+		lang.append("tajik", "tg", "ТаjikӣName");	//塔吉克语
+		lang.append("turkmen", "tk", "Türkmençe");	//土库曼语
+		lang.append("filipino", "tl", "Pilipino");	//菲律宾语
+		lang.append("tatar", "tt", "Татар");	//鞑靼语
+		lang.append("ukrainian", "uk", "УкраїнськаName");	//乌克兰语
+		lang.append("urdu", "ur", "اوردو");	//乌尔都语
+		lang.append("yiddish", "yi", "ייַדיש");	//意第绪语
+		lang.append("yoruba", "yo", "Yoruba");	//约鲁巴语
+		lang.append("kurdish", "ku", "Kurdî");	//库尔德语（库尔曼吉语）
 
 		
 		/*  不确定的几种进行注释
 		 
-		Language.append("Serbian", "sr", "Srpski@ item Spelling dictionary");	//TODO 塞尔维亚语   ---有（拉丁文）/（西里尔文） 此处用的第一种
-		Language.append("Ilocano", "ilo", "Ilocano");	//TODO 伊洛卡诺语---百度搜不出该语种/谷歌只有 伊洛卡诺文
-		Language.append("Oriya", "or", "OriyaName");	//TODO 奥利亚语---百度没有奥利亚语--》有奥里亚语
-		Language.append("Xhosa language, South Africa", "xh", "Name");	//TODO 南非科萨语  ---百度有科萨语没有南非科萨语
-		Language.append("South African Zulu", "zu", "isi-Ningizimu Afrika IsiZulu");	//TODO 南非祖鲁语  ---百度有祖鲁语没有南非祖鲁语
-		Language.append("Uzbek", "uz", "");	//TODO 乌兹别克语--百度搜不出该语种
-		Language.append("Javanese", "jw", "");	//TODO 印尼爪哇语---百度搜不出该语种/谷歌也没
-		Language.append("Kazakh", "kk", "");	//TODO 哈萨克语---百度搜不出该语种
-        	Language.append("Lingala", "ln", "");	//TODO 林格拉语---百度搜不出该语种/谷歌也无
-        	Language.append("Malagasy", "mg", "");	//TODO 马尔加什语---百度搜不出该语种
-		Language.append("Mongolian", "mn", "");	//TODO 蒙古语---百度搜不出该语种
-		Language.append("Meitei", "mni-Mtei", "");	//TODO 梅泰语（曼尼普尔语）---百度搜不出该语种
-		Language.append("Sepeti", "nso", "");	//TODO 塞佩蒂语---百度搜不出该语种
-		Language.append("sesotho", "st", "");	//TODO 塞索托语---百度搜不出该语种
-		Language.append("Sundanese", "su", "");	//TODO 印尼巽他语--百度搜不出该语种
-		Language.append("Tigri", "ti", "");	//TODO 蒂格尼亚语--百度搜不出该语种
-		Language.append("Uyghur", "ug", "");	//TODO 维吾尔语--百度搜不出该语种
-		Language.append("Zongjia", "ts", "");	//TODO 宗加语-百度搜不出该语种
-		Language.append("Mizo", "lus", "");	//TODO 米佐语---百度搜不出该语种
+		lang.append("Serbian", "sr", "Srpski@ item Spelling dictionary");	//TODO 塞尔维亚语   ---有（拉丁文）/（西里尔文） 此处用的第一种
+		lang.append("Ilocano", "ilo", "Ilocano");	//TODO 伊洛卡诺语---百度搜不出该语种/谷歌只有 伊洛卡诺文
+		lang.append("Oriya", "or", "OriyaName");	//TODO 奥利亚语---百度没有奥利亚语--》有奥里亚语
+		lang.append("Xhosa language, South Africa", "xh", "Name");	//TODO 南非科萨语  ---百度有科萨语没有南非科萨语
+		lang.append("South African Zulu", "zu", "isi-Ningizimu Afrika IsiZulu");	//TODO 南非祖鲁语  ---百度有祖鲁语没有南非祖鲁语
+		lang.append("Uzbek", "uz", "");	//TODO 乌兹别克语--百度搜不出该语种
+		lang.append("Javanese", "jw", "");	//TODO 印尼爪哇语---百度搜不出该语种/谷歌也没
+		lang.append("Kazakh", "kk", "");	//TODO 哈萨克语---百度搜不出该语种
+        	lang.append("Lingala", "ln", "");	//TODO 林格拉语---百度搜不出该语种/谷歌也无
+        	lang.append("Malagasy", "mg", "");	//TODO 马尔加什语---百度搜不出该语种
+		lang.append("Mongolian", "mn", "");	//TODO 蒙古语---百度搜不出该语种
+		lang.append("Meitei", "mni-Mtei", "");	//TODO 梅泰语（曼尼普尔语）---百度搜不出该语种
+		lang.append("Sepeti", "nso", "");	//TODO 塞佩蒂语---百度搜不出该语种
+		lang.append("sesotho", "st", "");	//TODO 塞索托语---百度搜不出该语种
+		lang.append("Sundanese", "su", "");	//TODO 印尼巽他语--百度搜不出该语种
+		lang.append("Tigri", "ti", "");	//TODO 蒂格尼亚语--百度搜不出该语种
+		lang.append("Uyghur", "ug", "");	//TODO 维吾尔语--百度搜不出该语种
+		lang.append("Zongjia", "ts", "");	//TODO 宗加语-百度搜不出该语种
+		lang.append("Mizo", "lus", "");	//TODO 米佐语---百度搜不出该语种
 		
 		*/
 	}

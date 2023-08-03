@@ -16,11 +16,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 import com.xnx3.MD5Util;
+import com.xnx3.StringUtil;
 import com.xnx3.UrlUtil;
 
 import cn.zvo.log.framework.springboot.LogUtil;
 import cn.zvo.translate.service.core.pluginManage.interfaces.manage.TranslateManage;
 import cn.zvo.translate.service.core.util.CacheUtil;
+import cn.zvo.translate.service.core.util.RequestUtil;
 import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.Service;
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
@@ -53,7 +55,29 @@ public class TranslateController{
 		params.put("method", "language.json");
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
 		LogUtil.add(params);
-		return Language.getLanguageList();
+		
+		/***** 翻译时，插件拦截，获取使用什么翻译 *****/
+		ServiceInterface service = null;
+		try {
+			service = TranslateManage.getServiceInterface(request);
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
+				| IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+			LanguageListVO vo = new LanguageListVO();
+			vo.setResult(TranslateResultVO.FAILURE);
+			vo.setInfo(e.getMessage());
+			return vo;
+		}
+		if(service == null) {
+			//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
+			service  = Service.getService();
+		}
+		
+		String serverName = StringUtil.subString(service.getClass().getPackage().getName(), "cn.zvo.translate.service.", null);
+		System.out.println("--serverName:"+serverName);
+		Language lang = new Language(serverName);
+		
+		return lang.getLanguageList();
 	}
 	
 	/**
@@ -115,15 +139,9 @@ public class TranslateController{
 		}
 		
 		//来源，是哪个网页在使用
-		String referer = request.getHeader("referer"); 
-		if(referer == null) {
-			referer = "";
-		}
+//		String referer = request.getHeader("referer"); 
 		//取这个来源网页的domain
-		String domain = UrlUtil.getDomain(referer);
-		if(domain == null || domain.length() < 1) {
-			domain = "unknow";
-		}
+		String domain = RequestUtil.getRefererDomain(request);
 		
 		/***** 翻译之前，插件拦截 *****/
 		try {
@@ -176,8 +194,11 @@ public class TranslateController{
 			//com.xnx3.Log.debug("service:"+service.getClass().getName());
 			
 //			String service_from = service.
+			String serverName = StringUtil.subString(service.getClass().getPackage().getName(), "cn.zvo.translate.service.", null);
+			System.out.println("serverName:"+serverName);
+			Language lang = new Language(serverName);
 			
-			vo = service.api(Language.currentToService(from).getInfo(), Language.currentToService(to).getInfo(), textArray);
+			vo = service.api(lang.currentToService(from).getInfo(), lang.currentToService(to).getInfo(), textArray);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
 				vo.setInfo("SUCCESS");
 			}

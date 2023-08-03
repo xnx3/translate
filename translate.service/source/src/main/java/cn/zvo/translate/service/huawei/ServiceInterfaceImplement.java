@@ -92,23 +92,27 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 
 	@Override
 	public void setLanguage() {
-
+		if(Language.map.get("niutrans") != null) {
+			return;
+		}
+		
+		Language lang = new Language("huawei");
 		/*
 		 * 向语种列表中追加支持的语种，以下注意只需要改第二个参数为对接的翻译服务中，人家的api语种标识即可
 		 */
-		Language.append("chinese_simplified", "zh", "简体中文");
-		Language.append("chinese_traditional", "zh-tw", "繁體中文");
-		Language.append("english", "en", "English");
-		Language.append("korean", "ko", "한어");
-		Language.append("arabic", "ar", "بالعربية");	//阿拉伯语
-		Language.append("german", "de", "Deutsch");	//德语
-		Language.append("french", "fr", "Français");	//法语
-		Language.append("portuguese", "pt", "Português");	//葡萄牙语
-		Language.append("japanese", "ja", "日本語");	//日语
-		Language.append("thai", "th", "ภาษาไทย");	//泰语
-		Language.append("turkish", "tr", "Türkçe");	//土耳其语
-		Language.append("spanish", "es", "Español");	//西班牙语
-		Language.append("vietnamese", "vi", "Tiếng Việt");	//越南语
+		lang.append("chinese_simplified", "zh", "简体中文");
+		lang.append("chinese_traditional", "zh-tw", "繁體中文");
+		lang.append("english", "en", "English");
+		lang.append("korean", "ko", "한어");
+		lang.append("arabic", "ar", "بالعربية");	//阿拉伯语
+		lang.append("german", "de", "Deutsch");	//德语
+		lang.append("french", "fr", "Français");	//法语
+		lang.append("portuguese", "pt", "Português");	//葡萄牙语
+		lang.append("japanese", "ja", "日本語");	//日语
+		lang.append("thai", "th", "ภาษาไทย");	//泰语
+		lang.append("turkish", "tr", "Türkçe");	//土耳其语
+		lang.append("spanish", "es", "Español");	//西班牙语
+		lang.append("vietnamese", "vi", "Tiếng Việt");	//越南语
 	}
 
 	private TranslateResultVO requestApi(String from, String to, JSONArray array) {

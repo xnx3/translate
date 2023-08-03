@@ -6,7 +6,7 @@ import com.xnx3.Log;
 import com.xnx3.StringUtil;
 import com.xnx3.SystemUtil;
 
-import cn.zvo.translate.service.core.LanguageEnum;
+import cn.zvo.translate.tcdn.core.LanguageEnum;
 
 import java.io.*;
 import java.util.concurrent.TimeUnit;

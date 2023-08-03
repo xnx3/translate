@@ -1,4 +1,4 @@
-package cn.zvo.translate.service.core;
+package cn.zvo.translate.tcdn.core;
 
 /**
  * 网站管理后台的左侧菜单项的id唯一标示

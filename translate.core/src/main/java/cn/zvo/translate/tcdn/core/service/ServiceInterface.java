@@ -36,4 +36,5 @@ public interface ServiceInterface {
 	 */
 	public TranslateResultVO api(String from, String to, JSONArray textArray);
 	
+	
 }

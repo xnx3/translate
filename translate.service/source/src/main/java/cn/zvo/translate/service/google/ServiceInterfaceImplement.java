@@ -26,6 +26,13 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		http.setEncode(Http.UTF8);	
 	}
 	
+	public ServiceInterfaceImplement() {
+		// TODO Auto-generated constructor stub
+	}
+	public ServiceInterfaceImplement(Map<String, String> config) {
+		//无什么作用，只是跟其他的统一起来，免得初始化失败
+	}
+	
 	public static void main(String[] args) {
 		ServiceInterfaceImplement service = new ServiceInterfaceImplement();
 		service.setLanguage();
@@ -206,10 +213,10 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 
 	@Override
 	public void setLanguage() {
-		if(Language.map.get("niutrans") != null) {
-			return;
-		}
-		Language lang = new Language("niutrans");
+//		if(Language.map.get("niutrans") != null) {
+//			return;
+//		}
+		Language lang = new Language("google");
 		
 		lang.append("english", "en", "English");
 		lang.append("chinese_simplified", "zh-CN", "简体中文");

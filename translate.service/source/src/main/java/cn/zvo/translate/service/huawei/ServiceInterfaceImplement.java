@@ -44,6 +44,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	private String projectname;
 
 	public ServiceInterfaceImplement(Map<String, String> config) {
+		if(config == null) {
+			return;
+		}
 		this.username = config.get("username");
 		this.domainname = config.get("domainname");
 		this.password = config.get("password");
@@ -92,9 +95,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 
 	@Override
 	public void setLanguage() {
-		if(Language.map.get("niutrans") != null) {
-			return;
-		}
+//		if(Language.map.get("niutrans") != null) {
+//			return;
+//		}
 		
 		Language lang = new Language("huawei");
 		/*

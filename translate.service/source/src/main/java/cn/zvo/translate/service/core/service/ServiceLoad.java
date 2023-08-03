@@ -1,17 +1,22 @@
 package cn.zvo.translate.service.core.service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import com.xnx3.Log;
 import com.xnx3.ScanClassUtil;
 
 import cn.zvo.translate.service.google.ServiceInterfaceImplement;
+import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.Service;
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
+import net.sf.json.JSONObject;
 
 /**
  * 翻译服务核心
@@ -25,6 +30,25 @@ public class ServiceLoad implements CommandLineRunner{
 	private ApplicationConfig translateServiceApplicationConfig;
 
 	public void run(String... args) throws Exception {
+		
+		//搜索继承ServiceInterface接口的,以便执行设置语种
+		List<Class<?>> classList = ScanClassUtil.getClasses("cn.zvo.translate.service");
+		List<Class<?>> logClassList = ScanClassUtil.searchByInterfaceName(classList, "cn.zvo.translate.tcdn.core.service.ServiceInterface");
+		for (int i = 0; i < logClassList.size(); i++) {
+			Class logClass = logClassList.get(i);
+			//com.xnx3.Log.debug("translate service : "+logClass.getName());
+			try {
+				Object newInstance = logClass.getDeclaredConstructor(Map.class).newInstance(new HashMap<String,String>());
+				Service.serviceInterface = (ServiceInterface) newInstance;
+				Service.serviceInterface.setLanguage(); //初始化设置语种
+				//System.out.println("-----setlanguage:"+ServiceInterface.class.getName());
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+		}
+		Log.info("language : \n"+JSONObject.fromObject(Language.map));
+		
+		//从application.properties中获取设置的默认翻译源
 		com.xnx3.Log.debug("load translate config by application.properties / yml : "+this.translateServiceApplicationConfig);
 		if(translateServiceApplicationConfig == null) {
 			System.err.println("未发现application配置");
@@ -71,21 +95,7 @@ public class ServiceLoad implements CommandLineRunner{
 						
 					}
 				}
-//				
-//				//搜索继承ServiceInterface接口的
-//				List<Class<?>> logClassList = ScanClassUtil.searchByInterfaceName(classList, "cn.zvo.translate.core.service.interfaces.ServiceInterface");
-//				for (int i = 0; i < logClassList.size(); i++) {
-//					Class logClass = logClassList.get(i);
-//					com.xnx3.Log.debug("translate service : "+logClass.getName());
-//					try {
-//						Object newInstance = logClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
-//						Service.serviceInterface = (ServiceInterface) newInstance;
-//						Service.serviceInterface.setLanguage(); //初始化设置语种
-//						return;
-//					} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
-//						e.printStackTrace();
-//					}
-//				}
+				
 			}
 		}else {
 			System.out.println("未配置 translate.service.xxx.xxx ，使用默认的google翻译");

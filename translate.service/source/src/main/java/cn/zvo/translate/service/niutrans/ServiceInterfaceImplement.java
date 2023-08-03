@@ -32,6 +32,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	private String apikey;
 	
 	public ServiceInterfaceImplement(Map<String, String> config) {
+		if(config == null) {
+			return;
+		}
 		this.apikey = config.get("apikey");
 	}
 	
@@ -75,9 +78,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 
 	@Override
 	public void setLanguage() {
-		if(Language.map.get("niutrans") != null) {
-			return;
-		}
+//		if(Language.map.get("niutrans") != null) {
+//			return;
+//		}
 		
 		Language lang = new Language("niutrans");
 		/*

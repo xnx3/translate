@@ -74,7 +74,6 @@ public class TranslateController{
 		}
 		
 		String serverName = StringUtil.subString(service.getClass().getPackage().getName(), "cn.zvo.translate.service.", null);
-		System.out.println("--serverName:"+serverName);
 		Language lang = new Language(serverName);
 		
 		return lang.getLanguageList();
@@ -195,7 +194,7 @@ public class TranslateController{
 			
 //			String service_from = service.
 			String serverName = StringUtil.subString(service.getClass().getPackage().getName(), "cn.zvo.translate.service.", null);
-			System.out.println("serverName:"+serverName);
+//			System.out.println("serverName:"+serverName);
 			Language lang = new Language(serverName);
 			
 			vo = service.api(lang.currentToService(from).getInfo(), lang.currentToService(to).getInfo(), textArray);

@@ -42,6 +42,7 @@ public class Language {
 		if(serviceName == null) {
 			serviceName = "";
 		}
+		this.serviceName = serviceName;
 	}
 	
 	
@@ -56,10 +57,11 @@ public class Language {
 		valueMap.put("serviceId", serviceId);
 		valueMap.put("name", name);
 		
-		if(map.get(serviceName) == null) {
-			map.put(serviceName, new HashMap<String, Map<String, String>>());
+		if(map.get(this.serviceName) == null) {
+			map.put(this.serviceName, new HashMap<String, Map<String, String>>());
 		}
-		map.get(serviceName).put(currentId, valueMap);
+		map.get(this.serviceName).put(currentId, valueMap);
+		System.out.println(" -- "+this.serviceName+", put -- "+currentId);
 	}
 	
 
@@ -79,7 +81,7 @@ public class Language {
 	 * @return {@link BaseVO} 如果成功，info中便是翻译服务的语种唯一标识，如 zh-CN
 	 */
 	public BaseVO currentToService(String id) {
-		Object obj = map.get(serviceName).get(id);
+		Object obj = map.get(this.serviceName).get(id);
 		if(obj == null) {
 			//未发现
 			return BaseVO.failure("not find");
@@ -95,7 +97,7 @@ public class Language {
 	public LanguageListVO getLanguageList() {
 		LanguageListVO vo = new LanguageListVO();
 		List<LanguageBean> list = new ArrayList<LanguageBean>();
-		for(Map.Entry<String, Map<String, String>> entry:map.get(serviceName).entrySet()){  
+		for(Map.Entry<String, Map<String, String>> entry:map.get(this.serviceName).entrySet()){  
 			LanguageBean bean = new LanguageBean();
         	bean.setId(entry.getKey());
         	bean.setName(entry.getValue().get("name"));

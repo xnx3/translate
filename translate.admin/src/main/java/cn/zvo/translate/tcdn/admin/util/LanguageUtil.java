@@ -12,10 +12,10 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 /**
- * 二级域名跟语种对应关系
+ * 获取当前可用的语种
  * @author 管雷鸣
  */
-public class DomainLanguageUtil {
+public class LanguageUtil {
 	public static List<LanguageBean> languageList; //当前支持的语种列表
 	
 	/**
@@ -36,6 +36,7 @@ public class DomainLanguageUtil {
 			list.add(new LanguageBean("", "请配置 application.properties 中的 translate.tcdn.service.domain "));
 			return list;
 		}
+		ConsoleUtil.info("translate.tcdn.service.domain ： "+serviceDomain);
 		
 		try {
 			Response res = http.post(serviceDomain+"language.json?source=tcdn.core", null);
@@ -44,6 +45,8 @@ public class DomainLanguageUtil {
 				ConsoleUtil.error(res.toString());
 				list.add(new LanguageBean("", "http code:"+res.getCode()+", content:"+res.getContent()));
 				return list;
+			}else {
+				ConsoleUtil.debug("load language.json --> "+res.getContent());
 			}
 			
 			JSONObject json = JSONObject.fromObject(res.getContent());
@@ -55,10 +58,10 @@ public class DomainLanguageUtil {
 				LanguageBean bean = new LanguageBean();
 				bean.setId(item.getString("id"));
 				bean.setName(item.getString("name"));
-				if(bean.getId().indexOf("_") > 0) {
-					//将language.id 中有下划线_ 的去掉
-					bean.setId(bean.getId().replace("_", ""));
-				}
+//				if(bean.getId().indexOf("_") > 0) {
+//					//将language.id 中有下划线_ 的去掉
+//					bean.setId(bean.getId().replace("_", ""));
+//				}
 				list.add(bean);
 			}
 			

@@ -16,13 +16,14 @@
 	    <maven.javadoc.skip>true</maven.javadoc.skip>
 	  </properties>
   
-	<!-- 定义公共资源版本 -->
-  <parent>
-    <groupId>com.xnx3.wangmarket.wm</groupId>
-    <artifactId>parent</artifactId>
-    <version>3.0</version>
-  </parent>
-  
+
+	<!-- Spring Boot 启动父依赖 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.6.1</version>
+    </parent>
+    
   	<repositories>
 		<repository>
             <id>maven-ali</id>
@@ -58,78 +59,40 @@
         </repository>
 	</repositories>
 	
-<!--    
-   <build>
-	    <plugins>
-                    <plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-jar-plugin</artifactId>
-						<configuration>
-							<excludes>
-		            			<exclude>**/com/Application*</exclude>
-		            			<exclude>**/*.xml</exclude>
-		            			<exclude>/*.properties</exclude>
-		            			<exclude>**/*.json</exclude>
-		            			<exclude>**/*.db</exclude>
-		            			<exclude>**/static/**</exclude>
-		          			</excludes>
-							<archive>  
-								<manifest>  
-									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>  
-									<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-								</manifest>
-							</archive>
-						</configuration>
-					</plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
-                        <executions>
-                            <execution>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-	    </plugins>
-	     <resources>  
-	     	<resource>  
-                <directory>src/main/resources</directory>  
-                <targetPath>./</targetPath>  
-                <includes>  
-                    <include>META-INF/**</include>
-                </includes>
-            </resource> 
-            <resource>  
-                <directory>src/main/resources/static/</directory>  
-                <targetPath>META-INF/resources/</targetPath>  
-                <includes>  
-                    <include>plugin/**</include>
-                </includes>
-            </resource> 
-            <resource>  
-                <directory>src/main/webapp</directory>  
-                <targetPath>META-INF/resources</targetPath>
-                <includes>  
-                    <include>plugin/**</include>  
-                </includes>  
-            </resource>
-            <resource>  
-                <directory>src/main/webapp/WEB-INF</directory>  
-                <targetPath>META-INF/resources/WEB-INF/</targetPath>  
-                <includes>  
-                    <include>view/**</include>  
-                </includes>  
-            </resource>  
-        </resources>  
-	</build>
-  -->
-  
   <dependencies>  
-	   	
+	   	<dependency> 
+	    	<groupId>cn.zvo.translate</groupId>
+			<artifactId>translate.service</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<!-- autoPublish 自动发布部署 -->
+		<dependency>
+		  <groupId>com.xnx3.wm.autoPublish</groupId>
+		  <artifactId>autoPublish</artifactId>
+		  <version>1.4</version>
+		  <scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.xnx3.util</groupId>
+					<artifactId>xnx3-util</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- sftp 支持 -->
+		<dependency>
+		  <groupId>com.jcraft</groupId>
+		  <artifactId>jsch</artifactId>
+		  <version>0.1.55</version>
+		  <scope>provided</scope>
+		</dependency>
+		<!-- ssh 支持 -->
+		<dependency>
+		  <groupId>ch.ethz.ganymed</groupId>
+		  <artifactId>ganymed-ssh2</artifactId>
+		  <version>262</version>
+		  <scope>provided</scope>
+		</dependency>
   </dependencies>  
   
 </project>

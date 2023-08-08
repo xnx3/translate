@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
+import com.xnx3.Log;
 import com.xnx3.MD5Util;
 import com.xnx3.StringUtil;
 import com.xnx3.UrlUtil;
@@ -108,6 +109,7 @@ public class TranslateController{
 		TranslateResultVO vo = new TranslateResultVO();
 //		vo.setFrom(from);
 //		vo.setTo(to);
+		//long start = DateUtil.timeForUnix13();
 		
 		//过滤换行符,如果有的话
 		Pattern p = Pattern.compile("\r|\n");
@@ -137,6 +139,8 @@ public class TranslateController{
 			}
 		}
 		
+		//Log.debug("tongji : "+(DateUtil.timeForUnix13()-start));
+		
 		//来源，是哪个网页在使用
 //		String referer = request.getHeader("referer"); 
 		//取这个来源网页的domain
@@ -159,6 +163,7 @@ public class TranslateController{
 			vo.setInfo(e.getMessage());
 			return vo;
 		}
+		//Log.debug("beforeVO : "+(DateUtil.timeForUnix13()-start));
 		
 		//日志
 		Map<String, Object> params = new HashMap<String, Object>();
@@ -186,6 +191,7 @@ public class TranslateController{
 				vo.setInfo(e.getMessage());
 				return vo;
 			}
+			//Log.debug("getServiceInterface : "+(DateUtil.timeForUnix13()-start));
 			if(service == null) {
 				//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
 				service = Service.getService();
@@ -201,7 +207,7 @@ public class TranslateController{
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
 				vo.setInfo("SUCCESS");
 			}
-			
+			//Log.debug("service.api : "+(DateUtil.timeForUnix13()-start));
 			params.put("source", "api");  //翻译来源-API翻译接口
 			
 			if(vo.getResult() - TranslateResultVO.FAILURE == 0) {
@@ -237,7 +243,7 @@ public class TranslateController{
 			vo.setInfo(e.getMessage());
 			return vo;
 		}
-		
+		//Log.debug("afterVO : "+(DateUtil.timeForUnix13()-start));
 		
 		vo.setFrom(from);
 		vo.setTo(to);

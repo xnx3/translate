@@ -7,7 +7,7 @@
 	<groupId>cn.zvo.translate</groupId>
 	<artifactId>translate.service</artifactId>
 	<version>1.0</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 
 	<description>java sms </description>
 	<url>https://github.com/xnx3/sms.java</url>
@@ -54,7 +54,20 @@
 
 	<build>
 		<plugins>
-		
+			
+			<!-- 使用 Maven Compiler 插件来排除某个Java文件 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<excludes>
+						<!-- 排除 xxxx.java -->
+						<exclude>cn/*.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			
 			<!-- Source -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -74,39 +87,6 @@
 				</executions>
 			</plugin>
 			
-			<!-- Javadoc -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<additionalparam>-Xdoclint:none</additionalparam>
-							<source>${java.version}</source>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>  -->
-			
-			<!-- GPG -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
-				<executions>
-					<execution>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>  -->
 		</plugins>
 	</build>
 	

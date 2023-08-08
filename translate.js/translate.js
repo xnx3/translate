@@ -1734,6 +1734,19 @@ var translate = {
 			}
 			return translate.language.local;
 		},
+		/*
+			获取当前语种。
+			比如当前设置的本地语种是简体中文，用户并未切换其他语种，那么这个方法将返回本地当前的语种，也就是等同于 translate.language.getLocal()
+			如果用户切换为英语进行浏览，那么这个方法将返回翻译的目标语种，也就是 english
+		*/
+		getCurrent:function(){
+			var to_storage = translate.storage.get('to');
+			if(to_storage != null && typeof(to_storage) != 'undefined' && to_storage.length > 0){
+				//之前有过使用，并且主动设置过目标语种
+				return to_storage;
+			}
+			return translate.language.getLocal();
+		},
 		//如果第一次用，默认以什么语种显示。
 		//比如本地当前语种是简体中文，这里设置为english，那么用户第一次使用时，会自动翻译为english进行显示。如果用户手动切换为其他语种比如韩语，那么就遵循用户手动切换的为主，显示韩语。
 		setDefaultTo:function(languageName){

@@ -2648,7 +2648,13 @@ var translate = {
 				//str = str.replace(/"/g,"\\\"");
 				return str;
 			}
-		}	
+		},
+		//获取URL的GET参数。若没有，返回""
+		getUrlParam:function (name){
+		     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+		     var r = window.location.search.substr(1).match(reg);
+		     if(r!=null)return  unescape(r[2]); return "";
+		}
 	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{

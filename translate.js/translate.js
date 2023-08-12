@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.5.2.20230808',
+	version:'2.5.3.20230812',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1758,6 +1758,16 @@ var translate = {
 				translate.storage.set('to', languageName);
 				translate.to = languageName;
 			}
+		},
+		//设置为可以根据当前访问url的某个get参数来控制使用哪种语言显示。
+		//比如当前语种是简体中文，网页url是http://translate.zvo.cn/index.html ,那么可以通过在url后面增加 language 参数指定翻译语种，来使网页内容以英文形态显示 http://translate.zvo.cn/index.html?language=english
+		setUrlParamControl:function(paramName){
+			if(typeof(paramName) == 'undefined' || paramName.length < 1){
+				paramName = 'language';
+			}
+			var paramValue = translate.util.getUrlParam(paramName);
+			translate.storage.set('to', paramValue);
+			translate.to = paramValue;
 		},
 		//自动识别当前页面是什么语种
 		autoRecognitionLocalLanguage:function(){

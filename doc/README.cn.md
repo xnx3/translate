@@ -7,11 +7,18 @@
     无需改动页面、无语言配置文件、无API Key、对SEO友好！
 </h4> 
 <h4 align="center">
-    当前为中文文档 |  <a href="../README.md">See English Documents</a>
+    简体中文 | 
+    <a href="http://translate.zvo.cn/41162.html?language=chinese_traditional">繁體中文</a> | 
+    <a href="http://translate.zvo.cn/41162.html?language=english">English</a> | 
+    <a href="http://translate.zvo.cn/41162.html?language=japanese">しろうと</a> | 
+    <a href="http://translate.zvo.cn/41162.html?language=russian">Русский язык</a> | 
+    <a href="http://translate.zvo.cn/41162.html?language=german">deutsch</a> | 
+    <a href="http://translate.zvo.cn/41162.html?language=french">Français</a> 
 </h4> 
 
 
-# 特性
+
+# 特性说明
 * **使用极其简单。** 无需任何前期准备，直接加入几行代码即可拥有多种语言全自动切换能力。
 * **不增加工作量。** 无需另行改造页面本身，也没有各种语言都要单独配置的语言文件，更不需要你对页面本身要显示的文字区域进行代码调用，我认为那样对技术人员实在是太不友好了。而且它也不需要你到某某网站申请什么key，它本身就是开放的，拿来即用。
 * **极其灵活扩展。** 您可指定它只翻译某些指定区域、切换语言时显示下拉框还是通过摆放多个切换语言按钮进行、可指定某些特定的元素不进行翻译忽略……
@@ -26,7 +33,8 @@
 http://res.zvo.cn/translate/demo.html
 
 
-# 先拿别人的网站动手试试
+# 测试效果
+先拿别人的网站动手试试效果
 ![效果](http://cdn.weiunity.com/site/341/news/9a7228aaae28475996da9026b93356c8.gif "")
 
 1. 随便打开一个网页
@@ -42,226 +50,38 @@ http://res.zvo.cn/translate/demo.html
 ````
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
-translate.setUseVersion2(); //设置使用v2.x 版本
 translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
 translate.execute();//进行翻译 
 </script>
 ````
 
-# 更多扩展用法
-
-### 指定切换语言的select选择框的位置
-你想在你页面什么地方显示，就吧下面这个放到哪即可。
-
-````
-<div id="translate"></div>
-````
-
-主要是这个 id="translate" 切换语言的按钮会自动赋予这个id里面。当然你也不一定非要是div的，也可以这样
-
-````
-<span id="translate"></span>
-````
-
-### CSS美化切换语言按钮
-可使用css来控制切换语言选择的显示位置及美观。如：
-
-````
-<style>
-.translateSelectLanguage{
-	position: absolute;
-	top:100px;
-	right:100px;
-}
-</style>
-````
-这就是控制切换语言的 ``<select>`` 标签
-
-### 设定是否自动出现 select 切换语言
-
-````
-/*
- * 是否显示 select选择语言的选择框，true显示； false不显示。默认为true
- * 注意,这行要放到 translate.execute(); 上面
- */
-translate.selectLanguageTag.show = false;
-translate.execute();
-````
-
-使用场景是，如果使用了:  
-
-````
-<a href="javascript:translate.changeLanguage('en');">切换为英语</a>
-````
-
-这种切换方式，那么 select下拉选择的就用不到了，就可以用此方式来不显示。  
-当然你也可以使用css的方式来控制其不显示。比如：   
-
-````
-<style>
-#translate{
-	display:none;
-}
-</style>
-````
-
-### 自定义出现的 select 切换语言所支持的语种
-
-````
-translate.selectLanguageTag.languages = 'english,chinese_simplified,korean'; //每个语种之间用英文,分割。比如这里设置的是支持英语、简体中文、韩语 的切换。根据后端翻译服务不同，支持的语言也不同。具体支持哪些，可通过 http://api.translate.zvo.cn/doc/language.json.html 获取 （如果您私有部署的，将请求域名换为您自己私有部署的域名）
-````
-每个语种之间用英文,分割。比如这里设置的是支持英语、简体中文、韩语 的切换。根据后端翻译服务不同，支持的语言也不同。  
-具体支持哪些，可通过 http://api.translate.zvo.cn/doc/language.json.html 获取 （如果您私有部署的，将请求域名换为您自己私有部署的域名）  
-**注意，这行要放到 translate.execute(); 上面**
-
-### 翻译时忽略指定的tag标签
-
-````
-translate.ignore.tag.push('span'); //翻译时追加上自己想忽略不进行翻译的tag标签，凡是在这里面的，都不进行翻译。
-````
-翻译时追加上自己想忽略不进行翻译的tag标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些tag标签，可直接执行 ```` console.log(translate.ignore.tag); ```` 进行查看
-**注意，这行要放到 translate.execute(); 上面**
-
-### 翻译时忽略指定的class值
-
-````
-translate.ignore.class.push('test');	//翻译时追加上自己想忽略不进行翻译的class name的值，凡是在这里面的，都不进行翻译。
-````
-翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些class，可直接执行 ```` console.log(translate.ignore.class); ```` 进行查看  
-**注意，这行要放到 translate.execute(); 上面**
-
-### 翻译时忽略指定的id值
-
-````
-translate.ignore.id.push('test');	//翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译。
-````
-翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译。  
-如果你想查看当前忽略哪些id，可直接执行 ```` console.log(translate.ignore.id); ```` 进行查看  
-**注意，这行要放到 translate.execute(); 上面**
+# 详细使用
+* [设置默认翻译为的语种](http://translate.zvo.cn/41556.html)
+* [自定义翻译术语](http://translate.zvo.cn/41555.html)
+* [翻译完后自动执行](http://translate.zvo.cn/41554.html)
+* [指定翻译服务接口](http://translate.zvo.cn/41553.html)
+* [监控页面动态渲染的文本进行自动翻译](http://translate.zvo.cn/41552.html)
+* [设置本地语种（当前网页的语种）](http://translate.zvo.cn/41551.html)
+* [自动根据用户所在的国家切换其语种](http://translate.zvo.cn/41550.html)
+* [主动进行语言切换](http://translate.zvo.cn/41549.html)
+* [只翻译指定的元素](http://translate.zvo.cn/41548.html)
+* [翻译时忽略指定的id](http://translate.zvo.cn/41547.html)
+* [翻译时忽略指定的class属性](http://translate.zvo.cn/41546.html)
+* [翻译时忽略指定的tag标签](http://translate.zvo.cn/41545.html)
+* [对网页中图片进行翻译](http://translate.zvo.cn/41538.html)
+* [设定切换语言所支持的语种](http://translate.zvo.cn/41544.html)
+* [设定是否自动出现 select 切换语言](http://translate.zvo.cn/41543.html)
+* [CSS美化切换语言按钮](http://translate.zvo.cn/41542.html)
+* [指定切换语言选择框在代码中的位置](http://translate.zvo.cn/41541.html)
+* [对网页中图片进行翻译](http://translate.zvo.cn/41538.html)
+* [鼠标划词翻译](http://translate.zvo.cn/41557.html)
+* [获取当前显示的是什么语种](http://translate.zvo.cn/41761.html)
+* [根据URL传参控制以何种语种显示](http://translate.zvo.cn/41929.html)
 
 
-### 翻译指定的区域
 
-````
-var documents = [];
-documents.push(document.getElementById('test1'));
-documents.push(document.getElementById('test2'));
-documents.push(document.getElementById('test3'));
-translate.setDocuments(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
-````
-
-可使用 translate.setDocuments(...) 指定要翻译的元素的集合,可传入一个或多个元素。如果不设置此，默认翻译整个网页。  
-**注意，这行要放到 translate.execute(); 上面**
-
-### js主动切换语言
-比如点击某个链接显示英文界面
-
-````
-<a href="javascript:translate.changeLanguage('english');" class="ignore">切换为英语</a>
-````
-
-只需传入翻译的目标语言，即可快速切换到指定语种。具体有哪些语言，可查阅： [http://api.translate.zvo.cn/doc/language.json.html](http://api.translate.zvo.cn/doc/language.json.html)  
-其中 ````class="ignore"```` 加了这个class，代表这个a标签将不会被翻译 
-
-### 自动根据用户所在的国家切换其语种
-
-用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。  
-如果用户手动切换了别的语种，再使用时，那就优先以用户所选择的为主，这个就不管用了。  
-
-````
-translate.setAutoDiscriminateLocalLanguage();	//设置用户第一次用时，自动识别其所在国家的语种进行切换
-````
-
-### 设置本地语种（当前网页的语种）
-
-````
-translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认就是 chinese_simplified 简体中文 
-````
-当前支持的本地语种有：  
-* **chinese_simplified** 简体中文
-* **chinese_traditional** 繁体中文
-* **english** 英语  
-如果不设置，默认会自动识别当前网页的文本，取当前网页文本中，出现频率最高的语种为默认语种。  
-这个会在出现 select 选择语言时，默认选中的语种。  
-
-**注意，这行要放到 translate.execute(); 上面**
-
-### 对页面动态渲染的文本进行自动翻译
-
-正常情况下，极大可能会有这种需求：
-1. 页面中需要通过ajax请求后端服务器获取数据，然后再将数据渲染展示出来。
-2. 页面中的弹出提示 （就比如 [msg.js](https://gitee.com/mail_osc/msg) 的 ````msg.info('你好');```` ） 这个提示是js加载出来的，提示文字也需要一并进行翻译的情况
-您可加入下面一行代码，来实现以上需求。  
-
-````
-translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
-````
-建议放在 translate.execute() 这行之前。
-##### 注意事项
-如果你手动设置了 ````translate.setDocuments(...)```` ，那么监听的就不是整个页面了，而是单纯只监听 ````setDocuments(...)````  所设置的区域的改动。
-
-### 私有化部署翻译服务接口
-在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、以及您对自有客户希望提供高可靠翻译服务场景时，您可将翻译服务接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。    
-实际部署方式，可参考：[translate.service](./translate.service/)  
-部署好后，在 ````translate.execute();```` 之前，加入一行代码，如下所示：
-
-````
-translate.request.api.host='http://121.121.121.121/'; //将这里面的ip地址换成你服务器的ip，注意开头，及结尾还有个 / 别拉下
-translate.execute();
-````
-
-如此，翻译请求接口就会走您自己服务器了。
-
-### 翻译完后自动执行
-当翻译完成后会自动触发执行某个方法，以便您来做自定义扩展。比如 [layui的翻译组件](https://gitee.com/mail_osc/translate_layui) 便是使用了此能力在翻译完成后重新绘制 select 选中项。
-
-````
-translate.listener.renderTaskFinish = function(task){
-	console.log('执行完一次');
-}
-````
-  
-进行翻译时每当执行完一次渲染任务（翻译）时会触发此。注意页面一次翻译会触发多个渲染任务。普通情况下，一次页面的翻译可能会触发两三次渲染任务。（因为一个网页上可能有多种语言，每种语言都是一次翻译任务。）  
-另外如果页面中有ajax交互方面的信息时，每次ajax信息刷新后，也会进行翻译，也是一次翻译任务。  
-当然，这里的翻译任务是确实有进行了翻译的前提下，执行完才会触发此。  
-
-### 自定义翻译术语
-如果你感觉某些翻译不准确，可进行针对性的定义某些词的翻译结果，进行自定义术语库。使用的方法为：
-
-````
-translate.nomenclature.append(from, to, properties);
-````
-传入参数解释：  
-* **from** 要转换的语种，传入如 chinese_simplified
-* **to** 翻译至的目标语种，传入如 english
-* **properties** 配置表，格式便是properties的格式，每行一个规则，每个前后用等号分割，等号前是要翻译的词或句子，等号后是自定义的翻译结果。传入如:  
-
-````
-你好=Hello
-世界=ShiJie	
-````
-
-比如，要自定义 “网市场云建站系统” 、 “国际化” 这两个词有简体中文翻译为英文的结果，可以这么写：  
-
-````
-translate.nomenclature.append('chinese_simplified','english',`
-网市场云建站系统=wangmarket CMS
-国际化=GuoJiHua
-`);
-````
-
-这个自定义术语库的可以单独用一个js文件来定义，如此定义一次，在类似的项目中有使用，可直接将之前定义的js术语库文件复制来引入即可方便使用。  
-当前正在优化中，如果原语种是中文、韩文还可以，像是英语结果会不准，如果您项目中用到了，发现异常时，可联系我，免费帮您调试好的同时还能完善本项目。  
-**注意，这行要放到 translate.execute(); 上面**
-
-##### 示例
-这里给出一个示例用于参考，链接地址： [https://res.zvo.cn/translate/doc/demo_nomenclature.html](https://res.zvo.cn/translate/doc/demo_nomenclature.html)  
-您可打开后查看页面源代码，即可看到它是如何设置的。  
-
-# 实际使用场景示例
-### 普通网站中点击某个语言进行切换
+# 使用示例
+**普通网站中点击某个语言进行切换**
 如下图所示，网站中的某个位置要有几种语言切换  
 ![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
 直接在其html代码末尾的位置加入以下代码：  
@@ -277,121 +97,55 @@ translate.nomenclature.append('chinese_simplified','english',`
 <!-- 引入多语言切换的js -->
 <script src="https://res.zvo.cn/translate/translate.js"></script>
 <script>
-	translate.setUseVersion2(); //设置使用v2.x 版本
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
 	translate.execute();
 </script>
 ````
 
-# 参与
-您可直接 fork 本项目，注意，是github仓库 [https://github.com/xnx3/translate](https://github.com/xnx3/translate) ，非 gitee 的仓库  
-如果您改动了哪些代码，请在其中备注上自己的姓名、以及自己的个人主页，是您参与付出的留名。比如，陈某人参与了日语翻译的字符判断，那可以这样：  
+# 谁在使用
+截止 2023.7 月份时，本项目的后端免费翻译服务的请求量就已经达到了 1.5亿次/月 的规模，并且还在非常快速的持续增大，包括一些城投集团像是长沙城投、以及一些政府单位像是环境保障局、企业国际化经营服务平台、海外矿业产业联合、国际潮青联谊年会、人力资源和社会保障局、政务服务网、海外的一些平台如futrom智能住宅、bitheime全球区块链等等都在广泛使用。
+这里给出两个使用比较好的网站作为实际示例参考：
+* [**RICE中国大米展**](https://www.cnrice.com.cn)
+* [**北京长城航空集团红十字会**](https://hh.changhang.org.cn)
+* [**第十一届国际潮青联谊年会组委会**](https://ityc.org.cn)
 
-````
-/*
-	是否包含日语，返回true:包含
-	参与完善者：陈某人 https://www.chenmouren.com/xxxxx.html
-*/
-japanese:function(str){
-	if(/.*[\u0800-\u4e00]+.*$/.test(str)){ 
-		return true
-	} else {
-		return false;
-	}
-},
+另外，很多开源框架及产品也都已将此翻译能力接入了自身系统，赋予自身系统多语言切换能力。比如 [Discuz](https://addon.dismall.com/plugins/domi_translate.html)、[wangmarket CMS](http://www.wang.market/37234.html)、[Layui](https://gitee.com/mail_osc/translate_layui)、[易优CMS](https://www.eyoucms.com/mall/plus/29751.html)、[迅睿CMS](https://www.xunruicms.com/shop/1285.html) 、[Pear Admin](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)、[WoShop](https://www.wo-shop.net/cbec/)……
 
-````
-
-# 版本
-注意，v1.x 跟 v2.x 使用上略有差别，可使用 ````console.log(translate.version);```` 查看当前使用的版本。  
-另外 v1.x 版本的相关说明参见： [使用说明](v1.md) | [在线demo](https://res.zvo.cn/translate/demo_v1.html)
-
-### v1.0
-2022.2月发布，提供多语言支持能力，使网页无需改动快速具备多语言切换能力。
-
-### v2.0
-2022.12月发布，增加更多的扩展方法。  
-1. 可自定义忽略的Tag标签，进行翻译时会忽略之
-2. 可自定义忽略的class，进行翻译时会忽略之
-3. 默认内置 class="ignore" 为忽略的class，可在某个标签上增加此属性，即可使其跳过不进行翻译。
-4. 增加缓存机制，翻译一次后会将结果进行缓存，翻译过后，再查看，会达到秒翻译的结果，极大提高体验度。
-5. 增加局部翻译的能力，可支持自定义翻译的区域。
-6. 优化 input 输入框的 placeholder 的内容不翻译的问题
-7. 优化本地使用（file协议）时无法测试的问题。现在本地也能正常使用及测试了。
-8. 修复翻译时会莫名其妙多了无数层font标签的问题
-9. 修复翻译时，像是中文翻译为韩语，鼠标多经过几次会将其翻译的韩语重复翻译导致翻译结果不准确的问题。
-10. 开放翻译云服务平台接口 http://api.translate.zvo.cn/doc/index.html
-
-### v2.1
-1. 本地语种时默认赋予使用v2版本翻译
-1. 增加 ````translate.language.connector()```` 对句子的连接符单独进行适配
-1. 增加如果是被 ````<!-- -->```` 注释的区域，不进行翻译
-1. 增加英文 README 文档
-1. 增加对图片alt、meta关键词及描述的翻译
-1. 优化判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译
-1. 增加 ````translate.listener.start()```` 可对当前页面变化的区域进行自动翻译，比如ajax加载数据后进行渲染
-1. ````translate.execute(...)```` 增加可传入翻译区域，传入的区域只是单纯做一次性翻译，不会影响 ````setDocuments(...)```` 的值
-1. 加入任务队列机制，彻底解决翻译时非常小概率有文字遗漏不翻译的问题。
-1. 增加 ````translate.setAutoDiscriminateLocalLanguage();```` 用户第一次用时，可自动识别其所在国家的语种进行切换
-
-### v2.2
-1. 开放后端翻译服务接口的私有化一键部署，并开源。
-2. 大幅优化句子翻译的准确性，达到百度翻译、谷歌翻译的程度
-3. 增加可配置对某个元素指定id忽略其不进行翻译
-4. 增加单独针对连接符识别判断，以提高翻译准确度
-5. 增加可针对 translate.request.api.host 单独配置，以私有化部署
-6. 增加 inspector_v2.js ，用于v2版本的快速转换体验，并将readme中的快速体验默认便是使用此v2版本。
-8. 增加 translate.language.autoRecognitionLocalLanguage(); 如果未手动设置当前网页的语种，会自动识别语种
-9. 增加 translate.language.getLocal() 用户获取当前网页的语种（如果未设置，自动根据网页当前显示的文字进行识别语种）
-10. 增加 translate.selectLanguageTag.selectOnChange 用于提供重写select onchange 事件，以便更好扩展
-11. 优化中英文混合时翻译的一些意外问题
-12. 优化meta - keywords 替换的问题
-13. 优化转英文时如果英文有'，比如 let's 这种的情况
-14. 优化 ignore 对忽略class name有多情况下的判断
-15. 开放后端翻译服务接口文档，以便更好自有扩展及使用
-16. 修复tag有时失效的问题，比如监听状态下局部翻译情况
-
-### v2.3
-1. 增加 translate.nomenclature 用于自定义术语支持
-1. 增加 translate.listener.renderTaskFinish(renderTask); 以便更好的扩展
-1. 增加 translate.language.wordBlankConnector() 适配语言是否需要空格作为连词符，增加十余种语言的适配
-1. 增加 translate.element.getNodeName 以供全局使用
-1. 增加vue、uniapp中使用的说明
-3. 增加 translate.element.nodeAnalyse 用于元素分析及渲染
-4. 增加对 input 标签的 type=button 类型的支持
-1. 增加对 input 标签的 type="submit" 类型的支持
-1. 增加 a 标签 title 属性的翻译适配
-1. 优化忽略类、tag、id等的判断，使之更精准
-1. 针对v2.0增加 translate.selectLanguageTag.languages 的设置
-1. 优化，当前语种在未翻译时，切换其他语种，不重新加载当前页面
-2. 修改 nodeQueue 第五维增加 translateText 
-1. 优化英文转其他语种时自定义术语异常的问题
-1. 优化忽略翻译的标签，增加 textarea
-2. 针对新潮传媒反馈的某些页面无法使用问题增加相关判断进行容错，避免阻塞整体运行。
-1. 将默认的忽略tag标签中的img标签去除。也对img的alt进行翻译
-1. 对翻译队列进行排序,将原字符串长的放前面，避免造成有部分不翻译的情况（bug是先翻译了短的，导致长的被打断而无法进行适配）
-1. 修复如果一个句子中有多个被特殊字符间隔的汉字时，会导致漏掉末尾一些汉字不翻译的问题
-
-### v2.4
-1. 增加对标签属性的翻译扩展。翻译队列中，增加第七维度，node跟随attribute属性，用于判断是node本身翻译，还是node的某个属性进行翻译
-1. 增加对标签title属性的翻译，并同样适配于ignore忽略标签的规则。
-1. 优化某些情况翻译前有空格，翻译后空格丢失问题
-1. translate 仓库整体结构优化，将不再只存放 translate.js ，将原本的放入了根目录的  /translate.js/ 文件中
-1. 将 translate.service 合并入 translate 仓库，跟 translate.js 仓库共存。
-1. 增加 translate.admin 项目，其作用为添加源站，对源站进行翻译控制、对翻译后的网站进行单独绑定域名、管理绑定域名、对翻译之后的网页支持使用javascript脚本进行控制其输出的源码。当源站内容有变动时，还可以根据域名进行刷新翻译内容的分发，进行重新翻译，以保证翻译内容处于最新。 已加入 translate 仓库，跟 translate.js 仓库共存。
-1. 增加 translate.user 项目，用于用户访问，当用户访问通过 translate.admin 绑定的某个域名时，会在此自动解析取得要响应的语种以及要展示的翻译结果页面，从 translate.api 中将这个html页面的翻译之后的源码取回，进行缓存。然后将结果进行返回，继而在浏览器中显示，以做到用户访问某个语种的域名后，会自动打开这个翻译之后的页面，并且查看网页源代码时，其也是翻译后的源码。已加入 translate 仓库，跟 translate.js 仓库共存。
-1. 增加 translate.api 项目，用于html源码层翻译，并开放此接口。它提供了你传入一个html源码，指定要翻译的目标语种，它会给你返回翻译之后的html源码。
-1. 增加 TCDN （translate.admin 、translate.api 、translate.user ）基于CentOS 7.4一键部署的Shell命令, 位于 translate 仓库中的 deploy 部署目录下。
+# 哪些能力
+#### 能力一：前端翻译
+加入一个js文件及两行js代码，即可让你现有页面具有几百种语种切换能力。零门槛！详细参见 [translate.js](http://translate.zvo.cn/41162.html)
+#### 能力二：翻译html的能力
+传入html源码，指定要范围为什么语种，能将翻译之后的html源码返回。详细参见 [translate.api](http://translate.zvo.cn/41165.html)
+#### 能力三：整站翻译及独立绑定域名
+将您现有的网站，翻译成全新的小语种网站，可以绑定域名并支持搜索引擎收录和排名。基于现有网站，无需改动源站，翻译全站网页，绑定独立域名，保证搜索收录。
+翻译是基于您现有的网站内容，不需要重新建设多语种网站，只需要解析域名到您私有部署的服务器，就可以完成全站翻译。
+详细参见 [TCDN](http://translate.zvo.cn/41159.html)
 
 
+# 开源仓库目录结构
+* deploy - 部署相关，比如shell文件、sql数据库文件等
+* doc - 一些文档相关
+* translate.admin - [TCDN的管理后台,PC端的WEB管理后台，可以通过此添加翻译的源站、绑定别的域名及设置域名所展现的语言、针对翻译的过程中支持使用JavaScript脚本自定义调优，比如设置哪些不被翻译、设置一些自定义术语库等。并且提供了CDN的基本能力，比如根据URL清除缓存、根据域名清除缓存等。](http://translate.zvo.cn/41163.html)
+* translate.api - [翻译开放接口，他不同于 translate service 的点在于 translate service 开放的是文本翻译接口，而 translate api 开放的是html翻译接口，你传入一个网页的url，它返回的是这个网页被翻译之后源码（此特性非常适合对不同语言上SEO优化）](http://translate.zvo.cn/41165.html)
+* translate.core - [TCDN的公共模块,无具体功能]
+* translate.js - [提供了针对html的分析及翻译能力。在现有的html页面中引入一个js可以快速实现当前页面语种切换的能力。且适配面非常广泛！只要是html的，它都能适配（包含VUE、uniapp等），在很多情况下，它是单独进行使用的，在你的老网站中加入几行js代码即可植入，使其快速具备语种切换能力。](http://translate.zvo.cn/41162.html)
+* translate.service - [翻译服务，它对接了 小牛翻译、google翻译、华为云翻译 等翻译服务，如果需要别的翻译服务或者局域网无网环境下部署，也可以快速对接自有翻译接口。它的作用是开放文本翻译接口，将 translate.js中 需要翻译的文本传入，然后将翻译之后的文本输出。提供批量翻译能力（一个翻译请求可以包含数千段需要翻译的文本）。
+并且它开放翻译接口，不止适用于 translate.js，你可以用在任何需要对接翻译接口的地方进行使用。其开放接口，说明参见：http://api.translate.zvo.cn/doc/translate.json.html](http://translate.zvo.cn/41164.html)
+* translate.user - [TCDN 对用户开放访问的，当在 translate admin 中添加源站，并绑定域名指向某个语种后，用户访问这个域名时，便会访问进此，有此进行网页翻译的调度、缓存的处理等。当用户第一次访问某个页面时，缓存中没有，会通过 translate api 从源站获取网页源码，然后进行翻译，将翻译之后的html源码在此进行缓存，然后返回给用户浏览器进行显示。 当有用户在此访问这个页面时，便会直接从缓存中取。](http://translate.zvo.cn/41166.html)
+
+其中每一个都是可以作为一个单独的项目进行使用，比如 translate.service 便可以作为文本翻译接口进行使用、translate.api 可以作为html文件翻译接口使用、translate.js 可以作为网页端直接嵌入几行js代码就能快速翻译来使用。
+另外像是如果你网站已经配置好，不需要在使用 translate.admin 管理后台，你可以将此停掉，从而降低服务器资源的占用。
 
 
-# 这些开源项目正在使用
-如下开源项目中已置入自动化翻译的能力：  
-[kefu.js](https://gitee.com/mail_osc/kefu.js) H5在线客服，引入一行js代码拿来即用！支持手机、电脑、APP、小程序。可一键部署自己私有SAAS云客服平台  
-[Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui) Pear Admin 是一款开箱即用的前端开发模板，扩展Layui原生UI样式，整合第三方开源组件，提供便捷快速的开发方式，延续LayuiAdmin  
-[Layui](https://gitee.com/mail_osc/translate_layui) 翻译组件 
-...  
+# 项目由来
+2021年，translate 翻译服务项目创建，最初为简化Google网页翻译JS进行了封装，可以更简单进行使用，但是因为扩展极其有限，文档也没那么好，于是开始了重构。
+2022年初，完全脱离Google网页翻译JS，从底层判断开始进行了全部重构，推出 2.0 版本，在加载js的资源大小上降低了95%，更快加载，同时内置了多层缓存、多种自定义方式等能力，使用更加灵活、翻译速度更加高效，极大提高了用户使用体验。
+同年，后端翻译服务也完全开源，支持在1核1G服务器进行私有部署，翻译服务内置对接Google翻译服务、华为云机器翻译服务，如果需要别的翻译服务或者局域网无网环境下部署，也可以快速对接自有翻译接口。
+同年年底，我们翻译服务的cdn源 translate.js 的月请求次数超过了一千万次。
+2023年，翻译服务再次迎来大的变化，不仅仅只是对网页使用js来进行翻译，它还增加了翻译内容分发的能力，我们暂且简单将其称之为TCDN，它具备了CDN内容分发的一些能力，比如可以通过后台添加一个源站，然后绑定不同的域名，可以设置每个域名对应着源站的哪种语言，这样访问时打开的就直接是翻译后的网页，如果查看网页源代码，会发现html源码本身就是已经被翻译过的，不在局限于js端进行翻译，而是通过服务端主动进行翻译，并进行缓存，用户访问请求时，直接将翻译结果输出给用户展示，极大提高了用户使用体验、每种语种也都可以在相应国家搜索引擎收录、并且系统因具备CDN的基本能力，如果网站有更新，还可以通过后台快速更新源站或者访问目标站点、或者指定访问url的网页翻译缓存。
+同样的能力，我们发现友商收费标注是一个站点20种翻译语种的情况是一万二每年，而我们这个支持七八十种语种（取决于 translaet.service 后端对接的翻译服务支持的语种数量），一台服务器可承载数千个源站提供服务！
+至2023年中旬，我们公开的翻译服务 translate.service 月请求量已达到1.5亿次！并再以非常恐怖的速度在增长。
+
 
 # 优秀开源项目及社区推荐
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具
@@ -444,5 +198,4 @@ japanese:function(str){
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
-# 最新文档
-当前我们只是介绍的 translate.js 相关，我们在 2023 年初开源了其他的几个配套产品 translate.api、translate.user、translate.admin 等，详细最新的文档请查阅 [translate.zvo.cn](http://translate.zvo.cn)
+

@@ -1759,13 +1759,21 @@ var translate = {
 				translate.to = languageName;
 			}
 		},
-		//设置为可以根据当前访问url的某个get参数来控制使用哪种语言显示。
+		//根据URL传参控制以何种语种显示
+		//设置可以根据当前访问url的某个get参数来控制使用哪种语言显示。
 		//比如当前语种是简体中文，网页url是http://translate.zvo.cn/index.html ,那么可以通过在url后面增加 language 参数指定翻译语种，来使网页内容以英文形态显示 http://translate.zvo.cn/index.html?language=english
 		setUrlParamControl:function(paramName){
 			if(typeof(paramName) == 'undefined' || paramName.length < 1){
 				paramName = 'language';
 			}
 			var paramValue = translate.util.getUrlParam(paramName);
+			if(typeof(paramValue) == 'undefined'){
+				return;
+			}
+			if(paramValue == '' || paramValue == 'null' || paramValue == 'undefined'){
+				return;
+			}
+
 			translate.storage.set('to', paramValue);
 			translate.to = paramValue;
 		},

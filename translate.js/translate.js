@@ -489,6 +489,9 @@ var translate = {
 				//console.log(local+', '+target+', key:'+key+', value:'+value);
 			}
 
+			//追加完后，对整个对象数组进行排序，key越大越在前面
+			translate.nomenclature.data[from][to] = translate.util.objSort(translate.nomenclature.data[from][to]);
+
 		},
 		//获取当前定义的术语表
 		get:function(){
@@ -589,7 +592,112 @@ var translate = {
 			
 			return str;
 			*/
-		}
+		},
+		
+	},
+	office:{
+		/*
+			网页上翻译之后，自动导出当前页面的术语库
+			
+			需要先指定本地语种，会自动将本地语种进行配置术语库
+			
+		*/
+		export:function(){
+			if(translate.language.getLocal() == translate.language.getCurrent()){
+				alert('本地语种跟要翻译的语种一致，无需导出');
+				return;
+			}
+
+			var text = '';
+			for(var uuid in translate.nodeQueue){
+				var queueValue = translate.nodeQueue[uuid];
+				for(var lang in translate.nodeQueue[uuid].list){
+					//console.log('------'+lang)
+					if(typeof(lang) != 'string' || lang.length < 1){
+						continue;
+					}
+					//if(translate.language.getLocal() == lang){
+						console.log(translate.nodeQueue[uuid].list[lang]);
+						for(var hash in translate.nodeQueue[uuid].list[lang]){
+							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
+							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
+							text = text + '\n' + translate.nodeQueue[uuid].list[lang][hash].original + '='+translate.storage.get('hash_'+translate.language.getCurrent()+'_'+hash);
+							
+						}
+					//}
+				}
+				
+			}
+
+			if(text.length > 0){
+				//有内容
+				text = 'translate.office.append(\''+translate.language.getCurrent()+'\',`'+text+'\n`);';
+				//console.log(text);
+				msg.popups({
+				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%;">loaing...</textarea>',
+				    width:'750px',
+				    height:'600px',
+				    padding:'1px',
+				});	
+				document.getElementById('msgPopupsTextarea').value = text;
+			}else{
+				msg.alert('无有效内容');
+			}
+
+
+		},
+		//显示导出面板
+		showExport:function(){
+			let exportPanel = document.createElement('button');
+			exportPanel.onclick = function() {
+			  translate.office.export();
+			};
+			exportPanel.innerHTML = '导出';
+			exportPanel.setAttribute('id', 'translate_export');
+			exportPanel.setAttribute('style', 'background-color: black; color: #fff; font-size: 3rem; border-radius: 5rem; width: 8rem; height: 8rem; position: absolute; bottom: 1rem; right: 1rem; cursor: pointer;');
+			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
+			document.body.appendChild(exportPanel);
+		},
+		/*
+			追加离线翻译数据。如果追加的数据重复，会自动去重
+			传入参数：
+				from 要转换的语种
+				to 翻译至的目标语种
+				properties 属于配置表，格式如：
+						你好=Hello
+						世界=ShiJie
+			这个传入参数跟 translate.nomenclature.append 的传入参数格式是一致的			
+		*/
+		append:function(to, properties){
+			//console.log(properties)
+			//将properties进行分析
+			//按行拆分
+			var line = properties.split('\n');
+			//console.log(line)
+			for(var line_index = 0; line_index < line.length; line_index++){
+				var item = line[line_index].trim();
+				if(item.length < 1){
+					//空行，忽略
+					continue;
+				}
+				var kvs = item.split('=');
+				//console.log(kvs)
+				if(kvs.length != 2){
+					//不是key、value构成的，忽略
+					continue;
+				}
+				var key = kvs[0];
+				var value = kvs[1];
+				//console.log(key)
+				if(key.length == 0 || value.length == 0){
+					//其中某个有空，则忽略
+					continue;
+				}
+				//console.log('set---'+key);
+				//加入 storate
+				translate.storage.set('hash_'+to+'_'+translate.util.hash(key), value);
+			}
+		},
 	},
 	setAutoDiscriminateLocalLanguage:function(){
 		translate.autoDiscriminateLocalLanguage = true;
@@ -2672,6 +2780,79 @@ var translate = {
 		     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
 		     var r = window.location.search.substr(1).match(reg);
 		     if(r!=null)return  unescape(r[2]); return "";
+		},
+		/**
+		 * 同步加载JS，加载过程中会阻塞，加载完毕后继续执行后面的。
+		 * url: 要加载的js的url
+		 */
+		synchronizesLoadJs:function(url){
+			var  xmlHttp = null;  
+			if(window.ActiveXObject){//IE  
+				try {  
+					//IE6以及以后版本中可以使用  
+					xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");  
+				} catch (e) {  
+					//IE5.5以及以后版本可以使用  
+					xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");  
+				}  
+			}else if(window.XMLHttpRequest){  
+				//Firefox，Opera 8.0+，Safari，Chrome  
+				xmlHttp = new XMLHttpRequest();  
+			}  
+			//采用同步加载  
+			xmlHttp.open("GET",url,false);  
+			//发送同步请求，如果浏览器为Chrome或Opera，必须发布后才能运行，不然会报错  
+			xmlHttp.send(null);  
+			//4代表数据发送完毕  
+			if( xmlHttp.readyState == 4 ){  
+				//0为访问的本地，200到300代表访问服务器成功，304代表没做修改访问的是缓存  
+				if((xmlHttp.status >= 200 && xmlHttp.status <300) || xmlHttp.status == 0 || xmlHttp.status == 304){  
+					var myBody = document.getElementsByTagName("HTML")[0];  
+					var myScript = document.createElement( "script" );  
+					myScript.language = "javascript";  
+					myScript.type = "text/javascript";  
+					try{  
+						//IE8以及以下不支持这种方式，需要通过text属性来设置  
+						myScript.appendChild(document.createTextNode(xmlHttp.responseText));  
+					}catch (ex){  
+						myScript.text = xmlHttp.responseText;  
+					}  
+					myBody.appendChild(myScript);  
+					return true;  
+				}else{  
+					return false;  
+				}  
+			}else{  
+				return false;  
+			}  
+		},
+		//加载 msg.js
+		loadMsgJs:function(){
+			if(typeof(msg) != 'undefined'){
+				return;
+			}
+			translate.util.synchronizesLoadJs('http://res.zvo.cn/msg/msg.js');
+		},
+		/*
+			对一个对象，按照对象的key的长度进行排序，越长越在前面
+		*/
+		objSort:function(obj){
+			// 获取对象数组的所有 key，并转换为普通数组
+			var keys = Array.from(Object.keys(obj));
+
+			// 对 key 数组进行排序
+			keys.sort(function(a, b){
+			  return b.length - a.length;
+			});
+
+			// 定义一个新的对象数组，用来存储排序后的结果
+			var sortedObj = new Array();
+
+			// 遍历排序后的 key 数组，将对应的值复制到新的对象数组中，并删除原来的对象数组中的键值对
+			for (var key of keys) {
+			  sortedObj[key] = obj[key];
+			}
+			return sortedObj;
 		}
 	},
 	//request请求来源于 https://github.com/xnx3/request

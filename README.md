@@ -77,7 +77,7 @@ translate.execute();//进行翻译
 * [鼠标划词翻译](http://translate.zvo.cn/41557.html)
 * [获取当前显示的是什么语种](http://translate.zvo.cn/41761.html)
 * [根据URL传参控制以何种语种显示](http://translate.zvo.cn/41929.html)
-
+* [离线翻译及自动生成配置](http://translate.zvo.cn/41936.html)
 
 
 # 使用示例

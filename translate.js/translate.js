@@ -633,6 +633,7 @@ var translate = {
 				//有内容
 				text = 'translate.office.append(\''+translate.language.getCurrent()+'\',`'+text+'\n`);';
 				//console.log(text);
+				translate.util.loadMsgJs();
 				msg.popups({
 				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%;">loaing...</textarea>',
 				    width:'750px',
@@ -671,6 +672,8 @@ var translate = {
 			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 200px; position: fixed; bottom: 50px; right: 50px;');
 			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
 			document.body.appendChild(panel);
+
+			translate.util.loadMsgJs();
 		},
 		/*
 			追加离线翻译数据。如果追加的数据重复，会自动去重

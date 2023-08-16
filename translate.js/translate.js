@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.5.3.20230812',
+	version:'2.5.4.20230816',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -617,7 +617,7 @@ var translate = {
 						continue;
 					}
 					//if(translate.language.getLocal() == lang){
-						console.log(translate.nodeQueue[uuid].list[lang]);
+						//console.log(translate.nodeQueue[uuid].list[lang]);
 						for(var hash in translate.nodeQueue[uuid].list[lang]){
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
@@ -647,16 +647,30 @@ var translate = {
 
 		},
 		//显示导出面板
-		showExport:function(){
-			let exportPanel = document.createElement('button');
-			exportPanel.onclick = function() {
+		showPanel:function(){
+			let panel = document.createElement('div');
+			panel.setAttribute('id', 'translate_export');
+			panel.setAttribute('class','ignore');
+
+			//导出按钮
+			let button = document.createElement('button');
+			button.onclick = function() {
 			  translate.office.export();
 			};
-			exportPanel.innerHTML = '导出';
-			exportPanel.setAttribute('id', 'translate_export');
-			exportPanel.setAttribute('style', 'background-color: black; color: #fff; font-size: 3rem; border-radius: 5rem; width: 8rem; height: 8rem; position: absolute; bottom: 1rem; right: 1rem; cursor: pointer;');
+			button.innerHTML = '导出配置信息';
+			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px;');
+			panel.appendChild(button);
+
+			//说明文字
+			let textdiv = document.createElement('div');
+			textdiv.innerHTML = '1. 首先将当前语种切换为你要翻译的语种<br/>2. 点击导出按钮，将翻译的配置信息导出<br/>3. 将导出的配置信息粘贴到代码中，即可完成<br/><a href="asd" target="_black" style="color: aliceblue;">点此进行查阅详细使用说明</a>';
+			textdiv.setAttribute('style','font-size: 14px; padding: 12px;');
+
+			panel.appendChild(textdiv);			
+			
+			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 200px; position: fixed; bottom: 50px; right: 50px;');
 			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
-			document.body.appendChild(exportPanel);
+			document.body.appendChild(panel);
 		},
 		/*
 			追加离线翻译数据。如果追加的数据重复，会自动去重

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.6.0.20230816',
+	version:'2.6.1.20230818',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2951,10 +2951,26 @@ var translate = {
 			        		func(json);
 			        	}
 			        }else{
+			        	console.log('------- translate.js service api response error --------');
+			        	console.log('    http code : '+xhr.status);
+			        	console.log('    response : '+xhr.response);
+			        	console.log('    request url : '+url);
+			        	console.log('    request data : '+data);
+			        	console.log('    request method : '+method);
+			        	console.log('    request headers : '+headers);
+			        	console.log('---------------------- end ----------------------');
 			        	if(abnormalFunc != null){
 			        		abnormalFunc(xhr);
 			        	}
 			        }
+			    }else{
+			    	console.log('------- translate.js service api response error --------');
+		        	console.log('    xhr.readyState : '+xhr.readyState);
+		        	console.log('    request url : '+url);
+		        	console.log('    request data : '+data);
+		        	console.log('    request method : '+method);
+		        	console.log('    request headers : '+headers);
+		        	console.log('---------------------- end ----------------------');
 			    }
 			}
 		}

@@ -182,7 +182,17 @@ public class TranslateController{
 		params.put("size", size);
 		
 		//先从缓存中取
-		String hash = MD5Util.MD5(from+"_"+to+"_"+text);
+		String hash = null;
+		try {
+			hash = MD5Util.MD5(from+"_"+to+"_"+text);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.info("text hash 化异常: "+text);
+			vo.setResult(TranslateResultVO.FAILURE);
+			vo.setInfo("text hash 化异常:"+e.getMessage());
+			return vo;
+		}
+		
 //		vo = CacheUtil.get(hash, to);
 		JSONArray cacheTextArray = CacheUtil.get(hash, to);
 		cacheTextArray = null;
@@ -221,6 +231,12 @@ public class TranslateController{
 			
 			if(vo.getResult() - TranslateResultVO.FAILURE == 0) {
 				//失败了，返回失败提示
+				
+				//记录失败
+				params.put("service", service.getClass().getName());
+				params.put("info", vo.getInfo());
+				params.put("status", "ServiceFailure"); //翻译失败
+				LogUtil.add(params); //记录日志
 				return vo;
 			}
 			/***** 翻译成功 ****/

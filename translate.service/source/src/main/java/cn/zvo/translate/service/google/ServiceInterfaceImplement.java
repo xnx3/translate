@@ -82,13 +82,13 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 				//对结果中不合适的地方进行替换
 				vo = responseReplace(vo);
 			}else {
-				vo.setResult(TranslateResultVO.SUCCESS);
+				vo.setResult(TranslateResultVO.FAILURE);
 				vo.setInfo("translate service response error , http code : "+res.getCode());
 				vo.setText(array);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			vo.setResult(TranslateResultVO.SUCCESS);
+			vo.setResult(TranslateResultVO.FAILURE);
 			vo.setInfo("translate service response error");
 			vo.setText(array);
 		}

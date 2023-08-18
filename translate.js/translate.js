@@ -2955,22 +2955,13 @@ var translate = {
 			        	console.log('    http code : '+xhr.status);
 			        	console.log('    response : '+xhr.response);
 			        	console.log('    request url : '+url);
-			        	console.log('    request data : '+data);
+			        	console.log('    request data : '+JSON.stringify(data));
 			        	console.log('    request method : '+method);
-			        	console.log('    request headers : '+headers);
 			        	console.log('---------------------- end ----------------------');
 			        	if(abnormalFunc != null){
 			        		abnormalFunc(xhr);
 			        	}
 			        }
-			    }else{
-			    	console.log('------- translate.js service api response error --------');
-		        	console.log('    xhr.readyState : '+xhr.readyState);
-		        	console.log('    request url : '+url);
-		        	console.log('    request data : '+data);
-		        	console.log('    request method : '+method);
-		        	console.log('    request headers : '+headers);
-		        	console.log('---------------------- end ----------------------');
 			    }
 			}
 		}

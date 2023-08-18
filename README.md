@@ -147,6 +147,9 @@ translate.execute();//进行翻译
 至2023年中旬，我们公开的翻译服务 translate.service 月请求量已达到1.5亿次！并再以非常恐怖的速度在增长。  
 
 
+# 结构图示
+[![](https://cdn.weiunity.com/site/1144/news/70a5b291d9af484999cbee5735f5cd10.png)](http://doc.zvo.cn/translate.js/home.html)
+
 # 优秀开源项目及社区推荐
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具  
 [LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat 是基于企业微信的开源 SCRM 系统，是企业私域流量管理与营销的综合解决方案。    

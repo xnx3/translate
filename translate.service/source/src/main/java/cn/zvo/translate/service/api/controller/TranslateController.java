@@ -128,7 +128,16 @@ public class TranslateController{
 			return vo;
 		}
 		
-		JSONArray textArray = JSONArray.fromObject(text);
+		JSONArray textArray = null;
+		try {
+			textArray = JSONArray.fromObject(text);
+		} catch (Exception e) {
+			//e.printStackTrace();
+			//Log.info("text : "+text);
+			vo.setBaseVO(BaseVO.FAILURE, "序列化失败！text 字段传入的翻译文本格式异常！text字段传入格式请参考： http://api.zvo.cn/translate/service/20230807/translate.json.html  当前传入的为："+text);
+			return vo;
+		}
+		
 		
 		//统计翻译字数
 		int size = 0;

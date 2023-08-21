@@ -1473,7 +1473,7 @@ var translate = {
 						var nodeAttributeName = node.name.toLowerCase();  //取meta 标签的name 属性
 						if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description'){
 							//替换渲染
-							if(typeof(originalText) != 'undefined' && originalText.length > 0){
+							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 								//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 								node.content = node.content.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 							}
@@ -1510,7 +1510,7 @@ var translate = {
 					result['text'] = '';
 				}else{
 					//替换渲染
-					if(typeof(originalText) != 'undefined' && originalText.length > 0){
+					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 						//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
 						node.nodeValue = node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 					}
@@ -3059,6 +3059,59 @@ var translate = {
 			*/
 			
 		}
+	},
+	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
+	reset:function(){
+		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
+		for(var queue in translate.nodeQueue){
+			//console.log(queue);
+			for(var lang in translate.nodeQueue[queue].list){
+				//console.log(lang);
+				
+				for(var hash in translate.nodeQueue[queue].list[lang]){
+					var item = translate.nodeQueue[queue].list[lang][hash];
+					//console.log(item);
+					for(var index in item.nodes){
+						//console.log(item.nodes[index]);
+						//item.nodes[index].node.nodeValue = item.original;
+						var currentShow = translate.storage.get('hash_'+currentLanguage+'_'+hash); //当前显示出来的文字，也就是已经翻译后的文字
+						//console.log('hash_'+lang+'_'+hash+'  --  '+currentShow);
+						if(typeof(currentShow) == 'undefined'){
+							continue;
+						}
+						if(currentShow == null){
+							continue;
+						}
+						if(currentShow.length == 0){
+							continue;
+						}
+/*
+						if(item.beforeText.length > 0 || item.afterText.length > 0){
+							console.log('----'+currentShow);
+							console.log(item);
+						}
+						
+						if(item.beforeText.length > 0){
+							currentShow = currentShow.substring(currentShow.lastIndexOf(item.beforeText)+1, currentShow.length);
+						}
+						if(item.afterText.length > 0){
+							currentShow = currentShow.substring(0, currentShow.lastIndexOf(item.afterText));
+						}
+						if(item.beforeText.length > 0 || item.afterText.length > 0){
+							console.log(currentShow);
+						}
+*/						
+						translate.element.nodeAnalyse.analyse(item.nodes[index].node, currentShow, item.original, item.nodes[index].node.attribute);
+					}
+				}
+			}
+		}
+
+		//清除设置storage中的翻译至的语种
+		translate.storage.set('to', '');
+		translate.to = null;
+		//重新渲染select
+		translate.selectLanguageTag.render();
 	},
 	
 	/*

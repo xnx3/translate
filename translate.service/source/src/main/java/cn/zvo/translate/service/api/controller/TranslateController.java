@@ -143,9 +143,15 @@ public class TranslateController{
 		int size = 0;
 		for (int i = 0; i < textArray.size(); i++) {
 			Object obj = textArray.get(i);
-			if(obj != null) {
-				size = size + ((String)obj).length();
+			if(obj == null) {
+				continue;
 			}
+			if (!(obj instanceof String)) {
+				//System.out.println("obj not string:" +obj);
+				continue;
+			}
+			
+			size = size + ((String)obj).length();
 		}
 		
 		//Log.debug("tongji : "+(DateUtil.timeForUnix13()-start));
@@ -222,7 +228,20 @@ public class TranslateController{
 //			System.out.println("serverName:"+serverName);
 			Language lang = new Language(serverName);
 			
-			vo = service.api(lang.currentToService(from).getInfo(), lang.currentToService(to).getInfo(), textArray);
+			//取翻译语言 - 原本的语言
+			BaseVO fromVO = lang.currentToService(from);
+			if(fromVO.getResult() - BaseVO.FAILURE == 0) {
+				vo.setBaseVO(BaseVO.FAILURE, "from params error : "+fromVO.getInfo());
+				return vo;
+			}
+			//取翻译语言 - 翻译的目标的语言
+			BaseVO toVO = lang.currentToService(to);
+			if(toVO.getResult() - BaseVO.FAILURE == 0) {
+				vo.setBaseVO(BaseVO.FAILURE, "to params error : "+toVO.getInfo());
+				return vo;
+			}
+			
+			vo = service.api(fromVO.getInfo(), toVO.getInfo(), textArray);
 			if(vo.getResult() - TranslateResultVO.SUCCESS == 0) {
 				vo.setInfo("SUCCESS");
 			}

@@ -127,6 +127,8 @@ public class TranslateController{
 			vo.setBaseVO(BaseVO.FAILURE, "请传入要翻译的语种");
 			return vo;
 		}
+		//过滤掉回车换行，避免转数组时、以及hash化等出现异常
+		text = text.replaceAll("\r|\n", " ");
 		
 		JSONArray textArray = null;
 		try {

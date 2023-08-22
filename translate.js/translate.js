@@ -1211,7 +1211,7 @@ var translate = {
 							//console.log('继续扫描 + 1 - '+twoScanNodes.length);
 							var twoScanIndex = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
 							for(var i = 0; i<twoScanNodes[lang].length; i++){
-								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isEqualNode(twoScanNodes[lang][i]['node'])){
+								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
 									//如果已经加入过了，那么跳过
 									twoScanIndex = i;
 									continue;
@@ -1929,15 +1929,21 @@ var translate = {
 					//console.log(translate.nodeQueue[uuid]['list'][lang][hash]);
 				}
 				
+				var isEquals = false; //queue中是否已经加入过了
 				if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
 							//相同，那就不用在存入了
 							//console.log('相同，那就不用在存入了')
+							isEquals = true;
 							//console.log(node)
 							continue;
 						}
 					}
+				}
+				if(isEquals){
+					//相同，那就不用在存入了
+					continue;
 				}
 
 				//往五维数组nodes中追加node元素

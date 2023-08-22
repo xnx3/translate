@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.6.1.20230818',
+	version:'2.6.2.20230822',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1135,6 +1135,19 @@ var translate = {
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
 		
+
+		/*
+				要进行第二次扫描的node - 2023.8.22 解决缓存会打散扫描到的翻译文本，导致翻译结束后找寻不到而导致不翻译的问题
+				一维 key: lang
+				二维 key: hash
+				三维 key: 
+						node: 当前的node元素
+				四维		array: 当前缓存中进行翻译的文本数组：
+							cacheOriginal: 已缓存被替换前的文本
+							cacheTranslateText: 已缓存被替换后的翻译文本
+					
+		*/
+		var twoScanNodes = {};
 		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中，取语言
 			//console.log('lang:'+lang); //lang为english这种语言标识
 			if(lang == null || typeof(lang) == 'undefined' || lang.length == 0 || lang == 'undefined'){
@@ -1147,6 +1160,8 @@ var translate = {
 			
 			let task = new translate.renderTask();
 			//console.log(translate.nodeQueue);
+			
+			twoScanNodes[lang] = [];
 			//二维数组，取hash、value
 			for(var hash in translate.nodeQueue[uuid]['list'][lang]){
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'function'){
@@ -1174,7 +1189,9 @@ var translate = {
 				var cacheHash = originalWord == translateText ? hash:translate.util.hash(translateText); //如果匹配到了自定义术语库，那翻译前的hash是被改变了
 				translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'] = cacheHash; //缓存的hash。 缓存时，其hash跟翻译的语言是完全对应的，缓存的hash就是翻译的语言转换来的
 				var cache = translate.storage.get('hash_'+translate.to+'_'+cacheHash);
-				//console.log(key+', '+cache);
+				//console.log(cacheHash+', '+cache);
+
+				//var twoScanNodes[] = [];	//要进行第二次扫描的node
 				if(cache != null && cache.length > 0){
 					//有缓存了
 					//console.log('find cache：'+cache);
@@ -1188,12 +1205,36 @@ var translate = {
 							//console.log(originalWord);
 							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
+							
+							//重新扫描这个node,避免这种情况：
+							//localstorage缓存中有几个词的缓存了，但是从缓存中使用时，把原本识别的要翻译的数据给打散了，导致翻译结果没法赋予，导致用户展示时有些句子没成功翻译的问题 -- 2023.8.22
+							//console.log('继续扫描 + 1 - '+twoScanNodes.length);
+							var twoScanIndex = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
+							for(var i = 0; i<twoScanNodes[lang].length; i++){
+								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isEqualNode(twoScanNodes[lang][i]['node'])){
+									//如果已经加入过了，那么跳过
+									twoScanIndex = i;
+									continue;
+								}
+							}
+							if(twoScanIndex == -1){
+								twoScanIndex = twoScanNodes[lang].length;
+								twoScanNodes[lang][twoScanIndex] = {};
+								twoScanNodes[lang][twoScanIndex]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+								twoScanNodes[lang][twoScanIndex]['array'] = [];
+							}
+							//未加入过，那么加入
+							var arrayIndex = twoScanNodes[lang][twoScanIndex]['array'].length;
+							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'];
 						}
 					//}
 
+
+						
 					continue;	//跳出，不用在传入下面的翻译接口了
 				}
 				
+
 				/*
 				//取出数组
 				var queueNodes = this.nodeQueue[lang][hash];
@@ -1211,8 +1252,79 @@ var translate = {
 				translateTextArray[lang].push(translateText);
 				translateHashArray[lang].push(hash); //这里存入的依旧还是用原始hash，未使用自定义术语库前的hash，目的是不破坏 nodeQueue 的 key
 			}
+
 			task.execute(); //执行渲染任务
 		}
+		//console.log(twoScanNodes);
+
+
+		/******* 进行第二次扫描、追加入翻译队列。目的是防止缓存打散扫描的待翻译文本 ********/
+		for(var lang in twoScanNodes){
+			//记录第一次扫描的数据，以便跟第二次扫描后的进行对比
+			var firstScan = Object.keys(translate.nodeQueue[uuid]['list'][lang]);
+			var firstScan_lang_langth = firstScan.length; //第一次扫描后的数组长度
+
+			//console.log(twoScanNodes[lang]);
+			for(var i = 0; i<twoScanNodes[lang].length; i++){
+				
+				twoScanNodes[lang][i].array.sort(function(a, b) { return b.length - a.length; });
+				//console.log(twoScanNodes[lang][i].array);
+
+				var nodeAnaly = translate.element.nodeAnalyse.get(twoScanNodes[lang][i].node);
+				//console.log(nodeAnaly);
+				var text = nodeAnaly.text;
+				//console.log(text.indexOf(twoScanNodes[lang][i].array[0]));
+
+				for(var ai = 0; ai < twoScanNodes[lang][i].array.length; ai++){
+					if(twoScanNodes[lang][i].array[ai] < 1){
+						continue;
+					}
+					text = text.replace(new RegExp(translate.util.regExp.pattern(twoScanNodes[lang][i].array[ai]),'g'), translate.util.regExp.resultText('\n'));
+				}
+				
+				//console.log(text);
+				var textArray = text.split('\n');
+				//console.log(textArray);
+				for(var tai = 0; tai < textArray.length; tai++){
+					if(textArray[tai] < 1){
+						continue;
+					}
+					//console.log(textArray[tai]);
+					//将新增的追加到 translate.nodeQueue 中
+					translate.addNodeToQueue(uuid, nodeAnaly['node'], textArray[tai]);
+				}
+			}
+
+
+			//取第二次扫描追加后的数据
+			var twoScan = Object.keys(translate.nodeQueue[uuid]['list'][lang]);
+			var twoScan_lang_langth = twoScan.length; //第二次扫描后的数组长度
+			//console.log(firstScan_lang_langth+ '=='+twoScan_lang_langth);
+			if(firstScan_lang_langth - twoScan_lang_langth == 0){
+				//一致，没有新增，那么直接跳出，忽略
+				continue;
+			}
+
+			//console.log(translate.nodeQueue[uuid]['list'][lang]);
+			//console.log(firstScan);
+			for(var ti=0; ti<twoScan.length; ti++){
+				twoHash = twoScan[ti];
+				//console.log(twoHash + '-- '+firstScan.indexOf(twoHash));
+				if(firstScan.indexOf(twoHash) == -1){
+					//需要追加了
+					var item = translate.nodeQueue[uuid]['list'][lang][twoHash];
+
+					var cacheHash = item.original == item.translateText ? twoHash:translate.util.hash(item.translateText); //如果匹配到了自定义术语库，那翻译前的hash是被改变了
+					translate.nodeQueue[uuid]['list'][lang][twoHash]['cacheHash'] = cacheHash; //缓存的hash。 缓存时，其hash跟翻译的语言是完全对应的，缓存的hash就是翻译的语言转换来的
+					
+					translateTextArray[lang].push(item.translateText);
+					translateHashArray[lang].push(twoHash);
+				}
+			}
+			
+		}
+		/******* 进行第二次扫描、追加入翻译队列  -- 结束 ********/
+
 		
 		//window.translateHashArray = translateHashArray;
 		
@@ -2964,6 +3076,52 @@ var translate = {
 			        }
 			    }
 			}
+		},
+		/*
+
+			手动进行翻译操作。参数说明：
+				texts: 可传入要翻译的文本、以及文本数组。 比如要一次翻译多个句子，那就可以传入数组的方式
+				function: 翻译完毕后的处理函数。传入如 function(data){ console.log(data); }
+						  注意，返回的data.result 为 1，则是翻译成功。  为0则是出错，可通过data.info 得到错误原因。 更详细说明参考： http://api.zvo.cn/translate/service/20230807/translate.json.html
+
+			使用案例一： 
+			translate.request.translateText('你好，我是翻译的内容', function(data){
+				//打印翻译结果
+				console.log(data);
+			});
+			
+			使用案例二：
+			var texts = ['我是翻译的第一句','我是翻译的第二句','我是翻译的第三句'];
+			translate.request.translateText(texts, function(data){
+				//打印翻译结果
+				console.log(data);
+			});
+		*/
+		translateText:function(texts, func){
+			if(typeof(texts) == 'string'){
+				texts = [texts];
+			}
+
+			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
+			var data = {
+				from:translate.language.getLocal(),
+				to: translate.language.getCurrent(),
+				text:encodeURIComponent(JSON.stringify(texts))
+			};
+			translate.request.post(url, data, function(data){
+				//console.log(data); 
+				if(data.result == 0){
+					console.log('=======ERROR START=======');
+					console.log('from : '+data.from);
+					console.log('to : '+data.to);
+					console.log('translate text array : '+texts);
+					console.log('response : '+data.info);
+					console.log('=======ERROR END  =======');
+					//return;
+				}
+
+				func(data);
+			});
 		}
 	},
 	//存储，本地缓存

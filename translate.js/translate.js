@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.6.2.20230822',
+	version:'2.6.3.20230823',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -734,13 +734,13 @@ var translate = {
 				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，二是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
 				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语操作后的，待翻译的文字。
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
-				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
-				afterText:  node元素中进行翻译结果赋予时，额外在翻译结果的后面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
 		六维：针对五维的 nodes，将各个具体的 node 以及 其操作的 attribute 以数组形式列出
 		七维：针对六维列出的nodes数组，其中包含：
 				node: 具体操作的node元素
 				attribute: 也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性，这则是设置为 "title"。如果这里不为空，那就是针对的属性操作的。 如果这里为空或者undefined ，那就是针对node本身，也就是 nodeValue 的字符串操作的
-		
+				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
+				afterText:  node元素中进行翻译结果赋予时，额外在翻译结果的后面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
+
 		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
 	*/
 	nodeQueue:{},
@@ -1202,8 +1202,8 @@ var translate = {
 
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
-							//console.log(originalWord);
-							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+							//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
+							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 							
 							//重新扫描这个node,避免这种情况：
@@ -1225,7 +1225,8 @@ var translate = {
 							}
 							//未加入过，那么加入
 							var arrayIndex = twoScanNodes[lang][twoScanIndex]['array'].length;
-							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'];
+							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
+							//twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'];
 						}
 					//}
 
@@ -1423,7 +1424,7 @@ var translate = {
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
 						//加入任务
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 					}
 					//}
 					/*
@@ -1919,8 +1920,8 @@ var translate = {
 					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
 					translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
 					translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
-					translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
-					translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
+					//translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
+					//translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
 					//translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute; //放入 nodes[index][attribute] 元素中
 					
 					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
@@ -1951,6 +1952,9 @@ var translate = {
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] = new Array();
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['node']=node; 
 				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['attribute']=attribute;
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
+				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
+
 				//console.log('end:'+word_index)
 			}
 			

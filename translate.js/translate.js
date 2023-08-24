@@ -787,7 +787,7 @@ var translate = {
 	},
 	listener:{
 		//当前页面打开后，是否已经执行完execute() 方法进行翻译了，只要执行完一次，这里便是true。 （多种语言的API请求完毕并已渲染html）
-		isExecuteFinish:false,
+		//isExecuteFinish:false,
 		//是否已经使用了 translate.listener.start() 了，如果使用了，那这里为true，多次调用 translate.listener.start() 只有第一次有效
 		isStart:false,
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
@@ -808,7 +808,7 @@ var translate = {
 					
 					//console.log('translate.temp_linstenerStartInterval Finish!');
 				//}
-	        }, 50);
+	        }, 300);
 			
 			
 		//	window.onload = function(){
@@ -856,8 +856,12 @@ var translate = {
 			    
 				//console.log(documents);
 				if(documents.length > 0){
-					//有变动，需要看看是否需要翻译
-					translate.execute(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+					//有变动，需要看看是否需要翻译，延迟10毫秒执行
+					// 使用setTimeout()函数延迟30毫秒执行一段代码
+					setTimeout(function() {
+						//console.log(documents);
+						translate.execute(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+					}, 10);
 				}
 			};
 			// 创建一个观察器实例并传入回调函数
@@ -1021,9 +1025,11 @@ var translate = {
 					}
 				}
 			}
+			
+			//console.log('---listen');
 
 			//监听
-			if(typeof(this.taskQueue) != 'undefined' && this.taskQueue.length > 0){
+			if(typeof(this.taskQueue) != 'undefined' && Object.keys(this.taskQueue).length > 0){
 				//50毫秒后执行，以便页面渲染完毕
 				var renderTask = this;
 				setTimeout(function() {
@@ -1059,7 +1065,8 @@ var translate = {
 							}
 							这里就不用判断了，直接同步到最新的，因为同一个node，可能有本地缓存直接更新，这样会非常快，网络的会慢2秒，因时间导致同步不是最新的
 							*/
-							//console.log('add-----'+analyse.text);
+							//console.log('add-----'+analyse.text +', uuid:'+nodeid);
+							//console.log(analyse.node);
 							translate.nodeHistory[nodeid] = {};
 							translate.nodeHistory[nodeid].node = analyse.node;
 							translate.nodeHistory[nodeid].translateText = analyse.text;
@@ -1073,6 +1080,9 @@ var translate = {
 
 				}, 50);
 				
+			}else{
+				//console.log(this.taskQueue);
+				//console.log('---this.taskQueue is null');
 			}
 		}
 	},
@@ -1187,21 +1197,39 @@ var translate = {
 			translate.element.whileNodes(uuid, node);	
 		}
 
-
+		//console.log(translate.nodeHistory);
+		//console.log(translate.nodeQueue[uuid])
 		for(var lang in translate.nodeQueue[uuid].list){
+			//console.log('lang:'+lang)
 			for(var hash in translate.nodeQueue[uuid].list[lang]){
-				//console.log(translate.nodeQueue[uuid].list[lang][hash])
-				for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
-					//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
+				//console.log(hash)
+				for(var nodeindex = translate.nodeQueue[uuid].list[lang][hash].nodes.length-1; nodeindex > -1; nodeindex--){
+					//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes);
 					var analyse = translate.element.nodeAnalyse.get(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node);
 					//analyse.text  analyse.node
 					var nodeid = nodeuuid.uuid(analyse.node);
+					//translate.nodeQueue[uuid].list[lang][hash].nodes.splice(nodeindex, 1);
+					//console.log(nodeid+'\t'+analyse.text);
 					if(typeof(translate.nodeHistory[nodeid]) != 'undefined'){
 						//存在，判断其内容是否发生了改变
+						//console.log('比较---------');
+						//console.log(translate.nodeHistory[nodeid].translateText);
+						//console.log(analyse.text);
 						if(translate.nodeHistory[nodeid].translateText == analyse.text){
 							//内容未发生改变，那么不需要再翻译了，从translate.nodeQueue中删除这个node
 							translate.nodeQueue[uuid].list[lang][hash].nodes.splice(nodeindex, 1);
+							//console.log('发现相等的node，删除 '+analyse.text+'\t'+hash);
+						}else{
+							//console.log("发现变化的node =======nodeid:"+nodeid);
+							//console.log(translate.nodeHistory[nodeid].translateText == analyse.text);
+							//console.log(translate.nodeHistory[nodeid].node);
+							//console.log(translate.nodeHistory[nodeid].translateText);
+							//console.log(analyse.text);
+							
 						}
+					}else{
+						//console.log('未在 nodeHistory 中发现，新的node  nodeid:'+nodeid);
+						//console.log(analyse.node)
 					}
 				}
 				if(translate.nodeQueue[uuid].list[lang][hash].nodes.length == 0){
@@ -1214,7 +1242,8 @@ var translate = {
 				delete translate.nodeQueue[uuid].list[lang];
 			}
 		}
-
+		//console.log('new queuq');
+		//console.log(translate.nodeQueue[uuid])
 		//translate.nodeHistory[nodeid]
 
 		
@@ -1266,7 +1295,7 @@ var translate = {
 				var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
 				//要翻译的词
 				var translateText = translate.nodeQueue[uuid]['list'][lang][hash]['translateText'];
-
+				//console.log(originalWord);
 /*
 				//自定义术语后的。如果
 				var nomenclatureOriginalWord = translate.nomenclature.dispose(cache);
@@ -1421,14 +1450,20 @@ var translate = {
 		
 		//统计出要翻译哪些语种 ，这里面的语种会调用接口进行翻译。其内格式如 english
 		var fanyiLangs = []; 
+		//console.log(translateTextArray)
 		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中取语言
+			if(typeof(translateTextArray[lang]) == 'undefined'){
+				continue;
+			}
 			if(translateTextArray[lang].length < 1){
 				continue;
 			}
 			fanyiLangs.push(lang);
 		}
 		
+
 		/******* 用以记录当前是否进行完第一次翻译了 *******/
+		/*
 		if(!translate.listener.isExecuteFinish){
 			translate.temp_executeFinishNumber = 0;	//下面请求接口渲染，翻译执行完成的次数	
 			//判断是否是执行完一次了
@@ -1436,13 +1471,15 @@ var translate = {
 				if(translate.temp_executeFinishNumber == fanyiLangs.length){
 					translate.listener.isExecuteFinish = true; //记录当前已执行完第一次了
 					clearInterval(translate.temp_executeFinishInterval);//停止
-					//console.log('translate.execute() Finish!');
+					console.log('translate.execute() Finish!');
 					//console.log(uuid);
 					
 				}
 	        }, 50);
 		}
+		*/
 
+		//console.log(fanyiLangs)
 		if(fanyiLangs.length == 0){
 			//没有需要翻译的，直接退出
 			return;
@@ -1481,7 +1518,7 @@ var translate = {
 					
 					console.log('response : '+data.info);
 					console.log('=======ERROR END  =======');
-					translate.temp_executeFinishNumber++; //记录执行完的次数
+					//translate.temp_executeFinishNumber++; //记录执行完的次数
 					return;
 				}
 				
@@ -1530,7 +1567,7 @@ var translate = {
 					translate.storage.set('hash_'+data.to+'_'+cacheHash,text);
 				}
 				task.execute(); //执行渲染任务
-				translate.temp_executeFinishNumber++; //记录执行完的次数
+				//translate.temp_executeFinishNumber++; //记录执行完的次数
 
 			});
 			/*** 翻译end ***/
@@ -3447,13 +3484,18 @@ var nodeuuid = {
         if(parent == null){
           return '';
         }
-        // 使用querySelectorAll()方法获取所有与node元素相同标签名的子节点
-        var children = parent.querySelectorAll(node.tagName);
-        // 使用indexOf()方法获取node元素在子节点集合中的位置
-        var index = Array.prototype.indexOf.call(children, node);
+
+        var childs;
         if(typeof(node.tagName) == 'undefined'){
-        	//console.log(node.nodeName+'==='+node.parentNode.nodeName);
+        	//console.log('undefi');
+        	childs = parent.childNodes;
+        	//console.log(Array.prototype.indexOf.call(childs, node));
+        }else{
+        	// 使用querySelectorAll()方法获取所有与node元素相同标签名的子节点
+	        childs = parent.querySelectorAll(node.tagName);
+	        // 使用indexOf()方法获取node元素在子节点集合中的位置
         }
+        var index = Array.prototype.indexOf.call(childs, node); 
         //console.log('--------'+node.tagName);
         return node.nodeName + "" + (index+1);
 	},

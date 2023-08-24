@@ -9,13 +9,14 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.6.3.20230823',
+	version:'2.6.4.20230824',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
 	},
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
+	 * 已废弃，v1使用的
 	 */
 	translate:null,
 	/*
@@ -25,6 +26,7 @@ var translate = {
 	includedLanguages:'zh-CN,zh-TW,en',
 	/*
 	 * 资源文件url的路径
+	 * 已废弃，v1使用的
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
 
@@ -140,12 +142,14 @@ var translate = {
 	
 	/*
 	 * 当前本地语言
+	 * 已废弃，v1使用的
 	 */
 	//localLanguage:'zh-CN',
 	localLanguage:'zh-CN',
 	
 	/**
 	 * google翻译执行的
+	 * 已废弃，v1使用的
 	 */
 	googleTranslateElementInit:function(){
 		var selectId = '';
@@ -174,6 +178,7 @@ var translate = {
 	
 	/**
 	 * 初始化，如加载js、css资源
+	 * 已废弃，v1使用的
 	 */
 	init:function(){
 		/****** 先判断当前协议，定义资源路径  ******/
@@ -192,6 +197,7 @@ var translate = {
 	},
 	/**
 	 * 执行翻译操作
+	 * 已废弃，v1使用的
 	 */
 	execute_v1:function(){
 		/*********** 判断translate 的id是否存在，不存在就创建一个  */
@@ -226,6 +232,7 @@ var translate = {
 	 * 设置Cookie，失效时间一年。
 	 * @param name
 	 * @param value
+	 * * 已废弃，v1使用的
 	 */
 	setCookie:function (name,value){
 		var cookieString=name+"="+escape(value); 
@@ -233,6 +240,7 @@ var translate = {
 	},
 
 	//获取Cookie。若是不存再，返回空字符串
+	//* 已废弃，v1使用的
 	getCookie:function (name){ 
 		var strCookie=document.cookie; 
 		var arrCookie=strCookie.split("; "); 
@@ -248,6 +256,7 @@ var translate = {
 	/**
 	 * 获取当前页面采用的是什么语言
 	 * 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
+	 * * 已废弃，v1使用的
 	 */
 	currentLanguage:function(){
 		//translate.check();
@@ -261,7 +270,7 @@ var translate = {
 	
 	/**
 	 * 切换语言，比如切换为英语、法语
- 	 * @param languageName 要切换的语言语种。传入如 en、zh-CN
+ 	 * @param languageName 要切换的语言语种。传入如 english
 	 * 				会自动根据传入的语言来判断使用哪种版本。比如传入 en、zh-CN 等，则会使用v1.x版本
 	 * 														传入 chinese_simplified 、english 等，则会使用 v2.x版本
 	 */
@@ -312,6 +321,8 @@ var translate = {
 	
 	/**
 	 * 自检提示，适用于 v1.x， 在 v2.x中已废弃
+	 * english
+	 * 已废弃，v1使用的
 	 */
 	check:function(){
 		if(window.location.protocol == 'file:'){
@@ -1013,7 +1024,55 @@ var translate = {
 
 			//监听
 			if(typeof(this.taskQueue) != 'undefined' && this.taskQueue.length > 0){
-				translate.listener.renderTaskFinish(this);
+				//50毫秒后执行，以便页面渲染完毕
+				var renderTask = this;
+				setTimeout(function() {
+
+					/** 执行完成后，保存翻译的历史node **/
+					//将当前翻译完成的node进行缓存记录，以node唯一标识为key，  node、以及node当前翻译之后的内容为值进行缓存。方便下一次执行 translate.execute() 时，若值未变化则不进行翻译
+					for(var hash in renderTask.nodes){
+						//console.log(translate.nodeQueue[uuid].list[lang][hash])
+						for(var nodeindex in renderTask.nodes[hash]){
+							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
+							//var nodename = translate.element.getNodeName(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
+							//console.log("nodename:"+nodename);
+							//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node.nodeName);
+							//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
+							var analyse = translate.element.nodeAnalyse.get(renderTask.nodes[hash][0]);
+							//analyse.text  analyse.node
+							var nodeid = nodeuuid.uuid(analyse.node);
+
+							if(nodeid.length == 0){
+								//像是input的placeholder 暂时没考虑进去，这种就直接忽略了
+								continue;
+							}
+
+							//加入
+							/*
+							if(typeof(translate.nodeHistory[nodeid]) == 'object'){
+								//已经加入过了，判断它的值是否有发生过变化
+
+								if(translate.nodeHistory[nodeid].translateText == analyse.text){
+									//值相同，就不用再加入了
+									continue;
+								}
+							}
+							这里就不用判断了，直接同步到最新的，因为同一个node，可能有本地缓存直接更新，这样会非常快，网络的会慢2秒，因时间导致同步不是最新的
+							*/
+							//console.log('add-----'+analyse.text);
+							translate.nodeHistory[nodeid] = {};
+							translate.nodeHistory[nodeid].node = analyse.node;
+							translate.nodeHistory[nodeid].translateText = analyse.text;
+						}
+						
+					}
+					//console.log(translate.nodeHistory);
+
+					/** 执行完成后，触发用户自定义的翻译完成执行函数 **/
+					translate.listener.renderTaskFinish(renderTask);
+
+				}, 50);
+				
 			}
 		}
 	},
@@ -1127,6 +1186,37 @@ var translate = {
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}
+
+
+		for(var lang in translate.nodeQueue[uuid].list){
+			for(var hash in translate.nodeQueue[uuid].list[lang]){
+				//console.log(translate.nodeQueue[uuid].list[lang][hash])
+				for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
+					//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
+					var analyse = translate.element.nodeAnalyse.get(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node);
+					//analyse.text  analyse.node
+					var nodeid = nodeuuid.uuid(analyse.node);
+					if(typeof(translate.nodeHistory[nodeid]) != 'undefined'){
+						//存在，判断其内容是否发生了改变
+						if(translate.nodeHistory[nodeid].translateText == analyse.text){
+							//内容未发生改变，那么不需要再翻译了，从translate.nodeQueue中删除这个node
+							translate.nodeQueue[uuid].list[lang][hash].nodes.splice(nodeindex, 1);
+						}
+					}
+				}
+				if(translate.nodeQueue[uuid].list[lang][hash].nodes.length == 0){
+					//如果node数组中已经没有了，那么直接把这个hash去掉
+					delete translate.nodeQueue[uuid].list[lang][hash];
+				}
+			}
+			if(Object.keys(translate.nodeQueue[uuid].list[lang]).length == 0){
+				//如果这个语言中没有要翻译的node了，那么删除这个语言
+				delete translate.nodeQueue[uuid].list[lang];
+			}
+		}
+
+		//translate.nodeHistory[nodeid]
+
 		
 		//console.log('-----待翻译：----');
 		//console.log(translate.nodeQueue);
@@ -1347,6 +1437,8 @@ var translate = {
 					translate.listener.isExecuteFinish = true; //记录当前已执行完第一次了
 					clearInterval(translate.temp_executeFinishInterval);//停止
 					//console.log('translate.execute() Finish!');
+					//console.log(uuid);
+					
 				}
 	        }, 50);
 		}
@@ -1356,6 +1448,7 @@ var translate = {
 			return;
 		}
 		
+
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			var lang = fanyiLangs[lang_index];
@@ -1445,6 +1538,14 @@ var translate = {
 			
 		}
 	},
+	/*
+		将已成功翻译并渲染的node节点进行缓存记录
+		key: node节点的唯一标识符，通过 nodeuuid.uuid() 生成
+		value: 
+			node: node节点
+			translateText: 翻译完成后，当前node节点的内容文本（是已经翻译渲染过的）
+	*/
+	nodeHistory:{},
 	element:{
 		//对翻译前后的node元素的分析（翻以前）及渲染（翻译后）
 		nodeAnalyse:{
@@ -1694,6 +1795,7 @@ var translate = {
 			if(node.parentNode == null){
 				return;
 			}
+
 			//console.log('-----parent')
 			var parentNodeName = translate.element.getNodeName(node.parentNode);
 			//node.parentNode.nodeName;
@@ -3334,6 +3436,46 @@ var translate = {
 	/**************************** v2.0 end */
 	
 }
+/*
+	将页面中的所有node节点，生成其在当前页面的唯一标识字符串uuid
+	开源仓库： https://github.com/xnx3/nodeuuid.js
+	原理： 当前节点的nodeName + 当前节点在父节点下，属于第几个 tagName ，然后追个向父级进行取，将node本身+父级+父父级+.... 拼接在一起
+*/
+var nodeuuid = {
+	index:function(node){
+		var parent = node.parentNode;
+        if(parent == null){
+          return '';
+        }
+        // 使用querySelectorAll()方法获取所有与node元素相同标签名的子节点
+        var children = parent.querySelectorAll(node.tagName);
+        // 使用indexOf()方法获取node元素在子节点集合中的位置
+        var index = Array.prototype.indexOf.call(children, node);
+        if(typeof(node.tagName) == 'undefined'){
+        	//console.log(node.nodeName+'==='+node.parentNode.nodeName);
+        }
+        //console.log('--------'+node.tagName);
+        return node.nodeName + "" + (index+1);
+	},
+	uuid:function(node){
+		var uuid = '';
+		var n = node;
+		while(n != null){
+			var id = nodeuuid.index(n);
+			//console.log(id);
+			if(id != ''){
+				if(uuid != ''){
+					uuid = '_'+uuid;
+				}
+				uuid = id + uuid;
+			}
+			//console.log(uuid)
+			n = n.parentNode;
+		}
+		return uuid;
+	}
+}
+
 console.log('Two lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate');
 
 //这个只是v1使用到

@@ -192,7 +192,15 @@ public class TranslateController{
 		//先从缓存中取
 		String hash = null;
 		try {
-			hash = MD5Util.MD5(from+"_"+to+"_"+text);
+			BaseVO md5VO = MD5Util.stringToMD5(from+"_"+to+"_"+text);
+			if(md5VO.getResult() - BaseVO.FAILURE == 0) {
+				Log.info("text hash 化异常: "+vo.getInfo());
+				vo.setResult(TranslateResultVO.FAILURE);
+				vo.setInfo("text hash 化异常:"+vo.getInfo());
+				return vo;
+			}
+			
+			hash = md5VO.getInfo(); 
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.info("text hash 化异常: "+text);

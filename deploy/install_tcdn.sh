@@ -206,11 +206,11 @@ echo "启动user - tomcat"
 cd /mnt/
 cp -r tomcat8/ service/
 # 更改tomcat 端口
-sed -i "s#^<Server port=\"8005\" shutdown=\"SHUTDOWN\">#<Server port=\"8160\" shutdown=\"SHUTDOWN\">#g" /mnt/admin/conf/server.xml
-sed -i "s#^.*port=\"80\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"# port=\"8060\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"#g" /mnt/admin/conf/server.xml
-sed -i "s#^.*redirectPort=\"8443\"# redirectPort=\"8460\" #g" /mnt/admin/conf/server.xml
+sed -i "s#^<Server port=\"8005\" shutdown=\"SHUTDOWN\">#<Server port=\"8160\" shutdown=\"SHUTDOWN\">#g" /mnt/service/conf/server.xml
+sed -i "s#^.*port=\"80\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"# port=\"8060\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"#g" /mnt/service/conf/server.xml
+sed -i "s#^.*redirectPort=\"8443\"# redirectPort=\"8460\" #g" /mnt/service/conf/server.xml
 
-# 安装translate.user应用
+# 安装translate.service 应用
 cd /mnt/service/webapps/ROOT/
 rm -rf ./*
 wget http://down.zvo.cn/translate/translate.service.war -O translate.service.war
@@ -237,9 +237,9 @@ chmod +x /etc/rc.d/rc.local
 echo "启动service - tomcat"
 /mnt/service/bin/startup.sh
 
-# translate.admin 设置它的配置文件
+# translate.admin 设置它的配置文件，设置翻译服务来源是服务器本身
 # java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://api.translate.zvo.cn/
-# translate.api 设置它的配置文件
+# translate.api 设置它的配置文件，设置翻译服务来源是服务器本身
 # java -cp ~/properties.jar Properties -path=/mnt/api/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://127.0.0.1:8060/
 
 #### 最后，安装完成后的一些清理

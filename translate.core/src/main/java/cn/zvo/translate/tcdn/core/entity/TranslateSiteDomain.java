@@ -13,7 +13,7 @@ import javax.persistence.Table;
  * @author <a href="https://github.com/xnx3/writecode">WriteCode自动生成</a>
  */
 @Entity()
-@Table(name = "translate_site_domain", indexes={@Index(name="suoyin_index",columnList="userid,name,language,siteid")})
+@Table(name = "translate_site_domain", indexes={@Index(name="suoyin_index",columnList="userid,language,siteid")})
 public class TranslateSiteDomain implements java.io.Serializable{
 
 

@@ -1,5 +1,7 @@
 package cn.zvo.translate.tcdn.generate;
 
+import java.util.List;
+
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 
@@ -7,10 +9,12 @@ import cn.zvo.fileupload.FileUpload;
 import cn.zvo.fileupload.storage.local.LocalStorage;
 import cn.zvo.fileupload.vo.UploadFileVO;
 import cn.zvo.translate.tcdn.core.entity.TranslateSite;
+import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 import cn.zvo.translate.tcdn.core.util.TranslateApiRequestUtil;
 import cn.zvo.translate.tcdn.generate.bean.LanguageBean;
 import cn.zvo.translate.tcdn.generate.bean.PageBean;
 import cn.zvo.translate.tcdn.generate.bean.SiteBean;
+import cn.zvo.translate.tcdn.generate.bean.TaskBean;
 
 /**
  * 翻译页面生成的入口
@@ -18,36 +22,55 @@ import cn.zvo.translate.tcdn.generate.bean.SiteBean;
  *
  */
 public class Task {
+	public static TaskBean taskBean;
+	static{
+		taskBean = new TaskBean();
+	}
 	
 	public static void main(String[] args) {
 		
 	}
 	
-	public static void add(String siteUrl) {
+	public static void add(TranslateSite site, List<TranslateSiteDomain> domainList) {
+		
 		LocalStorage storage = new LocalStorage();
 		storage.setLocalFilePath("G:\\git\\translate\\translate.admin\\target\\");
 		
-		
-		
-		
-		
-		
-		LanguageBean languageBean = new LanguageBean();
-		languageBean.setLanguage("english");
-		languageBean.setStorage(storage);
-		languageBean.getPageList().add(new PageBean("/index.html"));
-//		languageBean.getPageList().add(new PageBean("/plugin.html"));
-		
+
 		SiteBean siteBean = new SiteBean();
-		TranslateSite site = new TranslateSite();
-		site.setUrl(siteUrl);
 		siteBean.setSite(site);
-		siteBean.getLanguageList().add(languageBean);
+		
+		for (int i = 0; i < domainList.size(); i++) {
+			LanguageBean languageBean = new LanguageBean();
+			languageBean.setLanguage(domainList.get(i).getLanguage());
+			languageBean.getPageList().add(new PageBean("/index.html"));
+			languageBean.setStorage(storage);
+			siteBean.getLanguageList().add(languageBean);
+		}
 		
 		//加入翻译的任务队列
 		Global.taskList.add(siteBean);
 	}
 	
+	/**
+	 * 当前是否有等待进行翻译的任务（尚未翻译、翻译中还没完成）
+	 * @return true 有，  false没有
+	 */
+	public static boolean isHaveWaitTask() {
+		for (int i = 0; i < Global.taskList.size(); i++) {
+			SiteBean siteBean = Global.taskList.get(i);
+			if(siteBean.getIsTrans() != -1) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * 获取某个 siteBean 的翻译执行日志
+	 * @param siteUrl
+	 */
 	public static void log(String siteUrl) {
 		SiteBean siteBean = null;
 		for (int i = 0; i < Global.taskList.size(); i++) {

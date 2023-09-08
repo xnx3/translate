@@ -1,4 +1,4 @@
-package cn.zvo.translate.tcdn.user.util;
+package cn.zvo.translate.tcdn.core.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ import com.xnx3.j2ee.util.ConsoleUtil;
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
 import cn.zvo.log.framework.springboot.LogUtil;
-import cn.zvo.translate.tcdn.user.vo.TranslateVO;
+import cn.zvo.translate.tcdn.core.vo.TranslateApiRequestVO;
 import net.sf.json.JSONObject;
 
 /**
@@ -23,7 +23,7 @@ import net.sf.json.JSONObject;
  * @author 管雷鸣
  *
  */
-public class TranslateUtil {
+public class TranslateApiRequestUtil {
 	public static String apiDomain; //translate.api的域名，在application.properties中配置。格式如 http://127.0.0.1:8083/
 	public static Http http;
 	static {
@@ -92,15 +92,17 @@ public class TranslateUtil {
 	 * @param dynamic 貌似无效了
 	 * @param language 要翻译为什么语言
 	 * @param executeJs 在进行翻译过程中，执行的js脚本。这个只是在翻译的过程中进行执行，它本身并不会追加到输出的html上。它会在实际翻译的 translate.execute() 之前进行执行。
-	 * @param request
+	 * @param request 如果已传入url，这里可传入null
 	 * @return
 	 */
 	public static BaseVO trans(String sourceDomain, String newDomain, String url, String dynamic, String language, String executeJs, HttpServletRequest request) {
-		TranslateVO vo = new TranslateVO();
+		TranslateApiRequestVO vo = new TranslateApiRequestVO();
 		
 		if(url.length() == 0) {
 			//第二次或以后使用
-			
+			if(request == null) {
+				return BaseVO.failure("request is null");
+			}
 			url = targetUrl(sourceDomain, request);
 			ConsoleUtil.debug("第二次或以后使用:url："+url);
 //			dynamic = (String)request.getSession().getAttribute("dynamic");
@@ -125,7 +127,7 @@ public class TranslateUtil {
 		
 		long exeTime = 0;
 //		currentExecuteUrl = url; //赋予
-		TranslateVO transVO = null;
+		TranslateApiRequestVO transVO = null;
 		try {
 			long startTime = DateUtil.timeForUnix13();
 			//翻译

@@ -121,7 +121,7 @@ public class Util {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		String url = "https://api.translate.zvo.cn/translate_a/t?anno=3&client=te&format=html&v=1.0&key&logld=vTE_20200210_00&sl=zh-CN&tl=en&sp=nmt&tc=1&sr=1&tk=&mode=1";
+		String url = "https://translate.googleapis.com/translate_a/t?anno=3&client=te&format=html&v=1.0&key&logld=vTE_20200210_00&sl=zh-CN&tl=en&sp=nmt&tc=1&sr=1&tk=&mode=1";
 		String payload = "q=%E4%BD%A0%E5%A5%BD&q=%E5%93%88%E5%96%BD";
 		System.out.println(trans(url, payload, null, null, null).getContent());
 		

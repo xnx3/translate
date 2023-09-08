@@ -196,7 +196,7 @@ public class TranslateSiteController extends BaseController {
 			if(site != null) {
 				return error("源站["+url+"]已存在！请不要重复添加");
 			}
-			site.setUserid(getUserId());
+			entity.setUserid(getUserId());
 		} else {
 			// 修改
 			entity = sqlService.findById(TranslateSite.class, id);

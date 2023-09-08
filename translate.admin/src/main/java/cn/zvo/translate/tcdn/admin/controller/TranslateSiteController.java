@@ -88,6 +88,7 @@ public class TranslateSiteController extends BaseController {
 		Sql sql = new Sql(request);
 		// 配置查询那个表
 		sql.setSearchTable("translate_site");
+		sql.appendWhere("userid = "+getUserId());
 		// TODO [tag-1] 增加更多查询条件
 		//sql.appendWhere("xxx = " + xxx);
 		// TODO [tag-2] 查询条件-配置按某个字端搜索内容
@@ -132,6 +133,10 @@ public class TranslateSiteController extends BaseController {
 			TranslateSite entity = sqlService.findById(TranslateSite.class, id);
 			if(entity == null){
 				vo.setBaseVO(BaseVO.FAILURE, "要修改的信息不存在");
+				return vo;
+			}
+			if(entity.getUserid() - getUserId() != 0) {
+				vo.setBaseVO(BaseVO.FAILURE, "信息不属于您，无权操作");
 				return vo;
 			}
 			vo.setTranslateSite(entity);
@@ -191,12 +196,15 @@ public class TranslateSiteController extends BaseController {
 			if(site != null) {
 				return error("源站["+url+"]已存在！请不要重复添加");
 			}
-			
+			site.setUserid(getUserId());
 		} else {
 			// 修改
 			entity = sqlService.findById(TranslateSite.class, id);
 			if(entity == null) {
 				return error("根据id，没查到该信息");
+			}
+			if(entity.getUserid() - getUserId() != 0) {
+				return error("信息不属于您，无权操作");
 			}
 		}
 		
@@ -270,6 +278,9 @@ public class TranslateSiteController extends BaseController {
 		TranslateSite entity = sqlService.findById(TranslateSite.class, id);
 		if(entity == null) {
 			return error("要删除的记录不存在");
+		}
+		if(entity.getUserid() - getUserId() != 0) {
+			return error("信息不属于您，无权操作");
 		}
 		
 		// TODO [tag-12] 现在是物理删除，改为逻辑删除

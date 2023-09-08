@@ -1,5 +1,6 @@
 package cn.zvo.translate.tcdn.admin.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -18,7 +19,9 @@ import com.xnx3.j2ee.vo.BaseVO;
 
 import cn.zvo.translate.tcdn.admin.vo.TranslateSiteDomainListVO;
 import cn.zvo.translate.tcdn.admin.vo.TranslateSiteDomainVO;
+import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
+import cn.zvo.translate.tcdn.generate.Task;
 
 /**
  * 翻译站点绑定域名相关
@@ -87,7 +90,7 @@ public class TranslateSiteDomainController extends BaseController {
 		// 配置查询那个表
 		sql.setSearchTable("translate_site_domain");
 		// TODO [tag-1] 增加更多查询条件
-		//sql.appendWhere("xxx = " + xxx);
+		sql.appendWhere("userid = " + getUserId());
 		// TODO [tag-2] 查询条件-配置按某个字端搜索内容
 		sql.setSearchColumn(new String[] {"domain", "language", "siteid"});
 		// 查询数据表的记录总条数
@@ -130,6 +133,10 @@ public class TranslateSiteDomainController extends BaseController {
 			TranslateSiteDomain entity = sqlService.findById(TranslateSiteDomain.class, id);
 			if(entity == null){
 				vo.setBaseVO(BaseVO.FAILURE, "要修改的信息不存在");
+				return vo;
+			}
+			if(entity.getUserid() - getUserId() != 0) {
+				vo.setBaseVO(BaseVO.FAILURE, "信息不属于您，无权操作");
 				return vo;
 			}
 			vo.setTranslateSiteDomain(entity);
@@ -184,11 +191,15 @@ public class TranslateSiteDomainController extends BaseController {
 			// 添加
 			entity = new TranslateSiteDomain();
 			entity.setSiteid(siteid);
+			entity.setUserid(getUserId());
 		} else {
 			// 修改
 			entity = sqlService.findById(TranslateSiteDomain.class, id);
 			if(entity == null) {
 				return error("根据id，没查到该信息");
+			}
+			if(entity.getUserid() - getUserId() != 0) {
+				return error("信息不属于您，无权操作");
 			}
 		}
 		
@@ -254,11 +265,15 @@ public class TranslateSiteDomainController extends BaseController {
 			// 添加
 			entity = new TranslateSiteDomain();
 			entity.setSiteid(siteid);
+			entity.setUserid(getUserId());
 		} else {
 			// 修改
 			entity = sqlService.findById(TranslateSiteDomain.class, id);
 			if(entity == null) {
 				return error("根据id，没查到该信息");
+			}
+			if(entity.getUserid() - getUserId() != 0) {
+				return error("信息不属于您，无权操作");
 			}
 		}
 		
@@ -324,6 +339,9 @@ public class TranslateSiteDomainController extends BaseController {
 		if(entity == null) {
 			return error("要删除的记录不存在");
 		}
+		if(entity.getUserid() - getUserId() != 0) {
+			return error("信息不属于您，无权操作");
+		}
 		
 		// TODO [tag-12] 现在是物理删除，改为逻辑删除
 		sqlService.delete(entity);
@@ -349,6 +367,44 @@ public class TranslateSiteDomainController extends BaseController {
 		
 		
 		
+		
+		return success();
+	}
+	
+
+	/**
+	 * 生成整站html文件推送到指定存储
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "generate.json", method = {RequestMethod.POST})
+	public BaseVO generate(HttpServletRequest request,
+			@RequestParam(value = "id", required = false, defaultValue = "0") int id) {
+		if(id - 0 <= 0) {
+			return error("请传入id");
+		}
+		
+		TranslateSiteDomain entity = sqlService.findById(TranslateSiteDomain.class, id);
+		if(entity == null) {
+			return error("要删除的记录不存在");
+		}
+		if(entity.getUserid() - getUserId() != 0) {
+			return error("信息不属于您，无权操作");
+		}
+		
+		
+		TranslateSite site = sqlService.findById(TranslateSite.class, entity.getSiteid());
+		
+		List<TranslateSiteDomain> domainList = new ArrayList<TranslateSiteDomain>();
+		domainList.add(entity);
+		
+		if(Task.isHaveWaitTask()) {
+			return error("当前有等待翻译的其他任务，请过几分钟尝试");
+		}
+		
+		Task.add(site, domainList);
+		Task.execute();
 		
 		return success();
 	}

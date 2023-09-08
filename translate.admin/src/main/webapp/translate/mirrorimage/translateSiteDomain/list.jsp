@@ -42,6 +42,8 @@
 			<td>{{language[item.language]}}</td>
 			<td style="width: 120px;">
 				<botton class="layui-btn layui-btn-sm"
+					:onclick="'generate(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">生成</botton>
+				<botton class="layui-btn layui-btn-sm"
 					:onclick="'editItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">编辑</botton>
 				<!-- <botton class="layui-btn layui-btn-sm"
 					:onclick="'detailsItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">详情</botton> -->
@@ -103,6 +105,34 @@ function deleteItem(id, name) {
 	msg.confirm('是否删除【' + name + '】？', function() {
 		// 显示“删除中”的等待提示
 		parent.msg.loading("删除中");
+		$.post('/translate/mirrorimage/translateSiteDomain/delete.json?id=' + id, function(data) {
+			// 关闭“删除中”的等待提示
+			parent.msg.close();
+			if(data.result == '1') {
+				parent.msg.success('操作成功');
+				// 刷新当前页
+				window.location.reload();
+			} else if(data.result == '0') {
+				parent.msg.failure(data.info);
+			} else { 
+				parent.msg.failure();
+			}
+		});
+	}, function() {
+		
+	});
+}
+
+
+/**
+ * 根据id,生成这个站点的html 
+ * @param {Object} id 要删除的记录id
+ * @param {Object} name 要删除的记录的名称
+ */
+function generate(id, name) {
+	msg.confirm('是否重新生成【' + name + '】的缓存，以及静态翻译后的html文件推送到指定存储？', function() {
+		// 显示“删除中”的等待提示
+		parent.msg.loading("提交中");
 		$.post('/translate/mirrorimage/translateSiteDomain/delete.json?id=' + id, function(data) {
 			// 关闭“删除中”的等待提示
 			parent.msg.close();

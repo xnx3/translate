@@ -31,6 +31,7 @@
 			<th>对应</th>
 			<th>绑定的域名</th>
 			<th>翻译语种</th>
+			<th>预览</th>
 			<th>存储</th>
 			<th>操作</th>
 		</tr>
@@ -41,6 +42,9 @@
 			<td>{{item.id}}</td>
 			<td>{{item.domain}}</td>
 			<td>{{language[item.language]}}</td>
+			<td>
+				<botton class="layui-btn layui-btn-sm" :onclick="'preview(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">预览</botton>
+			</td>
 			<td>
 				<botton class="layui-btn layui-btn-sm" :onclick="'fileuploadConfig(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">存储配置</botton>
 				<botton class="layui-btn layui-btn-sm" :onclick="'generate(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">执行翻译</botton>
@@ -183,6 +187,15 @@ function generate(id, name) {
 	}, function() {
 		
 	});
+}
+
+
+/**
+ * 预览翻译结果
+ * @param {Object} id domain.id
+ */
+function preview(id) {
+	window.open('preview.do?domainid='+id);
 }
 
 </script>

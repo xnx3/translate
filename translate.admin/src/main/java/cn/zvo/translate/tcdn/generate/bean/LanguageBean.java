@@ -3,6 +3,7 @@ package cn.zvo.translate.tcdn.generate.bean;
 import java.util.ArrayList;
 import java.util.List;
 import cn.zvo.fileupload.StorageInterface;
+import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 
 /**
  * 翻译的语种， {@link SiteBean}的下级
@@ -10,10 +11,11 @@ import cn.zvo.fileupload.StorageInterface;
  *
  */
 public class LanguageBean {
-//	private TranslateSiteDomain language;
-	private String language; //要生成什么语种的
+	private TranslateSiteDomain domain;
+//	private String language; //要生成什么语种的
 	private List<PageBean> pageList; //翻译的页面列表 
-	private StorageInterface storage;	//翻译之后的页面的存储方式
+//	private StorageInterface storage;	//翻译之后的页面的存储方式
+	
 	/**
 	 * 是否已经被翻译。
 	 * 默认是0，代表还未翻译。
@@ -27,24 +29,26 @@ public class LanguageBean {
 		this.pageList = new ArrayList<PageBean>();
 	}
 	
-	public String getLanguage() {
-		return language;
+	public TranslateSiteDomain getDomain() {
+		return domain;
 	}
-	public void setLanguage(String language) {
-		this.language = language;
+
+	public void setDomain(TranslateSiteDomain domain) {
+		this.domain = domain;
 	}
+
 	public List<PageBean> getPageList() {
 		return pageList;
 	}
 	public void setPageList(List<PageBean> pageList) {
 		this.pageList = pageList;
 	}
-	public StorageInterface getStorage() {
-		return storage;
-	}
-	public void setStorage(StorageInterface storage) {
-		this.storage = storage;
-	}
+//	public StorageInterface getStorage() {
+//		return storage;
+//	}
+//	public void setStorage(StorageInterface storage) {
+//		this.storage = storage;
+//	}
 	public int getIsTrans() {
 		return isTrans;
 	}
@@ -57,10 +61,12 @@ public class LanguageBean {
 	public void setTime(int time) {
 		this.time = time;
 	}
+
 	@Override
 	public String toString() {
-		return "LanguageBean [language=" + language + ", pageList=" + pageList + ", storage=" + storage + ", isTrans="
+		return "LanguageBean [domain=" + domain + ", pageList=" + pageList + ", storage=storage" + ", isTrans="
 				+ isTrans + ", time=" + time + "]";
 	}
+	
 
 }

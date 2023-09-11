@@ -31,6 +31,7 @@
 			<th>对应</th>
 			<th>绑定的域名</th>
 			<th>翻译语种</th>
+			<th>存储</th>
 			<th>操作</th>
 		</tr>
 	</thead>
@@ -40,9 +41,12 @@
 			<td>{{item.id}}</td>
 			<td>{{item.domain}}</td>
 			<td>{{language[item.language]}}</td>
+			<td>
+				<botton class="layui-btn layui-btn-sm" :onclick="'fileuploadConfig(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">存储配置</botton>
+				<botton class="layui-btn layui-btn-sm" :onclick="'generate(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">执行翻译</botton>
+			</td>
 			<td style="width: 120px;">
-				<botton class="layui-btn layui-btn-sm"
-					:onclick="'generate(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">生成</botton>
+				
 				<botton class="layui-btn layui-btn-sm"
 					:onclick="'editItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">编辑</botton>
 				<!-- <botton class="layui-btn layui-btn-sm"
@@ -125,21 +129,51 @@ function deleteItem(id, name) {
 
 
 /**
+ * 存储源的配置
+ * @param {Object} id 站点id
+ * @param {Object} name 站点名称
+ */
+function fileuploadConfig(id, name) {
+	parent.msg.loading("获取中");
+	wm.post('/translate/generate/translateFileuploadConfig/details.json', {'id':id}, function(data){
+		parent.msg.close();
+		
+		msg.textarea('请输入FileUpload的 <a href="https://gitee.com/mail_osc/FileUpload/tree/main/config_json" style="color:#FFFFFF; text-decoration: underline;" target="_black">json配置</a>',function(value){
+			var saveData = {
+				id: id,
+				config: value
+			};
+			wm.post('/translate/generate/translateFileuploadConfig/save.json', saveData, function(saveResult){
+				console.log(saveResult);
+				if(saveResult.result == 1){
+					parent.msg.success('设置成功');
+				}else{
+					parent.msg.failure(saveResult.info);
+				}
+			});
+			
+		}, data.translateFileuploadConfig.config);
+		
+	});
+	
+}
+
+/**
  * 根据id,生成这个站点的html 
  * @param {Object} id 要删除的记录id
  * @param {Object} name 要删除的记录的名称
  */
 function generate(id, name) {
-	msg.confirm('是否重新生成【' + name + '】的缓存，以及静态翻译后的html文件推送到指定存储？', function() {
+	msg.confirm('是否生成【' + name + '】的翻译html？ 翻译后的html文件会推送到您指定的存储', function() {
 		// 显示“删除中”的等待提示
 		parent.msg.loading("提交中");
-		$.post('/translate/mirrorimage/translateSiteDomain/delete.json?id=' + id, function(data) {
+		$.post('/translate/generate/generate.json?domainid=' + id, function(data) {
 			// 关闭“删除中”的等待提示
 			parent.msg.close();
 			if(data.result == '1') {
 				parent.msg.success('操作成功');
 				// 刷新当前页
-				window.location.reload();
+				//window.location.reload();
 			} else if(data.result == '0') {
 				parent.msg.failure(data.info);
 			} else { 

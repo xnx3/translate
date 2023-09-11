@@ -48,64 +48,13 @@
 	<parent>
 	    <groupId>com.xnx3.wangmarket.wm</groupId>
 	    <artifactId>parent</artifactId>
-	    <version>3.10</version>
+	    <version>3.11</version>
 	</parent>
 	
 
 	<build>
 		<plugins>
-			<!-- Source -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
-				<executions>
-					<!-- <execution>
-						<id>attach-sources</id>
-						<phase>deploy</phase>
-					</execution> -->
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar-no-fork</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			
-			<!-- Javadoc -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<additionalparam>-Xdoclint:none</additionalparam>
-							<source>${java.version}</source>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin> -->
-			
-			<!-- GPG -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
-				<executions>
-					<execution>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>  -->
 		</plugins>
 	</build>
 	
@@ -115,6 +64,13 @@
 		    <groupId>cn.zvo.http</groupId>
 		    <artifactId>http</artifactId>
 		    <version>1.2</version>
+		</dependency>
+		
+		<!-- 文件存储-config -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-config-json</artifactId>
+			<version>1.0</version>
 		</dependency>
 		
 		<dependency> 

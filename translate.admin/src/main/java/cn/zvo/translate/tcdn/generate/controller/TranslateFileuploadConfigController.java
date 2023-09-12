@@ -11,6 +11,10 @@ import com.xnx3.j2ee.controller.BaseController;
 import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.util.ActionLogUtil;
 import com.xnx3.j2ee.vo.BaseVO;
+
+import cn.zvo.fileupload.config.json.Config;
+import cn.zvo.fileupload.config.json.vo.StorageVO;
+import cn.zvo.fileupload.storage.local.LocalStorage;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.generate.vo.TranslateFileuploadConfigVO;
 
@@ -93,6 +97,17 @@ public class TranslateFileuploadConfigController extends BaseController {
 		if(entity == null) {
 			return error("根据id，没查到该信息");
 		}
+		
+		try {
+			StorageVO storageVO = Config.configToStorageVO(config);
+			if(storageVO.getFileupload().isStorage(LocalStorage.class)) {
+				return error("您当前配置的是使用本地存储，本系统当前禁用此种存储方式！");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return error("请确认您输入的是json格式字符串！错误："+e.getMessage());
+		}
+			
 		
 		// TODO [tag-10] 给实体赋值 
 		entity.setConfig(config);

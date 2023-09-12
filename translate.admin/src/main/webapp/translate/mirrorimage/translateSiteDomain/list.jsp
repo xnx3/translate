@@ -138,26 +138,30 @@ function deleteItem(id, name) {
  * @param {Object} name 站点名称
  */
 function fileuploadConfig(id, name) {
-	parent.msg.loading("获取中");
+	msg.loading("获取中");
 	wm.post('/translate/generate/translateFileuploadConfig/details.json', {'id':id}, function(data){
-		parent.msg.close();
+		msg.close();
 		
-		msg.textarea('请输入FileUpload的 <a href="https://gitee.com/mail_osc/FileUpload/tree/main/config_json" style="color:#FFFFFF; text-decoration: underline;" target="_black">json配置</a>',function(value){
-			var saveData = {
-				id: id,
-				config: value
-			};
-			wm.post('/translate/generate/translateFileuploadConfig/save.json', saveData, function(saveResult){
-				console.log(saveResult);
-				if(saveResult.result == 1){
-					parent.msg.success('设置成功');
-				}else{
-					parent.msg.failure(saveResult.info);
-				}
-			});
-			
-		}, data.translateFileuploadConfig.config);
-		
+		msg.textarea({
+			text: '请输入FileUpload的 <a href="https://gitee.com/mail_osc/FileUpload/tree/main/config_json" style="color:#FFFFFF; text-decoration: underline;" target="_black">json配置</a>',
+			okFunc: function(value){
+				var saveData = {
+					id: id,
+					config: value
+				};
+				wm.post('/translate/generate/translateFileuploadConfig/save.json', saveData, function(saveResult){
+					console.log(saveResult);
+					if(saveResult.result == 1){
+						parent.msg.success('设置成功');
+					}else{
+						parent.msg.failure(saveResult.info);
+					}
+				});
+			},
+			defaultValue: data.translateFileuploadConfig.config,
+			width:'30rem',
+			height:'8rem'
+		});
 	});
 	
 }
@@ -195,7 +199,7 @@ function generate(id, name) {
  * @param {Object} id domain.id
  */
 function preview(id) {
-	window.open('preview.do?domainid='+id);
+	window.open('preview.jsp?domainid='+id);
 }
 
 </script>

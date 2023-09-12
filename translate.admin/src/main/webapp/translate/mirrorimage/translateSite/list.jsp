@@ -171,7 +171,7 @@ function siteDomainList(id, name) {
 	layer.open({
 		type: 2, 
 		title: '【' + name + '】域名管理', 
-		area: ['750px', '660px'],
+		area: ['900px', '660px'],
 		shadeClose: false, // 禁止遮罩关闭
 		content: '/translate/mirrorimage/translateSiteDomain/list.jsp?siteid=' + id
 	});

@@ -470,7 +470,7 @@ public class TranslateSiteDomainController extends BaseController {
 			siteSet = new TranslateSiteSet();
 		}
 		
-		com.xnx3.BaseVO tvo = TranslateApiRequestUtil.trans(sourceDomain, newDomain, sourceDomain+path, "true",targetLanguage, siteSet.getExecuteJs(), request);
+		com.xnx3.BaseVO tvo = TranslateApiRequestUtil.trans(sourceDomain, newDomain, sourceDomain+path, "false",targetLanguage, siteSet.getExecuteJs(), request);
 		if(tvo.getResult() - BaseVO.FAILURE == 0) {
 			//出错
 			response.setStatus(500);

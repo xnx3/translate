@@ -7,6 +7,10 @@
 </jsp:include>
 <script src="/<%=Global.CACHE_FILE %>Site_language.js"></script>
 
+<script src="https://res.zvo.cn/from.js/from.js"></script>
+<script src="/fileupload-config.js"></script>
+
+
 <jsp:include page="/wm/common/list/formSearch_formStart.jsp"></jsp:include>
 <!-- [tag-5] -->
 <jsp:include page="/wm/common/list/formSearch_input.jsp">
@@ -138,6 +142,16 @@ function deleteItem(id, name) {
  * @param {Object} name 站点名称
  */
 function fileuploadConfig(id, name) {
+
+	fileupload.config.quick.use({
+		configUrl:'/config.json?key='+id,
+		submitUrl:"/save.json",	//提交保存的url
+		key:id
+	});
+	
+	if(true){
+		return;
+	} 
 	msg.loading("获取中");
 	wm.post('/translate/generate/translateFileuploadConfig/details.json', {'id':id}, function(data){
 		msg.close();

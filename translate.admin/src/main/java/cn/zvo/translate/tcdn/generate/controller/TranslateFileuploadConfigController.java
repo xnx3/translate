@@ -12,8 +12,8 @@ import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.util.ActionLogUtil;
 import com.xnx3.j2ee.vo.BaseVO;
 
-import cn.zvo.fileupload.config.json.Config;
-import cn.zvo.fileupload.config.json.vo.StorageVO;
+import cn.zvo.fileupload.config.Config;
+import cn.zvo.fileupload.config.vo.StorageVO;
 import cn.zvo.fileupload.storage.local.LocalStorage;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.generate.vo.TranslateFileuploadConfigVO;

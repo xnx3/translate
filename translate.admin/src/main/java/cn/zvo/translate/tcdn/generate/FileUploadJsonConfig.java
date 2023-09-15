@@ -2,8 +2,9 @@ package cn.zvo.translate.tcdn.generate;
 
 import com.xnx3.BaseVO;
 import com.xnx3.j2ee.util.SpringUtil;
-import cn.zvo.fileupload.config.json.Config;
-import cn.zvo.fileupload.config.json.ConfigStorageInterface;
+
+import cn.zvo.fileupload.config.Config;
+import cn.zvo.fileupload.config.ConfigStorageInterface;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 
 /**

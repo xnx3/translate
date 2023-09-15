@@ -69,9 +69,30 @@
 		<!-- 文件存储-config -->
 		<dependency> 
 			<groupId>cn.zvo.fileupload</groupId>
-			<artifactId>fileupload-config-json</artifactId>
+			<artifactId>fileupload-config</artifactId>
 			<version>1.0</version>
 		</dependency>
+		
+		<!-- sftp文件上传 -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-storage-sftp</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<!-- sftp 支持 -->
+		<dependency>
+		  <groupId>com.jcraft</groupId>
+		  <artifactId>jsch</artifactId>
+		  <version>0.1.55</version>
+		</dependency>
+		<!-- ssh 支持 -->
+		<dependency>
+		  <groupId>ch.ethz.ganymed</groupId>
+		  <artifactId>ganymed-ssh2</artifactId>
+		  <version>262</version>
+		</dependency>
+		
+		
 		
 		<dependency> 
 			<groupId>cn.zvo.tcdn</groupId>

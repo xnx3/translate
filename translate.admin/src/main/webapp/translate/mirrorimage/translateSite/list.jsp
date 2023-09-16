@@ -48,8 +48,8 @@
 			<th>站点名字</th> -->
 			<th>源站网址 <i class="layui-icon wm-icon-help" onclick="showSourceUrl();">&#xe702;</i></th>
 			<th>源站语种</th>
+			<th>翻译语种</th>
 			<th>翻译控制</th>
-			<th>域名绑定</th>
 			<th>操作</th>
 		</tr>
 	</thead>
@@ -61,10 +61,10 @@
 			<td><a :href="item.url" target="_black">{{item.url}}</a></td>
 			<td>{{language[item.language]}}</td>
 			<td style="width: 60px;">
-				<botton class="layui-btn layui-btn-sm" :onclick="'editSiteSet(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">编辑</botton>
+				<botton class="layui-btn layui-btn-sm" :onclick="'siteDomainList(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">管理</botton>
 			</td>
 			<td style="width: 60px;">
-				<botton class="layui-btn layui-btn-sm" :onclick="'siteDomainList(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">管理</botton>
+				<botton class="layui-btn layui-btn-sm" :onclick="'editSiteSet(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">编辑</botton>
 			</td>
 			<td style="width: 100px;">
 				<botton class="layui-btn layui-btn-sm"
@@ -170,8 +170,8 @@ function editSiteSet(id, name) {
 function siteDomainList(id, name) {
 	layer.open({
 		type: 2, 
-		title: '【' + name + '】域名管理', 
-		area: ['900px', '660px'],
+		title: '【源网站：' + name + '】 翻译语种 - 域名管理', 
+		area: ['100%', '100%'],
 		shadeClose: false, // 禁止遮罩关闭
 		content: '/translate/mirrorimage/translateSiteDomain/list.jsp?siteid=' + id
 	});

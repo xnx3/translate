@@ -1,22 +1,34 @@
 package cn.zvo.translate.tcdn.generate.controller;
 
+import java.util.Map;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xnx3.Lang;
 import com.xnx3.j2ee.controller.BaseController;
 import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.util.ActionLogUtil;
+import com.xnx3.j2ee.util.SpringUtil;
 import com.xnx3.j2ee.vo.BaseVO;
 
 import cn.zvo.fileupload.config.Config;
+import cn.zvo.fileupload.config.ConfigStorageInterface;
+import cn.zvo.fileupload.config.vo.ConfigVO;
 import cn.zvo.fileupload.config.vo.StorageVO;
 import cn.zvo.fileupload.storage.local.LocalStorage;
+import cn.zvo.translate.tcdn.core.entity.TranslateSite;
+import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.generate.vo.TranslateFileuploadConfigVO;
+import net.sf.json.JSONObject;
 
 /**
  * fileupload的config配置表
@@ -25,99 +37,122 @@ import cn.zvo.translate.tcdn.generate.vo.TranslateFileuploadConfigVO;
 @Controller(value = "TranslateFileuploadConfigController")
 @RequestMapping("/translate/generate/translateFileuploadConfig/")
 public class TranslateFileuploadConfigController extends BaseController {
-
 	@Resource
 	private SqlService sqlService;
 	
+	static {
+		//设置 json 配置存放的方式，比如用户a选择使用华为云存储，华为云ak相关的是啥，进行的持久化存储相关，也就是保存、取得这个。 这里用于演示所以使用一个简单的以文件方式进行存储的
+		Config.setConfigStorageInterface(new ConfigStorageInterface() {
+			public BaseVO save(String key, String json) {
+				SqlService sqlService = SpringUtil.getSqlService();
+				TranslateFileuploadConfig tfc = sqlService.findById(TranslateFileuploadConfig.class, key);
+				if(tfc == null) {
+					tfc = new TranslateFileuploadConfig();
+					tfc.setId(key);
+				}
+				tfc.setConfig(json);
+				sqlService.save(tfc);
+				return BaseVO.success();
+			}
+			public BaseVO get(String key) {
+				SqlService sqlService = SpringUtil.getSqlService();
+				TranslateFileuploadConfig tfc = sqlService.findById(TranslateFileuploadConfig.class, key);
+				if(tfc == null) {
+					return BaseVO.success("");
+				}else {
+					return BaseVO.success(tfc.getConfig());
+				}
+			}
+		});
+	}
+
+
 	/**
-	 * 获取某条的数据
-	 * @param token 当前操作用户的登录标识 <required>
-	 * 			<a href="xxxxx.html">/xxxx/login.json</a> 取得</p>
-	 * @param id 主键
-	 * @return 若成功，则可获取此条信息
-	 * @author <a href="https://github.com/xnx3/writecode">WriteCode自动生成</a>
+	 * 获取配置
 	 */
 	@ResponseBody
-	@RequestMapping(value = "details.json", method = {RequestMethod.POST})
-	public TranslateFileuploadConfigVO details(HttpServletRequest request,
-			@RequestParam(value = "id", required = false, defaultValue = "") String id) {
-		TranslateFileuploadConfigVO vo = new TranslateFileuploadConfigVO();
-
-		if(id != null && id.length() > 0) {
-			TranslateFileuploadConfig entity = sqlService.findById(TranslateFileuploadConfig.class, id);
-			if(entity == null){
-				entity = new TranslateFileuploadConfig();
-				entity.setId(id);
-				entity.setConfig("");
-				sqlService.save(entity);
-			}
-			vo.setTranslateFileuploadConfig(entity);
-			ActionLogUtil.insert(request, "获取 translate_fileupload_config.id 为 " + id + " 的信息", entity.toString());
-		}else {
-			vo.setBaseVO(BaseVO.FAILURE, "请传入id");
+	@RequestMapping(value = "config.json")
+	public ConfigVO config(
+			@RequestParam(value = "key", required = false, defaultValue = "0") String key,
+			@RequestParam(value = "config", required = false, defaultValue = "") String config,
+			HttpServletRequest request, HttpServletResponse response) {
+		response.setHeader("Access-Control-Allow-Origin", "*");
+		
+		//判断key - 也就是 site_domain.id 是否属于这个用户
+		int siteDomainId = Lang.stringToInt(key, 0);
+		TranslateSiteDomain domain = sqlService.findById(TranslateSiteDomain.class, siteDomainId);
+		if(domain == null) {
+			ConfigVO vo = new ConfigVO();
+			vo.setBaseVO(ConfigVO.FAILURE, "域名翻译记录不存在");
 			return vo;
 		}
+		if(domain.getUserid() - getUserId() != 0) {
+			ConfigVO vo = new ConfigVO();
+			vo.setBaseVO(ConfigVO.FAILURE, "域名翻译记录不属于您，无权操作");
+			return vo;
+		}
+		
+		//获取当前所有的存储方式
+		ConfigVO vo = Config.getAllStorage(key);
+		
+		int deleteIndex = -1;
+		for (int i = 0; i < vo.getStorageList().size(); i++) {
+			if(vo.getStorageList().get(i).getId().equalsIgnoreCase("cn.zvo.fileupload.storage.local.LocalStorage")) {
+				deleteIndex = i;
+				break;
+			}
+		}
+		if(deleteIndex > -1) {
+			vo.getStorageList().remove(deleteIndex);
+		}
+		
 		
 		return vo;
 	}
 	
 	/**
-	 * 添加或修改一条记录
-	 * @param token 当前操作用户的登录标识 <required>
-	 * 			<a href="xxxxx.html">/xxxx/login.json</a> 取得</p>
-	 * TODO [tag-8] 
-	 * @param id 站点id，对应 translate_site.id 
-	 * @param config fileupload的config配置 
-	 * @return 保存结果
-	 * @author <a href="https://github.com/xnx3/writecode">WriteCode自动生成</a>
+	 * 保存配置
 	 */
 	@ResponseBody
-	@RequestMapping(value = "save.json", method = {RequestMethod.POST})
+	@RequestMapping(value = "save.json")
 	public BaseVO save(
-	        // TODO [tag-9]
-			@RequestParam(value = "id", required = false, defaultValue = "") String id,
-			@RequestParam(value = "config", required = false, defaultValue = "") String config,
-			HttpServletRequest request) {
-
-        /**
-         * TODO 添加编辑功能调整
-         * 说明：
-         * 	1.根据实际需求，调整要传递的参数，以及保存的数据
-         * 		* 详见 tag-8，tag-9，tag-10
-         * 	2.根据实际需求，在添加或编辑时，主动设置部分字段的值
-         * 		* 例如：添加时设置创建时间 entity.setCreateTime(nowTime);
-         *  3.根据实际需求，调整jsp页面内容
-         *  	* 例如：删除不需要保存的字段；不能编辑的字段，将其input隐藏。
-         *  	* 页面位置：src/main/webapp/translate/generate/translateFileuploadConfig/edit.jsp
-         *  	* 详见页面中 tag-11
-         */
-
-		// 创建一个实体
-		TranslateFileuploadConfig entity = sqlService.findById(TranslateFileuploadConfig.class, id);
-		if(entity == null) {
-			return error("根据id，没查到该信息");
+			HttpServletRequest request, HttpServletResponse response) {
+		response.setHeader("Access-Control-Allow-Origin", "*");
+		
+		String key = request.getParameter("key");
+		
+		//判断key - 也就是 site_domain.id 是否属于这个用户
+		int siteDomainId = Lang.stringToInt(key, 0);
+		TranslateSiteDomain domain = sqlService.findById(TranslateSiteDomain.class, siteDomainId);
+		if(domain == null) {
+			return error("域名翻译记录不存在");
+		}
+		if(domain.getUserid() - getUserId() != 0) {
+			return error("域名翻译记录不属于您，无权操作");
 		}
 		
-		try {
-			StorageVO storageVO = Config.configToStorageVO(config);
-			if(storageVO.getFileupload().isStorage(LocalStorage.class)) {
-				return error("您当前配置的是使用本地存储，本系统当前禁用此种存储方式！");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return error("请确认您输入的是json格式字符串！错误："+e.getMessage());
+		
+		//取 config
+		JSONObject config = new JSONObject();
+		Map<String, String[]> params = request.getParameterMap();
+		for (Map.Entry<String, String[]> entry : params.entrySet()) {
+		    //System.out.println(entry.getKey() + ": " + entry.getValue()[0]);
+		    config.put(entry.getKey(), entry.getValue()[0]);
 		}
-			
+		//删除storage
+		config.remove("storage");
 		
-		// TODO [tag-10] 给实体赋值 
-		entity.setConfig(config);
-		// 保存实体
-		sqlService.save(entity);
+		//当前保存的storage
+		String storage = request.getParameter("storage");
 		
-		// 日志记录
-		ActionLogUtil.insertUpdateDatabase(request, "修改 translate_fileupload_config.id 为 " + id + " 的记录", entity.toString());
+		JSONObject json = new JSONObject();
+		json.put("storage", storage);
+		json.put("config", config);
 		
-		return success(entity.getId()+"");
+		com.xnx3.BaseVO vo = Config.save(key, json.toString());
+		if(vo.getResult() - BaseVO.FAILURE == 0) {
+			return error(vo.getInfo());
+		}
+		return success();
 	}
-	
 }

@@ -6,6 +6,7 @@ import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 import com.xnx3.Log;
 import cn.zvo.fileupload.FileUpload;
+import cn.zvo.fileupload.config.Config;
 import cn.zvo.fileupload.config.vo.StorageVO;
 import cn.zvo.fileupload.storage.local.LocalStorage;
 import cn.zvo.fileupload.vo.UploadFileVO;
@@ -112,7 +113,7 @@ public class Task {
 				}
 				
 				//文件存储
-				StorageVO storageVO = FileUploadJsonConfig.config.get(languageBean.getDomain().getId()+"");
+				StorageVO storageVO = Config.get(languageBean.getDomain().getId()+"");
 				if(storageVO.getResult() - StorageVO.FAILURE == 0) {
 					//获取文件存储失败
 					Log.error("获取文件存储失败："+storageVO.getInfo()+", domainid:"+languageBean.getDomain().getId());
@@ -153,7 +154,12 @@ public class Task {
 					pageBean.setTime(DateUtil.timeForUnix10());
 					
 					//存储
-					UploadFileVO uploadVO = fileupload.uploadString(languageBean.getDomain().getLanguage() + pageBean.getPath(), vo.getInfo(), true);
+					String uploadPath = pageBean.getPath();
+					if(uploadPath.lastIndexOf("/") == uploadPath.length()-1) {
+						//最后一个字符是 "/" ，那么追加上 index.html
+						uploadPath = uploadPath + "index.html";
+					}
+					UploadFileVO uploadVO = fileupload.uploadString(uploadPath, vo.getInfo(), true);
 					System.out.println("存储结果："+uploadVO.toString());
 					if(uploadVO.getResult() - UploadFileVO.FAILURE == 0) {
 						//存储失败，后面的也就不用翻译了

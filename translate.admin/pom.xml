@@ -92,7 +92,26 @@
 		  <version>262</version>
 		</dependency>
 		
+		<!-- 加入华为云OBS存储相关实现 -->
+		<dependency> 
+		    <groupId>cn.zvo.fileupload</groupId>
+		    <artifactId>fileupload-storage-huaweicloudOBS</artifactId>
+		    <version>2.0</version>
+		</dependency>
 		
+		<!-- 加入阿里云OSS存储相关实现 -->
+		<dependency> 
+		    <groupId>cn.zvo.fileupload</groupId>
+		    <artifactId>fileupload-storage-aliyunOSS</artifactId>
+		    <version>2.0</version>
+		</dependency>
+		
+		<!-- 加入七牛云KODO存储相关实现 -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-storage-qiniuKodo</artifactId>
+			<version>2.0</version>
+		</dependency>
 		
 		<dependency> 
 			<groupId>cn.zvo.tcdn</groupId>

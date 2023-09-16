@@ -16,13 +16,23 @@ fileupload.config = {
 	},
 	configData:null, //通过 config.json接口获取到的数据
 	
-	//初始化，赋予配置信息
-	initConfigData:function(configData){
+	/**
+	 * 初始化，赋予配置信息
+	 * key 这个存储方式对应的key唯一标识
+	 * configData 这个key所使用的存储配置
+	 */
+	initConfigData:function(key, configData){
 		fileupload.config.configData = configData;
 		
 		if(fileupload.config.paramTemplate == null){
 			fileupload.config.paramTemplate = document.getElementById("storage_param").innerHTML
 		}
+		
+		//给存储方式 select 增加属性
+		for(var index in fileupload.config.configData.storageList){
+			fileupload.config.storageSelectAddOption(fileupload.config.configData.storageList[index].id, fileupload.config.configData.storageList[index].name);
+		}
+		document.getElementById("storage_key").value = key;
 	},
 	
 	storageSelectAddOption:function(value, text){
@@ -36,9 +46,8 @@ fileupload.config = {
 	/**
 	 * 渲染显示具体某个存储方式的输入
 	 * storageId 传入存储方式，显示这个存储方式的输入方式
-	 * key 这个存储方式对应的key唯一标识
 	 */
-	renderStorageParam:function(storageId, key){
+	renderStorageParam:function(storageId){
 		if(typeof(fileupload.config.configData) == 'undefined'){
 			msg.failure('请等待接口加载config配置数据');
 			return;
@@ -47,7 +56,6 @@ fileupload.config = {
 		//寻找 storage
 		var storage;
 		for(var index in fileupload.config.configData.storageList){
-			fileupload.config.storageSelectAddOption(fileupload.config.configData.storageList[index].id, fileupload.config.configData.storageList[index].name); //给存储方式 select 增加属性
 			if(storageId == fileupload.config.configData.storageList[index].id){
 				storage = fileupload.config.configData.storageList[index];
 				break;
@@ -60,8 +68,6 @@ fileupload.config = {
 		}
 		
 		document.getElementById("storage_param").innerHTML = html;
-		
-		document.getElementById("storage_key").value = key;
 	},
 	
 	/*快速使用*/
@@ -72,7 +78,7 @@ fileupload.config = {
 		//显示出来的html页面内容
 		html: `
 			<style>
-				#from{padding: 10px 0 5px 0;box-sizing: border-box;}
+				#storage_from{padding: 10px 0 5px 0;box-sizing: border-box;}
 				/* select选择框 */
 				.storageSelectDiv{margin-bottom:12px}
 				/* input输入框前面的文字 */
@@ -91,8 +97,10 @@ fileupload.config = {
 				.storage_submit_div{ margin-top:0.8rem; text-align: center; padding-right: 2rem;margin-left: 5rem;}
 				/* 提交按钮 */
 				.storage_submit_div button{ padding: 2px 15px;cursor: pointer;width: 60%;}
+				/* 如果出现超链接，超链接的样式 */
+				#storage_from a { color:gray; text-decoration: revert; }
 			</style>
-			<div id="from">
+			<div id="storage_from">
 				<div class="storageSelectDiv">
 					<label class="storage_label">存储方式:</label>
 					<select id="storageSelect" name="storage" onchange="fileupload.config.renderStorageParam(this.value);">
@@ -102,8 +110,8 @@ fileupload.config = {
 				<input type="hidden" id="storage_key" name="key" value="" />
 				<div id="storage_param">
 					<div class="storage_param_input_div">
-						<label class="storage_label" title="{description}">{name}:</label>
-						<input type="text" name="{id}" value="{defaultValue}" placeholder="" title="{description}" class="storage_param_{id}" />
+						<label class="storage_label">{name}:</label>
+						<input type="text" name="{id}" value="{defaultValue}" class="storage_param_{id}" />
 						<span class="storage_param_{require}">*</span>
 					</div>
 					<div class="storage_param_info">{description}</div>
@@ -114,7 +122,7 @@ fileupload.config = {
 		`,
 		//提交按钮
 		submit:function(){
-			var postData = from.getJsonData('from');
+			var postData = from.getJsonData('storage_from');
 			console.log(JSON.stringify(postData, null, 4));
 			//alert(data);
 			msg.loading('正在测试是否能连通，请稍后...');
@@ -144,17 +152,23 @@ fileupload.config = {
 					width: '360px',
 					top:'16%'
 				});
-				fileupload.config.initConfigData(data);
+				fileupload.config.initConfigData(fileupload.config.quick.key, data);
 				console.log(data);
 				
 				//这里默认让它显示第一个存储方式
-				var firstStorageId = data.storageList[0].id;
+				var storageId = data.storageList[0].id;
 				if(typeof(data.custom) != 'undefined' && data.custom != null && typeof(data.custom.storage) != 'undefined'){
 					//用户之前有设置过了，那么显示用户自己设置的
-					firstStorageId = data.custom.storage
+					storageId = data.custom.storage;
 				}
 				
-				fileupload.config.renderStorageParam(firstStorageId, fileupload.config.quick.key);
+				if(typeof(data.custom) != 'undefined' && data.custom != null && typeof(data.custom.storage) != 'undefined'){
+					//用户之前有设置过了，那么显示用户自己设置的信息，进行填充
+					from.fill('storage_from', data.custom);
+				}
+				
+				//显示当前用户选择的storage的输入参数进行展示
+				fileupload.config.renderStorageParam(storageId);
 				
 				if(typeof(data.custom) != 'undefined' && data.custom != null && typeof(data.custom.storage) != 'undefined'){
 					//用户之前有设置过了，那么显示用户自己设置的信息，进行填充

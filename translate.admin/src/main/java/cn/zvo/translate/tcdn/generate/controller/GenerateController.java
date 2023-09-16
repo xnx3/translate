@@ -21,7 +21,6 @@ import com.xnx3.j2ee.vo.BaseVO;
 import cn.zvo.fileupload.config.vo.StorageVO;
 import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
-import cn.zvo.translate.tcdn.generate.FileUploadJsonConfig;
 import cn.zvo.translate.tcdn.generate.Task;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.superadmin.Global;

@@ -16,10 +16,10 @@ import com.xnx3.StringUtil;
 import com.xnx3.SystemUtil;
 import com.xnx3.UrlUtil;
 import com.xnx3.j2ee.util.ApplicationPropertiesUtil;
-
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
 import cn.zvo.log.framework.springboot.LogUtil;
+import cn.zvo.translate.tcdn.api.Global;
 import cn.zvo.translate.tcdn.api.util.bean.Ignore;
 import cn.zvo.translate.tcdn.api.vo.TranslateVO;
 import net.sf.json.JSONArray;
@@ -64,19 +64,18 @@ public class ChromeUtil {
 	}
 	
 	public static void main(String[] args) throws InterruptedException, IOException {
-		Response res = http.get("https://www.weixiyun.cn");
-		if(res.getCode() != 200) {
-			System.out.println(res.getContent());
-		}else {
-			System.out.println(res);
-		}
+		Response res = http.get("http://www.zhongbing.zvo.cn");
+		
+		ChromeUtil chrome = new ChromeUtil();
+		TranslateVO vo = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+		System.out.println(vo);
+		
 	}
 	
 	/**
 	 * 
 	 * @param targetUrl 要打开的目标页面的url，要访问，也就是要翻译的目标页面的url，绝对地址
 	 * @param language
-	 * @param ignoreTag 忽略的tag标签，如 
 	 * @param newdomain 翻译后的使用的新域名，传入格式如 http://newdomain.zvo.cn   如果传入null，则代表不启用这个规则。
 	 * @param executeJs 在执行页面翻译的操作时，额外执行的js。这个只是在翻译的过程中进行执行，影响的是输出的翻译结果 
 	 * @return
@@ -107,7 +106,6 @@ public class ChromeUtil {
 			}
 			html = res.getContent();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,"+e.getMessage());
 			return vo;
@@ -115,12 +113,22 @@ public class ChromeUtil {
 		
 		String hash = null; //网页原始源代码的hash
 		hash = MD5Util.MD5(html);
+		
+		String path = "";
+		if(SystemUtil.isWindowsOS()) {
+			//本地开发调试
+			path = ChromeUtil.class.getResource("/").getPath();
+		}else {
+			path = "\"/mnt/api/chromehtml/\"";
+		}
+		Log.info("path:"+path);
+		
 		html = "<meta http-equiv=\"content-security-policy\" content=\"script-src 'none'\">"+html;
-		FileUtil.write("/mnt/api/chromehtml/"+hash+".html", html);
+		FileUtil.write(path+hash+".html", html);
 		
 		//System.out.println("hash:"+hash);
 	
-		String localHtml = "file:///mnt/api/chromehtml/"+hash+".html";
+		String localHtml = "file://"+path+hash+".html";
 		Log.info("chrome get url : "+localHtml);
 		driver = createDriver();
 		driver.get(localHtml);
@@ -162,8 +170,7 @@ public class ChromeUtil {
 			//缓存
 			CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
 			
-			driver.quit();
-			driver = null;
+			close();
 			return vo; 
 		}
 		
@@ -214,8 +221,7 @@ public class ChromeUtil {
 		if(objLocalLanguage == null) {
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,code:102");
 			
-			driver.quit();
-			driver = null;
+			close();
 			return vo;
 		}else {
 			Log.info("local language:"+objLocalLanguage);
@@ -232,8 +238,7 @@ public class ChromeUtil {
 		}else {
 			Log.info("first fanyi obj is null");
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,code:101");
-			driver.quit();
-			driver = null;
+			close();
 			return vo;
 		}
 		
@@ -267,7 +272,7 @@ public class ChromeUtil {
 			jsA = jsA.replace("www.zvo.cn", domain);
 			jsA = jsA.replace("newdomain.zvo.cn", newdomain);
 			js.executeScript(jsA);
-			Log.info(jsA);
+			//Log.info(jsA);
 		}
 		
 //		
@@ -285,12 +290,11 @@ public class ChromeUtil {
 		
 		vo.setInfo(pageSource);
 		
-		driver.quit();
-		driver = null;
+		close();
 		
 		
 		//缓存
-		CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
+		//CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
 		
 		return vo;
 	}
@@ -299,6 +303,11 @@ public class ChromeUtil {
 	public static String getLocalStorageSet(String key, String value) {
 //		Log.info(value);
 		return "localStorage.setItem(\""+key+"\",\""+value+"\");";
+	}
+	
+	public void close() {
+		driver.close();
+		driver.quit();
 	}
 	
 	/**
@@ -329,7 +338,10 @@ public class ChromeUtil {
 		options.addArguments("disable-infobars");	//正受到自动测试软件的控制
 		
 		if(SystemUtil.isWindowsOS()) {
-			System.setProperty("webdriver.chrome.driver","G:\\git\\chrome\\lib\\chromedriver.exe");
+			options.setBinary(Global.projectPath+"\\bin\\chrome\\chrome.exe");
+			System.setProperty("webdriver.chrome.driver",Global.projectPath+"\\bin\\chrome\\chromedriver.exe");
+			
+//			System.setProperty("webdriver.chrome.driver","G:\\git\\translate\\translate.api\\source\\src\\main\\webapp\\lib\\chromedriver-114.0.5735.90.exe");
 		}else {
 			//centos中是将它放在了 /mnt/translate/chrome/
 			System.setProperty("webdriver.chrome.driver","/mnt/api/chrome/chromedriver");

@@ -1,33 +1,23 @@
 package cn.zvo.translate.tcdn.generate.controller;
 
 import java.util.Map;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.xnx3.Lang;
 import com.xnx3.j2ee.controller.BaseController;
 import com.xnx3.j2ee.service.SqlService;
-import com.xnx3.j2ee.util.ActionLogUtil;
 import com.xnx3.j2ee.util.SpringUtil;
 import com.xnx3.j2ee.vo.BaseVO;
-
 import cn.zvo.fileupload.config.Config;
 import cn.zvo.fileupload.config.ConfigStorageInterface;
 import cn.zvo.fileupload.config.vo.ConfigVO;
-import cn.zvo.fileupload.config.vo.StorageVO;
-import cn.zvo.fileupload.storage.local.LocalStorage;
-import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
-import cn.zvo.translate.tcdn.generate.vo.TranslateFileuploadConfigVO;
 import net.sf.json.JSONObject;
 
 /**

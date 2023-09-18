@@ -119,7 +119,7 @@ public class ChromeUtil {
 			//本地开发调试
 			path = ChromeUtil.class.getResource("/").getPath();
 		}else {
-			path = "\"/mnt/api/chromehtml/\"";
+			path = "/mnt/api/chromehtml/";
 		}
 		Log.info("path:"+path);
 		

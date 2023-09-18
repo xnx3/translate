@@ -145,6 +145,8 @@ java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/class
 java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set fileupload.storage.local.path=/mnt/admin/fileupload/
 # translate.service domain
 java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.service.domain=http://api.translate.zvo.cn/
+# translate.api domain
+java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set translate.tcdn.api.domain=http://127.0.0.1:8070/
 # log
 java -cp ~/properties.jar Properties -path=/mnt/admin/webapps/ROOT/WEB-INF/classes/application.properties -set log.datasource.file.path=/mnt/admin/logs/
 # 加入开机启动文件

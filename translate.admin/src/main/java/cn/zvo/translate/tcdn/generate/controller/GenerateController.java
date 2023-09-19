@@ -1,5 +1,6 @@
 package cn.zvo.translate.tcdn.generate.controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,10 +20,13 @@ import com.xnx3.j2ee.util.ActionLogUtil;
 import com.xnx3.j2ee.vo.BaseVO;
 
 import cn.zvo.fileupload.config.vo.StorageVO;
+import cn.zvo.http.Http;
+import cn.zvo.http.Response;
 import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 import cn.zvo.translate.tcdn.generate.Task;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
+import cn.zvo.translate.tcdn.generate.util.SitemapUtil;
 import cn.zvo.translate.tcdn.superadmin.Global;
 import net.sf.json.JSONArray;
 
@@ -64,6 +68,29 @@ public class GenerateController extends BaseController {
 		}
 		
 		//取 sitemap.xml
+		if(false) {
+			Http http = new Http();
+			Response res;
+			try {
+				res = http.get("http://www.wang.market/sitemap.xml");
+			} catch (IOException e) {
+				e.printStackTrace();
+				return error("未发现 http://www.wang.market/sitemap.xml 存在，错误代码："+e.getMessage());
+			}
+			if(res.getCode() != 200) {
+				return error("响应异常，http code:"+res.getCode()+", content:"+res.getContent());
+			}
+			
+			List<String> urlList = SitemapUtil.analysis(res.getContent());
+			if(urlList.size() == 0) {
+				return error("sitemap.xml 中未发现url");
+			}
+			
+			
+			
+		}
+		
+		
 		
 		TranslateSite site = sqlService.findById(TranslateSite.class, domain.getSiteid());
 		List<TranslateSiteDomain> domainList = new ArrayList<TranslateSiteDomain>();

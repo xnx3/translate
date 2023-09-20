@@ -48,8 +48,8 @@
 			<th>站点名字</th> -->
 			<th>源站网址 <i class="layui-icon wm-icon-help" onclick="showSourceUrl();">&#xe702;</i></th>
 			<th>源站语种</th>
+			<th>翻译语种</th>
 			<th>翻译控制</th>
-			<th>域名绑定</th>
 			<th>操作</th>
 		</tr>
 	</thead>
@@ -61,10 +61,10 @@
 			<td><a :href="item.url" target="_black">{{item.url}}</a></td>
 			<td>{{language[item.language]}}</td>
 			<td style="width: 60px;">
-				<botton class="layui-btn layui-btn-sm" :onclick="'editSiteSet(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">编辑</botton>
+				<botton class="layui-btn layui-btn-sm" :onclick="'siteDomainList(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">管理</botton>
 			</td>
 			<td style="width: 60px;">
-				<botton class="layui-btn layui-btn-sm" :onclick="'siteDomainList(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">管理</botton>
+				<botton class="layui-btn layui-btn-sm" :onclick="'editSiteSet(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">编辑</botton>
 			</td>
 			<td style="width: 100px;">
 				<botton class="layui-btn layui-btn-sm"
@@ -79,10 +79,12 @@
 <jsp:include page="/wm/common/page.jsp"></jsp:include>
 
 <div style="padding: 20px;color: gray;">
-	<div>提示:</div>
-	<div>源站 &nbsp;：你当前的网站，你已经做好的网站，也就是你要进行翻译的来源网站。</div>
-	<div>翻译控制 &nbsp;：对源站进行翻译时，可以通过此自定义翻译程度，比如那些标签或者class不被翻译、自定义翻译术语等；另外也可对翻译中的网页进行一些修改，具体想修改哪些，可以用javascript脚本非常方便的进行扩展。</div>
-	<div>域名绑定 &nbsp;：比如你添加了一个中文的源站，然后你可以在此绑定一个英文的二级域名，翻译语种的属性设置为英文，那么你访问这个绑定的英文二级域名时，所出现的页面便是被翻译为英文的网页。注意，域名绑定后，您需要将绑定的域名解析到本服务器ip，访问时才能访问到</div>
+	<div><b>提示</b>:</div>
+	<div><b>源站</b> &nbsp;：你当前的网站，你已经做好的网站，也就是你要进行翻译的来源网站。</div>
+	<div><b>源站语种</b> &nbsp;：你当前的网站的语种。当前只支持 简体中文、英文 两种！</div>
+	<div><b>翻译语种</b> &nbsp;：比如你添加了一个中文的源站，然后你可以在创建一个英文的、并且指定英文绑定的域名是什么。当你访问这个的英文二级域名时，所出现的页面便是被翻译为英文的网页了。注意，您需要将域名进行解析才能访问到</div>
+	<div><b>翻译控制</b> &nbsp;：对源站进行翻译时，可以通过此自定义翻译程度，比如那些标签或者class不被翻译、自定义翻译术语等；另外也可对翻译中的网页进行一些修改，具体想修改哪些，可以用javascript脚本非常方便的进行扩展。</div>
+	
 </div>
 
 <script type="text/javascript">
@@ -170,8 +172,8 @@ function editSiteSet(id, name) {
 function siteDomainList(id, name) {
 	layer.open({
 		type: 2, 
-		title: '【' + name + '】域名管理', 
-		area: ['750px', '660px'],
+		title: '【源网站：' + name + '】 翻译语种 - 域名管理', 
+		area: ['100%', '100%'],
 		shadeClose: false, // 禁止遮罩关闭
 		content: '/translate/mirrorimage/translateSiteDomain/list.jsp?siteid=' + id
 	});

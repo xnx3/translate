@@ -33,7 +33,9 @@
 		<label class="layui-form-label">源站网址</label>
 		<div class="layui-input-block">
 			<input type="text" id="url" name="url" class="layui-input" value="" placeholder="填写如: http://cms.zvo.cn" />			
-			<div style="font-size: 10px;color: gray;">注意，填写时要带上协议</div>
+			<div style="font-size: 10px;color: gray;">注意，填写时要带上协议，格式注意域名后面不要带 / 
+				<br/>强烈推荐填写http协议的网址，如果是https协议的，可能会因为证书配置异常问题导致无法翻译
+			</div>
 		</div>
 	</div>
 	

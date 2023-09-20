@@ -17,11 +17,14 @@ import com.xnx3.j2ee.service.SqlCacheService;
 import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.util.ConsoleUtil;
 import com.xnx3.j2ee.util.SpringUtil;
+
+import cn.zvo.http.Http;
+import cn.zvo.http.Response;
 import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteSet;
 import cn.zvo.translate.tcdn.core.util.HtmlCacheUtil;
+import cn.zvo.translate.tcdn.core.util.TranslateApiRequestUtil;
 import cn.zvo.translate.tcdn.user.util.DomainUtil;
-import cn.zvo.translate.tcdn.user.util.TranslateUtil;
 import cn.zvo.translate.tcdn.user.vo.SiteVO;
 
 /**
@@ -36,9 +39,28 @@ public class RequestController extends BaseController{
 	@Resource
 	private SqlCacheService sqlCacheService;
 	
-	static TranslateUtil translateUtil;
+	static TranslateApiRequestUtil translateApiRequestUtil;
 	static {
-		translateUtil = new TranslateUtil();
+		translateApiRequestUtil = new TranslateApiRequestUtil();
+	}
+	
+	//translate.js 的源码
+	static String translatejs = null;
+	/**
+	 * 加载 translate.js
+	 * @throws IOException
+	 */
+	@ResponseBody
+	@RequestMapping(value="translate.js")
+	public String translatejs(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setHeader("Content-Type", "text/javascript");
+		if(translatejs == null){
+			Response res = new Http().get("http://res.zvo.cn/translate/translate.js");
+			if (res.getCode() == 200) {
+				translatejs = res.getContent();
+			}
+		}
+		return translatejs;
 	}
 	
 	/**
@@ -73,8 +95,8 @@ public class RequestController extends BaseController{
 		
 		//如果是静态资源，不作处理，进行重定向操作
 		String staticUrl = request.getRequestURI();
-		if(TranslateUtil.isStaticFile(staticUrl)) {
-			response.sendRedirect(TranslateUtil.targetUrl(sourceDomain, request));
+		if(TranslateApiRequestUtil.isStaticFile(staticUrl)) {
+			response.sendRedirect(TranslateApiRequestUtil.targetUrl(sourceDomain, request));
 			return "redirect";
 		}
 		
@@ -113,7 +135,7 @@ public class RequestController extends BaseController{
 //				return redirect(TranslateUtil.targetUrl(sourceDomain, request));
 //			}
 			
-			BaseVO tvo = TranslateUtil.trans(sourceDomain, newDomain, "", "true",targetLanguage, siteSet.getExecuteJs(), request);
+			BaseVO tvo = TranslateApiRequestUtil.trans(sourceDomain, newDomain, "", "true",targetLanguage, siteSet.getExecuteJs(), request);
 			if(tvo.getResult() - BaseVO.FAILURE == 0) {
 				//出错
 				response.setStatus(500);

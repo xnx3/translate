@@ -48,64 +48,12 @@
 	<parent>
 	    <groupId>com.xnx3.wangmarket.wm</groupId>
 	    <artifactId>parent</artifactId>
-	    <version>3.7</version>
+	    <version>3.12</version>
 	</parent>
-	
 
 	<build>
 		<plugins>
-			<!-- Source -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
-				<executions>
-					<!-- <execution>
-						<id>attach-sources</id>
-						<phase>deploy</phase>
-					</execution> -->
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar-no-fork</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			
-			<!-- Javadoc -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<additionalparam>-Xdoclint:none</additionalparam>
-							<source>${java.version}</source>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin> -->
-			
-			<!-- GPG -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
-				<executions>
-					<execution>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>  -->
 		</plugins>
 	</build>
 	
@@ -115,6 +63,60 @@
 		    <groupId>cn.zvo.http</groupId>
 		    <artifactId>http</artifactId>
 		    <version>1.2</version>
+		</dependency>
+		
+		<!-- 加入elasticsearch的实现。 （存储到哪，这里artifactId就引入的哪里的 datasource.xxx 另外，core中默认带控制台将日志实时打印出来） https://github.com/xnx3/log/tree/main/datasource_elasticsearch  -->
+		<dependency> 
+			<groupId>cn.zvo.log</groupId>
+			<artifactId>log-datasource-elasticsearch</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+		
+		<!-- 文件存储-config -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-config</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<!-- sftp文件上传 -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-storage-sftp</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<!-- sftp 支持 -->
+		<dependency>
+		  <groupId>com.jcraft</groupId>
+		  <artifactId>jsch</artifactId>
+		  <version>0.1.55</version>
+		</dependency>
+		<!-- ssh 支持 -->
+		<dependency>
+		  <groupId>ch.ethz.ganymed</groupId>
+		  <artifactId>ganymed-ssh2</artifactId>
+		  <version>262</version>
+		</dependency>
+		
+		<!-- 加入华为云OBS存储相关实现 -->
+		<dependency> 
+		    <groupId>cn.zvo.fileupload</groupId>
+		    <artifactId>fileupload-storage-huaweicloudOBS</artifactId>
+		    <version>2.0</version>
+		</dependency>
+		
+		<!-- 加入阿里云OSS存储相关实现 -->
+		<dependency> 
+		    <groupId>cn.zvo.fileupload</groupId>
+		    <artifactId>fileupload-storage-aliyunOSS</artifactId>
+		    <version>2.0</version>
+		</dependency>
+		
+		<!-- 加入七牛云KODO存储相关实现 -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-storage-qiniuKodo</artifactId>
+			<version>2.0</version>
 		</dependency>
 		
 		<dependency> 
@@ -127,9 +129,11 @@
   		<dependency> 
 	        <groupId>com.xnx3.wangmarket.wm</groupId>  
 	        <artifactId>wm</artifactId>  
-	        <version>3.9</version>  
+	        <version>3.12</version>  
+	         <scope>system</scope>  
+    	  <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/wm-3.12.jar</systemPath>  
 	    </dependency>
-		
+	    
 	</dependencies>
 	
 	<distributionManagement>

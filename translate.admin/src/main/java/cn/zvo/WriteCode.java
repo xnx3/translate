@@ -11,8 +11,8 @@ import com.xnx3.writecode.template.wm.Code;
 public class WriteCode {
 	public static void main(String[] args) {
 		Code code = new Code();
-		code.setPackageName("com.xnx3.translate.mirrorimage");	//设置生成的entity、controller、vo等java类放到哪个包下
-		code.setProjectUrlPath("/translate/mirrorimage/"); //设置url请求的路径
+		code.setPackageName("cn.zvo.translate.tcdn.generate");	//设置生成的entity、controller、vo等java类放到哪个包下
+		code.setProjectUrlPath("/translate/generate/"); //设置url请求的路径
 		code.write();	//执行
 	}
 }

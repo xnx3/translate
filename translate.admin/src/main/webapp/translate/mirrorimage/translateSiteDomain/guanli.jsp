@@ -109,7 +109,7 @@ function generate(id, name) {
  * @param {Object} id domain.id
  */
 function preview(id) {
-	window.open('preview.jsp?domainid='+id);
+	window.open('preview.jsp?domainid='+id+'&path=/');
 }
 </script>
 

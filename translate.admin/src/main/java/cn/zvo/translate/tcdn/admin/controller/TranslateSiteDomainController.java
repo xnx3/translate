@@ -428,7 +428,7 @@ public class TranslateSiteDomainController extends BaseController {
 	 */
 	@RequestMapping(value="preview.do")
 	@ResponseBody
-	public String all(HttpServletRequest request, HttpServletResponse response, Model model,
+	public String preview(HttpServletRequest request, HttpServletResponse response, Model model,
 			@RequestParam(value = "domainid", required = false, defaultValue = "0") int domainid,
 			@RequestParam(value = "path", required = false, defaultValue = "/") String path
 		) throws IOException{

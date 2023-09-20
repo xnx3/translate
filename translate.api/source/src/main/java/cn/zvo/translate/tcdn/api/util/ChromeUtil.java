@@ -16,6 +16,8 @@ import com.xnx3.StringUtil;
 import com.xnx3.SystemUtil;
 import com.xnx3.UrlUtil;
 import com.xnx3.j2ee.util.ApplicationPropertiesUtil;
+import com.xnx3.j2ee.util.ConsoleUtil;
+
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
 import cn.zvo.log.framework.springboot.LogUtil;
@@ -30,10 +32,19 @@ public class ChromeUtil {
 	static WebDriver driver;
 	static Map<String, String> headers;
 	
+	//这俩在application.properties配置
+	static String chromePath;
+	static String chromeDriverPath;
+	
 	public static String translateJs = "var console={ log:function(str){ var consolelogDiv = document.createElement(\"div\");"
 			+ "consolelogDiv.className=\"translate_consoleLog ignore\"; consolelogDiv.style.display='none'; consolelogDiv.innerHTML = str; try{ document.getElementsByTagName('html')[0].appendChild(consolelogDiv); }catch (ce){ } } };";
 	public static String translateCoverJs = "";
 	static {
+		chromePath = ApplicationPropertiesUtil.getProperty("chrome.path");
+		chromeDriverPath=ApplicationPropertiesUtil.getProperty("chrome.driver.path");
+		ConsoleUtil.info("chrome.path:"+chromePath);
+		ConsoleUtil.info("chrome.driver.path:"+chromeDriverPath);
+		
 		http = new Http();
 		headers = new HashMap<String, String>();
 		headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
@@ -337,14 +348,17 @@ public class ChromeUtil {
 		options.setExperimentalOption("prefs", prefs);
 		options.addArguments("disable-infobars");	//正受到自动测试软件的控制
 		
+		
+		options.setBinary(chromePath);
+		System.setProperty("webdriver.chrome.driver",chromeDriverPath);
 		if(SystemUtil.isWindowsOS()) {
-			options.setBinary(Global.projectPath+"\\bin\\chrome\\chrome.exe");
-			System.setProperty("webdriver.chrome.driver",Global.projectPath+"\\bin\\chrome\\chromedriver.exe");
+//			options.setBinary(Global.projectPath+"\\bin\\chrome\\chrome.exe");
+//			System.setProperty("webdriver.chrome.driver",Global.projectPath+"\\bin\\chrome\\chromedriver.exe");
 			
 //			System.setProperty("webdriver.chrome.driver","G:\\git\\translate\\translate.api\\source\\src\\main\\webapp\\lib\\chromedriver-114.0.5735.90.exe");
 		}else {
 			//centos中是将它放在了 /mnt/translate/chrome/
-			System.setProperty("webdriver.chrome.driver","/mnt/api/chrome/chromedriver");
+//			System.setProperty("webdriver.chrome.driver","/mnt/api/chrome/chromedriver");
 			
 			//(unknown error: DevToolsActivePort file doesn't exist)
 			options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems

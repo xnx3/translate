@@ -192,7 +192,7 @@ public class Task {
 					map.put("taskid", siteBean.getTaskid());
 					map.put("local_language", siteBean.getSite().getLanguage()); //本地语种
 					map.put("time", DateUtil.timeForUnix10());	//完成时间，13位时间戳
-					map.put("attempts_number", pageBean.getIsTrans()); //当前的尝试次数，当前是第几次， 1~3
+					map.put("attempts_number", pageBean.getIsTrans()+1); //当前的尝试次数，当前是第几次， 1~3
 					map.put("target_language", languageBean.getDomain().getLanguage()); //翻译为的语种
 					map.put("domainid", languageBean.getDomain().getId());	//site_domain.id
 					map.put("page_path", pageBean.getPath());	//当前翻译的页面，比如 / 可能是首页， 又或者 /ab/c.html
@@ -206,7 +206,7 @@ public class Task {
 						
 						/** log **/
 						map.put("result", "FAILURE"); //翻译结果-翻译成功，  SUCCESS 成功， FAILURE 失败
-						map.put("failure_info","第"+k+"次翻译，失败："+vo.getInfo()); //如果result为失败，这里是失败的原因
+						map.put("failure_info",vo.getInfo()); //如果result为失败，这里是失败的原因
 						cn.zvo.translate.tcdn.generate.Log.log.add(map);
 						/****** end ******/
 						

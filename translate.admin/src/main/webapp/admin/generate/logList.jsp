@@ -46,6 +46,7 @@
 			<th>翻译为</th>
 			<th>翻译页面</th>
 			<th>时间</th>
+			<th>执行结果</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -58,6 +59,7 @@
 			<td>{{item.target_language}}</td>
 			<td>{{item.page_path}}</td>
 			<td>{{formatTime(item.time,'M-D h:m:s')}}</td>
+			<td>{{item.result}}({{item.attempts_number}})</td>
 		</tr>
 	</tbody>
 </table>
@@ -66,10 +68,8 @@
 
 <div style="padding: 20px;color: gray;">
 	<div><b>提示</b>:</div>
-	<div><b>源站</b> &nbsp;：你当前的网站，你已经做好的网站，也就是你要进行翻译的来源网站。</div>
-	<div><b>源站语种</b> &nbsp;：你当前的网站的语种。当前只支持 简体中文、英文 两种！</div>
-	<div><b>翻译语种</b> &nbsp;：比如你添加了一个中文的源站，然后你可以在创建一个英文的、并且指定英文绑定的域名是什么。当你访问这个的英文二级域名时，所出现的页面便是被翻译为英文的网页了。注意，您需要将域名进行解析才能访问到</div>
-	<div><b>翻译控制</b> &nbsp;：对源站进行翻译时，可以通过此自定义翻译程度，比如那些标签或者class不被翻译、自定义翻译术语等；另外也可对翻译中的网页进行一些修改，具体想修改哪些，可以用javascript脚本非常方便的进行扩展。</div>
+	<div><b>任务编号</b> &nbsp;：翻译任务的编号，比如对网站提交翻译任务时，便会创建任务唯一编号。这个任务内进行翻译的页面，都会记录上这个任务编号</div>
+	<div><b>执行结果</b> &nbsp;：某个页面执行翻译的结果。 成功为 SUCCESS，失败为 FAILURE。 如果翻译失败，会自动进行重试，最多尝试三次，如果三次都不成功，则记录下失败原因。 其中 SUCCESS(1) 、 FAILURE(1) 括号中的数字便是当前是第几次翻译</div>
 	
 </div>
 

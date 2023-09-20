@@ -21,6 +21,6 @@ iframe{
 }
 </style>
 
-<iframe src="preview.do?domainid=<%=request.getParameter("domainid") %>" style="width:100%; height:100%;" onload="msg.close();" frameborder="0"></iframe>
+<iframe src="preview.do?domainid=<%=request.getParameter("domainid") %>&path=<%=request.getParameter("path") %>" style="width:100%; height:100%;" onload="msg.close();" frameborder="0"></iframe>
 
 <jsp:include page="/wm/common/foot.jsp"></jsp:include>

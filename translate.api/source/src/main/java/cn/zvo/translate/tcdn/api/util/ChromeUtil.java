@@ -166,7 +166,7 @@ public class ChromeUtil {
 		if(htmlLower.indexOf("</html>") == -1 && htmlLower.indexOf("</body>") == -1) {
 			String pageSource = driver.getPageSource();
 			vo.setResult(BaseVO.FAILURE);
-			vo.setInfo("源站页面未发现html、body标签，翻译中止。源站目标源码："+pageSource);
+			vo.setInfo("源站页面 "+targetUrl+" 未发现html、body标签，翻译中止。");
 			//缓存
 			CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
 			

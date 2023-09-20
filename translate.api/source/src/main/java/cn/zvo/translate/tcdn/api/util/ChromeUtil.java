@@ -9,6 +9,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import com.xnx3.BaseVO;
+import com.xnx3.DateUtil;
 import com.xnx3.FileUtil;
 import com.xnx3.Log;
 import com.xnx3.MD5Util;
@@ -29,7 +30,7 @@ import net.sf.json.JSONObject;
 
 public class ChromeUtil {
 	static Http http;
-	static WebDriver driver;
+	private ChromeDriver driver;
 	static Map<String, String> headers;
 	
 	//这俩在application.properties配置
@@ -60,7 +61,7 @@ public class ChromeUtil {
 		
 		if(SystemUtil.isWindowsOS()) {
 			//translateJs += FileUtil.read("G:\\git\\translate\\translate.js");
-			translateCoverJs = FileUtil.read("G:\\git\\chrome\\js\\translate_cover.js");
+			translateCoverJs = FileUtil.read("G:\\git\\translate\\translate.api\\source\\src\\main\\webapp\\js\\translate_cover.js");
 		}else{
 			
 			translateCoverJs = "translate.requests = new Array();\r\n"
@@ -79,7 +80,13 @@ public class ChromeUtil {
 		
 		ChromeUtil chrome = new ChromeUtil();
 		TranslateVO vo = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
-		System.out.println(vo);
+		System.out.println("1:"+vo.getResult());
+		TranslateVO vo2 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+		System.out.println("2:"+vo2.getResult());
+		TranslateVO vo3 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+		System.out.println("2:"+vo3.getResult());
+		
+		//chrome.quit();
 		
 	}
 	
@@ -89,11 +96,35 @@ public class ChromeUtil {
 	 * @param language
 	 * @param newdomain 翻译后的使用的新域名，传入格式如 http://newdomain.zvo.cn   如果传入null，则代表不启用这个规则。
 	 * @param executeJs 在执行页面翻译的操作时，额外执行的js。这个只是在翻译的过程中进行执行，影响的是输出的翻译结果 
-	 * @return
 	 * @throws InterruptedException
 	 */
 	//synchronized
 	public TranslateVO execute(String targetUrl, String language, String newdomain, String executeJs) {
+		TranslateVO vo = null;
+		try {
+			vo = executeneibu(targetUrl, language, newdomain, executeJs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			vo = new TranslateVO();
+			vo.setBaseVO(BaseVO.FAILURE, e.getMessage());
+		}
+		
+		close();
+		quit();
+		
+		return vo;
+	}
+	
+	/**
+	 * 
+	 * @param targetUrl 要打开的目标页面的url，要访问，也就是要翻译的目标页面的url，绝对地址
+	 * @param language
+	 * @param newdomain 翻译后的使用的新域名，传入格式如 http://newdomain.zvo.cn   如果传入null，则代表不启用这个规则。
+	 * @param executeJs 在执行页面翻译的操作时，额外执行的js。这个只是在翻译的过程中进行执行，影响的是输出的翻译结果 
+	 * @throws InterruptedException
+	 */
+	//synchronized
+	public TranslateVO executeneibu(String targetUrl, String language, String newdomain, String executeJs) {
 		TranslateVO vo = new TranslateVO();
 		String domain = UrlUtil.getDomain(targetUrl);
 		String html = "";
@@ -141,7 +172,7 @@ public class ChromeUtil {
 	
 		String localHtml = "file://"+path+hash+".html";
 		Log.info("chrome get url : "+localHtml);
-		driver = createDriver();
+		this.driver = createDriver();
 		driver.get(localHtml);
 		
 		/** 先判断缓存 **/
@@ -181,7 +212,7 @@ public class ChromeUtil {
 			//缓存
 			CacheUtil.set(domain, hash, language, JSONObject.fromObject(vo).toString());
 			
-			close();
+//			close();
 			return vo; 
 		}
 		
@@ -232,15 +263,15 @@ public class ChromeUtil {
 		if(objLocalLanguage == null) {
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,code:102");
 			
-			close();
+//			close();
 			return vo;
 		}else {
 			Log.info("local language:"+objLocalLanguage);
 		}
-		Log.info("execute:");
-		Log.info(execute);
-		Log.info("translateJs:"+translateJs.length());
-		Log.info("translateCoverJs:"+translateCoverJs);
+		//Log.info("execute:");
+		//Log.info(execute);
+		//Log.info("translateJs:"+translateJs.length());
+		//Log.info("translateCoverJs:"+translateCoverJs);
 		Object obj = js.executeScript(translateJs +translateCoverJs+ execute);
 		if(obj != null) {
 			Log.info("fanyi first obj : "+JSONArray.fromObject(obj));
@@ -249,7 +280,7 @@ public class ChromeUtil {
 		}else {
 			Log.info("first fanyi obj is null");
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,code:101");
-			close();
+//			close();
 			return vo;
 		}
 		
@@ -260,8 +291,8 @@ public class ChromeUtil {
 //		System.out.println("--------");
 		
 		if(obj2 != null) {
-			System.out.println("第2次执行结果：");
-			System.out.println(obj2);
+//			System.out.println("第2次执行结果：");
+//			System.out.println(obj2);
 			fanyi(obj2, js);
 		}
 		
@@ -301,7 +332,7 @@ public class ChromeUtil {
 		
 		vo.setInfo(pageSource);
 		
-		close();
+//		close();
 		
 		
 		//缓存
@@ -317,7 +348,13 @@ public class ChromeUtil {
 	}
 	
 	public void close() {
+		Log.info("close driver : "+driver.toString());
 		driver.close();
+//		quit();
+	}
+	
+	public void quit() {
+		Log.info("quit driver : "+driver.toString()+"- "+DateUtil.timeForUnix10());
 		driver.quit();
 	}
 	
@@ -326,6 +363,7 @@ public class ChromeUtil {
 	 * @return
 	 */
 	public ChromeDriver createDriver() {
+		
 		ChromeOptions options = new ChromeOptions(); // 设置chrome的一些属性
 //		options.setPageLoadStrategy(PageLoadStrategy.NONE);
 		options.addArguments("--disable-gpu"); //谷歌文档提到需要加上这个属性来规避bug
@@ -375,7 +413,8 @@ public class ChromeUtil {
 		Log.info(JSONObject.fromObject(options).toString());
 		options.setPageLoadStrategy(PageLoadStrategy.EAGER);
 		Log.info("webdriver.chrome.driver:"+System.getProperty("webdriver.chrome.driver"));
-		ChromeDriver driver = new ChromeDriver(options);
+		driver = new ChromeDriver(options);
+		Log.info("create driver : "+driver.toString());
 		return driver;
 	}
 	

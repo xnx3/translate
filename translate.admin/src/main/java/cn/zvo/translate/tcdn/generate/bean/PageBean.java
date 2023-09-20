@@ -1,5 +1,7 @@
 package cn.zvo.translate.tcdn.generate.bean;
 
+import com.xnx3.UrlUtil;
+
 /**
  * 翻译的目标网页， 服务于 {@link LanguageBean}
  * @author 管雷鸣
@@ -22,14 +24,18 @@ public class PageBean {
 	
 	public PageBean(String path) {
 		this.isTrans = 0;
-		this.path = path;
+		setPath(path);
 	}
 	
 	public String getPath() {
 		return path;
 	}
 	public void setPath(String path) {
-		this.path = path;
+		String p = UrlUtil.getRequestPath(path);
+		if(!p.substring(0, 1).equals("/")) {
+			p = "/"+p;
+		}
+		this.path = p;
 	}
 	public int getIsTrans() {
 		return isTrans;

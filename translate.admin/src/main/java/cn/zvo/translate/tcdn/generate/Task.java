@@ -1,10 +1,14 @@
 package cn.zvo.translate.tcdn.generate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 import com.xnx3.Log;
+import com.xnx3.j2ee.util.ConsoleUtil;
+
 import cn.zvo.fileupload.FileUpload;
 import cn.zvo.fileupload.config.Config;
 import cn.zvo.fileupload.config.vo.StorageVO;
@@ -30,6 +34,32 @@ public class Task {
 	static{
 		taskBean = new TaskBean();
 		isTasking = false;
+		
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				while(true) {
+					
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+					
+					try {
+						BaseVO vo = Task.execute();
+						ConsoleUtil.info(vo.toString()+" - Task Thread");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+				}
+				
+				
+			}
+		}).start();
 	}
 	
 	public static void main(String[] args) {
@@ -51,6 +81,22 @@ public class Task {
 		//加入翻译的任务队列
 		Global.taskList.add(siteBean);
 	}
+	
+	public static void add(TranslateSite site, TranslateSiteDomain domain, List<PageBean> pageList) {
+		SiteBean siteBean = new SiteBean();
+		siteBean.setSite(site);
+		
+		LanguageBean languageBean = new LanguageBean();
+		languageBean.setDomain(domain);
+		languageBean.setPageList(pageList);
+//			languageBean.getPageList().add(new PageBean("/")); //index.html
+//			languageBean.setStorage(storage);
+		siteBean.getLanguageList().add(languageBean);
+		
+		//加入翻译的任务队列
+		Global.taskList.add(siteBean);
+	}
+	
 	
 	/**
 	 * 当前是否有等待进行翻译的任务（尚未翻译、翻译中还没完成）
@@ -87,7 +133,7 @@ public class Task {
 			return;
 		}
 		
-		System.out.println(siteBean);
+		//System.out.println(siteBean);
 	}
 	
 	//执行翻译任务
@@ -136,16 +182,35 @@ public class Task {
 //					System.out.println("execute---"+pageBean.toString());
 					
 					String domian = siteBean.getSite().getUrl();
-					BaseVO vo = TranslateApiRequestUtil.trans(domian, domian+"/english", domian+pageBean.getPath(), "false", languageBean.getDomain().getLanguage(), null, null);
+					BaseVO vo = TranslateApiRequestUtil.trans(domian, languageBean.getDomain().getDomain(), domian+pageBean.getPath(), "false", languageBean.getDomain().getLanguage(), null, null);
 //					System.out.println(vo);
+					
+					/**** Log ****/
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put("siteid", siteBean.getSite().getId());
+					map.put("userid", siteBean.getSite().getId());
+					map.put("taskid", siteBean.getTaskid());
+					map.put("local_language", siteBean.getSite().getLanguage()); //本地语种
+					map.put("time", DateUtil.timeForUnix10());	//完成时间，13位时间戳
+					map.put("attempts_number", pageBean.getIsTrans()); //当前的尝试次数，当前是第几次， 1~3
+					map.put("target_language", languageBean.getDomain().getLanguage()); //翻译为的语种
+					map.put("domainid", languageBean.getDomain().getId());	//site_domain.id
+					map.put("page_path", pageBean.getPath());	//当前翻译的页面，比如 / 可能是首页， 又或者 /ab/c.html
 					
 					if(vo.getResult() - BaseVO.FAILURE == 0) {
 						pageBean.setIsTrans(pageBean.getIsTrans()+1);
 					
 						//翻译失败，在尝试一次本次翻译
-						k--;
 						pageBean.setErrorInfo(vo.getInfo());
 						Log.error(domian+pageBean.getPath()+"翻译失败："+vo.getInfo());
+						
+						/** log **/
+						map.put("result", "FAILURE"); //翻译结果-翻译成功，  SUCCESS 成功， FAILURE 失败
+						map.put("failure_info","第"+k+"次翻译，失败："+vo.getInfo()); //如果result为失败，这里是失败的原因
+						cn.zvo.translate.tcdn.generate.Log.log.add(map);
+						/****** end ******/
+						
+						k--;
 						continue;
 					}
 					
@@ -153,8 +218,21 @@ public class Task {
 					pageBean.setIsTrans(-1);
 					pageBean.setTime(DateUtil.timeForUnix10());
 					
+					
+					/**** Log ****/
+					map.put("result", "SUCCESS"); //翻译结果-翻译成功，  SUCCESS 成功， FAILURE 失败
+					map.put("failure_info",""); //如果result为失败，这里是失败的原因
+					cn.zvo.translate.tcdn.generate.Log.log.add(map);
+					/****** end ******/
+					
+					
 					//存储
 					String uploadPath = pageBean.getPath();
+					
+					//如果第一个字符是 / ，那么去掉
+					if(uploadPath.indexOf("/") == 0) {
+						uploadPath = uploadPath.substring(1, uploadPath.length());
+					}
 					if(uploadPath.lastIndexOf("/") == uploadPath.length()-1) {
 						//最后一个字符是 "/" ，那么追加上 index.html
 						uploadPath = uploadPath + "index.html";

@@ -41,9 +41,22 @@ String name = request.getParameter("name");
 	<div>
 		进行翻译，执行翻译，将原本网站翻译为指定语种，并存储到上面您自己设置的存储位置进行存储。
 		<br/>
-		【注意，测试阶段，当前只是将首页进行了翻译，如果您感觉整体没问题了，要真正对全站进行翻译，可以喊我，给你放开】
+		【注意】
+		<br/>1. 测试阶段，当前只是将首页进行了翻译，如果您感觉整体没问题了，要真正对全站进行翻译，可以喊我，给你放开
+		<br/>2. 点击执行后，会创建一个翻译任务，翻译任务并不会立即执行，而是进入排队期，前面排队的任务（包括别人的）都执行完后才会执行您此次的翻译任务。您可以通过“查看日志”来时时查看任务执行情况
 	</div>
 </div>
+
+<hr/>
+<div>
+	<a class="layui-btn layui-btn-sm" href="/admin/generate/logList.jsp" target="_black" style="margin-left: 3px;">查看日志</a>
+	<div>
+		执行翻译任务后，每翻译一个页面，都会将翻译的页面进行写日志。您可以通过此处日志记录，来查看翻译的执行情况。
+		<br/>
+		【注意，测试阶段，当前可以看到全局日志】
+	</div>
+</div>
+
 
 <script>
 
@@ -71,12 +84,12 @@ function fileuploadConfig(id, name) {
 function generate(id, name) {
 	msg.confirm('是否生成【' + name + '】的翻译html？ 翻译后的html文件会推送到您指定的存储', function() {
 		// 显示“删除中”的等待提示
-		parent.msg.loading("提交中");
+		msg.loading("提交中");
 		$.post('/translate/generate/generate.json?domainid=' + id, function(data) {
 			// 关闭“删除中”的等待提示
-			parent.msg.close();
+			msg.close();
 			if(data.result == '1') {
-				parent.msg.success('操作成功');
+				msg.alert(data.info);
 				// 刷新当前页
 				//window.location.reload();
 			} else if(data.result == '0') {

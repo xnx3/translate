@@ -48,9 +48,8 @@
 	<parent>
 	    <groupId>com.xnx3.wangmarket.wm</groupId>
 	    <artifactId>parent</artifactId>
-	    <version>3.11</version>
+	    <version>3.12</version>
 	</parent>
-	
 
 	<build>
 		<plugins>
@@ -64,6 +63,13 @@
 		    <groupId>cn.zvo.http</groupId>
 		    <artifactId>http</artifactId>
 		    <version>1.2</version>
+		</dependency>
+		
+		<!-- 加入elasticsearch的实现。 （存储到哪，这里artifactId就引入的哪里的 datasource.xxx 另外，core中默认带控制台将日志实时打印出来） https://github.com/xnx3/log/tree/main/datasource_elasticsearch  -->
+		<dependency> 
+			<groupId>cn.zvo.log</groupId>
+			<artifactId>log-datasource-elasticsearch</artifactId>
+			<version>1.0.1</version>
 		</dependency>
 		
 		<!-- 文件存储-config -->

@@ -22,9 +22,12 @@ import com.xnx3.j2ee.vo.BaseVO;
 import cn.zvo.fileupload.config.vo.StorageVO;
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
+import cn.zvo.log.vo.LogListVO;
 import cn.zvo.translate.tcdn.core.entity.TranslateSite;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
+import cn.zvo.translate.tcdn.generate.Log;
 import cn.zvo.translate.tcdn.generate.Task;
+import cn.zvo.translate.tcdn.generate.bean.PageBean;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.generate.util.SitemapUtil;
 import cn.zvo.translate.tcdn.superadmin.Global;
@@ -53,6 +56,8 @@ public class GenerateController extends BaseController {
 	        // TODO [tag-9]
 			@RequestParam(value = "domainid", required = false, defaultValue = "0") int domainid,
 			HttpServletRequest request) {
+		BaseVO vo = new BaseVO();
+		
 		TranslateSiteDomain domain = sqlService.findById(TranslateSiteDomain.class, domainid);
 		if(domain == null) {
 			return error("根据id，没查到该翻译域名");
@@ -67,44 +72,60 @@ public class GenerateController extends BaseController {
 			return error("请先设置存储配置");
 		}
 		
+		TranslateSite site = sqlService.findById(TranslateSite.class, domain.getSiteid());
+		
 		//取 sitemap.xml
-		if(false) {
-			Http http = new Http();
-			Response res;
-			try {
-				res = http.get("http://www.wang.market/sitemap.xml");
-			} catch (IOException e) {
-				e.printStackTrace();
-				return error("未发现 http://www.wang.market/sitemap.xml 存在，错误代码："+e.getMessage());
-			}
+//		if(false) {
+		boolean sitemapFind = false;
+		
+		Http http = new Http();
+		Response res = null;
+		try {
+			res = http.get(site.getUrl() + "/sitemap.xml");
 			if(res.getCode() != 200) {
-				return error("响应异常，http code:"+res.getCode()+", content:"+res.getContent());
+				sitemapFind = false;
+				//return error("响应异常，http code:"+res.getCode()+", content:"+res.getContent());
+			}else {
+				sitemapFind = true;
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			sitemapFind = false;
+			//return error("未发现 http://www.wang.market/sitemap.xml 存在，错误代码："+e.getMessage());
+		}
+		
+		
+		if(sitemapFind) {
+			//true，存在这个文件，从这个文件取数据
 			
 			List<String> urlList = SitemapUtil.analysis(res.getContent());
 			if(urlList.size() == 0) {
 				return error("sitemap.xml 中未发现url");
 			}
 			
+			if(urlList.size() > 100) {
+				return error("异常，您的sitemap.xml中的页面超过了100，可以联系官方放开限制");
+			}
 			
+			List<PageBean> pageList = new ArrayList<PageBean>();
+			for (int i = 0; i < urlList.size(); i++) {
+				String url = urlList.get(i);
+				pageList.add(new PageBean(url));
+			}
 			
+			Task.add(site, domain, pageList);
+			vo.setBaseVO(BaseVO.SUCCESS, "检测到您网站有 sitemap.xml 存在，已根据其自动取得"+pageList.size()+"个页面，已提交翻译任务进行排队，可关注翻译日志查看翻译情况");
+		}else {
+			//不存在，只是翻译首页吧
+			List<TranslateSiteDomain> domainList = new ArrayList<TranslateSiteDomain>();
+			domainList.add(domain);
+			
+			Task.add(site, domainList);
+			vo.setBaseVO(BaseVO.SUCCESS, "检测到您网站没有 sitemap.xml ，本次将只是进行翻译网站首页进行测试，已将网站首页提交翻译任务进行排队，可关注翻译日志查看翻译情况");
 		}
-		
-		
-		
-		TranslateSite site = sqlService.findById(TranslateSite.class, domain.getSiteid());
-		List<TranslateSiteDomain> domainList = new ArrayList<TranslateSiteDomain>();
-		domainList.add(domain);
-		
-		Task.add(site, domainList);
-		com.xnx3.BaseVO taskVO = Task.execute();
-		if(taskVO.getResult() - BaseVO.FAILURE == 0) {
-			return error(taskVO.getInfo());
-		}
-		Task.log(site.getUrl());
 		
 		ActionLogUtil.insert(request, "翻译生成并推送到自定义存储", domainid+"");
-		return success();
+		return vo;
 	}
 	
 	/**
@@ -113,15 +134,18 @@ public class GenerateController extends BaseController {
 	 * @return
 	 */
 	@ResponseBody
-	@RequestMapping(value = "log.json", method = {RequestMethod.GET})
-	public BaseVO log(
+	@RequestMapping(value = "log.json", method = {RequestMethod.POST})
+	public LogListVO log(
 	        // TODO [tag-9]
 			@RequestParam(value = "domainid", required = false, defaultValue = "0") int domainid,
+			@RequestParam(value = "currentPage", required = false, defaultValue = "1") int currentPage,
 			HttpServletRequest request) {
 		
-		System.out.println(JSONArray.fromObject(cn.zvo.translate.tcdn.generate.Global.taskList).toString());
+		String query = "userid="+getUserId();
+		query = "";
+		LogListVO vo = Log.log.list(query, 25, currentPage);
 		
-		return success();
+		return vo;
 	}
 	
 }

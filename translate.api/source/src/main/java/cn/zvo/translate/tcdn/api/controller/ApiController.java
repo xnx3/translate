@@ -22,12 +22,7 @@ import cn.zvo.translate.tcdn.api.util.TranslateUtil;
 @RequestMapping("/")
 public class ApiController{
 	
-	static ChromeUtil chrome;
-	static {
-		chrome = new ChromeUtil();
-	}
-	
-	static String currentExecuteUrl = ""; //当前正在执行的url
+//	static String currentExecuteUrl = ""; //当前正在执行的url
 	
 	/**
 	 * 对指定网页url进行翻译

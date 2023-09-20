@@ -3043,6 +3043,8 @@ var translate = {
 				//str = str.replace(/./g,'\\\.');
 				str = str.replace(/\?/g,'\\\?');
 				str = str.replace(/\$/g,'\\\$');
+				//str = str.replace(/\(/g,'\\\(');
+				//str = str.replace(/\)/g,'\\\)');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理

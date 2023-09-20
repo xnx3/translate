@@ -17,12 +17,12 @@ import cn.zvo.log.framework.springboot.LogUtil;
 import cn.zvo.translate.tcdn.api.vo.TranslateVO;
 
 public class TranslateUtil {
-	static ChromeUtil chrome;
+//	static ChromeUtil chrome;
 //	static String newdomain = "service.translate.zvo.cn"; //传入如 www.xxxx.com:80
-	static {
-		chrome = new ChromeUtil();
-	}
-	static String currentExecuteUrl = ""; //当前正在执行的url
+//	static {
+//		chrome = new ChromeUtil();
+//	}
+//	static String currentExecuteUrl = ""; //当前正在执行的url
 	
 	/**
 	 * 获取缓存的 http://wwww.xxxx.com/
@@ -119,6 +119,7 @@ public class TranslateUtil {
 			long startTime = DateUtil.timeForUnix13();
 			//翻译
 			ConsoleUtil.debug("url"+url+", language:"+language+", dynamic:"+dynamic);
+			ChromeUtil chrome = new ChromeUtil();
 			transVO = chrome.execute(url, language, newDomain, executeJs);
 			vo.setResult(transVO.getResult());
 			vo.setInfo(transVO.getInfo());

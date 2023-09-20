@@ -51,18 +51,29 @@ public class ChromeUtil {
 		headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 		headers.put("Referer", "translate.js");
 		
-		try {
-			translateJs = translateJs + http.get("http://res.zvo.cn/translate/translate.js").getContent();
-//			translateJs += http.get("https://gitee.com/mail_osc/translate/raw/master/translate.js/translate.js").getContent();
-		} catch (IOException e) {
-			e.printStackTrace();
-			translateJs = "document.write('网络加载 translate.js失败，请重启服务器中的 translate.api 项目');";
-		}
+			
+		
+//		try {
+//			translateJs = translateJs + http.get("http://res.zvo.cn/translate/translate.js").getContent();
+////			translateJs += http.get("https://gitee.com/mail_osc/translate/raw/master/translate.js/translate.js").getContent();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			translateJs = "document.write('网络加载 translate.js失败，请重启服务器中的 translate.api 项目');";
+//		}
 		
 		if(SystemUtil.isWindowsOS()) {
+			translateJs = translateJs + FileUtil.read("G:\\git\\translate\\translate.js\\translate.js");
+			
 			//translateJs += FileUtil.read("G:\\git\\translate\\translate.js");
 			translateCoverJs = FileUtil.read("G:\\git\\translate\\translate.api\\source\\src\\main\\webapp\\js\\translate_cover.js");
 		}else{
+			try {
+				translateJs = translateJs + http.get("http://res.zvo.cn/translate/translate.js").getContent();
+			} catch (IOException e) {
+				e.printStackTrace();
+				translateJs = "document.write('网络加载 translate.js失败，请重启服务器中的 translate.api 项目');";
+			}
+			
 			
 			translateCoverJs = "translate.requests = new Array();\r\n"
 					+ "translate.request.send = function(url, data, func, method, isAsynchronize, headers, abnormalFunc){\r\n"
@@ -79,12 +90,12 @@ public class ChromeUtil {
 		Response res = http.get("http://www.zhongbing.zvo.cn");
 		
 		ChromeUtil chrome = new ChromeUtil();
-		TranslateVO vo = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+		TranslateVO vo = chrome.execute("http://tag.wscso.com/35602.html", "english", null, "");
 		System.out.println("1:"+vo.getResult());
-		TranslateVO vo2 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
-		System.out.println("2:"+vo2.getResult());
-		TranslateVO vo3 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
-		System.out.println("2:"+vo3.getResult());
+//		TranslateVO vo2 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+//		System.out.println("2:"+vo2.getResult());
+//		TranslateVO vo3 = chrome.execute("http://www.zhongbing.zvo.cn", "chinese_simplified", "xinyuming", "");
+//		System.out.println("2:"+vo3.getResult());
 		
 		//chrome.quit();
 		
@@ -272,6 +283,8 @@ public class ChromeUtil {
 		//Log.info(execute);
 		//Log.info("translateJs:"+translateJs.length());
 		//Log.info("translateCoverJs:"+translateCoverJs);
+		//Log.info("first execute javascript:");
+		//Log.info(translateJs +translateCoverJs+ execute);
 		Object obj = js.executeScript(translateJs +translateCoverJs+ execute);
 		if(obj != null) {
 			Log.info("fanyi first obj : "+JSONArray.fromObject(obj));
@@ -282,6 +295,12 @@ public class ChromeUtil {
 			vo.setBaseVO(BaseVO.FAILURE, "处理异常,code:101");
 //			close();
 			return vo;
+		}
+		
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
 		}
 		
 		//在执行一次，避免有单词落下了
@@ -367,7 +386,7 @@ public class ChromeUtil {
 		ChromeOptions options = new ChromeOptions(); // 设置chrome的一些属性
 //		options.setPageLoadStrategy(PageLoadStrategy.NONE);
 		options.addArguments("--disable-gpu"); //谷歌文档提到需要加上这个属性来规避bug
-		options.addArguments("--headless"); //无界面运行 ,开启这个后js会被执行----------
+		
 		options.addArguments("--disable-javascript"); //禁用javascript
 		options.addArguments("--remote-allow-origins=*");//解决 403 出错问题
 		Map<String, Object> prefs = new HashMap<String, Object>();
@@ -402,9 +421,11 @@ public class ChromeUtil {
 			options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
 			options.addArguments("--no-sandbox"); //数是让Chrome在root权限下跑
 			
+			//这种方式在无头Headless模式下是生效的， 非无头Headless模式下也是生效的。
+			options.addArguments("blink-settings=imagesEnabled=false");
+			options.addArguments("--headless"); //无界面运行 ,开启这个后js会被执行----------
 		}
-		//这种方式在无头Headless模式下是生效的， 非无头Headless模式下也是生效的。
-		options.addArguments("blink-settings=imagesEnabled=false");
+		
 		options.addArguments("blink-settings=javascriptEnabled=false");
 		//https://chromedriver.storage.googleapis.com/index.html?path=110.0.5481.30/
 		

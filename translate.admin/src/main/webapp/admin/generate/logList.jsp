@@ -40,9 +40,9 @@
 		    <!-- [tag-6] -->
 			<!-- <th>主键</th> -->
 			<th>任务编号</th>
-			<th>site.id</th>
+			<!-- <th>site.id</th> -->
 			<th>domain.id</th>
-			<th>源站语种</th>
+			<!-- <th>源站语种</th> -->
 			<th>翻译为</th>
 			<th>翻译页面</th>
 			<th>时间</th>
@@ -53,9 +53,9 @@
 		<tr v-for="item in list" id="list">
 		    <!-- [tag-7] -->
 		    <td>{{item.taskid}}</td>
-			<td>{{item.siteid}}</td>
+			<!-- <td>{{item.siteid}}</td> -->
 			<td>{{item.domainid}}</td>
-			<td>{{item.local_language}}</td>
+			<!-- <td>{{item.local_language}}</td> -->
 			<td>{{item.target_language}}</td>
 			<td>{{item.page_path}}</td>
 			<td>{{formatTime(item.time,'M-D h:m:s')}}</td>
@@ -76,7 +76,7 @@
 <script type="text/javascript">
 
 // 刚进入这个页面，加载第一页的数据
-wm.list(1, '/translate/generate/log.json');
+wm.list(1, '/translate/generate/log.json?siteid=<%=request.getParameter("siteid") %>');
 
 </script>
 

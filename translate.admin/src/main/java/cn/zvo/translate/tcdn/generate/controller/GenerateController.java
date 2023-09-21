@@ -30,6 +30,7 @@ import cn.zvo.translate.tcdn.generate.Task;
 import cn.zvo.translate.tcdn.generate.bean.PageBean;
 import cn.zvo.translate.tcdn.generate.entity.TranslateFileuploadConfig;
 import cn.zvo.translate.tcdn.generate.util.SitemapUtil;
+import cn.zvo.translate.tcdn.generate.vo.WaitingProgressVO;
 import cn.zvo.translate.tcdn.superadmin.Global;
 import net.sf.json.JSONArray;
 
@@ -127,6 +128,32 @@ public class GenerateController extends BaseController {
 		ActionLogUtil.insert(request, "翻译生成并推送到自定义存储", domainid+"");
 		return vo;
 	}
+
+	/**
+	 * 查看任务排队状态
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "waitingProgress.json", method = {RequestMethod.POST})
+	public WaitingProgressVO waitingProgress(
+			@RequestParam(value = "siteid", required = false, defaultValue = "0") int siteid,
+			HttpServletRequest request) {
+		WaitingProgressVO vo = new WaitingProgressVO();
+		TranslateSite site = sqlService.findById(TranslateSite.class, siteid);
+		
+		if(site == null) {
+			vo.setBaseVO(BaseVO.FAILURE, "根据id，没查到该源站存在");
+			return vo;
+		}
+		if(site.getUserid() - getUserId() != 0) {
+			vo.setBaseVO(BaseVO.FAILURE, "源站记录不属于您，无权操作");
+			return vo;
+		}
+		
+		return Task.waitingProgress(site.getId());
+	}
+	
+	
 	
 	/**
 	 * 查看翻译日志
@@ -137,14 +164,24 @@ public class GenerateController extends BaseController {
 	@RequestMapping(value = "log.json", method = {RequestMethod.POST})
 	public LogListVO log(
 	        // TODO [tag-9]
-			@RequestParam(value = "domainid", required = false, defaultValue = "0") int domainid,
+			@RequestParam(value = "siteid", required = false, defaultValue = "0") int siteid,
 			@RequestParam(value = "currentPage", required = false, defaultValue = "1") int currentPage,
 			HttpServletRequest request) {
+		LogListVO vo = new LogListVO();
+		TranslateSite site = sqlService.findById(TranslateSite.class, siteid);
 		
-		String query = "userid="+getUserId();
-		query = "";
-		LogListVO vo = Log.log.list(query, 25, currentPage);
+		if(site == null) {
+			vo.setBaseVO(BaseVO.FAILURE, "根据id，没查到该源站存在");
+			return vo;
+		}
+		if(site.getUserid() - getUserId() != 0) {
+			vo.setBaseVO(BaseVO.FAILURE, "源站记录不属于您，无权操作");
+			return vo;
+		}
 		
+		
+		String query = "siteid:"+site.getId();
+		vo = Log.log.list(query, 50, currentPage);
 		return vo;
 	}
 	

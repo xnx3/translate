@@ -24,7 +24,7 @@
 	</div>
 	
 	<div class="layui-form-item" id="item_domain">
-		<label class="layui-form-label">绑定的域名</label>
+		<label class="layui-form-label">访问域名</label>
 		<div class="layui-input-block">
 			<input type="text" id="domain" name="domain" class="layui-input" value="" placeholder="填写如: english.zvo.cn" />			
 		</div>

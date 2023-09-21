@@ -58,7 +58,7 @@
 		    <!-- [tag-7] -->
 			<!-- <td>{{item.id}}</td>
 			<td>{{item.name}}</td> -->
-			<td><a :href="item.url" target="_black">{{item.url}}</a></td>
+			<td><a :href="'/translate/mirrorimage/translateSite/detail.jsp?siteid='+item.id">{{item.url}}</a></td>
 			<td>{{language[item.language]}}</td>
 			<td style="width: 60px;">
 				<botton class="layui-btn layui-btn-sm" :onclick="'siteDomainList(\'' + item.id + '\', \'' + item.url + '\');'" style="margin-left: 3px;">管理</botton>
@@ -170,13 +170,17 @@ function editSiteSet(id, name) {
  * @param {Object} name 要编辑的记录的名称
  */
 function siteDomainList(id, name) {
+	window.location.href = '/translate/mirrorimage/translateSite/detail.jsp?siteid=' + id;
+	/* 
 	layer.open({
 		type: 2, 
 		title: '【源网站：' + name + '】 翻译语种 - 域名管理', 
 		area: ['100%', '100%'],
 		shadeClose: false, // 禁止遮罩关闭
-		content: '/translate/mirrorimage/translateSiteDomain/list.jsp?siteid=' + id
+		//content: '/translate/mirrorimage/translateSiteDomain/list.jsp?siteid=' + id
+		content: '/translate/mirrorimage/translateSite/detail.jsp?siteid=' + id
 	});
+	*/
 }
 
  

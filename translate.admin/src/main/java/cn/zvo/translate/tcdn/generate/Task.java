@@ -21,6 +21,7 @@ import cn.zvo.translate.tcdn.generate.bean.LanguageBean;
 import cn.zvo.translate.tcdn.generate.bean.PageBean;
 import cn.zvo.translate.tcdn.generate.bean.SiteBean;
 import cn.zvo.translate.tcdn.generate.bean.TaskBean;
+import cn.zvo.translate.tcdn.generate.vo.WaitingProgressVO;
 
 /**
  * 翻译页面生成的入口
@@ -28,12 +29,12 @@ import cn.zvo.translate.tcdn.generate.bean.TaskBean;
  *
  */
 public class Task {
-	public static TaskBean taskBean;
-	public static boolean isTasking; //当前是否正在翻译中，有翻译正在进行，则是true
+//	public static TaskBean taskBean;
+//	public static boolean isTasking; //当前是否正在翻译中，有翻译正在进行，则是true
 	
 	static{
-		taskBean = new TaskBean();
-		isTasking = false;
+//		taskBean = new TaskBean();
+//		isTasking = false;
 		
 		new Thread(new Runnable() {
 			
@@ -99,19 +100,23 @@ public class Task {
 	
 	
 	/**
-	 * 当前是否有等待进行翻译的任务（尚未翻译、翻译中还没完成）
-	 * @return true 有，  false没有
+	 * 等待进度（尚未翻译、翻译中还没完成）
+	 * @param siteid 判断这个siteid下是否有等待进行的翻译任务，也就是还没执行完的翻译任务
+	 * @return true 有（等待中、执行中的任务都算），  false没有
 	 */
-	public static boolean isHaveWaitTask() {
-//		for (int i = 0; i < Global.taskList.size(); i++) {
-//			SiteBean siteBean = Global.taskList.get(i);
-//			if(siteBean.getIsTrans() != -1) {
-//				return true;
-//			}
-//		}
+	public static WaitingProgressVO waitingProgress(int siteid) {
+		WaitingProgressVO vo = new WaitingProgressVO();
+		vo.setAllnumber(Global.taskList.size());
 		
-//		return false;
-		return isTasking;
+		for (int i = 0; i < Global.taskList.size(); i++) {
+			SiteBean siteBean = Global.taskList.get(i);
+			if(siteBean.getSite().getId() - siteid == 0) {
+				vo.setRank(i);
+				break;
+			}
+		}
+		
+		return vo;
 	}
 	
 	/**
@@ -138,18 +143,29 @@ public class Task {
 	
 	//执行翻译任务
 	public static BaseVO execute() {
-		isTasking = false;
-		if(isTasking) {
-			return BaseVO.failure("执行失败，当前正在有翻译任务在执行");
-		}
+//		isTasking = false;
+//		if(isTasking) {
+//			return BaseVO.failure("执行失败，当前正在有翻译任务在执行");
+//		}
 		
-		isTasking = true;
-		for (int i = 0; i < Global.taskList.size(); i++) {
-			SiteBean siteBean = Global.taskList.get(i);
-			if(siteBean.getIsTrans() == -1) {
-				//已翻译完，跳过
-				continue;
-			}
+//		isTasking = true;
+		if (Global.taskList.size() > 0) {
+			SiteBean siteBean = Global.taskList.get(0);
+//			if(siteBean.getIsTrans() == -1) {
+//				//已翻译完，跳过
+//				continue;
+//			}
+			
+			/**** Log ****/
+			Map<String, Object> startMap = new HashMap<String, Object>();
+			startMap.put("siteid", siteBean.getSite().getId());
+			startMap.put("userid", siteBean.getSite().getId());
+			startMap.put("taskid", siteBean.getTaskid());
+			startMap.put("local_language", siteBean.getSite().getLanguage()); //本地语种
+			startMap.put("time", DateUtil.timeForUnix10());	//完成时间，10位时间戳
+			startMap.put("info", "任务开始执行");
+			cn.zvo.translate.tcdn.generate.Log.log.add(startMap);
+			/****** end ******/
 			
 			for (int j = 0; j < siteBean.getLanguageList().size(); j++) {
 				LanguageBean languageBean = siteBean.getLanguageList().get(j);
@@ -253,9 +269,22 @@ public class Task {
 			siteBean.setIsTrans(-1);
 			siteBean.setTime(DateUtil.timeForUnix10());
 			
+			/**** Log ****/
+			Map<String, Object> finishMap = new HashMap<String, Object>();
+			finishMap.put("siteid", siteBean.getSite().getId());
+			finishMap.put("userid", siteBean.getSite().getId());
+			finishMap.put("taskid", siteBean.getTaskid());
+			finishMap.put("local_language", siteBean.getSite().getLanguage()); //本地语种
+			finishMap.put("time", DateUtil.timeForUnix10());	//完成时间，10位时间戳
+			finishMap.put("info", "任务执行完毕");
+			cn.zvo.translate.tcdn.generate.Log.log.add(finishMap);
+			/****** end ******/
+			
+			//移除这个网站
+			Global.taskList.remove(0);
 		}
 		
-		isTasking = false; //标记没有正在翻译的了
+//		isTasking = false; //标记没有正在翻译的了
 		return BaseVO.success();
 	}
 }

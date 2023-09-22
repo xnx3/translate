@@ -265,7 +265,7 @@ loadWaitingProgressData();
 					<td>{{item.domain}}</td>
 					<td>
 						<span class="siteurl">loading...</span>
-						<input type="text" value="/" id="tiaoshiyulan_path" title="您可在次填写调试预览的网页，比如填写 / 那会直接访问首页，填写比如 /a.html 、 /a/b/123.html" />
+						<input type="text" value="/" :id="'tiaoshiyulan_path_'+item.id" title="您可在次填写调试预览的网页，比如填写 / 那会直接访问首页，填写比如 /a.html 、 /a/b/123.html" />
 						<botton class="layui-btn layui-btn-sm"
 								:onclick="'preview(\''+item.id+'\');'" style="margin-left: 3px;">调试预览</botton>
 					</td>
@@ -365,7 +365,7 @@ function deleteItem(id, name) {
  * @param id domain.id
  */
 function preview(id) {
-	var path = document.getElementById('tiaoshiyulan_path').value;
+	var path = document.getElementById('tiaoshiyulan_path_'+id).value;
 	if(path.length == ''){
 		path = '/';
 	}

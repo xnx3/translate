@@ -157,6 +157,11 @@ public class ChromeUtil {
 				vo.setBaseVO(BaseVO.FAILURE, "处理异常, http code :"+res.getCode());
 				return vo;
 			}
+			//如果大于200KB，忽略之 ，不翻译
+			if(res.getContent().length() > 200000) {
+				vo.setBaseVO(BaseVO.FAILURE, "处理异常, 页面过大，限制200KB以内。当前大小 :"+res.getContent().length()+"B, url:"+targetUrl);
+				return vo;
+			}
 			html = res.getContent();
 		} catch (IOException e) {
 			e.printStackTrace();

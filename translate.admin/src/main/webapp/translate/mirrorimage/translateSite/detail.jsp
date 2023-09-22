@@ -14,30 +14,62 @@ var siteid = getUrlParams('siteid');
 
 <!-- 顶部导航 - start -->
 <div>
-	<a href="/translate/mirrorimage/translateSite/list.jsp">源站管理</a> 
-	/
-	<span class="siteurl">loading...</span> 
+	<fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+		<legend><a href="/translate/mirrorimage/translateSite/list.jsp">源站管理</a><span class="siteurl" style="margin-left: 5px"> loading...</span></legend>
+	</fieldset>
 </div>
 <!-- 顶部导航 - end -->
 
 <!-- 源站本身相关 - start -->
 <style>
-#site input{ border-style: hidden; }
+	.flex-sb{
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.layui-card {
+		position: relative;
+		border-width: 1px;
+		border-style: solid;
+		border-radius: 2px;
+		box-shadow: 1px 1px 4px rgb(0 0 0 / 8%);
+		background-color: #fff;
+		color: #5f5f5f;
+		border-color: #eee;
+		width: 98%;
+		margin: 0 auto 10px;
+	}
+	.layui-col-md3 {
+		width:30%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.layui-form-label{
+		display: inline-block;
+	}
+	#site input{ border-style: hidden; }
 </style>
-<div id="site">
-	<h2>源站信息</h2>
-	<botton class="layui-btn layui-btn-sm" onclick="editSourceSite();" style="margin-left: 3px;">编辑</botton>
-	<div>
-		源站id:
-		<input type="text" value="加载中..." name="id" />
+<div class="layui-card" id="site">
+	<div class="layui-card-header flex-sb">
+		<div><h3>源站信息</h3></div>
+		<div><botton class="layui-btn layui-btn-sm" onclick="editSourceSite();" style="margin-left: 3px;">编辑</botton></div>
 	</div>
-	<div>
-		网址:
-		<input type="text" value="加载中..." name="url" />
-	</div>
-	<div>
-		语言:
-		<input type="text" value="加载中..." name="language" />
+	<div class="layui-card-body">
+		<div class="layui-row flex-sb">
+			<div class="layui-col-md3">
+				<label class="layui-form-label">源站id:</label>
+				<input type="text" value="加载中..." readonly class="layui-input" name="id" />
+			</div>
+			<div class="layui-col-md3">
+				<label class="layui-form-label">网址:</label>
+				<input type="text" value="加载中..." readonly class="layui-input" name="url" />
+			</div>
+			<div class="layui-col-md3">
+				<label class="layui-form-label">语言:</label>
+				<input type="text" value="加载中..." readonly class="layui-input" name="language" />
+			</div>
+		</div>
 	</div>
 </div>
 <script>
@@ -77,26 +109,31 @@ function editSourceSite() {
 </script>
 <!-- 源站本身相关 - end -->
 
-
-<hr/>
-
-
 <!-- 翻译控制 - start -->
-<div id="site">
-	<h2>翻译控制</h2>
-	<botton class="layui-btn layui-btn-sm" onclick="editSiteSet();" style="margin-left: 3px;">编辑</botton>
-	<div>
-		执行的JavaScript：
+<div class="layui-card" id="site">
+	<div class="layui-card-header flex-sb">
+		<div><h3>翻译控制</h3></div>
+		<div>
+			<botton class="layui-btn layui-btn-sm" onclick="editSiteSet();">编辑</botton>
+		</div>
 	</div>
-	<div id="translateSiteSet-executeJs">
-		加载中...
-	</div>
-	
-	<div>
-		执行的JavaScript：
-	</div>
-	<div id="translateSiteSet-htmlAppendJs">
-		加载中...
+	<div class="layui-card-body">
+		<div>
+			执行的JavaScript：
+		</div>
+		<div>
+			<pre class="layui-code" id="translateSiteSet-executeJs">
+			加载中...
+			</pre>
+		</div>
+		<div>
+			执行的JavaScript：
+		</div>
+		<div>
+			<pre class="layui-code" id="translateSiteSet-htmlAppendJs">
+			加载中...
+			</pre>
+		</div>
 	</div>
 </div>
 <script>
@@ -135,11 +172,18 @@ function editSiteSet() {
 
 <!-- 翻译控制 - end -->
 
-<hr/>
 
 <!-- 翻译队列排队情况 - start -->
-<h2>翻译任务排队情况</h2>
-<div id="waitingProgress"></div>
+<div class="layui-card" id="site">
+	<div class="layui-card-header flex-sb">
+		<div><h3>翻译任务排队情况</h3></div>
+	</div>
+	<div class="layui-card-body">
+		<div id="waitingProgress"></div>
+	</div>
+</div>
+<%--<h2>翻译任务排队情况</h2>--%>
+<%--<div id="waitingProgress"></div>--%>
 <script>
 /**
  * 加载数据
@@ -175,60 +219,75 @@ loadWaitingProgressData();
 </script>
 <!-- 翻译队列排队情况 - end -->
 
-<hr/>
 
 <!-- 翻译语种 - start -->
 <style>
 #page{ display:none; }
 .toubu_xnx3_search_form{ display:none; }
 </style>
-<h2>翻译语种</h2>
-<a href="javascript:editItem(0, '');" class="layui-btn layui-btn-normal" style="float: right; margin-right: 10px;">添加</a>
+<div class="layui-card" id="site">
+	<div class="layui-card-header flex-sb">
+		<div><h3>翻译语种</h3></div>
+		<div><botton class="layui-btn layui-btn-sm" onclick="javascript:editItem(0, '');">添加</botton></div>
+	</div>
+	<div class="layui-card-body">
+		<%--<h2>翻译语种</h2>--%>
+		<%--<a href="javascript:editItem(0, '');" class="layui-btn layui-btn-normal" style="float: right; margin-right: 10px;">添加</a>--%>
 
-<jsp:include page="/wm/common/list/formSearch_formStart.jsp"></jsp:include>
-<!-- [tag-5] -->
-<jsp:include page="/wm/common/list/formSearch_input.jsp">
-	<jsp:param name="iw_label" value="绑定的域名" />
-	<jsp:param name="iw_name" value="domain" />
-</jsp:include>
-<jsp:include page="/wm/common/list/formSearch_input.jsp">
-	<jsp:param name="iw_label" value="翻译语种" />
-	<jsp:param name="iw_name" value="language" />
-	<jsp:param name="iw_type" value="select"/>
-</jsp:include>
-<input type="hidden" name="siteid" value="<%=request.getParameter("siteid") %>" />
-<a class="layui-btn" href="javascript:wm.list(1);" style="margin-left: 15px;">搜索</a>
-</form>
-<div class="iw_table">
-	<div class="domain_item" v-for="item in list" id="list" style="padding-top: 3rem;">
-		<div class="title">
-			翻译语种：{{language[item.language]}} ({{item.language}}) 
-			
-			<botton class="layui-btn layui-btn-sm"
-					:onclick="'editItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">编辑</botton>
-			<botton class="layui-btn layui-btn-sm"
-					:onclick="'deleteItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">删除</botton>
-		</div>
-		<div class="info">
-			编号：{{item.id}} 
-			&nbsp;&nbsp;&nbsp;
-			访问域名：{{item.domain}}
-		</div>
-		<div class="gongnengcaozuo">
-			<span class="siteurl">loading...</span><input type="text" value="/" id="tiaoshiyulan_path" title="您可在次填写调试预览的网页，比如填写 / 那会直接访问首页，填写比如 /a.html 、 /a/b/123.html" />
-			<botton class="layui-btn layui-btn-sm" :onclick="'preview(\''+item.id+'\');'" style="margin-left: 3px;">调试预览</botton>
-			<br/>
-			<botton class="layui-btn layui-btn-sm" :onclick="'fileuploadConfig(\''+item.id+'\', \''+language[item.language]+'\');'" style="margin-left: 3px;">存储设置</botton>
-			<br/>
-			<botton class="layui-btn layui-btn-sm" :onclick="'generate(\''+item.id+'\', \''+language[item.language]+'\');'" style="margin-left: 3px;">执行翻译</botton>
-			<br/>
-			<a class="layui-btn layui-btn-sm" :href="'/admin/generate/logList.jsp?siteid='+item.siteid" target="_black" style="margin-left: 3px;">查看日志</a>
-		</div>
+		<jsp:include page="/wm/common/list/formSearch_formStart.jsp"></jsp:include>
+		<!-- [tag-5] -->
+		<jsp:include page="/wm/common/list/formSearch_input.jsp">
+			<jsp:param name="iw_label" value="绑定的域名" />
+			<jsp:param name="iw_name" value="domain" />
+		</jsp:include>
+		<jsp:include page="/wm/common/list/formSearch_input.jsp">
+			<jsp:param name="iw_label" value="翻译语种" />
+			<jsp:param name="iw_name" value="language" />
+			<jsp:param name="iw_type" value="select"/>
+		</jsp:include>
+		<input type="hidden" name="siteid" value="<%=request.getParameter("siteid") %>" />
+		<a class="layui-btn" href="javascript:wm.list(1);" style="margin-left: 15px;">搜索</a>
+		</form>
+		<table class="layui-table iw_table">
+			<thead>
+				<tr>
+					<th>编号</th>
+					<th>翻译语种</th>
+					<th>访问域名</th>
+					<th></th>
+					<th style="text-align: center">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="item in list" id="list">
+					<td>{{item.id}}</td>
+					<td>{{language[item.language]}} ({{item.language}})</td>
+					<td>{{item.domain}}</td>
+					<td><span class="siteurl">loading...</span></td>
+					<td style="text-align: center">
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'editItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">编辑</botton>
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'deleteItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">删除</botton>
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'preview(\''+item.id+'\');'" style="margin-left: 3px;">调试预览</botton>
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'fileuploadConfig(\''+item.id+'\', \''+language[item.language]+'\');'" style="margin-left: 3px;">存储设置</botton>
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'generate(\''+item.id+'\', \''+language[item.language]+'\');'" style="margin-left: 3px;">执行翻译</botton>
+						<a class="layui-btn layui-btn-sm"
+						   :href="'/admin/generate/logList.jsp?siteid='+item.siteid" target="_black" style="margin-left: 3px;">查看日志</a>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<!-- 通用分页跳转 -->
+		<jsp:include page="/wm/common/page.jsp"></jsp:include>
 	</div>
 </div>
+
 	
-<!-- 通用分页跳转 -->
-<jsp:include page="/wm/common/page.jsp"></jsp:include>
+
 
 <script src="/fileupload-config.js"></script>
 <script type="text/javascript">
@@ -358,7 +417,7 @@ function fileuploadConfig(id, name) {
 
 
 <!-- 底部说明 - start -->
-<div style="padding: 20px;color: gray;">
+<div style="padding: 0 20px 20px;color: gray;box-sizing: border-box">
 	<div>提示:</div>
 	<div><b>调试预览</b>：对某个页面进行翻译预览。它的作用是进行精细的调控，比如翻译之后的页面感觉某个地方不合适，或者某个图片没翻译好，可以通过此来进行调试，因为它可以针对某一个具体的页面进行调试预览，速度会很快，十来秒就能取得翻译的结果，而不需要生成整个网站后在取查看某个页面的翻译结果。
 		<br/>

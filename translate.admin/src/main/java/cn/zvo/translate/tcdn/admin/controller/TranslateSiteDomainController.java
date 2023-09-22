@@ -33,6 +33,7 @@ import cn.zvo.translate.tcdn.core.entity.TranslateSiteDomain;
 import cn.zvo.translate.tcdn.core.entity.TranslateSiteSet;
 import cn.zvo.translate.tcdn.core.util.TranslateApiRequestUtil;
 import cn.zvo.translate.tcdn.generate.Task;
+import cn.zvo.translate.tcdn.generate.vo.WaitingProgressVO;
 
 /**
  * 翻译站点绑定域名相关
@@ -403,16 +404,16 @@ public class TranslateSiteDomainController extends BaseController {
 		if(entity.getUserid() - getUserId() != 0) {
 			return error("信息不属于您，无权操作");
 		}
-		
+
+		WaitingProgressVO waitVO = Task.waitingProgress(entity.getSiteid());
+		if(waitVO.getRank() > -1) {
+			return error("您当前有等待翻译的任务，请等待几分钟，您之前的任务执行完成后，再提交新任务");
+		}
 		
 		TranslateSite site = sqlService.findById(TranslateSite.class, entity.getSiteid());
 		
 		List<TranslateSiteDomain> domainList = new ArrayList<TranslateSiteDomain>();
 		domainList.add(entity);
-		
-		if(Task.isHaveWaitTask()) {
-			return error("当前有等待翻译的其他任务，请过几分钟尝试");
-		}
 		
 		Task.add(site, domainList);
 		Task.execute();

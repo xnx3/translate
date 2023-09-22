@@ -136,6 +136,7 @@ public class TranslateApiRequestUtil {
 			params.put("dynamic", dynamic);
 			params.put("language", language);
 			params.put("executeJs", executeJs);
+			
 //			ConsoleUtil.debug(JSONObject.fromObject(params).toString()+", api:"+apiDomain+"api");
 			Response res = http.post(apiDomain+"api", params);
 			//ConsoleUtil.debug(res.toString());

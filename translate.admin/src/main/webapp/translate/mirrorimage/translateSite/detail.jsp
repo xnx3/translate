@@ -263,14 +263,17 @@ loadWaitingProgressData();
 					<td>{{item.id}}</td>
 					<td>{{language[item.language]}} ({{item.language}})</td>
 					<td>{{item.domain}}</td>
-					<td><span class="siteurl">loading...</span></td>
+					<td>
+						<span class="siteurl">loading...</span>
+						<input type="text" value="/" :id="'tiaoshiyulan_path_'+item.id" title="您可在次填写调试预览的网页，比如填写 / 那会直接访问首页，填写比如 /a.html 、 /a/b/123.html" />
+						<botton class="layui-btn layui-btn-sm"
+								:onclick="'preview(\''+item.id+'\');'" style="margin-left: 3px;">调试预览</botton>
+					</td>
 					<td style="text-align: center">
 						<botton class="layui-btn layui-btn-sm"
 								:onclick="'editItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">编辑</botton>
 						<botton class="layui-btn layui-btn-sm"
 								:onclick="'deleteItem(\'' + item.id + '\', \'id=' + item.id + '\');'" style="margin-left: 3px;">删除</botton>
-						<botton class="layui-btn layui-btn-sm"
-								:onclick="'preview(\''+item.id+'\');'" style="margin-left: 3px;">调试预览</botton>
 						<botton class="layui-btn layui-btn-sm"
 								:onclick="'fileuploadConfig(\''+item.id+'\', \''+language[item.language]+'\');'" style="margin-left: 3px;">存储设置</botton>
 						<botton class="layui-btn layui-btn-sm"
@@ -362,7 +365,7 @@ function deleteItem(id, name) {
  * @param id domain.id
  */
 function preview(id) {
-	var path = document.getElementById('tiaoshiyulan_path').value;
+	var path = document.getElementById('tiaoshiyulan_path_'+id).value;
 	if(path.length == ''){
 		path = '/';
 	}

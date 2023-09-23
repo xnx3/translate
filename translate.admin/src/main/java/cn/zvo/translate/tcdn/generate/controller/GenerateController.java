@@ -75,6 +75,12 @@ public class GenerateController extends BaseController {
 		
 		TranslateSite site = sqlService.findById(TranslateSite.class, domain.getSiteid());
 		
+		//判断是否允许提交翻译任务
+		WaitingProgressVO wp = Task.waitingProgress(site.getId());
+		if(wp.getRank() > -1) {
+			return error("当前任务池中已经有您的任务在等待执行了，请等待执行完毕后再提交新任务！您只有之前提交的任务执行完成了，才能继续提交新任务！<br/>友情提示：如果您感觉某个页面翻译的不合适，调整后再试试效果是否合适，您可以使用调试预览能力来进行针对这个指定的页面快速调试。");
+		}
+		
 		//取 sitemap.xml
 //		if(false) {
 		boolean sitemapFind = false;

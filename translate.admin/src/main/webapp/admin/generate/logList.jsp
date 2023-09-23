@@ -12,28 +12,6 @@
 }
 </style>
 
-<jsp:include page="/wm/common/list/formSearch_formStart.jsp"></jsp:include>
-<!-- [tag-5] -->
-<!-- 
-<jsp:include page="/wm/common/list/formSearch_input.jsp">
-	<jsp:param name="iw_label" value="主键" />
-	<jsp:param name="iw_name" value="id" />
-</jsp:include>
-<jsp:include page="/wm/common/list/formSearch_input.jsp">
-	<jsp:param name="iw_label" value="站点名字" />
-	<jsp:param name="iw_name" value="name" />
-</jsp:include>
- -->
-<jsp:include page="/wm/common/list/formSearch_input.jsp">
-	<jsp:param name="iw_label" value="源站网址" />
-	<jsp:param name="iw_name" value="url" />
-</jsp:include>
-
-<a class="layui-btn" href="javascript:wm.list(1);" style="margin-left: 15px;">搜索</a>
-
-<a href="javascript:editItem(0, '');" class="layui-btn layui-btn-normal" style="float: right; margin-right: 10px;">添加</a>
-</form>
-
 <table class="layui-table iw_table">
 	<thead>
 		<tr>

@@ -8,6 +8,7 @@ import com.xnx3.j2ee.service.SmsService;
 import com.xnx3.j2ee.service.SqlService;
 import com.xnx3.j2ee.service.UserService;
 import com.xnx3.j2ee.util.ActionLogUtil;
+import com.xnx3.j2ee.util.ConsoleUtil;
 import com.xnx3.j2ee.vo.BaseVO;
 
 import cn.zvo.translate.tcdn.superadmin.Global;
@@ -102,24 +103,32 @@ public class PhoneRegController extends BasePluginController{
 	public BaseVO create(HttpServletRequest request,
 			@RequestParam(value = "username", required = false , defaultValue="") String username,
 			@RequestParam(value = "password", required = false , defaultValue="") String password,
-			@RequestParam(value = "phone", required = false , defaultValue="") String phone
+			@RequestParam(value = "phone", required = false , defaultValue="") String phone,
+			@RequestParam(value = "code", required = false , defaultValue="") String code
 			){
 		username = StringUtil.filterXss(username);
 		phone = filter(phone);
 
+		//判断用户的短信验证码
+		BaseVO verifyVO = smsService.verifyPhoneAndCode(phone, code, SmsLog.TYPE_REG, 300);
+		if(verifyVO.getResult() - BaseVO.FAILURE == 0){
+			return verifyVO;
+		}
+		
 		User user = new User();
 		user.setUsername(username);
 		user.setPassword(password);
-		user.setReferrerid(getUserId());
 		user.setAuthority(Global.ROLE_ID_SITEADMIN+"");
 		BaseVO vo = userService.createUser(user, request);
 		if(vo.getResult() - BaseVO.FAILURE == 0){
 			//创建用户失败
 			return vo;
 		}
-
+		
 		//创建用户成功
-
+		ConsoleUtil.log(user.toString());
+		ConsoleUtil.log("userid:"+vo.getInfo());
+		
 		//设置当前用户为登录用户
 		userService.loginForUserId(request, user.getId());
 

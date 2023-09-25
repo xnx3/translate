@@ -24,7 +24,7 @@
 	</div>
 	
 	<div class="layui-form-item" id="item_domain">
-		<label class="layui-form-label">访问域名</label>
+		<label class="layui-form-label" id="domain_table_fangwen">访问域名</label>
 		<div class="layui-input-block">
 			<input type="text" id="domain" name="domain" class="layui-input" value="" placeholder="填写如: english.zvo.cn" />			
 		</div>
@@ -100,7 +100,14 @@ if(id != null && id > 0){
 	//新增
 	
 }
-	
+
+//帮助，复制的 site/detail.jsp
+msg.tip({
+	id:'domain_table_fangwen',
+	width:'320px',
+	direction:'bottom',
+	text:'生成这个翻译的新网站后，访问的域名（或路径）填写如：<br/>english.xxxxxx.com<br/>www.xxxxx.com/english/<br/>这里建议采用第一种，域名的方式。如果是采用第二种路径的方式，那么通过存储方式推送时，你应该考虑好要推送到哪里去才能被访问到<br/>这里如果你不好理解，你都可以填写个 123 都可以，都可以正常进行翻译。'
+});
 </script>
 
 <jsp:include page="/wm/common/foot.jsp"></jsp:include>

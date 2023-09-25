@@ -7,10 +7,10 @@
 <jsp:include page="/wm/common/head.jsp">
 	<jsp:param name="title" value="免费开通"/>
 </jsp:include>
-<script src="${STATIC_RESOURCE_PATH}js/admin/commonedit.js?v=<%=Global.VERSION %>"></script>
+<script src="<%=Global.get("STATIC_RESOURCE_PATH") %>js/admin/commonedit.js?v=<%=Global.VERSION %>"></script>
 
-<link rel="stylesheet" href="${STATIC_RESOURCE_PATH}plugin/login/css/style.css" type="text/css" media="all" />
-<link rel="stylesheet" href="${STATIC_RESOURCE_PATH}plugin/login/css/font-awesome.min.css" type="text/css" media="all">
+<link rel="stylesheet" href="<%=Global.get("STATIC_RESOURCE_PATH") %>plugin/login/css/style.css" type="text/css" media="all" />
+<link rel="stylesheet" href="<%=Global.get("STATIC_RESOURCE_PATH") %>plugin/login/css/font-awesome.min.css" type="text/css" media="all">
 
 <style>
 	#block{overflow: hidden}
@@ -50,10 +50,9 @@
 					color: #fff;
 					letter-spacing: 5px;
 					text-align: center;
-				">免费开通网站</span></h1>
+				">免费开通</span></h1>
 				<form action="#" method="post" action="/plugin/phoneReg/create.json">
 					<input type="text" class="text" name="username" placeholder="请输入用户名" required="" autofocus>
-					<input type="email" class="text" name="email" placeholder="请输入邮箱（用于接收提醒）" required="" autofocus>
 					<input type="password" class="password" name="password" placeholder="请输入您的密码" required="" autofocus>
 					<input type="text" class="text" id="phone" name="phone" placeholder="请输入您的手机号" required="" autofocus>
 					<div style="position: relative">
@@ -70,12 +69,12 @@
 
 <%--新的手机号开通页面end--%>
 
-<script src="/plugin/login/js/jquery.min.js"></script>
+<script src="<%=Global.get("STATIC_RESOURCE_PATH") %>plugin/login/js/jquery.min.js"></script>
 <!-- //js -->
 <script>
-	var STATIC_RESOURCE_PATH = '${STATIC_RESOURCE_PATH}';
+	var STATIC_RESOURCE_PATH = '<%=Global.get("STATIC_RESOURCE_PATH") %>';
 </script>
-<script src="/plugin/login/js/jquery.vide.js"></script>
+<script src="<%=Global.get("STATIC_RESOURCE_PATH") %>plugin/login/js/jquery.vide.js"></script>
 
 <script>
 //Demo
@@ -90,8 +89,9 @@ layui.use('form', function(){
 		msg.close();
        	var obj = JSON.parse(result);
        	if(obj.result == '1'){
+       		wm.token.set(obj.info);
        		msg.success('创建成功', function(){
-       			window.location.href='/admin/index/index.do';
+       			window.location.href='/login.do';
        		});
        	}else if(obj.result == '0'){
        		msg.failure(obj.info);

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.7.1.20230920',
+	version:'2.8.1.20230927',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3318,11 +3318,13 @@ var translate = {
 		},
 		//执行图片替换操作，将原本的图片替换为跟翻译语种一样的图片
 		execute:function(){
+			//console.log(translate.images.queues);
 			if(Object.keys(translate.images.queues).length < 1){
 				//如果没有，那么直接取消图片的替换扫描
 				return;
 			}
 			
+			/*** 寻找img标签中的图片 ***/
 			var imgs = document.getElementsByTagName('img');
 			for(var i = 0; i < imgs.length; i ++){
 				var img = imgs[i];
@@ -3346,7 +3348,8 @@ var translate = {
 						*/
 						
 						//没在忽略元素里，可以替换
-						img.src = newImage.replace(new RegExp('{language}','g'), translate.to);
+						newImage = newImage.replace(new RegExp('{language}','g'), translate.to);
+						img.src = newImage;
 					}
 				}
 				
@@ -3354,19 +3357,49 @@ var translate = {
 			
 			
 			/********** 还要替换style中的背景图 */
-			/*
-			
-				var elements = document.querySelectorAll('[style*="background-image"], [style*="background"]');
-				for (var i = 0; i < elements.length; i++) {
-				    var style = window.getComputedStyle(elements[i]);
-				    var backgroundImage = style.getPropertyValue('background-image');
-				    if (backgroundImage !== 'none') {
-				        console.log(backgroundImage);
-				    }
+			// 获取当前网页中所有的元素
+			var elems = document.getElementsByTagName("*");
+			// 遍历每个元素，检查它们是否有背景图
+			for (var i = 0; i < elems.length; i++) {
+				var elem = elems[i];
+				// 获取元素的计算后样式
+				var style = window.getComputedStyle(elem, null);
+				// 获取元素的背景图URL
+				var bg = style.backgroundImage;
+				// 如果背景图不为空，打印出来
+				if (bg != "none") {
+					//console.log(bg);
+					var old_img = translate.images.gainCssBackgroundUrl(bg);
+					//console.log("old_img:"+old_img);
+					if(typeof(translate.images.queues[old_img]) != 'undefined'){
+						//存在
+						var newImage = translate.images.queues[old_img];
+						newImage = newImage.replace(new RegExp('{language}','g'), translate.to);
+						//更换翻译指定图像
+						elem.style.backgroundImage='url("'+newImage+'")';
+					}else{
+						//console.log('发现图像'+old_img+', 但未做语种适配');
+					}
 				}
+			}
 
-			*/
+
+
 			
+		},
+		//取css中的背景图，传入 url("https://xxx.com/a.jpg")  返回里面单纯的url
+		gainCssBackgroundUrl:function(str){
+			// 使用indexOf方法，找到第一个双引号的位置
+			var start = str.indexOf("\"");
+			// 使用lastIndexOf方法，找到最后一个双引号的位置
+			var end = str.lastIndexOf("\"");
+			// 如果找到了双引号，使用substring方法，截取中间的内容
+			if (start != -1 && end != -1) {
+				var url = str.substring(start + 1, end); // +1是为了去掉双引号本身
+				//console.log(url); // https://e-assets.gitee.com/gitee-community-web/_next/static/media/mini_app.2e6b6d93.jpg!/quality/100
+				return url;
+			}
+			return str;
 		}
 	},
 	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现

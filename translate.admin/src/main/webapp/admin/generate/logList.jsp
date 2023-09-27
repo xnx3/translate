@@ -23,8 +23,8 @@
 			<!-- <th>源站语种</th> -->
 			<th>翻译为</th>
 			<th>翻译页面</th>
-			<th>时间</th>
 			<th>执行结果</th>
+			<th>时间</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -36,8 +36,15 @@
 			<!-- <td>{{item.local_language}}</td> -->
 			<td>{{item.target_language}}</td>
 			<td>{{item.page_path}}</td>
+			
+			<td v-if="item.result == null">
+				{{item.info}}
+			</td>
+			<td v-else>
+				{{item.result}}({{item.attempts_number}})
+			</td>
+			
 			<td>{{formatTime(item.time,'M-D h:m:s')}}</td>
-			<td>{{item.result}}({{item.attempts_number}})</td>
 		</tr>
 	</tbody>
 </table>

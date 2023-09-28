@@ -3193,21 +3193,23 @@ var translate = {
 					if(storage_hostQueue == null || typeof(storage_hostQueue) == 'undefined'){
 						//本地存储中没有，也就是之前没设置过，是第一次用，那么直接讲 translate.request.api.host 赋予之
 						//translate.request.api.host
-
+						//console.log(typeof(translate.request.api.host))
 						if(typeof(translate.request.api.host) == 'string'){
-							//单个，那么直接赋予
-							translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
-						}else{
-							//console.log(translate.request.api.host)
-							//数组形态，多个，v2.8.2 增加多个，根据优先级返回
-							translate.request.speedDetectionControl.hostQueue = [];
-							for(var i = 0; i<translate.request.api.host.length; i++){
-								var h = translate.request.api.host[i];
-								//console.log(h);
-								translate.request.speedDetectionControl.hostQueue[i] = {"host":h, time:0 };
-							}
-							console.log(translate.request.speedDetectionControl.hostQueue);
+							//单个，那么赋予数组形式
+							//translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
+							translate.request.api.host = [''+translate.request.api.host];
 						}
+
+						//console.log(translate.request.api.host)
+						//数组形态，多个，v2.8.2 增加多个，根据优先级返回
+						translate.request.speedDetectionControl.hostQueue = [];
+						for(var i = 0; i<translate.request.api.host.length; i++){
+							var h = translate.request.api.host[i];
+							//console.log(h);
+							translate.request.speedDetectionControl.hostQueue[i] = {"host":h, time:0 };
+						}
+						//console.log(translate.request.speedDetectionControl.hostQueue);
+						
 					}else{
 						//storage中有，那么赋予
 						translate.request.speedDetectionControl.hostQueue = JSON.parse(storage_hostQueue);

@@ -201,4 +201,8 @@ translate.execute();//进行翻译
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
+# 感谢赞助
+* [指点云](https://www.zhidianyun.cn/?i125cc1) 赞助服务器，用于开放公共、免费API给大家使用。指点云服务器便宜，性能很不错。  
+*  [小牛翻译](https://niutrans.com/register?userSource=translate-js)  赞助在线翻译接口，小牛翻译提供三百八十多种语种翻译能力，需要的语种，它基本都包含了！  
+* [如果您想参与赞助，可点此查看更多](https://gitee.com/mail_osc/translate/issues/I7OXEQ),如果有没列出来的，您感觉可以对本项目有帮助的，也欢迎联系我的，感谢大家的支持
 

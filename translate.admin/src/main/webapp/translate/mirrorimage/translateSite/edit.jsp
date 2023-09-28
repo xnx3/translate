@@ -60,15 +60,31 @@
 var index = parent.layer.getFrameIndex(window.name); 
 // 获取记录id
 var id = getUrlParams('id');
+
+
+function validateUrl(url) {
+	var reg = /^(https?:\/\/)[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+([a-zA-Z0-9_\/?%&=]*[^\/])?$/;
+	// 获取要检查的字符串
+	var str = "https://www.bing.com/";
+	// 使用test方法，返回一个布尔值，表示字符串是否匹配正则表达式
+	var result = reg.test(url);
+	return result;
+}
+
 	
 /**
  * 保存
  */
 function save() {
-	msg.loading("保存中");
 	// 表单序列化
 	var param = wm.getJsonObjectByForm($("form"));
+	if(!validateUrl(param.url)){
+		msg.alert('源站网址填写格式错误！<br/>格式如：http://www.xxx.com');
+		return;
+	}
+	//console.log(param);
 	
+	msg.loading("保存中");
 	wm.post("/translate/mirrorimage/translateSite/save.json", param, function(data) {
 		msg.close();
 		if (data.result == '1') {

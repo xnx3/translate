@@ -73,7 +73,7 @@ var translate = {
 			}
 			
 			//从服务器加载支持的语言库
-			translate.request.post(translate.request.api.host+translate.request.api.language+'?v='+translate.version, {}, function(data){
+			translate.request.post(translate.request.api.language, {}, function(data){
 				if(data.result == 0){
 					console.log('load language list error : '+data.info);
 					return;
@@ -1502,7 +1502,7 @@ var translate = {
 			}*/
 
 			/*** 翻译开始 ***/
-			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
+			var url = translate.request.api.translate;
 			var data = {
 				from:lang,
 				to:translate.to,
@@ -2938,7 +2938,7 @@ var translate = {
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
 	//如果使用后，第二次在用，那就优先以用户所选择的为主
 	executeByLocalLanguage:function(){
-		translate.request.post(translate.request.api.host+translate.request.api.ip+'?v='+translate.version, {}, function(data){
+		translate.request.post(translate.request.api.ip, {}, function(data){
 			//console.log(data); 
 			if(data.result == 0){
 				console.log('==== ERROR 获取当前用户所在区域异常 ====');
@@ -3142,35 +3142,220 @@ var translate = {
 			/**
 			 * 翻译接口请求的域名主机 host
 			 * 格式注意前面要带上协议如 https:// 域名后要加 /
+			 * v2.8.2 增加数组形态，如 ['https://api.translate.zvo.cn/','xxxxx'] 
 			 */
-			host:'https://api.translate.zvo.cn/',
+			//host:'https://api.translate.zvo.cn/',
+			host:['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/'],
+			//host的备用接口，格式同host，可以填写多个，只不过这里是数组格式。只有当主 host 无法连通时，才会采用备host来提供访问。如果为空也就是 [] 则是不采用备方案。
+			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口
 			translate:'translate.json', //翻译接口
-			ip:'ip.json' //根据用户当前ip获取其所在地的语种
+			ip:'ip.json', //根据用户当前ip获取其所在地的语种
+			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
+		},
+		/*
+			速度检测控制中心， 检测主备翻译接口的响应速度进行排列，真正请求时，按照排列的顺序进行请求
+			v2.8.2增加	
+			
+			storage存储方面
+			storage存储的key  						存的什么
+			speedDetectionControl_hostQueue			hostQueue
+			speedDetectionControl_hostQueueIndex	当前要使用的是 hostQueue 中的数组下标。如果没有，这里默认视为0
+			speedDetectionControl_lasttime			最后一次执行速度检测的时间戳，13位时间戳
+
+
+			
+		*/
+		speedDetectionControl:{
+			/*
+				翻译的队列，这是根据网络相应的速度排列的，0下标为请求最快，1次之...
+				其格式为：
+					[
+						{
+							"host":"xxxxxxxx",
+							"time":123 			//这里的单位是毫秒
+						},
+						{
+							"host":"xxxxxxxx",
+							"time":123 			//这里的单位是毫秒
+						}
+					]
+			*/
+			hostQueue:[],	
+			hostQueueIndex:-1,	//当前使用的 hostQueue的数组下标，  -1表示还未初始化赋予值，不可直接使用，通过 getHostQueueIndex() 使用
+			
+			//获取 host queue 队列
+			getHostQueue:function(){
+				if(translate.request.speedDetectionControl.hostQueue.length == 0){
+					//还没有，先从本地存储中取，看之前是否已经设置过了
+					// 只有经过真正的网络测速后，才会加入 storage 的 hostQueue
+					var storage_hostQueue = translate.storage.get('speedDetectionControl_hostQueue');
+					if(storage_hostQueue == null || typeof(storage_hostQueue) == 'undefined'){
+						//本地存储中没有，也就是之前没设置过，是第一次用，那么直接讲 translate.request.api.host 赋予之
+						//translate.request.api.host
+
+						if(typeof(translate.request.api.host) == 'string'){
+							//单个，那么直接赋予
+							translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
+						}else{
+							//console.log(translate.request.api.host)
+							//数组形态，多个，v2.8.2 增加多个，根据优先级返回
+							translate.request.speedDetectionControl.hostQueue = [];
+							for(var i = 0; i<translate.request.api.host.length; i++){
+								var h = translate.request.api.host[i];
+								//console.log(h);
+								translate.request.speedDetectionControl.hostQueue[i] = {"host":h, time:0 };
+							}
+							console.log(translate.request.speedDetectionControl.hostQueue);
+						}
+					}else{
+						//storage中有，那么赋予
+						translate.request.speedDetectionControl.hostQueue = JSON.parse(storage_hostQueue);
+						//console.log(storage_hostQueue);
+						//console.log(translate.request.speedDetectionControl.hostQueue[0].time);
+					}
+
+
+					/*
+						当页面第一次打开初始化这个时才会进行测速，另外测速也是要判断时间的，五分钟一次
+						进行测速
+					*/
+					var lasttime = translate.storage.get('speedDetectionControl_lasttime');
+					if(lasttime == null || typeof(lasttime) == 'undefined'){
+						lasttime = 0;
+					}
+					var updateTime = 60000;	//1分钟检测一次
+					if(new Date().getTime() - lasttime > updateTime){
+						translate.request.speedDetectionControl.checkResponseSpeed();
+					}
+					
+				}
+				
+
+				return translate.request.speedDetectionControl.hostQueue;
+			},
+
+			//测试响应速度
+			checkResponseSpeed:function(){
+				var headers = {
+					'content-type':'application/x-www-form-urlencoded',
+				};
+
+
+				translate.request.speedDetectionControl.checkHostQueue = []; //用于实际存储
+				translate.request.speedDetectionControl.checkHostQueueMap = []; //只是map，通过key取值，无其他作用
+
+				for(var i = 0; i < translate.request.api.host.length; i++){
+					var host = translate.request.api.host[i];
+					// 获取当前时间的时间戳
+					translate.request.speedDetectionControl.checkHostQueueMap[host] = {
+						start:new Date().getTime()
+					};
+
+					
+					try{
+						translate.request.send(
+							host+translate.request.api.connectTest,
+							{host:host},
+							function(data){
+								var host = data.info;
+								var map = translate.request.speedDetectionControl.checkHostQueueMap[host];
+								var time = new Date().getTime() - map.start;
+
+								translate.request.speedDetectionControl.checkHostQueue.push({"host":host, "time":time });
+								//按照time进行排序
+								translate.request.speedDetectionControl.checkHostQueue.sort((a, b) => a.time - b.time);
+
+								//存储到 storage 持久化
+								translate.storage.set('speedDetectionControl_hostQueue',JSON.stringify(translate.request.speedDetectionControl.checkHostQueue));
+								translate.storage.set('speedDetectionControl_lasttime', new Date().getTime());
+
+								translate.request.speedDetectionControl.hostQueue = translate.request.speedDetectionControl.checkHostQueue;
+								//console.log(translate.request.speedDetectionControl.hostQueue);
+							},
+							'post',
+							true,
+							headers,
+							function(data){
+								//console.log('eeerrr');
+							},
+							false
+						);
+					}catch(e){
+						//console.log('e0000');
+						//console.log(e);
+						//time = 300000; //无法连接的，那么赋予 300 秒吧
+					}
+
+				}
+				
+			},
+
+			//获取当前使用的host的数组下标
+			getHostQueueIndex:function(){
+				if(translate.request.speedDetectionControl.hostQueueIndex < 0){
+					//页面当前第一次使用，赋予值
+					//先从 storage 中取
+					var storage_index = translate.storage.get('speedDetectionControl_hostQueueIndex');
+					if(typeof(storage_index) == 'undefined' || storage_index == null){
+						//存储中不存在，当前用户（浏览器）第一次使用，默认赋予0
+						translate.request.speedDetectionControl.hostQueueIndex = 0;
+						translate.storage.set('speedDetectionControl_hostQueueIndex',0);
+					}else{
+						translate.request.speedDetectionControl.hostQueueIndex = storage_index;
+					}
+				}
+				return translate.request.speedDetectionControl.hostQueueIndex;
+			},
+
+			//获取当前要使用的host
+			getHost:function(){
+				var queue = translate.request.speedDetectionControl.getHostQueue();
+				var queueIndex = translate.request.speedDetectionControl.getHostQueueIndex();
+				if(queue.length > queueIndex){
+					//正常，没有超出越界
+					
+				}else{
+					//异常，下标越界了！，固定返回最后一个
+					console.log('异常，下标越界了！index：'+queueIndex);
+					queueIndex = queue.length-1;
+				}
+				//console.log(queueIndex);
+				return queue[queueIndex].host;
+			},
+
+		},
+		//生成post请求的url
+		getUrl:function(path){
+			var currentHost = translate.request.speedDetectionControl.getHost();
+			var url = currentHost+path+'?v='+translate.version;
+			//console.log('url: '+url);
+			return url;
 		},
 		/**
 		 * post请求
-		 * @param url 请求的接口URL，传入如 http://www.xxx.com/a.php
+		 * @param path 请求的path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * @param data 请求的参数数据，传入如 {"goodsid":"1", "author":"管雷鸣"}
 		 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
 		 */
-		post:function(url, data, func){
+		post:function(path, data, func){
 			var headers = {
 				'content-type':'application/x-www-form-urlencoded',
 			};
-			this.send(url, data, func, 'post', true, headers, null);
+			this.send(path, data, func, 'post', true, headers, null, true);
 		},
 		/**
 		 * 发送请求
-		 * url 请求的url
+		 * url 请求的url或者path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * data 请求的数据，如 {"author":"管雷鸣",'site':'www.guanleiming.com'} 
 		 * func 请求完成的回调，传入如 function(data){}
 		 * method 请求方式，可传入 post、get
 		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求
 		 * headers 设置请求的header，传入如 {'content-type':'application/x-www-form-urlencoded'};
 		 * abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}
+		 * showErrorLog 是否控制台打印出来错误日志，true打印， false 不打印
 		 */
-		send:function(url, data, func, method, isAsynchronize, headers, abnormalFunc){
+		send:function(url, data, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
 			//post提交的参数
 			var params = '';
 			if(data != null){
@@ -3181,7 +3366,15 @@ var translate = {
 					params = params + index + '=' + data[index];
 				}
 			}
-			
+
+
+			if(url.indexOf('https://') == 0 || url.indexOf('http://') == 0){
+				//采用的url绝对路径
+			}else{
+				//相对路径，拼接上host
+				url = translate.request.getUrl(url);
+			}
+
 			var xhr=null;
 			try{
 				xhr=new XMLHttpRequest();
@@ -3214,13 +3407,16 @@ var translate = {
 			        		func(json);
 			        	}
 			        }else{
-			        	console.log('------- translate.js service api response error --------');
-			        	console.log('    http code : '+xhr.status);
-			        	console.log('    response : '+xhr.response);
-			        	console.log('    request url : '+url);
-			        	console.log('    request data : '+JSON.stringify(data));
-			        	console.log('    request method : '+method);
-			        	console.log('---------------------- end ----------------------');
+			        	if(showErrorLog){
+				        	console.log('------- translate.js service api response error --------');
+				        	console.log('    http code : '+xhr.status);
+				        	console.log('    response : '+xhr.response);
+				        	console.log('    request url : '+url);
+				        	console.log('    request data : '+JSON.stringify(data));
+				        	console.log('    request method : '+method);
+				        	console.log('---------------------- end ----------------------');
+			        	}
+			        	
 			        	if(abnormalFunc != null){
 			        		abnormalFunc(xhr);
 			        	}
@@ -3253,7 +3449,7 @@ var translate = {
 				texts = [texts];
 			}
 
-			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
+			var url = translate.request.api.translate;
 			var data = {
 				from:translate.language.getLocal(),
 				to: translate.language.getCurrent(),
@@ -3471,7 +3667,7 @@ var translate = {
 			let translateText = window.getSelection().toString();
 
 			//简单Copy原有代码了
-			var url = translate.request.api.host+translate.request.api.translate+'?v='+translate.version;
+			var url = translate.request.api.translate
 			var data = {
 				from:translate.language.getLocal(),
 				to:translate.to,

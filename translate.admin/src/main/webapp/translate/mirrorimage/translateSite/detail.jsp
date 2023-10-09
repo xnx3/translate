@@ -471,6 +471,7 @@ function fileuploadConfig(id, name) {
  		$.post('/translate/generate/generate.json?domainid=' + id, function(data) {
  			// 关闭“删除中”的等待提示
  			msg.close();
+ 			msg.close();
  			if(data.result == '1') {
  				msg.alert(data.info);
  				// 刷新当前页

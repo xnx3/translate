@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.8.2.20230928',
+	version:'2.8.3.20231009',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1509,6 +1509,7 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
+			//console.log('url-'+url)
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				if(data.result == 0){
@@ -3145,7 +3146,7 @@ var translate = {
 			 * v2.8.2 增加数组形态，如 ['https://api.translate.zvo.cn/','xxxxx'] 
 			 */
 			//host:'https://api.translate.zvo.cn/',
-			host:['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/'],
+			host:['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/','https://apihwcdn.translate.zvo.cn/','https://apiqiniucdn.translate.zvo.cn/'],
 			//host的备用接口，格式同host，可以填写多个，只不过这里是数组格式。只有当主 host 无法连通时，才会采用备host来提供访问。如果为空也就是 [] 则是不采用备方案。
 			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口
@@ -3217,6 +3218,7 @@ var translate = {
 						//console.log(translate.request.speedDetectionControl.hostQueue[0].time);
 					}
 
+					//console.log(translate.request.speedDetectionControl.hostQueue)
 
 					/*
 						当页面第一次打开初始化这个时才会进行测速，另外测速也是要判断时间的，五分钟一次
@@ -3246,6 +3248,11 @@ var translate = {
 
 				translate.request.speedDetectionControl.checkHostQueue = []; //用于实际存储
 				translate.request.speedDetectionControl.checkHostQueueMap = []; //只是map，通过key取值，无其他作用
+
+				if(typeof(translate.request.api.host) == 'string'){
+					//单个，那么赋予数组形式
+					translate.request.api.host = [''+translate.request.api.host];
+				}
 
 				for(var i = 0; i < translate.request.api.host.length; i++){
 					var host = translate.request.api.host[i];
@@ -3313,6 +3320,7 @@ var translate = {
 			//获取当前要使用的host
 			getHost:function(){
 				var queue = translate.request.speedDetectionControl.getHostQueue();
+				//console.log(queue);
 				var queueIndex = translate.request.speedDetectionControl.getHostQueueIndex();
 				if(queue.length > queueIndex){
 					//正常，没有超出越界
@@ -3369,6 +3377,7 @@ var translate = {
 				}
 			}
 
+			
 
 			if(url.indexOf('https://') == 0 || url.indexOf('http://') == 0){
 				//采用的url绝对路径
@@ -3750,8 +3759,7 @@ var nodeuuid = {
 		return uuid;
 	}
 }
-
-console.log('Two lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate');
+console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
 
 //这个只是v1使用到
 try{

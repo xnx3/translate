@@ -277,6 +277,8 @@ public class TranslateController{
 			params.put("source", "cache"); //翻译来源-缓存
 		}
 		
+		params.put("cache", hash+"_"+to+"_.txt");	
+		params.put("to", to);
 		LogUtil.add(params);
 		
 

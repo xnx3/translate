@@ -8,6 +8,8 @@ import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import com.beust.jcommander.internal.Console;
 import com.xnx3.BaseVO;
 import com.xnx3.DateUtil;
 import com.xnx3.FileUtil;
@@ -33,7 +35,7 @@ public class ChromeUtil {
 	private ChromeDriver driver;
 	static Map<String, String> headers;
 	
-	//这俩在application.properties配置
+	//这俩在application.properties配置. 支持 {this} 标识当前路径，会替换为如： E:\abc\
 	static String chromePath;
 	static String chromeDriverPath;
 	
@@ -41,8 +43,20 @@ public class ChromeUtil {
 			+ "consolelogDiv.className=\"translate_consoleLog ignore\"; consolelogDiv.style.display='none'; consolelogDiv.innerHTML = str; try{ document.getElementsByTagName('html')[0].appendChild(consolelogDiv); }catch (ce){ } } };";
 	public static String translateCoverJs = "";
 	static {
+		
 		chromePath = ApplicationPropertiesUtil.getProperty("chrome.path");
 		chromeDriverPath=ApplicationPropertiesUtil.getProperty("chrome.driver.path");
+		if(chromePath == null) {
+			ConsoleUtil.error("application.properties not find : chrome.path");
+		}else {
+			chromePath.replaceAll("\\{this\\}", SystemUtil.getCurrentDir());
+		}
+		if(chromeDriverPath == null) {
+			ConsoleUtil.error("application.properties not find : chrome.driver.path");
+		}else {
+			chromeDriverPath.replaceAll("\\{this\\}", SystemUtil.getCurrentDir());
+		}
+		
 		ConsoleUtil.info("chrome.path:"+chromePath);
 		ConsoleUtil.info("chrome.driver.path:"+chromeDriverPath);
 		

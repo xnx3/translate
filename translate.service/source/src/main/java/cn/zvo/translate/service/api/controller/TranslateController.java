@@ -188,6 +188,7 @@ public class TranslateController{
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
 		params.put("method", "translate.json");
 		params.put("size", size);
+		params.put("referer", request.getHeader("referer"));
 		
 		//先从缓存中取
 		String hash = null;

@@ -5,6 +5,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.stereotype.Component;
 import com.xnx3.ScanClassUtil;
 
@@ -43,15 +45,15 @@ public class TranslateManage {
 	 * 获取当前在使用的翻译接口
 	 * @return 如果返回null，则是没有使用
 	 */
-	public static ServiceInterface getServiceInterface(HttpServletRequest request) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
+	public static ServiceInterface getServiceInterface(HttpServletRequest request, HttpServletResponse response) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
 		for (int i = 0; i < classList.size(); i++) {
 			Class<?> c = classList.get(i);
 			Object invokeReply = null;
 			invokeReply = c.newInstance();
 			//运用newInstance()来生成这个新获取方法的实例
-			Method m = c.getMethod("getServiceInterface",new Class[]{HttpServletRequest.class});	//获取要调用的init方法
+			Method m = c.getMethod("getServiceInterface",new Class[]{HttpServletRequest.class, HttpServletResponse.class});	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
-			Object o = m.invoke(invokeReply, new Object[]{request});
+			Object o = m.invoke(invokeReply, new Object[]{request, response});
 			if(o != null) {
 				return (ServiceInterface) o;
 			}
@@ -80,15 +82,15 @@ public class TranslateManage {
 	 * @param refererDomain 调用这个接口的来源域名，也就是哪个网页上调用的这个翻译接口，这里传入的如 abc.zvo.cn 域名格式
 	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
 	 */
-	public static TranslateResultVO before(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
+	public static TranslateResultVO before(HttpServletRequest request,HttpServletResponse response, String from, String to, JSONArray textArray, long size, String refererDomain) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException{
 		for (int i = 0; i < classList.size(); i++) {
 			Class<?> c = classList.get(i);
 			Object invokeReply = null;
 			invokeReply = c.newInstance();
 			//运用newInstance()来生成这个新获取方法的实例
-			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class });	//获取要调用的init方法
+			Method m = c.getMethod("before",new Class[]{HttpServletRequest.class, HttpServletResponse.class, String.class, String.class, JSONArray.class, long.class, String.class });	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
-			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain});
+			Object o = m.invoke(invokeReply, new Object[]{request, response, from, to, textArray, size, refererDomain});
 			if(o != null) {
 				return (TranslateResultVO) o;
 			}
@@ -119,15 +121,15 @@ public class TranslateManage {
 	 * @param isCache 当前翻译是否是走的缓存。 ture 是通过缓存， false不是通过缓存，也就是通过api翻译接口
 	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
 	 */
-	public static TranslateResultVO after(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain, boolean isCache, JSONArray translateArray)throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException {
+	public static TranslateResultVO after(HttpServletRequest request,HttpServletResponse response, String from, String to, JSONArray textArray, long size, String refererDomain, boolean isCache, JSONArray translateArray)throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException {
 		for (int i = 0; i < classList.size(); i++) {
 			Class<?> c = classList.get(i);
 			Object invokeReply = null;
 			invokeReply = c.newInstance();
 			//运用newInstance()来生成这个新获取方法的实例
-			Method m = c.getMethod("after",new Class[]{HttpServletRequest.class, String.class, String.class, JSONArray.class, long.class, String.class, boolean.class, JSONArray.class });	//获取要调用的init方法
+			Method m = c.getMethod("after",new Class[]{HttpServletRequest.class, HttpServletResponse.class, String.class, String.class, JSONArray.class, long.class, String.class, boolean.class, JSONArray.class });	//获取要调用的init方法
 			//动态构造的Method对象invoke委托动态构造的InvokeTest对象，执行对应形参的add方法
-			Object o = m.invoke(invokeReply, new Object[]{request, from, to, textArray, size, refererDomain,isCache, translateArray});
+			Object o = m.invoke(invokeReply, new Object[]{request, response, from, to, textArray, size, refererDomain,isCache, translateArray});
 			if(o != null) {
 				return (TranslateResultVO) o;
 			}

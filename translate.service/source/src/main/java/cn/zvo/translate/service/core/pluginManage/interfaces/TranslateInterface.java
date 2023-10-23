@@ -1,6 +1,7 @@
 package cn.zvo.translate.service.core.pluginManage.interfaces;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
@@ -16,7 +17,7 @@ public interface TranslateInterface {
 	 * 获取当前在使用的翻译接口
 	 * @return 如果返回null，则是没有使用,没有进行重写
 	 */
-	public ServiceInterface getServiceInterface(HttpServletRequest request);
+	public ServiceInterface getServiceInterface(HttpServletRequest request, HttpServletResponse response);
 	
 	/**
 	 * 翻译之前，在进行翻译之前触发
@@ -39,7 +40,7 @@ public interface TranslateInterface {
 	 * @param refererDomain 调用这个接口的来源域名，也就是哪个网页上调用的这个翻译接口，这里传入的如 abc.zvo.cn 域名格式
 	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
 	 */
-	public TranslateResultVO before(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain);
+	public TranslateResultVO before(HttpServletRequest request,HttpServletResponse response, String from, String to, JSONArray textArray, long size, String refererDomain);
 	
 
 	/**
@@ -65,7 +66,7 @@ public interface TranslateInterface {
 	 * @param translateArray 翻译之后的结果，跟 textArray 对应
 	 * @return TranslateResultVO 如果result= failure ，那么翻译接口不会再往下执行， 将这个 vo 返回。
 	 */
-	public TranslateResultVO after(HttpServletRequest request, String from, String to, JSONArray textArray, long size, String refererDomain, boolean isCache, JSONArray translateArray);
+	public TranslateResultVO after(HttpServletRequest request,HttpServletResponse response, String from, String to, JSONArray textArray, long size, String refererDomain, boolean isCache, JSONArray translateArray);
 	
 	
 	

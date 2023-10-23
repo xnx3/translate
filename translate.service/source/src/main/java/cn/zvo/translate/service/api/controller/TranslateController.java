@@ -8,6 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -48,7 +50,7 @@ public class TranslateController{
 	 */
 	@ResponseBody
 	@RequestMapping(value="language.json", method = RequestMethod.POST)
-	public LanguageListVO language(HttpServletRequest request) {
+	public LanguageListVO language(HttpServletRequest request, HttpServletResponse response) {
 		//日志
 		String referer = request.getHeader("referer"); 
 		Map<String, Object> params = new HashMap<String, Object>();
@@ -60,7 +62,7 @@ public class TranslateController{
 		/***** 翻译时，插件拦截，获取使用什么翻译 *****/
 		ServiceInterface service = null;
 		try {
-			service = TranslateManage.getServiceInterface(request);
+			service = TranslateManage.getServiceInterface(request, response);
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
 				| IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -102,7 +104,7 @@ public class TranslateController{
 	 */
 	@ResponseBody
 	@RequestMapping(value="translate.json", method = RequestMethod.POST)
-	public TranslateResultVO translate(HttpServletRequest request,
+	public TranslateResultVO translate(HttpServletRequest request,HttpServletResponse response, 
 			@RequestParam(value = "from", defaultValue = "chinese_simplified") String from,
 			@RequestParam(value = "to", defaultValue = "english") String to,
 			@RequestParam(value = "text", defaultValue = "") String text){
@@ -165,7 +167,7 @@ public class TranslateController{
 		
 		/***** 翻译之前，插件拦截 *****/
 		try {
-			TranslateResultVO beforeVO = TranslateManage.before(request, from, to, textArray, size, domain);
+			TranslateResultVO beforeVO = TranslateManage.before(request, response, from, to, textArray, size, domain);
 			if(beforeVO != null) {
 				if(beforeVO.getResult() - TranslateResultVO.FAILURE == 0) {
 					return beforeVO;
@@ -219,7 +221,7 @@ public class TranslateController{
 			ServiceInterface service = null; 
 			/***** 翻译时，插件拦截，获取使用什么翻译 *****/
 			try {
-				service = TranslateManage.getServiceInterface(request);
+				service = TranslateManage.getServiceInterface(request, response);
 			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException
 					| IllegalArgumentException | InvocationTargetException e) {
 				e.printStackTrace();
@@ -285,7 +287,7 @@ public class TranslateController{
 
 		/***** 翻译之后，插件拦截 *****/
 		try {
-			TranslateResultVO afterVO = TranslateManage.after(request, from, to, textArray, size, domain, cacheTextArray!=null, vo.getText());
+			TranslateResultVO afterVO = TranslateManage.after(request, response, from, to, textArray, size, domain, cacheTextArray!=null, vo.getText());
 			if(afterVO != null) {
 				if(afterVO.getResult() - TranslateResultVO.FAILURE == 0) {
 					return afterVO;

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.8.3.20231009',
+	version:'2.9.1.20231023',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -742,7 +742,7 @@ var translate = {
 		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
 		五维：针对四维的value，  这是个对象， 其中
 				original: 是三维的key的hash的原始文字，也就是 node 中的原始文字。
-				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，二是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
+				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，而是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
 				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语操作后的，待翻译的文字。
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
 		六维：针对五维的 nodes，将各个具体的 node 以及 其操作的 attribute 以数组形式列出
@@ -1203,6 +1203,10 @@ var translate = {
 			//console.log('lang:'+lang)
 			for(var hash in translate.nodeQueue[uuid].list[lang]){
 				//console.log(hash)
+				if(typeof(translate.nodeQueue[uuid].list[lang][hash]) == 'function'){
+					//v2.10增加，避免hash冒出个 Contains 出来导致for中的.length 出错
+					continue;
+				}
 				for(var nodeindex = translate.nodeQueue[uuid].list[lang][hash].nodes.length-1; nodeindex > -1; nodeindex--){
 					//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes);
 					var analyse = translate.element.nodeAnalyse.get(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node);
@@ -1962,6 +1966,8 @@ var translate = {
 		if(node == null || text == null || text.length == 0){
 			return;
 		}
+
+
 		//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
 		//console.log('addNodeToQueue into -- node:'+node+', text:'+text+', attribute:'+attribute);
 		var nodename = translate.element.getNodeName(node);
@@ -1984,6 +1990,7 @@ var translate = {
 		//console.log(node.parentNode);
 		//console.log(node.parentNode.nodeName);
 		
+		//判断其内容是否是 script、style 等编程的文本，如果是，则不进行翻译，不然翻译后还会影响页面正常使用
 		if(translate.util.findTag(text)){
 			//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
 			//console.log(node.parentNode.nodeName);
@@ -2007,102 +2014,280 @@ var translate = {
 		var langs = translate.language.get(text);
 		//console.log('langs');
 		//console.log(langs);
+
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
 		if(typeof(langs[translate.to]) != 'undefined'){
 			delete langs[translate.to];
 		}
 		
-		/* if(this.nodeQueue[lang] == null || typeof(this.nodeQueue[lang]) == 'undefined'){
-			this.nodeQueue[lang] = new Array();
-		} 
-		//创建二维数组
-		if(this.nodeQueue[lang][key] == null || typeof(this.nodeQueue[lang][key]) == 'undefined'){
-			this.nodeQueue[lang][key] = new Array();
-		}
-		*/
-		//console.log(langs);
-		
-		for(var lang in langs) {
-			//创建二维数组， key为语种，如 english
-			if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
-				translate.nodeQueue[uuid]['list'][lang] = new Array();
+		var isWhole = translate.whole.isWhole(node);
+		//console.log('isWhole:'+isWhole+', '+text);
+
+		if(!isWhole){
+			//常规方式，进行语种分类
+
+
+			/* if(this.nodeQueue[lang] == null || typeof(this.nodeQueue[lang]) == 'undefined'){
+				this.nodeQueue[lang] = new Array();
+			} 
+			//创建二维数组
+			if(this.nodeQueue[lang][key] == null || typeof(this.nodeQueue[lang][key]) == 'undefined'){
+				this.nodeQueue[lang][key] = new Array();
 			}
-			//console.log('|'+langs[lang].length);
-			//遍历出该语种下有哪些词需要翻译
-			for(var word_index = 0; word_index < langs[lang].length; word_index++){
-				//console.log('start:'+word_index)
-				//console.log(langs[lang][word_index]);
-				if(typeof(langs[lang][word_index]) == 'undefined' || typeof(langs[lang][word_index]['text']) == 'undefined'){
-					//理论上应该不会，但多加个判断
-					continue;
+			*/
+			//console.log(langs);
+			
+			for(var lang in langs) {
+				//创建二维数组， key为语种，如 english
+				/*
+				放到了 translate.addNodeQueueItem 进行判断
+				if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
+					translate.nodeQueue[uuid]['list'][lang] = new Array();
 				}
-				var word = langs[lang][word_index]['text']; //要翻译的词
-				var beforeText = langs[lang][word_index]['beforeText'];
-				var afterText = langs[lang][word_index]['afterText'];
+				*/
+				//console.log('|'+langs[lang].length);
+				//遍历出该语种下有哪些词需要翻译
+				for(var word_index = 0; word_index < langs[lang].length; word_index++){
+					//console.log('start:'+word_index)
+					//console.log(langs[lang][word_index]);
+					if(typeof(langs[lang][word_index]) == 'undefined' || typeof(langs[lang][word_index]['text']) == 'undefined'){
+						//理论上应该不会，但多加个判断
+						continue;
+					}
+					var word = langs[lang][word_index]['text']; //要翻译的词
+					var beforeText = langs[lang][word_index]['beforeText'];
+					var afterText = langs[lang][word_index]['afterText'];
 
-				//console.log("word:"+word+', bef:'+beforeText+', after:'+afterText)
-				var hash = translate.util.hash(word); 	//要翻译的词的hash
-				//console.log(hash);
-				
-				//创建三维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
-				if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
-					translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
-					
+					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
+
 					/*
-					 * 创建四维数组，存放具体数据
-					 * key: nodes 包含了这个hash的node元素的数组集合，array 多个。其中
-					 		nodes[index]['node'] 存放当前的node元素
-					 		nodes[index]['attribute'] 存放当前hash，也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性。如果这里不为空，那就是针对的属性操作的
-					 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
-					 * beforeText、afterText:见 translate.nodeQueue 的说明
-					 */
-					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
-					translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
-					translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
-					//translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
-					//translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
-					//translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute; //放入 nodes[index][attribute] 元素中
-					
-					//其中key： nodes 是第四维数组，里面存放具体的node元素对象
-					
+					var hash = translate.util.hash(word); 	//要翻译的词的hash					
+					//创建三维数组， key为要通过接口翻译的文本词或句子的 hash （注意并不是node的文本，而是node拆分后的文本）
+					if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
+						translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
+						
+						translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
+						translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
+						translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
+						//translate.nodeQueue[uuid]['list'][lang][hash]['beforeText'] = beforeText;
+						//translate.nodeQueue[uuid]['list'][lang][hash]['afterText'] = afterText;
+						//translate.nodeQueue[uuid]['list'][lang][hash]['attribute'] = attribute; //放入 nodes[index][attribute] 元素中
+						
+						//其中key： nodes 是第四维数组，里面存放具体的node元素对象
+						
 
-					//console.log(translate.nodeQueue[uuid]['list'][lang][hash]);
-				}
-				
-				var isEquals = false; //queue中是否已经加入过了
-				if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
-					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-						if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
-							//相同，那就不用在存入了
-							//console.log('相同，那就不用在存入了')
-							isEquals = true;
-							//console.log(node)
-							continue;
+						//console.log(translate.nodeQueue[uuid]['list'][lang][hash]);
+					}
+					
+					var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node情况）
+					if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
+						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
+							if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
+								//相同，那就不用在存入了
+								//console.log('相同，那就不用在存入了')
+								isEquals = true;
+								//console.log(node)
+								continue;
+							}
 						}
 					}
-				}
-				if(isEquals){
-					//相同，那就不用在存入了
-					continue;
-				}
+					if(isEquals){
+						//相同，那就不用在存入了
+						continue;
+					}
 
-				//往五维数组nodes中追加node元素
-				var nodesIndex = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length;
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] = new Array();
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['node']=node; 
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['attribute']=attribute;
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
-				translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
+					//往五维数组nodes中追加node元素
+					var nodesIndex = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length;
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] = new Array();
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['node']=node; 
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['attribute']=attribute;
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
+					translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
+					
+					*/
 
-				//console.log('end:'+word_index)
+					//console.log('end:'+word_index)
+				}
+				
 			}
 			
+
+
+
+		}else{
+			//直接翻译整个元素内的内容，不再做语种分类，将出现次数最多的语种作为原本语种
+
+			var lang = Object.keys(langs)[0];
+			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
 		}
-		
+
 		
 		
 		//this.nodeQueue[lang][key][this.nodeQueue[lang][key].length]=node; //往数组中追加
+	},
+
+	/*
+
+		服务于上面的 addNodeToQueue ，用于区分不同type情况，进行调用此加入 translate.nodeQueue
+		uuid, node, attribute 这五个参数说明见 addNodeToQueue 的参数说明，相同
+		
+		word 要实际进行翻译的文本，也就是要把它拿来进行通过后端翻译接口进行翻译的文本
+		lang 当前要翻译的文本的语种，如 english
+		beforeText 参见 translate.nodeQueue 注释中第七维的解释
+		afterText 参见 translate.nodeQueue 注释中第七维的解释
+
+	*/
+	addNodeQueueItem:function(uuid, node, word, attribute, lang, beforeText, afterText){
+		//创建二维数组， key为语种，如 english
+		if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
+			translate.nodeQueue[uuid]['list'][lang] = new Array();
+		}
+
+		//var word = text;	//要翻译的文本
+		var hash = translate.util.hash(word); 	//要翻译的文本的hash
+
+		//创建三维数组， key为要通过接口翻译的文本词或句子的 hash 。这里翻译的文本也就是整个node元素的内容了，不用在做拆分了
+		if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
+			translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
+			
+			/*
+			 * 创建四维数组，存放具体数据
+			 * key: nodes 包含了这个hash的node元素的数组集合，array 多个。其中
+			 		nodes[index]['node'] 存放当前的node元素
+			 		nodes[index]['attribute'] 存放当前hash，也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性。如果这里不为空，那就是针对的属性操作的
+			 * key: original 原始的要翻译的词或句子，html加载完成但还没翻译前的文本，用于支持当前页面多次语种翻译切换而无需跳转
+			 * beforeText、afterText:见 translate.nodeQueue 的说明
+			 */
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
+			translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
+			translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
+
+			//其中key： nodes 是第四维数组，里面存放具体的node元素对象
+		}
+
+
+		var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node情况）
+		if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
+			for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
+				if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
+					//相同，那就不用在存入了
+					//console.log('相同，那就不用在存入了')
+					isEquals = true;
+					//console.log(node)
+					continue;
+				}
+			}
+		}
+		if(isEquals){
+			//相同，那就不用在存入了
+			return;
+		}
+
+		//往五维数组nodes中追加node元素
+		var nodesIndex = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length;
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] = new Array();
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['node']=node; 
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['attribute']=attribute;
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
+		
+
+	},
+
+	//全部翻译，node内容全部翻译，而不是进行语种提取，直接对node本身的全部内容拿出来进行直接全部翻译
+	whole:{
+		class:[],
+		tag:[],
+		id:[],
+
+		//运行时出现自检并在浏览器控制台提示性文本。 
+		//在执行翻译，也就是 execute() 时，会调用此方法。
+		executeTip:function(){
+			if(translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0){
+				
+			}else{
+				console.log('您开启了 translate.whole 此次行为避开了浏览器端的文本语种自动识别，而是暴力的直接对某个元素的整个文本进行翻译，很可能会产生非常大的翻译量，请谨慎！有关每日翻译字符的说明，可参考： http://translate.zvo.cn/42557.html ');
+			}
+
+			if(translate.whole.tag.indexOf('html') > -1){
+				console.log('自检发现您设置了 translate.whole.tag 其中有 html ，这个是不生效的，最大只允许设置到 body ');
+			}
+		},
+
+		//当前元素是属于全部翻译定义的元素
+		/*
+			传入一个元素，判断这个元素是否是被包含的。 这个会找父类，看看父类中是否包含在其之中。
+			return true是在其中，false不再其中
+		*/
+		isWhole:function(ele){
+			if(translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0){
+				//未设置，那么直接返回false
+				return false;
+			}
+			if(ele == null || typeof(ele) == 'undefined'){
+				return false;
+			}
+
+			var parentNode = ele;
+			var maxnumber = 100;	//最大循环次数，避免死循环
+			while(maxnumber-- > 0){
+				if(parentNode == null || typeof(parentNode) == 'undefined'){
+					//没有父元素了
+					return false;
+				}
+
+				//判断Tag
+				//var tagName = parentNode.nodeName.toLowerCase(); //tag名字，小写
+				var nodename = translate.element.getNodeName(parentNode).toLowerCase(); //tag名字，小写
+				if(nodename.length > 0){
+					//有nodename
+					if(nodename == 'html' || nodename == '#document'){
+						//上层元素已经是顶级元素了，那肯定就不是了
+						return false;
+					}
+					if(translate.whole.tag.indexOf(nodename) > -1){
+						//发现ignore.tag 当前是处于被忽略的 tag
+						return true;
+					}
+				}
+				
+
+				//判断class name
+				if(parentNode.className != null){
+					var classNames = parentNode.className;
+					if(classNames == null || typeof(classNames) != 'string'){
+						continue;
+					}
+					//console.log('className:'+typeof(classNames));
+					//console.log(classNames);
+					classNames = classNames.trim().split(' ');
+					for(var c_index = 0; c_index < classNames.length; c_index++){
+						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
+							//有效的class name，进行判断
+							if(translate.whole.class.indexOf(classNames[c_index]) > -1){
+								//发现ignore.class 当前是处于被忽略的 class
+								return true;
+							}
+						}
+					}					
+				}
+
+				//判断id
+				if(parentNode.id != null && typeof(parentNode.id) != 'undefined'){
+					//有效的class name，进行判断
+					if(translate.whole.id.indexOf(parentNode.id) > -1){
+						//发现ignore.id 当前是处于被忽略的 id
+						return true;
+					}
+				}
+
+				//赋予判断的元素向上一级
+				parentNode = parentNode.parentNode;
+			}
+
+			return false;
+		}
 	},
 
 	language:{
@@ -2215,6 +2400,19 @@ var translate = {
 		 * str : node.nodeValue 或 图片的 node.alt 等
 		 * 如果语句长，会全句翻译，以保证翻译的准确性，提高可读性。
 		 * 如果语句短，会自动将特殊字符、要翻译的目标语种给过滤掉，只取出具体的要翻译的目标语种文本
+		 *
+		 * 返回 存放不同语言的数组，格式如
+		 *  	[
+					"english":[
+						{beforeText: '', afterText: '', text: 'emoambue hag'},
+						......
+					],
+					"japanese":[
+						{beforeText: ' ', afterText: ' ', text: 'ẽ '},
+						......
+					]
+		 		]
+		 * 		
 		 */
 		get:function(str){
 			//将str拆分为单个char进行判断

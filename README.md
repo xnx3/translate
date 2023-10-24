@@ -21,12 +21,13 @@
 # 特性说明
 * **使用极其简单。** 无需任何前期准备，直接加入几行代码即可拥有多种语言全自动切换能力。
 * **不增加工作量。** 无需另行改造页面本身，也没有各种语言都要单独配置的语言文件，更不需要你对页面本身要显示的文字区域进行代码调用，我认为那样对技术人员实在是太不友好了。而且它也不需要你到某某网站申请什么key，它本身就是开放的，拿来即用。
-* **极其灵活扩展。** 您可指定它只翻译某些指定区域、切换语言时显示下拉框还是通过摆放多个切换语言按钮进行、可指定某些特定的元素不进行翻译忽略……
-* **自动匹配语种。** 自动根据用户所在的国家切换其国家所使用的语种
-* **瞬间翻译能力。** 内置缓存预加载机制，只要翻译过的网页，再次看时会达到瞬间翻译的效果，给用户的感觉就是，这个页面本来就是这种语言的，而不是经过第三方翻译的。
-* **永久免费使用。** 采用Apache-2.0开源协议，您可永久免费使用。
+* **极其灵活扩展。** 您可指定它[只翻译某些指定区域](http://translate.zvo.cn/41548.html)、切换语言时[显示下拉框](http://translate.zvo.cn/41544.html)还是通过[摆放多个切换语言按钮](http://translate.zvo.cn/41549.html)进行、可指定某些特定的元素不进行翻译忽略……
+* [**自动匹配语种。** 自动根据用户所在的国家切换其国家所使用的语种](http://translate.zvo.cn/41550.html)
+* [**瞬间翻译能力。** 内置缓存预加载机制，只要翻译过的网页，再次看时会达到瞬间翻译的效果，给用户的感觉就是，这个页面本来就是这种语言的，而不是经过第三方翻译的。](http://translate.zvo.cn/41750.html)
+* [**永久免费使用。** 采用Apache-2.0开源协议，您可永久免费使用。](https://github.com/xnx3/translate/blob/master/LICENSE)
 * **搜索引擎友好。** 完全不影响你本身网站搜索引擎的收录。爬虫所爬取的网页源代码，它不会对其进行任何改动，你可完全放心。
-* **后端翻译开源。** 在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或您对自有客户希望提供自建高可靠翻译服务场景时，您可将后端翻译接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。 
+* [**后端翻译开源。** 在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或您对自有客户希望提供自建高可靠翻译服务场景时，您可将后端翻译接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。](http://translate.zvo.cn/41160.html) 
+* **多个翻译节点**。每间隔1分钟自动获取一次延迟最小的节点进行接入使用，全面规避全球使用时，某个地域网络波动导致后端翻译接口无法响应的情况发生。自动适配最快节点，做到更好的使用体验！
 
 
 # 在线体验
@@ -78,7 +79,8 @@ translate.execute();//进行翻译
 * [获取当前显示的是什么语种](http://translate.zvo.cn/41761.html)
 * [根据URL传参控制以何种语种显示](http://translate.zvo.cn/41929.html)
 * [离线翻译及自动生成配置](http://translate.zvo.cn/41936.html)
-
+* [手动调用接口进行翻译操作](http://translate.zvo.cn/41961.html)
+* [元素的内容整体翻译能力配置](http://translate.zvo.cn/42563.html)
 
 # 使用示例
 **普通网站中点击某个语言进行切换**
@@ -105,11 +107,19 @@ translate.execute();//进行翻译
 # 谁在使用
 截止 2023.7 月份时，本项目的后端免费翻译服务的请求量就已经达到了 1.5亿次/月 的规模，并且还在非常快速的持续增大，包括一些城投集团像是长沙城投、以及一些政府单位像是环境保障局、企业国际化经营服务平台、海外矿业产业联合、国际潮青联谊年会、人力资源和社会保障局、政务服务网、海外的一些平台如futrom智能住宅、bitheime全球区块链等等都在广泛使用。
 这里给出两个使用比较好的网站作为实际示例参考：
+  
 * [**RICE中国大米展**](https://www.cnrice.com.cn)
 * [**北京长城航空集团红十字会**](https://hh.changhang.org.cn)
 * [**第十一届国际潮青联谊年会组委会**](https://ityc.org.cn)
 
-另外，很多开源框架及产品也都已将此翻译能力接入了自身系统，赋予自身系统多语言切换能力。比如 [Discuz](https://addon.dismall.com/plugins/domi_translate.html)、[wangmarket CMS](http://www.wang.market/37234.html)、[Layui](https://gitee.com/mail_osc/translate_layui)、[易优CMS](https://www.eyoucms.com/mall/plus/29751.html)、[迅睿CMS](https://www.xunruicms.com/shop/1285.html) 、[Pear Admin](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)、[WoShop](https://www.wo-shop.net/cbec/)……
+另外，很多开源框架及产品也都已将此翻译能力接入了自身系统，赋予自身系统多语言切换能力。
+
+
+## 这些开源产品已内置本多语言能力
+* [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)、[Discuz](https://addon.dismall.com/plugins/domi_translate.html)、[kefu.js](https://gitee.com/mail_osc/kefu.js)、[Layui](https://gitee.com/mail_osc/translate_layui)、[wangmarket CMS](http://cms.zvo.cn)、[易优CMS](https://www.eyoucms.com/mall/plus/29751.html)、[迅睿CMS](https://www.xunruicms.com/shop/1285.html)、[chanyue-cms](https://gitee.com/yanyutao0402/chanyue-cms)、[phpok cms](https://gitee.com/phpok/phpok)、[RPCMS](https://app.rpcms.cn/app/149.html)、[Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs)、[WoShop](https://www.wo-shop.net/)
+...  
+如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好  
+
 
 # 哪些能力
 #### 能力一：前端翻译
@@ -159,8 +169,6 @@ translate.execute();//进行翻译
 
 # 我的其他开源项目
 
-这里列出了我部分开源项目：
-
 | 开源项目 | star数量 | 仓库 |
 | --- | --- | --- |
 | 可私有部署 SAAS 建站系统  |  ![](https://gitee.com/mail_osc/wangmarket/badge/star.svg?theme=white) | https://gitee.com/mail_osc/wangmarket |
@@ -196,8 +204,10 @@ translate.execute();//进行翻译
 
 # 交流
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
-作者微信：xnx3com  
-交流QQ群:181781514  
+作者微信：xnx3com（使用交流可加QQ群进行，我看微信很不及时）    
+交流QQ群:181781514  (已满)  
+交流QQ群:641047127  
+微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 

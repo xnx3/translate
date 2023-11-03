@@ -146,10 +146,10 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		JSONObject userJsonObject = new JSONObject();
 		// IAM用户所属帐号名
 		JSONObject nameObject = new JSONObject();
-		nameObject.put("name", this.username);
+		nameObject.put("name", this.domainname);
 
 		userJsonObject.put("domain", nameObject);
-		userJsonObject.put("name", this.domainname);
+		userJsonObject.put("name", this.username);
 		userJsonObject.put("password", this.password);
 		passwordObject.put("user", userJsonObject);
 		identityObject.put("password", passwordObject);
@@ -177,7 +177,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 				
 				
 				//TODO 方法① 文本翻译
-				URL url = new URL(TRANS_API_URL);
+				URL url = new URL(TRANS_API_URL);//其中Endpoint地址要与上面获取token的地址一致
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("POST");
 				connection.setDoInput(true);

@@ -259,7 +259,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.OROKO, "bdu");//奥罗科语
 		lang.append(LanguageEnum.ADHOLA, "adh");//阿多拉语
 		lang.append(LanguageEnum.AGNI_SANVI, "any");//阿格尼桑维语
-		lang.append(LanguageEnum.ASHÉNINKA, "cpb");//阿舍宁卡语
+		lang.append(LanguageEnum.ASHENINKA, "cpb");//阿舍宁卡语
 		lang.append(LanguageEnum.EFIK, "efi");//埃菲克语
 		lang.append(LanguageEnum.ACHOLI, "ach");//阿乔利语
 		lang.append(LanguageEnum.ESAN, "ish");//埃桑语
@@ -268,7 +268,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.BARASANA, "bsn");//巴拉萨纳语
 		lang.append(LanguageEnum.BEMBA, "bem");//别姆巴语
 		lang.append(LanguageEnum.POTAWATOMI, "pot");//波塔瓦托米语
-		lang.append(LanguageEnum.POQOMCHI’, "poh");//波孔奇语
+		lang.append(LanguageEnum.BOKONQI, "poh");//波孔奇语
 		lang.append(LanguageEnum.NORTHERN_MAM, "map");//北部马姆语
 		lang.append(LanguageEnum.BARIBA, "bba");//巴里巴语
 		lang.append(LanguageEnum.BOKOBARU, "bus");//博科巴鲁语
@@ -285,7 +285,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.BASAA, "bas");//巴萨语
 		lang.append(LanguageEnum.BULU, "bum");//布卢语
 		lang.append(LanguageEnum.PANGASINAN, "pag");//邦阿西楠语
-		lang.append(LanguageEnum.BAOULÉ, "bci");//鲍勒语
+		lang.append(LanguageEnum.BAOLE, "bci");//鲍勒语
 		lang.append(LanguageEnum.BIAK, "bhw");//比亚克语
 		lang.append(LanguageEnum.BATAK_KARO, "btx");//巴塔克卡罗语
 		lang.append(LanguageEnum.POHNPEIAN, "pon");//波纳佩语
@@ -320,13 +320,13 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.FRAFRA, "gur");//法拉法拉语
 		lang.append(LanguageEnum.CAPE_VERDEAN_CREOLE, "kea");//佛得角克里奥尔语
 		lang.append(LanguageEnum.QUICHUA, "quw");//盖丘亚语
-		lang.append(LanguageEnum.GUAJAJÁRA, "gub");//瓜哈哈拉语
+		lang.append(LanguageEnum.GUAJARA, "gub");//瓜哈哈拉语
 		lang.append(LanguageEnum.GOFFA, "gof");//果发语
 		lang.append(LanguageEnum.KASEM, "xsm");//格森语
 		lang.append(LanguageEnum.GBAYA, "krs");//格巴亚语
 		lang.append(LanguageEnum.GUN, "guw");//龚语
 		lang.append(LanguageEnum.CONGO_SWAHILI, "swc");//刚果斯瓦希里语
-		lang.append(LanguageEnum.GUAYMÍ, "gym");//圭米语
+		lang.append(LanguageEnum.GUIMI, "gym");//圭米语
 		lang.append(LanguageEnum.KAZAKH_CYRILLIC, "kk");//哈萨克语(西里尔)
 		lang.append(LanguageEnum.HULI, "hui");//胡里语
 		lang.append(LanguageEnum.HALBI, "hlb");//亥比语
@@ -356,8 +356,8 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.KAQCHIKEL, "cki");//喀克其奎语
 		lang.append(LanguageEnum.KAULONG, "pss");//卡乌龙语
 		lang.append(LanguageEnum.KULUNG, "kle");//库隆语
-		lang.append(LanguageEnum.CAÑAR_HIGHLAND_QUICHUA, "qxr");//卡纳尔高地-基丘亚语
-		lang.append(LanguageEnum.COOK_ISLANDS_MĀORI, "rar");//库克群岛毛利语
+		lang.append(LanguageEnum.KANAR_HIGHLAND_QUICHUA, "qxr");//卡纳尔高地-基丘亚语
+		lang.append(LanguageEnum.COOK_ISLANDS_MAORI, "rar");//库克群岛毛利语
 		lang.append(LanguageEnum.KABIYE, "kbp");//卡比耶语
 		lang.append(LanguageEnum.KAMBA, "kam");//卡姆巴语
 		lang.append(LanguageEnum.KAONDE, "kqn");//卡昂多语
@@ -378,7 +378,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.MARI, "mhr");//马里语
 		lang.append(LanguageEnum.MAM, "mam");//马姆语
 		lang.append(LanguageEnum.MONGOLIAN_CYRILLIC, "mn");//蒙古语(西里尔)
-		lang.append(LanguageEnum.MANIPURI, "mni");//曼尼普尔语---------------枚举有：梅泰语（曼尼普尔语）
+		lang.append(LanguageEnum.MEITEI, "mni");//曼尼普尔语---------------枚举有：梅泰语（曼尼普尔语）
 		lang.append(LanguageEnum.MOTU, "meu");//摩图语
 		lang.append(LanguageEnum.MARANAO, "mrw");//马拉瑙语
 		lang.append(LanguageEnum.MAALE, "mdy");//马勒语
@@ -407,7 +407,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.PIJIN, "pis");//皮京语
 		lang.append(LanguageEnum.CHEROKEE, "chr");//切诺基语
 		lang.append(LanguageEnum.CHINANTEC, "chq");//奇南特克语
-		lang.append(LanguageEnum.TSIMANÉ, "cas");//齐马内语
+		lang.append(LanguageEnum.ZIMANE, "cas");//齐马内语
 		lang.append(LanguageEnum.CHOKWE, "cjk");//乔奎语
 		lang.append(LanguageEnum.CHOPI, "cce");//乔皮语
 		lang.append(LanguageEnum.CHUUKESE, "chk");//丘克语

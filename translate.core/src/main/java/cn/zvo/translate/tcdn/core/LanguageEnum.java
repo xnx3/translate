@@ -186,7 +186,7 @@ public enum LanguageEnum {
     SYRIAC("syriac","ܓܙܽܘܪܝܐܳܐ","叙利亚语"),
     HILIGAYNON("hiligaynon","Indi ko ini maubra tanan.","希利盖农语"),
     ACEH("aceh","aceh","亚齐语"),
-    CANTONESE("cantonese","广东话","粤语");//中文（粤语）
+    CANTONESE("cantonese","广东话","粤语"), //中文（粤语）
 
 
 	//	------------------2023/11/3放开下面的枚举----------------------242
@@ -214,7 +214,6 @@ public enum LanguageEnum {
     EDO("edo", "埃多语", "埃多语"),
     TOK_PISIN("tok_pisin", "巴布亚皮钦语", "巴布亚皮钦语"),
     BARASANA("barasana", "巴拉萨纳语", "巴拉萨纳语"),
-    HMONG("hmong", "白苗文", "白苗文"),
     BEMBA("bemba", "别姆巴语", "别姆巴语"),
     POTAWATOMI("potawatomi", "波塔瓦托米语", "波塔瓦托米语"),
     BOKONQI("bokonqi", "波孔奇语", "波孔奇语"),

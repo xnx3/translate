@@ -20,6 +20,7 @@ import com.xnx3.SystemUtil;
 import com.xnx3.UrlUtil;
 import com.xnx3.j2ee.util.ApplicationPropertiesUtil;
 import com.xnx3.j2ee.util.ConsoleUtil;
+import com.xnx3.json.JSONUtil;
 
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
@@ -34,6 +35,7 @@ public class ChromeUtil {
 	static Http http;
 	private ChromeDriver driver;
 	static Map<String, String> headers;
+	static String translateServiceDomain; // 翻译接口，填写示例比如 http://api.translate.zvo.cn/   那么实际执行翻译请求的接口为 http://api.translate.zvo.cn/translate.json
 	
 	//这俩在application.properties配置. 支持 {this} 标识当前路径，会替换为如： E:\abc\
 	static String chromePath;
@@ -49,12 +51,12 @@ public class ChromeUtil {
 		if(chromePath == null) {
 			ConsoleUtil.error("application.properties not find : chrome.path");
 		}else {
-			chromePath.replaceAll("\\{this\\}", SystemUtil.getCurrentDir());
+			chromePath = chromePath.replace("{this}", SystemUtil.getCurrentDir());
 		}
 		if(chromeDriverPath == null) {
 			ConsoleUtil.error("application.properties not find : chrome.driver.path");
-		}else {
-			chromeDriverPath.replaceAll("\\{this\\}", SystemUtil.getCurrentDir());
+		}else { 
+			chromeDriverPath = chromeDriverPath.replace("{this}", SystemUtil.getCurrentDir());
 		}
 		
 		ConsoleUtil.info("chrome.path:"+chromePath);
@@ -195,7 +197,16 @@ public class ChromeUtil {
 		}
 		Log.info("path:"+path);
 		
+		//文件编码
+		//String fileEncode = FileUtil.UTF8;
+		
 		html = "<meta http-equiv=\"content-security-policy\" content=\"script-src 'none'\">"+html;
+//		try {
+//			FileUtil.write(path+hash+".html", html, fileEncode);
+//		} catch (IOException e2) {
+//			e2.printStackTrace();
+//		}
+		Log.info("html source : "+html);
 		FileUtil.write(path+hash+".html", html);
 		
 		//System.out.println("hash:"+hash);
@@ -282,8 +293,8 @@ public class ChromeUtil {
 		
 		//翻译的请求主机
 		String apiUrl = ApplicationPropertiesUtil.getProperty("translate.tcdn.service.domain");
-		if(apiUrl == null || apiUrl.length() == 0) {
-			apiUrl = "http://api.translate.zvo.cn/";
+		if(apiUrl != null && apiUrl.length() == 0) {
+			this.translateServiceDomain = apiUrl;
 		}
 		
 		execute += " translate.request.api.host='"+apiUrl+"'; translate.selectLanguageTag.show = false; translate.to = '"+language+"'; translate.execute(); ";
@@ -387,8 +398,8 @@ public class ChromeUtil {
 	
 	public void close() {
 		Log.info("close driver : "+driver.toString());
-		driver.close();
-//		quit();
+		//driver.close();
+		quit();
 	}
 	
 	public void quit() {
@@ -494,6 +505,8 @@ public class ChromeUtil {
 					//执行js
 					js.executeScript(sb.toString());
 				}
+			}else {
+				js.executeScript("console.log('translate.service response code:"+res.code+", content:"+res.content+"');");
 			}
 		}
 	}
@@ -502,13 +515,15 @@ public class ChromeUtil {
 		Response res = null;
 		Http http = new Http();
 		
+		String url = JSONUtil.getString(json, "url");
+		
 		JSONObject data = json.getJSONObject("data");
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("from", data.getString("from"));
 		params.put("text", data.getString("text"));
 		params.put("to", data.getString("to"));
 		try {
-			res = http.post(json.getString("url"), params);
+			res = http.post(getTranslateServiceDomain()+"translate.json", params);
 		} catch (IOException e) {
 			e.printStackTrace();
 			res = new Response();
@@ -517,4 +532,17 @@ public class ChromeUtil {
 		}
 		return res;
 	}
+	
+	/**
+	 * 获取 translate。service 的 翻译接口
+	 * @return 返回格式如 http://api.translate.zvo.cn/  不需要非得https，http也能没问题
+	 */
+	public static String getTranslateServiceDomain() {
+		if(translateServiceDomain == null || translateServiceDomain.length() < 2) {
+			translateServiceDomain = "http://api.translate.zvo.cn/";
+		}
+		
+		return translateServiceDomain;
+	}
+	
 }

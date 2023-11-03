@@ -398,8 +398,8 @@ public class ChromeUtil {
 	
 	public void close() {
 		Log.info("close driver : "+driver.toString());
-		//driver.close();
-		quit();
+		driver.close();
+//		quit();
 	}
 	
 	public void quit() {

@@ -14,7 +14,7 @@ public enum LanguageEnum {
 	RUSSIAN("russian","Русский язык", "俄语"),
 	ARABIC("arabic", "بالعربية", "阿拉伯语"),
 
-	GERMAN("german","deutsch","德语"),
+	GERMAN("deutsch","Deutsch","德语"),
 	FRENCH("french", "Français", "法语"),
 	PORTUGUESE("portuguese","português","葡萄牙语"),
 	THAI("thai", "คนไทย", "泰语"),

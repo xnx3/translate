@@ -4,10 +4,7 @@ import org.lionsoul.ip2region.xdb.Searcher;
 import com.xnx3.BaseVO;
 import com.xnx3.Log;
 import com.xnx3.StringUtil;
-import com.xnx3.SystemUtil;
-
 import cn.zvo.translate.tcdn.core.LanguageEnum;
-
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 
@@ -98,7 +95,7 @@ public class IpUtil{
 		else if(country.equals("法国")) {return LanguageEnum.FRENCH.id;}
 		else if(country.equals("波兰")) {return LanguageEnum.POLISH.id;}
 		else if(country.equals("捷克")) {return LanguageEnum.CZECH.id;}
-		else if(country.equals("德国")) {return LanguageEnum.GERMAN.id;}
+		else if(country.equals("德国")) {return LanguageEnum.DEUTSCH.id;}
 		else if(country.equals("荷兰")) {return LanguageEnum.DUTCH.id;}
 		else if(country.equals("西班牙")) {return LanguageEnum.SPANISH.id;}
 //		else if(country.equals("奥地利")) {return LanguageEnum.奥地利.id;}

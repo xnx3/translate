@@ -123,7 +123,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.XITSONGA, "ts");//聪加语
 		lang.append(LanguageEnum.TATAR, "tt");//鞑靼语
 		lang.append(LanguageEnum.DANISH, "da");//丹麦语
-		lang.append(LanguageEnum.GERMAN, "de");//德语
+		lang.append(LanguageEnum.DEUTSCH, "de");//德语
 		lang.append(LanguageEnum.TETUN, "tet");//德顿语
 		lang.append(LanguageEnum.DHIVEHI, "dv");//迪维希语
 		lang.append(LanguageEnum.RUSSIAN, "ru");//俄语

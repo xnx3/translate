@@ -9,6 +9,7 @@ import com.xnx3.DateUtil;
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
 import cn.zvo.translate.service.core.util.StringUtil;
+import cn.zvo.translate.tcdn.core.LanguageEnum;
 import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
@@ -225,7 +226,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append("japanese", "ja", "日本語");	//日语
 		lang.append("russian", "ru", "Русский язык");
 		lang.append("arabic", "ar", "بالعربية");	//阿拉伯语
-		lang.append("german", "de", "Deutsch");	//德语
+		lang.append(LanguageEnum.DEUTSCH.id, "de", LanguageEnum.DEUTSCH.name);	//德语
 		lang.append("french", "fr", "Français");	//法语
 		lang.append("portuguese", "pt", "Português");	//葡萄牙语
 		lang.append("thai", "th", "ภาษาไทย");	//泰语

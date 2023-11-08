@@ -165,6 +165,9 @@ public class TranslateController{
 		//取这个来源网页的domain
 		String domain = RequestUtil.getRefererDomain(request);
 		
+		from = languageIdHandle(from);
+		to = languageIdHandle(to);
+		
 		/***** 翻译之前，插件拦截 *****/
 		try {
 			TranslateResultVO beforeVO = TranslateManage.before(request, response, from, to, textArray, size, domain);
@@ -307,6 +310,23 @@ public class TranslateController{
 		vo.setFrom(from);
 		vo.setTo(to);
 		return vo;
+	}
+	
+	/**
+	 * 对 languageId 进行处理，比如德语的id再 2023.11.08 进行更改过
+	 * @param languageId 传入如 english ，枚举类中定义的语种的id
+	 * @return
+	 */
+	public static String languageIdHandle(String languageId) {
+		if(languageId == null) {
+			return null;
+		}
+		
+		//德语的id更改过一次
+		if(languageId.equalsIgnoreCase("german")) {
+			languageId = "deutsch";
+		}
+		return languageId;
 	}
 	
 	public static void main(String[] args) throws IOException {

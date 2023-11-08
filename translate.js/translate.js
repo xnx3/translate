@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.9.1.20231023',
+	version:'2.9.2.20231108',
 	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3353,6 +3353,17 @@ var translate = {
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
 		},
 		/*
+			请求后端接口的响应。无论是否成功，都会触发此处。
+			另外当 xhr.readyState==4 的状态时才会触发。
+			此处会在接口请求响应后、且在translate.js处理前就会触发
+			@param xhr XMLHttpRequest 接口请求
+			
+		*/
+		response:function(xhr){
+			//console.log('response------');
+			//console.log(xhr);
+		},
+		/*
 			速度检测控制中心， 检测主备翻译接口的响应速度进行排列，真正请求时，按照排列的顺序进行请求
 			v2.8.2增加	
 			
@@ -3602,6 +3613,8 @@ var translate = {
 			//4.请求状态改变事件
 			xhr.onreadystatechange=function(){
 			    if(xhr.readyState==4){
+			    	translate.request.response(xhr); //自定义响应的拦截
+
 			        if(xhr.status==200){
 			        	//请求正常，响应码 200
 			        	var json = null;

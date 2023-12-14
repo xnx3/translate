@@ -211,6 +211,16 @@ translate.execute();//进行翻译
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
 
+# 有偿帮助
+我们位于三线城市，各方面开发成本相对较低，如果您有临时需要技术人员帮助，欢迎联系我们，也算对我们的支持，让我们能持续下去。
+* Java开发，5年以上经验，65元每小时
+* Java开发，半年经验（主要处理琐碎杂事），25元每小时
+* 前端开发，3年经验（vue、uniapp、微信小程序等都可以），50元每小时
+* Android开发，7年经验，65元每小时
+
+另外，如果有别编程语言的需要，也可以喊我，我微信 xnx3com  价格绝对实在，诚信第一，不满意不要钱！！
+
+
 # 感谢赞助
 * [指点云](https://www.zhidianyun.cn/?i125cc1) 赞助服务器，用于开放公共、免费API给大家使用。指点云服务器便宜，性能很不错。  
 *  [小牛翻译](https://niutrans.com/register?userSource=translate-js)  赞助在线翻译接口，小牛翻译提供三百八十多种语种翻译能力，需要的语种，它基本都包含了！  

@@ -655,7 +655,7 @@ var translate = {
 				});	
 				document.getElementById('msgPopupsTextarea').value = text;
 			}else{
-				msg.alert('无有效内容');
+				msg.alert('无有效内容！');
 			}
 
 
@@ -672,7 +672,7 @@ var translate = {
 			  translate.office.export();
 			};
 			button.innerHTML = '导出配置信息';
-			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px;');
+			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px; background-color: blue; padding: 15px; padding-top: 3px; padding-bottom: 3px; border-radius: 3px;');
 			panel.appendChild(button);
 
 			//说明文字
@@ -682,7 +682,7 @@ var translate = {
 
 			panel.appendChild(textdiv);			
 			
-			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 200px; position: fixed; bottom: 50px; right: 50px;');
+			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 206px; position: fixed; bottom: 50px; right: 50px;');
 			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
 			document.body.appendChild(panel);
 

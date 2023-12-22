@@ -648,7 +648,7 @@ var translate = {
 				//console.log(text);
 				translate.util.loadMsgJs();
 				msg.popups({
-				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%;">loaing...</textarea>',
+				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%; color: black; padding: 8px;">loaing...</textarea>',
 				    width:'750px',
 				    height:'600px',
 				    padding:'1px',

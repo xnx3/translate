@@ -9,10 +9,12 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.9.2.20231108',
-	useVersion:'v1',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
+	version:'2.10.1.20231222',
+	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
+		console.log('v1版本已废弃，请使用V2版本。');
+		console.log('The v1 version has been discontinued, please use the V2 version.');
 	},
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
@@ -646,14 +648,14 @@ var translate = {
 				//console.log(text);
 				translate.util.loadMsgJs();
 				msg.popups({
-				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%;">loaing...</textarea>',
+				    text:'<textarea id="msgPopupsTextarea" style="width:100%; height:100%; color: black; padding: 8px;">loaing...</textarea>',
 				    width:'750px',
 				    height:'600px',
 				    padding:'1px',
 				});	
 				document.getElementById('msgPopupsTextarea').value = text;
 			}else{
-				msg.alert('无有效内容');
+				msg.alert('无有效内容！');
 			}
 
 
@@ -670,7 +672,7 @@ var translate = {
 			  translate.office.export();
 			};
 			button.innerHTML = '导出配置信息';
-			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px;');
+			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px; background-color: blue; padding: 15px; padding-top: 3px; padding-bottom: 3px; border-radius: 3px;');
 			panel.appendChild(button);
 
 			//说明文字
@@ -680,7 +682,7 @@ var translate = {
 
 			panel.appendChild(textdiv);			
 			
-			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 200px; position: fixed; bottom: 50px; right: 50px;');
+			panel.setAttribute('style', 'background-color: black; color: #fff; width: 320px; height: 206px; position: fixed; bottom: 50px; right: 50px;');
 			//把元素节点添加到body元素节点中成为其子节点，放在body的现有子节点的最后
 			document.body.appendChild(panel);
 

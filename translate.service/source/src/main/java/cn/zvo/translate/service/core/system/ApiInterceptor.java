@@ -27,7 +27,7 @@ public class ApiInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 		response.setHeader("Access-Control-Allow-Origin", "*"); //增加跨域支持
-		response.setHeader("Access-Control-Allow-Headers", "CurrentPage"); //增加跨域支持
+		response.setHeader("Access-Control-Allow-Headers", "currentpage"); //增加跨域支持
 		response.setHeader("site", "http://translate.zvo.cn");
 		return HandlerInterceptor.super.preHandle(request, response, handler);
 	}

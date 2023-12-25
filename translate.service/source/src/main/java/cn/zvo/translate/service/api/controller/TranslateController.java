@@ -52,11 +52,11 @@ public class TranslateController{
 	@RequestMapping(value="language.json")
 	public LanguageListVO language(HttpServletRequest request, HttpServletResponse response) {
 		//日志
-		String referer = request.getHeader("referer"); 
 		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("referer", referer);
+		params.put("referer", request.getHeader("referer"));
 		params.put("method", "language.json");
 		params.put("time", DateUtil.currentDate("yyyy-MM-dd HH:mm:ss"));
+		params.put("currentpage", request.getHeader("currentpage"));
 		LogUtil.add(params);
 		
 		/***** 翻译时，插件拦截，获取使用什么翻译 *****/
@@ -194,6 +194,7 @@ public class TranslateController{
 		params.put("method", "translate.json");
 		params.put("size", size);
 		params.put("referer", request.getHeader("referer"));
+		params.put("currentpage", request.getHeader("currentpage"));
 		
 		//先从缓存中取
 		String hash = null;

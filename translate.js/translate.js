@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.10.1.20231222',
+	version:'2.10.2.20231225',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3611,6 +3611,7 @@ var translate = {
 					xhr.setRequestHeader(index,headers[index]);
 				}
 			}
+			xhr.setRequestHeader('CurrentPage', window.location.href+'');
 			xhr.send(params);
 			//4.请求状态改变事件
 			xhr.onreadystatechange=function(){
@@ -3632,13 +3633,19 @@ var translate = {
 			        	}
 			        }else{
 			        	if(showErrorLog){
-				        	console.log('------- translate.js service api response error --------');
-				        	console.log('    http code : '+xhr.status);
-				        	console.log('    response : '+xhr.response);
-				        	console.log('    request url : '+url);
-				        	console.log('    request data : '+JSON.stringify(data));
-				        	console.log('    request method : '+method);
-				        	console.log('---------------------- end ----------------------');
+			        		if(url.indexOf(translate.request.api.connectTest) > -1){
+			        			//测试链接速度的不在报错里面
+			        		}else{
+			        			console.log(xhr);
+					        	console.log('------- translate.js service api response error --------');
+					        	console.log('    http code : '+xhr.status);
+					        	console.log('    response : '+xhr.response);
+					        	console.log('    request url : '+url);
+					        	console.log('    request data : '+JSON.stringify(data));
+					        	console.log('    request method : '+method);
+					        	console.log('---------------------- end ----------------------');
+			        		}
+			        		
 			        	}
 			        	
 			        	if(abnormalFunc != null){

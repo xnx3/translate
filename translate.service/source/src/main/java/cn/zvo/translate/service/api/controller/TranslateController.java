@@ -49,7 +49,7 @@ public class TranslateController{
 	 * @author 管雷鸣
 	 */
 	@ResponseBody
-	@RequestMapping(value="language.json", method = RequestMethod.POST)
+	@RequestMapping(value="language.json")
 	public LanguageListVO language(HttpServletRequest request, HttpServletResponse response) {
 		//日志
 		String referer = request.getHeader("referer"); 

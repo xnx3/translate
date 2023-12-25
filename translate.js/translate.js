@@ -3345,7 +3345,7 @@ var translate = {
 			 * v2.8.2 增加数组形态，如 ['https://api.translate.zvo.cn/','xxxxx'] 
 			 */
 			//host:'https://api.translate.zvo.cn/',
-			host:['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/','https://apihwcdn.translate.zvo.cn/','https://apiqiniucdn.translate.zvo.cn/'],
+			host:['https://api.translate.zvo.cn/','https://api.kefu.leimingyun.com/'],
 			//host的备用接口，格式同host，可以填写多个，只不过这里是数组格式。只有当主 host 无法连通时，才会采用备host来提供访问。如果为空也就是 [] 则是不采用备方案。
 			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口
@@ -3378,6 +3378,20 @@ var translate = {
 			
 		*/
 		speedDetectionControl:{
+			/*
+				
+				进行 connect主节点缩减的时间，单位是毫秒.
+				这个是进行 translate.request.speedDetectionControl.checkResponseSpeed() 节点测速时，translate.request.api.host 第一个元素是默认的主节点。
+				主节点在实际测速完后，会减去一定的时间，以便让用户大部分时间可以使用主节点，而不必走分节点。
+				例如主节点实际响应速度 3500 毫秒，那么会减去这里设置的2000毫秒，记为 1500 毫秒
+				当然如果是小于这里设置的2000毫秒，那么会记为0毫秒。
+				这样再跟其他分节点的响应时间进行对比，主节点只要不是响应超时，就会有更大的几率被选中为实际使用的翻译的节点
+				
+				这里的单位是毫秒。
+				v2.10.2.20231225 增加
+			*/
+			hostMasterNodeCutTime:2000,	
+
 			/*
 				翻译的队列，这是根据网络相应的速度排列的，0下标为请求最快，1次之...
 				其格式为：
@@ -3480,6 +3494,14 @@ var translate = {
 								var host = data.info;
 								var map = translate.request.speedDetectionControl.checkHostQueueMap[host];
 								var time = new Date().getTime() - map.start;
+
+								if(translate.request.api.host[0] == host){
+									//console.log('如果是第一个，那么是主的，默认允许缩减2000毫秒，也就是优先使用主的');
+									time = time - translate.request.speedDetectionControl.hostMasterNodeCutTime;
+									if(time < 0){
+										time = 0;
+									}
+								}
 
 								translate.request.speedDetectionControl.checkHostQueue.push({"host":host, "time":time });
 								//按照time进行排序

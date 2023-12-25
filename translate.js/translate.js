@@ -13,8 +13,7 @@ var translate = {
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
-		console.log('v1版本已废弃，请使用V2版本。');
-		console.log('The v1 version has been discontinued, please use the V2 version.');
+		console.log('自 v2.10 之后的版本默认就是使用V2版本， translate.setUseVersion2() 可以不用再加这一行了。当然加了也无所谓，只是加了跟不加是完全一样的。');
 	},
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
@@ -3636,7 +3635,7 @@ var translate = {
 			        		if(url.indexOf(translate.request.api.connectTest) > -1){
 			        			//测试链接速度的不在报错里面
 			        		}else{
-			        			console.log(xhr);
+			        			//console.log(xhr);
 					        	console.log('------- translate.js service api response error --------');
 					        	console.log('    http code : '+xhr.status);
 					        	console.log('    response : '+xhr.response);

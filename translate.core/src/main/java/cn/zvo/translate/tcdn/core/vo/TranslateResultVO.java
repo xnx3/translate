@@ -33,9 +33,8 @@ public class TranslateResultVO extends BaseVO implements java.io.Serializable{
 	}
 	@Override
 	public String toString() {
-		return "TranslateResultVO [from=" + from + ", to=" + to + ", text=" + text + ", getResult()=" + getResult()
-				+ ", getInfo()=" + getInfo() + "]";
+		return "TranslateResultVO [getFrom()=" + getFrom() + ", getTo()=" + getTo() + ", getText()=" + getText()
+				+ ", getResult()=" + getResult() + ", getInfo()=" + getInfo() + "]";
 	}
-	
 	
 }

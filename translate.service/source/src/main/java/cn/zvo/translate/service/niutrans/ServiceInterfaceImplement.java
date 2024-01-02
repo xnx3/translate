@@ -73,6 +73,8 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 			vo.getText().addAll(vf.getText());
 		}
 		
+		vo.setFrom(from);
+		vo.setTo(to);
 		return vo;
 	}
 

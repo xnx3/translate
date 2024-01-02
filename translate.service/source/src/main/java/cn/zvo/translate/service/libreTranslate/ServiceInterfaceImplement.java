@@ -49,10 +49,10 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		service.setLanguage();
 
 		JSONArray array = new JSONArray();
-		array.add("translate");
-		array.add("result info");
+		array.add("翻译");
+		array.add("你好世界");
 
-		TranslateResultVO vo = service.api("auto", "en", array);
+		TranslateResultVO vo = service.api("zh", "en", array);
 		System.out.println(vo);
 	}
 
@@ -63,7 +63,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		
 		List<JSONArray> list = JSONUtil.split(array, 2000); //长度不能超过2000字符，所以针对2000进行截取
 		for (int i = 0; i < list.size(); i++) {
-			TranslateResultVO vf = requestApi(to, list.get(i));
+			TranslateResultVO vf = requestApi(from, to, list.get(i));
 			if(vf.getResult() - TranslateResultVO.FAILURE == 0) {
 				return vf;
 			}
@@ -100,9 +100,8 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 	}
 	
 
-	private TranslateResultVO requestApi(String to, JSONArray array) {
+	private TranslateResultVO requestApi(String from, String to, JSONArray array) {
 		TranslateResultVO vo = new TranslateResultVO();
-		String from = "auto";  //固定的，自动识别原本语种
 		
 		//要翻译的原字符串
 		StringBuffer payload = new StringBuffer();

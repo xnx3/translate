@@ -90,13 +90,46 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.CHINESE_SIMPLIFIED, "zh");	
 		lang.append(LanguageEnum.CHINESE_TRADITIONAL, "zt");
 		lang.append(LanguageEnum.ENGLISH, "en");
-		
-		/*
-		 
-		 待补充
-		  
-		 */
-		
+		lang.append(LanguageEnum.ALBANIAN, "sq");
+		lang.append(LanguageEnum.ARABIC, "ar");
+		lang.append(LanguageEnum.AZERBAIJANI, "az");
+		lang.append(LanguageEnum.BENGALI, "bn");
+		lang.append(LanguageEnum.BULGARIAN, "bg");
+		lang.append(LanguageEnum.CATALAN, "ca");
+		lang.append(LanguageEnum.CZECH, "cs");
+		lang.append(LanguageEnum.DANISH, "da");
+		lang.append(LanguageEnum.DUTCH, "nl");
+		lang.append(LanguageEnum.ESPERANTO, "eo");
+		lang.append(LanguageEnum.ESTONIAN, "et");
+		lang.append(LanguageEnum.FINNISH, "fi");
+		lang.append(LanguageEnum.FRENCH, "fr");
+		lang.append(LanguageEnum.GERMAN, "de");
+		lang.append(LanguageEnum.GREEK, "el");
+		lang.append(LanguageEnum.HEBREW, "he");
+		lang.append(LanguageEnum.HINDI, "hi");
+		lang.append(LanguageEnum.HUNGARIAN, "hu");
+		lang.append(LanguageEnum.INDONESIAN, "id");
+		lang.append(LanguageEnum.IRISH, "ga");
+		lang.append(LanguageEnum.ITALIAN, "it");
+		lang.append(LanguageEnum.JAPANESE, "ja");
+		lang.append(LanguageEnum.KOREAN, "ko");
+		lang.append(LanguageEnum.LATVIAN, "lv");
+		lang.append(LanguageEnum.LITHUANIAN, "lt");
+		lang.append(LanguageEnum.MALAY, "ms");
+		lang.append(LanguageEnum.NORWEGIAN, "nb");
+		lang.append(LanguageEnum.PERSIAN, "fa");
+		lang.append(LanguageEnum.POLISH, "pl");
+		lang.append(LanguageEnum.PORTUGUESE, "pt");
+		lang.append(LanguageEnum.ROMANIAN, "ro");
+		lang.append(LanguageEnum.RUSSIAN, "ru");
+		lang.append(LanguageEnum.SLOVAK, "sk");
+		lang.append(LanguageEnum.SLOVENIAN, "sl");
+		lang.append(LanguageEnum.SPANISH, "es");
+		lang.append(LanguageEnum.SWEDISH, "sv");
+		lang.append(LanguageEnum.TAGALOG, "tl");
+		lang.append(LanguageEnum.THAI, "th");
+		lang.append(LanguageEnum.TURKISH, "tr");
+		lang.append(LanguageEnum.UKRANIAN, "uk");
 	}
 	
 

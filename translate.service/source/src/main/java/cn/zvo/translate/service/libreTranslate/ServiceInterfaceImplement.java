@@ -103,7 +103,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.ESTONIAN, "et");
 		lang.append(LanguageEnum.FINNISH, "fi");
 		lang.append(LanguageEnum.FRENCH, "fr");
-		lang.append(LanguageEnum.GERMAN, "de");
+		lang.append(LanguageEnum.DEUTSCH, "de");
 		lang.append(LanguageEnum.GREEK, "el");
 		lang.append(LanguageEnum.HEBREW, "he");
 		lang.append(LanguageEnum.HINDI, "hi");
@@ -123,13 +123,13 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.ROMANIAN, "ro");
 		lang.append(LanguageEnum.RUSSIAN, "ru");
 		lang.append(LanguageEnum.SLOVAK, "sk");
-		lang.append(LanguageEnum.SLOVENIAN, "sl");
+		lang.append(LanguageEnum.SLOVENE, "sl");
 		lang.append(LanguageEnum.SPANISH, "es");
 		lang.append(LanguageEnum.SWEDISH, "sv");
 		lang.append(LanguageEnum.TAGALOG, "tl");
 		lang.append(LanguageEnum.THAI, "th");
 		lang.append(LanguageEnum.TURKISH, "tr");
-		lang.append(LanguageEnum.UKRANIAN, "uk");
+		lang.append(LanguageEnum.UKRAINIAN, "uk");
 	}
 	
 

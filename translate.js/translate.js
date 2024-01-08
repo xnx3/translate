@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.10.2.20231225',
+	version:'2.10.3.20240108',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1043,12 +1043,10 @@ var translate = {
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							//var nodename = translate.element.getNodeName(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
 							//console.log("nodename:"+nodename);
-							//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node.nodeName);
-							//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
 							var analyse = translate.element.nodeAnalyse.get(renderTask.nodes[hash][0]);
 							//analyse.text  analyse.node
 							var nodeid = nodeuuid.uuid(analyse.node);
-
+							
 							if(nodeid.length == 0){
 								//像是input的placeholder 暂时没考虑进去，这种就直接忽略了
 								continue;
@@ -1066,6 +1064,7 @@ var translate = {
 							}
 							这里就不用判断了，直接同步到最新的，因为同一个node，可能有本地缓存直接更新，这样会非常快，网络的会慢2秒，因时间导致同步不是最新的
 							*/
+							//console.log(analyse);
 							//console.log('add-----'+analyse.text +', uuid:'+nodeid);
 							//console.log(analyse.node);
 							translate.nodeHistory[nodeid] = {};
@@ -3245,6 +3244,7 @@ var translate = {
 				str = str.replace(/\$/g,'\\\$');
 				str = str.replace(/\(/g,'\\\(');
 				str = str.replace(/\)/g,'\\\)');
+				str = str.replace(/\|/g,'\\\|');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>cn.zvo.translate</groupId>
+	<artifactId>translate.service</artifactId>
+	<version>1.0</version>
+	<packaging>war</packaging>
+
+	<description>java sms </description>
+	<url>https://github.com/xnx3/sms.java</url>
+	
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>	
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<!-- 编译时的编码 -->
+		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+		<java.version>1.8</java.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+	
+	<!-- Spring Boot 启动父依赖 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.6.1</version>
+    </parent>
+	
+	<developers>
+		<developer>
+		<name>leiming guan</name>
+		<email>mail@xnx3.com</email>
+		<organization>Sonatype</organization>
+		<organizationUrl>http://www.sonatype.com</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git://github.com/xnx3/sms.java</connection>
+		<developerConnection>scm:git:ssh://github.com/xnx3/sms.java</developerConnection>
+		<url>github.com/xnx3/FileUpload</url>
+	</scm>
+
+
+	<build>
+		<plugins>
+			
+			<!-- 使用 Maven Compiler 插件来排除某个Java文件 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<excludes>
+						<!-- 排除 xxxx.java -->
+						<!-- <exclude>cn/*.java</exclude>  -->
+					</excludes>
+				</configuration>
+			</plugin>
+			
+			<!-- Source -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
+				<executions>
+					<!-- <execution>
+						<id>attach-sources</id>
+						<phase>deploy</phase>
+					</execution> -->
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+		</plugins>
+	</build>
+	
+	
+	<dependencies>  
+		<!-- Spring Boot web依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+	
+		<dependency> 
+	        <groupId>com.xnx3.cache</groupId>  
+	        <artifactId>xnx3-cache</artifactId>  
+	        <version>1.1.1</version>  
+	    </dependency>
+		
+		<!-- http/https请求工具 https://github.com/xnx3/http.java -->
+		<dependency> 
+			<groupId>cn.zvo.http</groupId>
+			<artifactId>http</artifactId>
+			<version>1.2</version>
+		</dependency>
+		
+		<!-- 文件上传相关的核心支持 https://github.com/xnx3/FileUpload -->
+		<dependency> 
+		    <groupId>cn.zvo.fileupload</groupId>
+		    <artifactId>fileupload-core</artifactId>
+		    <version>1.1</version>
+		</dependency>
+		<!-- 在 SpringBoot 框架中的快速使用。 （在不同的框架中使用，这里引入的framework.xxx也不同） -->
+		<dependency> 
+			<groupId>cn.zvo.fileupload</groupId>
+			<artifactId>fileupload-framework-springboot</artifactId>
+			<version>1.1</version>
+		</dependency> 
+		
+		<!-- 日志的核心支持 https://github.com/xnx3/log -->
+		<dependency> 
+		    <groupId>cn.zvo.log</groupId>
+		    <artifactId>log-core</artifactId>
+		    <version>1.0</version>
+		</dependency>
+		<!-- 在 SpringBoot 框架中的快速使用。 （在不同的框架中使用，这里引入的framework.xxx也不同） -->
+		<dependency> 
+		    <groupId>cn.zvo.log</groupId>
+		    <artifactId>log-framework-springboot</artifactId>
+		    <version>1.0</version>
+		</dependency> 
+		
+		<dependency>
+			<groupId>com.xnx3.json</groupId>
+			<artifactId>json</artifactId>
+			<version>1.0</version>
+		</dependency>   
+		
+		<!-- autoPublish 自动发布部署 -->
+		<dependency>
+		  <groupId>com.xnx3.wm.autoPublish</groupId>
+		  <artifactId>autoPublish</artifactId>
+		  <version>1.4</version>
+		  <scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.xnx3.util</groupId>
+					<artifactId>xnx3-util</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- sftp 支持 -->
+		<dependency>
+		  <groupId>com.jcraft</groupId>
+		  <artifactId>jsch</artifactId>
+		  <version>0.1.55</version>
+		  <scope>provided</scope>
+		</dependency>
+		<!-- ssh 支持 -->
+		<dependency>
+		  <groupId>ch.ethz.ganymed</groupId>
+		  <artifactId>ganymed-ssh2</artifactId>
+		  <version>262</version>
+		  <scope>provided</scope>
+		</dependency>
+		
+		<!-- javadoc https://gitee.com/leimingyun/javadoc -->
+		<dependency>
+		  <groupId>com.xnx3.doc.javadoc</groupId>
+		  <artifactId>javadoc</artifactId>
+		  <version>1.16</version>
+		  <scope>provided</scope>
+		</dependency>
+
+		
+		<!-- ip https://gitee.com/lionsoul/ip2region/tree/master/binding/java -->
+		<dependency>
+		    <groupId>org.lionsoul</groupId>
+		    <artifactId>ip2region</artifactId>
+		    <version>2.6.6</version>
+		</dependency>
+		
+		<dependency> 
+			<groupId>cn.zvo.tcdn</groupId>
+			<artifactId>tcdn.core</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<dependency>
+		 	<groupId>com.xnx3.util</groupId>
+			<artifactId>xnx3-util</artifactId>
+			<version>1.16</version>
+		</dependency>
+	</dependencies>
+	
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+</project>

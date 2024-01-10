@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.10.3.20240108',
+	version:'2.10.4.20240110',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -827,7 +827,7 @@ var translate = {
 			    for(let mutation of mutationsList) {
 			        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
 						//多了个组件
-						documents.push.apply(documents,mutation.addedNodes);
+						documents.push.apply(documents, [mutation.target]);
 			        //    console.log(mutation.addedNodes);
 			        //}else if (mutation.type === 'attributes') {
 			        //   console.log('The ' + mutation.attributeName + ' attribute was modified.');

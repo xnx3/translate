@@ -812,27 +812,6 @@ var translate = {
 	        }, 300);
 			
 			
-		//	window.onload = function(){
-				/* if(translate.listener.isStart){
-					//已开启了
-					return;
-				} */
-				
-				//判断是否是执行完一次了
-		//        translate.temp_linstenerStartInterval = setInterval(function(){
-					//if(translate.listener.isExecuteFinish){ //执行完过一次，那才能使用
-						/*if(translate.listener.isStart){
-							//已开启了
-							return;
-						}*/
-		//				clearInterval(translate.temp_linstenerStartInterval);//停止
-		//				translate.listener.addListener();
-						//console.log('translate.temp_linstenerStartInterval Finish!');
-					//}
-		//	      }, 50);
-		//	}
-			
-			
 		},
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
@@ -1090,7 +1069,7 @@ var translate = {
 	//执行翻译操作。翻译的是 nodeQueue 中的
 	//docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
 	execute:function(docs){
-		if(typeof(doc) != 'undefined'){
+		if(typeof(docs) != 'undefined'){
 			//execute传入参数，只有v2版本才支持
 			translate.useVersion = 'v2';
 		}

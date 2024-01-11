@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.10.4.20240110',
+	version:'2.10.5.20240111',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2509,7 +2509,7 @@ var translate = {
 			}else if(this.korean(charstr)){
 				return 'korean';
 			}else{
-				console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
+				//console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
 				return '';
 			}
 		},

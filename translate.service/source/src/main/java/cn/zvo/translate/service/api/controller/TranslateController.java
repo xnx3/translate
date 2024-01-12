@@ -72,8 +72,10 @@ public class TranslateController{
 			return vo;
 		}
 		if(service == null) {
-			//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
-			service  = Service.getService();
+			//如果没有用插件自定义
+			LanguageListVO vo = new LanguageListVO();
+			vo.setBaseVO(BaseVO.FAILURE, "未设定翻译通道,请在 application.properties 中设置 translate.service. xxx 为翻译服务指定翻译通道。  详细参考： http://translate.zvo.cn/41160.html");
+			return vo;
 		}
 		
 		String serverName = StringUtil.subString(service.getClass().getPackage().getName(), "cn.zvo.translate.service.", null);
@@ -235,8 +237,9 @@ public class TranslateController{
 			}
 			//Log.debug("getServiceInterface : "+(DateUtil.timeForUnix13()-start));
 			if(service == null) {
-				//如果没有用插件自定义，那么默认从appliclation.properties中取设置的
-				service = Service.getService();
+				//如果没有用插件自定义
+				vo.setBaseVO(BaseVO.FAILURE, "未设定翻译通道,请在 application.properties 中设置 translate.service. xxx 为翻译服务指定翻译通道。  详细参考： http://translate.zvo.cn/41160.html");
+				return vo;
 			}
 			//com.xnx3.Log.debug("service:"+service.getClass().getName());
 			

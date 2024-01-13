@@ -13,11 +13,10 @@ public class Service{
 	/**
 	 * 获取当前使用的翻译服务
 	 * @return
-	 * @deprecated
 	 */
 	public static ServiceInterface getService() {
 		if(serviceInterface == null) {
-			System.err.println("cn.zvo.translate.tcdn.core.service.serviceInterface 尚未初始化，请检查是否加入了 tcdn.service 服务");
+			System.err.println("未配置短信通道，请在application.propeties 中进行配置。可参考 http://translate.zvo.cn/41160.html");
 		}
 		return serviceInterface;
 	}

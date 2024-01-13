@@ -8,6 +8,8 @@ import javax.annotation.Resource;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import com.sun.tools.javac.code.Type.ForAll;
 import com.xnx3.Log;
 import com.xnx3.ScanClassUtil;
 import cn.zvo.translate.tcdn.core.service.Language;
@@ -43,7 +45,7 @@ public class ServiceLoad implements CommandLineRunner{
 				e.printStackTrace();
 			}
 		}
-		Log.info("language : \n"+JSONObject.fromObject(Language.map));
+		//Log.info("language : \n"+JSONObject.fromObject(Language.map));
 		
 		//从application.properties中获取设置的默认翻译源
 		com.xnx3.Log.debug("load translate config by application.properties / yml : "+this.translateServiceApplicationConfig);
@@ -81,11 +83,21 @@ public class ServiceLoad implements CommandLineRunner{
 						
 						try {
 							Class serviceClass = classList.get(i);
-							Object newInstance = serviceClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
-							Service.serviceInterface = (ServiceInterface) newInstance;
-							Service.serviceInterface.setLanguage(); //初始化设置语种
-							com.xnx3.Log.info("service use "+serviceClass.getName());
-							return;
+							Class[] interfaceClass = serviceClass.getInterfaces();
+							if(interfaceClass.length < 1) {
+								continue;
+							}
+							for(int j = 0; j<interfaceClass.length; j++) {
+								if("cn.zvo.translate.tcdn.core.service.ServiceInterface".equalsIgnoreCase(interfaceClass[0].getName())) {
+									
+									Object newInstance = serviceClass.getDeclaredConstructor(Map.class).newInstance(entry.getValue());
+									Service.serviceInterface = (ServiceInterface) newInstance;
+									Service.serviceInterface.setLanguage(); //初始化设置语种
+									com.xnx3.Log.info("translate service use : "+serviceClass.getName());
+									return;
+								}
+							}
+							
 						} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
 							e.printStackTrace();
 						}

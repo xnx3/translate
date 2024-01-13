@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import com.xnx3.ScanClassUtil;
 
+import cn.zvo.translate.tcdn.core.service.Service;
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
 import cn.zvo.translate.tcdn.core.vo.TranslateResultVO;
 import net.sf.json.JSONArray;
@@ -58,7 +59,8 @@ public class TranslateManage {
 				return (ServiceInterface) o;
 			}
 		}
-		return null;
+		
+		return Service.getService();
 	}
 
 	/**

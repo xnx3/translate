@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.xnx3.DateUtil;
+import com.xnx3.Log;
 
 import cn.zvo.http.Http;
 import cn.zvo.http.Response;
@@ -52,9 +53,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 //		from = Language.currentToService(from).getInfo();
 //		to = Language.currentToService(to).getInfo();
 		
-		String domain = "translate.googleapis.com";
-//		domain = "api.translate.zvo.cn";	//本地调试用
-		String url = "https://"+domain+"/translate_a/t?anno=3&client=te_lib&format=html&v=1.0&key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&logld=vTE_"+DateUtil.currentDate("yyyyMMdd")+"&sl="+from+"&tl="+to+"&sp=nmt&tc=1&ctt=1&sr=1&tk=&mode=1";
+		String domain = "https://translate.googleapis.com";
+//		domain = "http://api.translate.zvo.cn";	//本地调试用
+		String url = domain+"/translate_a/t?anno=3&client=te_lib&format=html&v=1.0&key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&logld=vTE_"+DateUtil.currentDate("yyyyMMdd")+"&sl="+from+"&tl="+to+"&sp=nmt&tc=1&ctt=1&sr=1&tk=&mode=1";
 		//System.out.println(url);
 //		JSONArray array = JSONArray.fromObject(text);
 		StringBuffer payload = new StringBuffer();
@@ -70,34 +71,30 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 //			}
 		}
 		//System.out.println(payload);
-		Response res = null;
-		try {
-			res = trans(url, payload.toString(), null, null, null);
-			if(res.getCode() == 200) {
-				//成功
-				
-				vo.setResult(TranslateResultVO.SUCCESS);
-				vo.setInfo("SUCCESS");
-				vo.setText(JSONArray.fromObject(res.getContent()));
-				
-				//对结果中不合适的地方进行替换
-				vo = responseReplace(vo);
-			}else {
-				vo.setResult(TranslateResultVO.FAILURE);
-				vo.setInfo("translate service response error , http code : "+res.getCode());
-				vo.setText(array);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		Response res = trans(url, payload.toString(), null, null, null);
+		if(res == null) {
 			vo.setResult(TranslateResultVO.FAILURE);
-			vo.setInfo("translate service response error");
+			vo.setInfo("translate service response error , Connection timed out. ");
+			vo.setText(array);
+		}else if(res.getCode() == 200) {
+			//成功
+			
+			vo.setResult(TranslateResultVO.SUCCESS);
+			vo.setInfo("SUCCESS");
+			vo.setText(JSONArray.fromObject(res.getContent()));
+			
+			//对结果中不合适的地方进行替换
+			vo = responseReplace(vo);
+		}else {
+			vo.setResult(TranslateResultVO.FAILURE);
+			vo.setInfo("translate service response error , http code : "+res.getCode());
 			vo.setText(array);
 		}
 		
 		return vo;
 	}
 	
-	public static Response trans(String url, String payload, String userAgent, String acceptLanguage, String contentLength) throws IOException {
+	public static Response trans(String url, String payload, String userAgent, String acceptLanguage, String contentLength) {
 		if(userAgent == null || userAgent.length() == 0) {
 			userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36";
 		}
@@ -118,7 +115,13 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		}
 		headers.put("Accept", "*/*");
 		
-    	Response res = http.post(url, payload, headers);
+    	Response res = null;
+		try {
+			res = http.post(url, payload, headers);
+		} catch (IOException e) {
+//			e.printStackTrace();
+			Log.error("google translate ServiceInterface 128 line : "+e.getMessage());
+		}
 		return res;
 	}
 	

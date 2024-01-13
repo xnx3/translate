@@ -3327,7 +3327,7 @@ var translate = {
 			 * v2.8.2 增加数组形态，如 ['https://api.translate.zvo.cn/','xxxxx'] 
 			 */
 			//host:'https://api.translate.zvo.cn/',
-			host:['https://api.translate.zvo.cn/','https://api.kefu.leimingyun.com/'],
+			host:['https://api.translate.zvo.cn/','https://api.kefu.leimingyun.com/', 'https://america.api.translate.zvo.cn/'],
 			//host的备用接口，格式同host，可以填写多个，只不过这里是数组格式。只有当主 host 无法连通时，才会采用备host来提供访问。如果为空也就是 [] 则是不采用备方案。
 			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口

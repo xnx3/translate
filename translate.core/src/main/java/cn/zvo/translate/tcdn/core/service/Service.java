@@ -13,6 +13,7 @@ public class Service{
 	/**
 	 * 获取当前使用的翻译服务
 	 * @return
+	 * @deprecated
 	 */
 	public static ServiceInterface getService() {
 		if(serviceInterface == null) {

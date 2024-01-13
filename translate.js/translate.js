@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.10.5.20240111',
+	version:'2.10.6.20240113',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -299,7 +299,8 @@ var translate = {
 		}
 		
 		//用的是v2.x或更高
-		translate.setUseVersion2();
+		//translate.setUseVersion2();
+		translate.useVersion = 'v2';
 		//判断是否是第一次翻译，如果是，那就不用刷新页面了。 true则是需要刷新，不是第一次翻译
 		if(translate.to != null && translate.to.length > 0){
 			//当前目标值有值，且目标语言跟当前语言不一致，那当前才是已经被翻译过的
@@ -2274,7 +2275,8 @@ var translate = {
 		local:'',
 		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
 		setLocal:function(languageName){
-			translate.setUseVersion2(); //Set to use v2.x version
+			//translate.setUseVersion2(); //Set to use v2.x version
+			translate.useVersion = 'v2';
 			translate.language.local = languageName;
 		},
 		//获取当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)
@@ -3123,7 +3125,8 @@ var translate = {
 				console.log(data.info);
 				console.log('==== ERROR END ====');
 			}else{
-				translate.setUseVersion2();
+				//translate.setUseVersion2();
+				translate.useVersion = 'v2';
 				translate.storage.set('to',data.language);	//设置目标翻译语言
 				translate.to = data.language; //设置目标语言
 				translate.selectLanguageTag
@@ -3324,7 +3327,7 @@ var translate = {
 			 * v2.8.2 增加数组形态，如 ['https://api.translate.zvo.cn/','xxxxx'] 
 			 */
 			//host:'https://api.translate.zvo.cn/',
-			host:['https://api.translate.zvo.cn/','https://api.kefu.leimingyun.com/'],
+			host:['https://api.translate.zvo.cn/','https://api.kefu.leimingyun.com/', 'https://america.api.translate.zvo.cn/'],
 			//host的备用接口，格式同host，可以填写多个，只不过这里是数组格式。只有当主 host 无法连通时，才会采用备host来提供访问。如果为空也就是 [] 则是不采用备方案。
 			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口

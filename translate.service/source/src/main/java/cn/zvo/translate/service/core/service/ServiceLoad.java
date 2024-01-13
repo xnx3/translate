@@ -8,11 +8,8 @@ import javax.annotation.Resource;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
 import com.xnx3.Log;
 import com.xnx3.ScanClassUtil;
-
-import cn.zvo.translate.service.google.ServiceInterfaceImplement;
 import cn.zvo.translate.tcdn.core.service.Language;
 import cn.zvo.translate.tcdn.core.service.Service;
 import cn.zvo.translate.tcdn.core.service.ServiceInterface;
@@ -39,8 +36,8 @@ public class ServiceLoad implements CommandLineRunner{
 			//com.xnx3.Log.debug("translate service : "+logClass.getName());
 			try {
 				Object newInstance = logClass.getDeclaredConstructor(Map.class).newInstance(new HashMap<String,String>());
-				Service.serviceInterface = (ServiceInterface) newInstance;
-				Service.serviceInterface.setLanguage(); //初始化设置语种
+				ServiceInterface serviceInterface = (ServiceInterface) newInstance;
+				serviceInterface.setLanguage(); //初始化设置语种
 				//System.out.println("-----setlanguage:"+ServiceInterface.class.getName());
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException| InvocationTargetException  | NoSuchMethodException | SecurityException e) {
 				e.printStackTrace();
@@ -98,9 +95,7 @@ public class ServiceLoad implements CommandLineRunner{
 				
 			}
 		}else {
-			System.out.println("未配置 translate.service.xxx.xxx ，使用默认的google翻译");
-			Service.serviceInterface = new ServiceInterfaceImplement();
-			Service.serviceInterface.setLanguage();
+			System.err.println("未配置 translate.service.xxx.xxx 请先配置");
 		}
     }
 	

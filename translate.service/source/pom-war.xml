@@ -51,45 +51,6 @@
 		<url>github.com/xnx3/FileUpload</url>
 	</scm>
 
-
-	<build>
-		<plugins>
-			
-			<!-- 使用 Maven Compiler 插件来排除某个Java文件 -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<excludes>
-						<!-- 排除 xxxx.java -->
-						<!-- <exclude>cn/*.java</exclude>  -->
-					</excludes>
-				</configuration>
-			</plugin>
-			
-			<!-- Source -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
-				<executions>
-					<!-- <execution>
-						<id>attach-sources</id>
-						<phase>deploy</phase>
-					</execution> -->
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jar-no-fork</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			
-		</plugins>
-	</build>
-	
 	
 	<dependencies>  
 		<!-- Spring Boot web依赖 -->

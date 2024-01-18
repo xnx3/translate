@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.0.20240113',
+	version:'2.11.1.20240118',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -72,7 +72,7 @@ var translate = {
 					return;
 				}
 			}
-			
+
 			//从服务器加载支持的语言库
 			translate.request.post(translate.request.api.language, {}, function(data){
 				if(data.result == 0){
@@ -1493,7 +1493,7 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
-			//console.log('url-'+url)
+			//console.log('url-'+url);
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				if(data.result == 0){
@@ -2413,7 +2413,6 @@ var translate = {
 					//continue;
 					lang = 'unidentification';
 				}
-				
 				var result = translate.language.analyse(lang, langStrs, upLangs, upLangsTwo, charstr);
 				//console.log(result)
 				langStrs = result['langStrs'];
@@ -2498,7 +2497,9 @@ var translate = {
 				return '';
 			}
 			
-			if(this.english(charstr)){
+			if(this.italian(charstr)){
+				return 'italian';
+			}else if(this.english(charstr)){
 				return 'english';
 			}else if(this.specialCharacter(charstr)){
 				return 'specialCharacter';
@@ -2836,6 +2837,14 @@ var translate = {
 			}
 			return false;
 		},
+		//意大利语
+		italian:function(str){
+			if(/.*[\u00E0-\u00F6]+.*$/.test(str)){
+				return true;
+			}
+			return false;
+		},
+
 		//是否包含特殊字符
 		specialCharacter:function(str){
 			//如：① ⑴ ⒈ 
@@ -3317,8 +3326,61 @@ var translate = {
 			return sortedObj;
 		}
 	},
+	//机器翻译采用哪种翻译服务
+	service:{  
+		/*
+			name填写的值有
+			translate.service 有 http://translate.zvo.cn/41160.html 提供机器翻译服务
+			client.edge 有edge浏览器接口提供翻译服务 ，也就是执行翻译时直接是
+
+		*/
+		name:'translate.service',  
+		//客户端方式的edge提供机器翻译服务
+		edge:{
+			language:function(){
+				console.log('client.edge.language');
+			},
+			/**
+			 * edge 进行翻译。 这个传入参数跟 translate.request.post 是一样的
+			 * @param path 请求的path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
+			 * @param data 请求的参数数据，传入如 {"goodsid":"1", "author":"管雷鸣"}
+			 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
+			 */
+			translate:function(path, data, func){
+				translate.request.send(translate.request.api.edge.auth, {}, function(auth){
+					var textArray = JSON.parse(decodeURIComponent(data.text));
+					var json = [];
+					for(var i = 0; i<textArray.length; i++){
+						json.push({"Text":textArray[i]});
+					}
+
+					var transUrl = translate.request.api.edge.translate.replace('{from}','zh-CHS').replace('{to}','en');
+					translate.request.send(transUrl, JSON.stringify(json), function(result){
+						var d = {};
+						d.info = 'SUCCESS';
+						d.result = 1;
+						d.from = data.from;
+						d.to = data.to;
+						d.text = [];
+						for(var t = 0; t < result.length; t++){
+							d.text.push(result[t].translations[0].text);
+						}
+						func(d);
+					}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, function(xhr){
+						console.log('---------error--------');
+						console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
+					}, true);
+				}, 'get', true, {'content-type':'application/x-www-form-urlencoded'}, function(xhr){
+					console.log('---------error--------');
+					console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
+				}, true);
+
+			}
+		}
+	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{
+		 
 		//相关API接口方面
 		api:{
 			/**
@@ -3334,6 +3396,10 @@ var translate = {
 			translate:'translate.json', //翻译接口
 			ip:'ip.json', //根据用户当前ip获取其所在地的语种
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
+			edge:{ //edge浏览器的翻译功能
+				auth:'https://edge.microsoft.com/translate/auth', //auth授权拉取
+				translate:'https://dev-eape-sg01p.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
+			}
 		},
 		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
@@ -3566,6 +3632,26 @@ var translate = {
 			var headers = {
 				'content-type':'application/x-www-form-urlencoded',
 			};
+			if(typeof(data) == 'undefined'){
+				return;
+			}
+
+			// ------- edge start --------
+			var url = translate.request.getUrl(path);
+			//if(url.indexOf('edge') > -1 && path == translate.request.api.translate){
+			if(translate.service.name == 'client.edge'){	
+				if(path == translate.request.api.translate){
+					translate.service.edge.translate(path, data, func);
+				}
+				if(path == translate.request.api.language){
+					console.log('----language');
+					//translate.service.edge.translate(path, data, func);
+				}
+				
+				return;
+			}
+			// ------- edge end --------
+
 			this.send(path, data, func, 'post', true, headers, null, true);
 		},
 		/**
@@ -3583,11 +3669,16 @@ var translate = {
 			//post提交的参数
 			var params = '';
 			if(data != null){
-				for(var index in data){
-					if(params.length > 0){
-						params = params + '&';
+				if(typeof(data) == 'string'){
+					params = data; //payload 方式
+				}else{
+					//表单提交方式
+					for(var index in data){
+						if(params.length > 0){
+							params = params + '&';
+						}
+						params = params + index + '=' + data[index];
 					}
-					params = params + index + '=' + data[index];
 				}
 			}
 
@@ -3624,11 +3715,20 @@ var translate = {
 			        if(xhr.status==200){
 			        	//请求正常，响应码 200
 			        	var json = null;
-			        	try{
-			        		json = JSON.parse(xhr.responseText);
-			        	}catch(e){
-			        		console.log(e);
+			        	if(typeof(xhr.responseText) == 'undefined' || xhr.responseText == null){
+			        		//相应内容为空
+			        	}else{
+			        		//响应内容有值
+			        		if(xhr.responseText.indexOf('{') > -1 && xhr.responseText.indexOf('}') > -1){
+				        		//应该是json格式
+				        		try{
+					        		json = JSON.parse(xhr.responseText);
+					        	}catch(e){
+					        		console.log(e);
+					        	}
+				        	}
 			        	}
+			        	
 			        	if(json == null){
 			        		func(xhr.responseText);
 			        	}else{
@@ -3689,6 +3789,7 @@ var translate = {
 				to: translate.language.getCurrent(),
 				text:encodeURIComponent(JSON.stringify(texts))
 			};
+			//console.log(data);
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				if(data.result == 0){

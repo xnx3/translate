@@ -44,7 +44,21 @@
 		<organizationUrl>http://www.sonatype.com</organizationUrl>
 		</developer>
 	</developers>
-
+	
+	
+	<build>
+		<plugins>
+			
+			<!-- 使用 Maven Compiler 插件来排除某个Java文件 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+			</plugin>
+		</plugins>
+	</build>
+	
+	
 	<scm>
 		<connection>scm:git:git://github.com/xnx3/sms.java</connection>
 		<developerConnection>scm:git:ssh://github.com/xnx3/sms.java</developerConnection>

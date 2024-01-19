@@ -101,6 +101,7 @@ public class Language {
 			LanguageBean bean = new LanguageBean();
         	bean.setId(entry.getKey());
         	bean.setName(entry.getValue().get("name"));
+        	bean.setServiceId(entry.getValue().get("serviceId"));
         	list.add(bean);
 	    }
 		vo.setList(list);

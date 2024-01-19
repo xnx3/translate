@@ -149,10 +149,80 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.CHINESE_SIMPLIFIED, "zh-CHS");	 //简体中文
 		lang.append(LanguageEnum.CHINESE_TRADITIONAL, "zh-CHT"); //繁体中文
 		lang.append(LanguageEnum.ENGLISH, "en"); //英文
-		
-		
-		
-		
+		lang.append(LanguageEnum.ALBANIAN, "sq"); //阿尔巴尼亚语
+		lang.append(LanguageEnum.ARABIC, "ar"); //阿拉伯语
+		lang.append(LanguageEnum.AMHARIC, "am"); //阿姆哈拉语
+		lang.append(LanguageEnum.AZERBAIJANI, "az"); //阿塞拜疆语
+		lang.append(LanguageEnum.IRISH, "ga"); //爱尔兰语
+		lang.append(LanguageEnum.ESTONIAN, "et"); //爱沙尼亚语
+		//lang.append(LanguageEnum.ORIYA, "or"); //奥里亚语
+		lang.append(LanguageEnum.BULGARIAN, "bg"); //保加利亚语
+		lang.append(LanguageEnum.ICELANDIC, "is"); //冰岛语
+		lang.append(LanguageEnum.POLISH, "pl"); //波兰语
+		lang.append(LanguageEnum.BOSNIAN, "bs-Latn"); //波斯尼亚语（拉丁文）
+		lang.append(LanguageEnum.PERSIAN, "fa"); //波斯语
+		//lang.append(LanguageEnum.FARSI, "prs"); //波斯语（阿富汗）
+		lang.append(LanguageEnum.DANISH, "da"); //丹麦语
+		lang.append(LanguageEnum.DEUTSCH, "de"); //德语
+		lang.append(LanguageEnum.RUSSIAN, "ru"); //俄语
+		lang.append(LanguageEnum.FRENCH, "fr"); //法语
+		lang.append(LanguageEnum.FILIPINO, "fil"); //菲律宾语
+		lang.append(LanguageEnum.FINNISH, "fi"); //芬兰语
+		lang.append(LanguageEnum.KHMER, "km"); //高棉语
+		lang.append(LanguageEnum.GUJARATI, "gu"); //古吉拉特语
+		lang.append(LanguageEnum.HAITIAN_CREOLE, "ht"); //海地克里奥尔语
+		lang.append(LanguageEnum.KOREAN, "ko"); //韩语
+		lang.append(LanguageEnum.DUTCH, "nl"); //荷兰语
+		lang.append(LanguageEnum.CATALAN, "ca"); //加泰罗尼亚语
+		lang.append(LanguageEnum.CZECH, "cs"); //捷克语
+		lang.append(LanguageEnum.KANNADA, "kn"); //卡纳达语
+		lang.append(LanguageEnum.CROATIAN, "hr"); //克罗地亚语
+		lang.append(LanguageEnum.KURDISH, "ku"); //库尔德语
+		lang.append(LanguageEnum.LATVIAN, "lv"); //拉脱维亚语
+		lang.append(LanguageEnum.LAO, "lo"); //老挝语
+		lang.append(LanguageEnum.LITHUANIAN, "lt"); //立陶宛语
+		lang.append(LanguageEnum.ROMANIAN, "ro"); //罗马尼亚语
+		lang.append(LanguageEnum.MALTESE, "mt"); //马耳他语
+		lang.append(LanguageEnum.MARATHI, "mr"); //马拉地语
+		//lang.append(LanguageEnum.MALAGASY, "mg"); //马拉加斯语
+		lang.append(LanguageEnum.MALAYALAM, "ml"); //马拉雅拉姆语
+		lang.append(LanguageEnum.MALAY, "ms"); //马来语
+		lang.append(LanguageEnum.MAORI, "mi"); //毛利语
+		lang.append(LanguageEnum.BENGALI, "bn"); //孟加拉语
+		lang.append(LanguageEnum.BURMESE, "my"); //缅甸语
+		lang.append(LanguageEnum.AFRIKAANS, "af"); //南非荷兰语
+		lang.append(LanguageEnum.NEPALI, "ne"); //尼泊尔语
+		lang.append(LanguageEnum.NORWEGIAN, "no"); //挪威语
+		lang.append(LanguageEnum.PUNJABI, "pa"); //旁遮普语
+		lang.append(LanguageEnum.PORTUGUESE, "pt"); //葡萄牙语
+		//lang.append(LanguageEnum.PORTUGAL, "pt-pt"); //葡萄牙语（葡萄牙）
+		lang.append(LanguageEnum.PASHTO, "ps"); //普什图语
+		lang.append(LanguageEnum.JAPANESE, "ja"); //日语
+		lang.append(LanguageEnum.SWEDISH, "sv"); //瑞典语
+		lang.append(LanguageEnum.SAMOAN, "sm"); //萨摩亚语
+		//lang.append(LanguageEnum.SERBIA, "sr-Latn"); //塞尔维亚语（拉丁文）
+		//lang.append(LanguageEnum.SERBIA, "sr-Cyrl"); //塞尔维亚语（西里尔文）
+		lang.append(LanguageEnum.SLOVAK, "sk"); //斯洛伐克语
+		lang.append(LanguageEnum.SLOVENE, "sl"); //斯洛文尼亚语
+		lang.append(LanguageEnum.SWAHILI, "sw"); //斯瓦希里语
+		lang.append(LanguageEnum.TELUGU, "te"); //泰卢固语
+		lang.append(LanguageEnum.TAMIL, "ta"); //泰米尔语
+		lang.append(LanguageEnum.THAI, "th"); //泰语
+		lang.append(LanguageEnum.TONGAN, "to"); //汤加语
+		lang.append(LanguageEnum.TURKISH, "tr"); //土耳其语
+		lang.append(LanguageEnum.WELSH, "cy"); //威尔士语
+		lang.append(LanguageEnum.URDU, "ur"); //乌尔都语
+		lang.append(LanguageEnum.UKRAINIAN, "uk"); //乌克兰语
+		lang.append(LanguageEnum.SPANISH, "es"); //西班牙语
+		lang.append(LanguageEnum.HEBREW, "he"); //希伯来语
+		lang.append(LanguageEnum.GREEK, "el"); //希腊语
+		lang.append(LanguageEnum.HUNGARIAN, "hu"); //匈牙利语
+		lang.append(LanguageEnum.ARMENIAN, "hy"); //亚美尼亚语
+		lang.append(LanguageEnum.ITALIAN, "it"); //意大利语
+		//lang.append(LanguageEnum.INUKTITUT, "iu"); //因纽特语
+		lang.append(LanguageEnum.HINDI, "hi"); //印地语
+		//lang.append(LanguageEnum.INDONESIAN, "id"); //印度尼西亚语
+		lang.append(LanguageEnum.VIETNAMESE, "vi"); //越南语
 	}
 	
 	public String gainAuth() {

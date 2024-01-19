@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.2.20240119',
+	version:'2.11.3.20240119',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1085,6 +1085,11 @@ var translate = {
 			translate.useVersion = 'v2';
 		}
 		
+		//版本检测
+		try{
+			translate.versionCheck();
+		}catch(e){  }
+
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
 		
 
@@ -3324,6 +3329,19 @@ var translate = {
 			  sortedObj[key] = obj[key];
 			}
 			return sortedObj;
+		},
+		/*
+			将 2.11.3.20231232 转化为 2011003
+			转化时会去掉最后一个日期的字符
+		*/
+		versionStringToInt:function(versionString){
+			var vs = versionString.split('\.');
+			var result = 0;
+			result = parseInt(vs[0])*1000*1000 + result;
+			result = parseInt(vs[1])*1000 + result;
+			result = parseInt(vs[2]) + result;
+
+			return result;
 		}
 	},
 	//机器翻译采用哪种翻译服务
@@ -3337,6 +3355,11 @@ var translate = {
 		name:'translate.service',  
 		//客户端方式的edge提供机器翻译服务
 		edge:{
+			api:{ //edge浏览器的翻译功能
+				auth:'https://edge.microsoft.com/translate/auth', //auth授权拉取
+				translate:'https://dev-eape-sg01p.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
+			},
+
 			language:{
 				json:[{"id":"ukrainian","name":"УкраїнськаName","serviceId":"uk"},{"id":"norwegian","name":"Norge","serviceId":"no"},{"id":"welsh","name":"color name","serviceId":"cy"},{"id":"dutch","name":"nederlands","serviceId":"nl"},{"id":"japanese","name":"しろうと","serviceId":"ja"},{"id":"filipino","name":"Pilipino","serviceId":"fil"},{"id":"english","name":"English","serviceId":"en"},{"id":"lao","name":"ກະຣຸນາ","serviceId":"lo"},{"id":"telugu","name":"తెలుగుQFontDatabase","serviceId":"te"},{"id":"romanian","name":"Română","serviceId":"ro"},{"id":"nepali","name":"नेपालीName","serviceId":"ne"},{"id":"french","name":"Français","serviceId":"fr"},{"id":"haitian_creole","name":"Kreyòl ayisyen","serviceId":"ht"},{"id":"czech","name":"český","serviceId":"cs"},{"id":"swedish","name":"Svenska","serviceId":"sv"},{"id":"russian","name":"Русский язык","serviceId":"ru"},{"id":"burmese","name":"ဗာရမ်","serviceId":"my"},{"id":"pashto","name":"پښتوName","serviceId":"ps"},{"id":"thai","name":"คนไทย","serviceId":"th"},{"id":"armenian","name":"Արմենյան","serviceId":"hy"},{"id":"chinese_simplified","name":"简体中文","serviceId":"zh-CHS"},{"id":"persian","name":"Persian","serviceId":"fa"},{"id":"chinese_traditional","name":"繁體中文","serviceId":"zh-CHT"},{"id":"kurdish","name":"Kurdî","serviceId":"ku"},{"id":"turkish","name":"Türkçe","serviceId":"tr"},{"id":"hindi","name":"हिन्दी","serviceId":"hi"},{"id":"bulgarian","name":"български","serviceId":"bg"},{"id":"malay","name":"Malay","serviceId":"ms"},{"id":"swahili","name":"Kiswahili","serviceId":"sw"},{"id":"icelandic","name":"ÍslandName","serviceId":"is"},{"id":"irish","name":"Íris","serviceId":"ga"},{"id":"khmer","name":"ខ្មែរKCharselect unicode block name","serviceId":"km"},{"id":"gujarati","name":"ગુજરાતી","serviceId":"gu"},{"id":"slovak","name":"Slovenská","serviceId":"sk"},{"id":"kannada","name":"ಕನ್ನಡ್Name","serviceId":"kn"},{"id":"hebrew","name":"היברית","serviceId":"he"},{"id":"hungarian","name":"magyar","serviceId":"hu"},{"id":"marathi","name":"मराठीName","serviceId":"mr"},{"id":"tamil","name":"தாமில்","serviceId":"ta"},{"id":"estonian","name":"eesti keel","serviceId":"et"},{"id":"malayalam","name":"മലമാലം","serviceId":"ml"},{"id":"arabic","name":"بالعربية","serviceId":"ar"},{"id":"deutsch","name":"Deutsch","serviceId":"de"},{"id":"slovene","name":"slovenščina","serviceId":"sl"},{"id":"bengali","name":"বেঙ্গালী","serviceId":"bn"},{"id":"urdu","name":"اوردو","serviceId":"ur"},{"id":"azerbaijani","name":"azerbaijani","serviceId":"az"},{"id":"portuguese","name":"português","serviceId":"pt"},{"id":"samoan","name":"lifiava","serviceId":"sm"},{"id":"afrikaans","name":"afrikaans","serviceId":"af"},{"id":"tongan","name":"汤加语","serviceId":"to"},{"id":"greek","name":"ελληνικά","serviceId":"el"},{"id":"spanish","name":"Español","serviceId":"es"},{"id":"danish","name":"dansk","serviceId":"da"},{"id":"amharic","name":"amharic","serviceId":"am"},{"id":"punjabi","name":"ਪੰਜਾਬੀName","serviceId":"pa"},{"id":"albanian","name":"albanian","serviceId":"sq"},{"id":"lithuanian","name":"Lietuva","serviceId":"lt"},{"id":"italian","name":"italiano","serviceId":"it"},{"id":"vietnamese","name":"Tiếng Việt","serviceId":"vi"},{"id":"korean","name":"한어","serviceId":"ko"},{"id":"maltese","name":"Malti","serviceId":"mt"},{"id":"finnish","name":"suomi","serviceId":"fi"},{"id":"catalan","name":"català","serviceId":"ca"},{"id":"croatian","name":"hrvatski","serviceId":"hr"},{"id":"bosnian","name":"bosnian","serviceId":"bs-Latn"},{"id":"polish","name":"Polski","serviceId":"pl"},{"id":"latvian","name":"latviešu","serviceId":"lv"},{"id":"maori","name":"Maori","serviceId":"mi"}],
 				/*
@@ -3368,7 +3391,7 @@ var translate = {
 			 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
 			 */
 			translate:function(path, data, func){
-				translate.request.send(translate.request.api.edge.auth, {}, function(auth){
+				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
 					var textArray = JSON.parse(decodeURIComponent(data.text));
 					var json = [];
 					for(var i = 0; i<textArray.length; i++){
@@ -3377,7 +3400,7 @@ var translate = {
 
 					var from = translate.service.edge.language.getMap()[data.from];
 					var to = translate.service.edge.language.getMap()[data.to];
-					var transUrl = translate.request.api.edge.translate.replace('{from}',from).replace('{to}',to);
+					var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
 					translate.request.send(transUrl, JSON.stringify(json), function(result){
 						var d = {};
 						d.info = 'SUCCESS';
@@ -3419,10 +3442,8 @@ var translate = {
 			translate:'translate.json', //翻译接口
 			ip:'ip.json', //根据用户当前ip获取其所在地的语种
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
-			edge:{ //edge浏览器的翻译功能
-				auth:'https://edge.microsoft.com/translate/auth', //auth授权拉取
-				translate:'https://dev-eape-sg01p.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
-			}
+			version:'version.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
+			
 		},
 		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
@@ -3665,13 +3686,14 @@ var translate = {
 			if(translate.service.name == 'client.edge'){	
 				if(path == translate.request.api.translate){
 					translate.service.edge.translate(path, data, func);
+					return;
 				}
 				if(path == translate.request.api.language){
 					//console.log('----language');
 					//translate.service.edge.translate(path, data, func);
 				}
 				
-				return;
+				//return;
 			}
 			// ------- edge end --------
 
@@ -4055,6 +4077,25 @@ var translate = {
 			//监听鼠标点击事件，隐藏tooltip，此处可优化
 			document.addEventListener('click', (event)=>{  document.querySelector('#translateTooltip').style.display = "none"}, false);
 		}
+	},
+
+	//版本检测，看是否有新版本
+	versionCheck:function(){
+		translate.request.post(translate.request.api.version, {}, function(data) {
+			if (data.result == 0){
+				console.log('版本检测异常：'+data.info);
+				return;
+			}
+
+			//服务端返回的最新版本
+			var newVersion = translate.util.versionStringToInt(data.info);
+			//当前translate.js的版本
+			var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
+
+			if(newVersion > currentVersion){
+				console.log('Tip : translate.js find new version : '+data.info);
+			}
+		});
 	}
 
 
@@ -4066,6 +4107,7 @@ var translate = {
 	将页面中的所有node节点，生成其在当前页面的唯一标识字符串uuid
 	开源仓库： https://github.com/xnx3/nodeuuid.js
 	原理： 当前节点的nodeName + 当前节点在父节点下，属于第几个 tagName ，然后追个向父级进行取，将node本身+父级+父父级+.... 拼接在一起
+	注意，如果动态添加一个节点到第一个，那么其他节点就会挤下去导致节点标记异常
 */
 var nodeuuid = {
 	index:function(node){

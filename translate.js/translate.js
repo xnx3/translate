@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.3.20240119',
+	version:'2.11.4.20240120',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -819,21 +819,31 @@ var translate = {
 			translate.listener.isStart = true; //记录已执行过启动方法了
 			
 			// 观察器的配置（需要观察什么变动）
-			const config = { attributes: true, childList: true, subtree: true };
+			translate.listener.config = { attributes: true, childList: true, subtree: true, characterData: true, attributeOldValue:true, characterDataOldValue:true };
 			// 当观察到变动时执行的回调函数
-			const callback = function(mutationsList, observer) {
+			translate.listener.callback = function(mutationsList, observer) {
 				var documents = []; //有变动的元素
 				
 			    // Use traditional 'for loops' for IE 11
 			    for(let mutation of mutationsList) {
-			        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-						//多了个组件
+					if (mutation.type === 'childList') {
+						if(mutation.addedNodes.length > 0){
+							//多了组件
+							documents.push.apply(documents, mutation.addedNodes);
+						}else if(mutation.removedNodes.length > 0){
+							//console.log('remove:');
+							//console.log(mutation.removedNodes);
+						}else{
+							//console.log('not find:');
+							//console.log(mutation);
+						}
+					}else if (mutation.type === 'attributes') {
+						//console.log('The ' + mutation.attributeName + ' attribute was modified.');
+					}else if(mutation.type === 'characterData'){
+						//内容改变
 						documents.push.apply(documents, [mutation.target]);
-			        //    console.log(mutation.addedNodes);
-			        //}else if (mutation.type === 'attributes') {
-			        //   console.log('The ' + mutation.attributeName + ' attribute was modified.');
-			        }
-			    }
+					}
+	          	}
 			    
 				//console.log(documents);
 				if(documents.length > 0){
@@ -846,13 +856,13 @@ var translate = {
 				}
 			};
 			// 创建一个观察器实例并传入回调函数
-			const observer = new MutationObserver(callback);
+			translate.listener.observer = new MutationObserver(translate.listener.callback);
 			// 以上述配置开始观察目标节点
 			var docs = translate.getDocuments();
 			for(var docs_index = 0; docs_index < docs.length; docs_index++){
 				var doc = docs[docs_index];
 				if(doc != null){
-					observer.observe(doc, config);
+					translate.listener.observer.observe(doc, translate.listener.config);
 				}
 			}
 		},

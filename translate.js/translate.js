@@ -4091,6 +4091,10 @@ var translate = {
 
 	//版本检测，看是否有新版本
 	versionCheck:function(){
+		if(typeof(translate.versionCheck_execute) != 'undefined'){
+			return;
+		}
+		translate.versionCheck_execute = '已进行';
 		translate.request.post(translate.request.api.version, {}, function(data) {
 			if (data.result == 0){
 				console.log('版本检测异常：'+data.info);

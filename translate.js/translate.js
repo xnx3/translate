@@ -826,10 +826,12 @@ var translate = {
 				
 			    // Use traditional 'for loops' for IE 11
 			    for(let mutation of mutationsList) {
+			    	let addNodes = [];
 					if (mutation.type === 'childList') {
 						if(mutation.addedNodes.length > 0){
 							//多了组件
-							documents.push.apply(documents, mutation.addedNodes);
+							addNodes = mutation.addedNodes;
+							//documents.push.apply(documents, mutation.addedNodes);
 						}else if(mutation.removedNodes.length > 0){
 							//console.log('remove:');
 							//console.log(mutation.removedNodes);
@@ -841,7 +843,24 @@ var translate = {
 						//console.log('The ' + mutation.attributeName + ' attribute was modified.');
 					}else if(mutation.type === 'characterData'){
 						//内容改变
-						documents.push.apply(documents, [mutation.target]);
+						addNodes = [mutation.target];
+						//documents.push.apply(documents, [mutation.target]);
+					}
+					for(let item of addNodes){
+						//console.log(item);
+
+						//判断是否已经加入过了，如果已经加入过了，就不重复加了
+						var isFind = false;
+						for(var di = 0; di < documents.length; di++){
+							if(documents[di].isSameNode(item)){
+								isFind = true;
+								break;
+							}
+						}
+						if(isFind){
+							break;
+						}
+						documents.push.apply(documents, [item]);
 					}
 	          	}
 			    

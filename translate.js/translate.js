@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.4.20240120',
+	version:'2.11.5.20240120',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -341,6 +341,31 @@ var translate = {
 	//使用 setAutoDiscriminateLocalLanguage 进行设置
 	autoDiscriminateLocalLanguage:false,
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
+	/*
+		v2.11.5增加
+		正在进行翻译的节点，会记录到此处。
+		这里是最底的节点了，不会再有下级了。这也就是翻译的最终节点，也就是 translate.element.findNode() 发现的节点
+		也就是扫描到要进行翻译的节点，在翻译前，加入到这里，在这个节点翻译结束后，将这里面记录的节点删掉。
+		
+		格式如 
+			[
+				{
+					node: node节点的对象
+					number: 2 (当前正在翻译进行中的次数，比如一个节点有中英文混合的文本，那么中文、英文 会同时进行两次翻译，也就是最后要进行两次替换，会导致这个node产生两次改动。每次便是+1、-1)
+				},
+				{
+					......
+				}
+			]
+
+		生命周期：
+		
+		translate.execute() 执行后，会扫描要翻译的字符，扫描完成后首先会判断缓存中是否有，是否会命中缓存，如果缓存中有，那么在加入 task.add 之前就会将这个进行记录 ++ 
+		在浏览器缓存没有命中后，则会通过网络api请求进行翻译，此时在发起网络请求前，会进行记录 ++
+		当使用 translate.listener.start() 后，网页中动态渲染的部分会触发监听，触发监听后首先会判断这个节点是否存在于这里面正在被翻译，如果存在里面，那么忽略， 如果不存在里面，那么再进行 translate.execute(变动的节点) 进行翻译 （当然执行这个翻译后，自然也就又把它加入到此处进行记录 ++）
+		【唯一的减去操作】 在task.execute() 中，翻译完成并且渲染到页面执行完成后，会触发延迟50毫秒后将这个翻译的节点从这里减去
+	*/
+	inProgressNodes:[], 
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'link', 'pre', 'code'],
@@ -823,7 +848,7 @@ var translate = {
 			// 当观察到变动时执行的回调函数
 			translate.listener.callback = function(mutationsList, observer) {
 				var documents = []; //有变动的元素
-				
+				//console.log('--------- 变动');
 			    // Use traditional 'for loops' for IE 11
 			    for(let mutation of mutationsList) {
 			    	let addNodes = [];
@@ -846,6 +871,8 @@ var translate = {
 						addNodes = [mutation.target];
 						//documents.push.apply(documents, [mutation.target]);
 					}
+
+					//去重并加入 documents
 					for(let item of addNodes){
 						//console.log(item);
 
@@ -864,14 +891,44 @@ var translate = {
 					}
 	          	}
 			    
-				//console.log(documents);
+				//console.log(documents.length);
 				if(documents.length > 0){
 					//有变动，需要看看是否需要翻译，延迟10毫秒执行
-					// 使用setTimeout()函数延迟30毫秒执行一段代码
+					
+					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
+					var translateNodes = [];
+					//console.log(translate.inProgressNodes.length);
+					for(let ipnode of documents){
+						//console.log('---type:'+ipnode.nodeType);
+
+						var find = false;
+						for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
+							if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+								//有记录了，那么忽略这个node，这个node是因为翻译才导致的变动
+								//console.log('发现相同');
+								find = true;
+								break;
+							}
+						}
+						if(find){
+							continue;
+						}
+
+						//不相同，才追加到新的 translateNodes
+						translateNodes.push(ipnode);
+						//console.log('listener ++ '+ipnode.nodeValue);
+						//console.log(ipnode.nodeType);
+					}
+					if(translateNodes.length < 1){
+						return;
+					}
+					//console.log(translateNodes.length);
+
+
 					setTimeout(function() {
 						//console.log(documents);
-						translate.execute(documents); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
-					}, 10);
+						translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+					}, 10); //这个要比 task.execute() 中的 settimeout 延迟执行删除 translate.inpr.....nodes 的时间要小，目的是前一个发生变动后，记入 inpr...nodes 然后翻译完成后节点发生变化又触发了listener，此时 inpr....nodes 还有，那么这个变化将不做处理，然后 inp.....nodes 再删除这个标记
 				}
 			};
 			// 创建一个观察器实例并传入回调函数
@@ -1006,8 +1063,37 @@ var translate = {
 							continue;
 						}
 						
+						//翻译完毕后，再将这个翻译的目标node从 inPro....Nodes 中去掉
+						var ipnode = this.nodes[hash][task_index];
+						//console.log('int-----++'+ipnode.nodeValue);
+						setTimeout(function(ipnode){
+							//console.log('int-----'+ipnode.nodeValue);
+							for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
+								if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+									//console.log('in progress --');
+									//console.log(ipnode);
+									//有记录了，那么出现次数 +1
+									translate.inProgressNodes[ini].number = translate.inProgressNodes[ini].number - 1;
+									if(translate.inProgressNodes[ini].number < 1){
+										
+										
+											//console.log('ini-'+ini)
+											translate.inProgressNodes.splice(ini,1);	
+											//console.log("-- length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
+										//
+									}
+									break;
+								}
+							}
+						}, 50, ipnode);
+
 						//console.log(this.nodes[hash][task_index]);
 						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
+
+
+
+
+
 						/*
 						//var tagName = translate.element.getTagNameByNode(this.nodes[hash][task_index]);//节点的tag name
 						//console.log(tagName)
@@ -1038,7 +1124,7 @@ var translate = {
 			
 			//console.log('---listen');
 
-			//监听
+			//监听 - 增加到翻译历史里面 nodeHistory
 			if(typeof(this.taskQueue) != 'undefined' && Object.keys(this.taskQueue).length > 0){
 				//50毫秒后执行，以便页面渲染完毕
 				var renderTask = this;
@@ -1340,6 +1426,34 @@ var translate = {
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
+
+
+							//加入 translate.inProgressNodes
+							//取得这个翻译的node
+							var ipnode = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+
+							//判断这个node是否已经在 inProgressNodes 记录了
+							var isFind = false;
+							for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
+								if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+									//有记录了，那么出现次数 +1
+									translate.inProgressNodes[ini].number++;
+									isFind = true;
+									//console.log('cache - find - ++ ');
+									//console.log(ipnode);
+								}
+							}
+							//未发现，那么还要将这个node加入进去
+							if(!isFind){
+								//console.log('cache - find - add -- lang:'+lang+', hash:'+hash+' node_index:'+node_index);
+								//console.log(ipnode.nodeValue);
+								translate.inProgressNodes.push({node: ipnode, number:1});
+							}
+
+							//console.log(translate.inProgressNodes);
+							//加入 translate.inProgressNodes -- 结束
+
+
 							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 							
@@ -1497,12 +1611,53 @@ var translate = {
 		}
 		*/
 
-		//console.log(fanyiLangs)
+		//console.log(translate.nodeQueue[uuid]['list'])
 		if(fanyiLangs.length == 0){
 			//没有需要翻译的，直接退出
 			return;
 		}
 		
+		//加入 translate.inProgressNodes -- start
+		for(var lang in translateHashArray){
+			if(typeof(translateHashArray[lang]) == 'undefined'){
+				continue;
+			}
+			if(translateHashArray[lang].length < 1){
+				continue;
+			}
+			for(var hai = 0; hai<translateHashArray[lang].length; hai++){
+				var thhash = translateHashArray[lang][hai];
+				//取得这个翻译的node
+				//var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
+				for(var ipni = 0; ipni < translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length; ipni++){
+					//取得这个翻译的node
+					var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
+
+					//判断这个node是否已经在 inProgressNodes 记录了
+					var isFind = false;
+					for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
+						if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+							//有记录了，那么出现次数 +1
+							//console.log('net request ++');
+							//console.log(ipnode);
+							translate.inProgressNodes[ini].number++;
+							isFind = true;
+						}
+					}
+					//未发现，那么还要将这个node加入进去
+					if(!isFind){
+						//console.log('net request add');
+						//console.log(ipnode);
+						translate.inProgressNodes.push({node: ipnode, number:1});
+					}
+
+				}
+
+			}
+		}
+		//加入 translate.inProgressNodes -- end
+
+
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言

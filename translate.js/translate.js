@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.5.20240120',
+	version:'2.11.7.20240122',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1372,6 +1372,7 @@ var translate = {
 					
 		*/
 		var twoScanNodes = {};
+		var cacheScanNodes = []; //同上面的 twoScanNodes，只不过 twoScanNodes 是按照lang存的，而这个不再有lang区分
 		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中，取语言
 			//console.log('lang:'+lang); //lang为english这种语言标识
 			if(lang == null || typeof(lang) == 'undefined' || lang.length == 0 || lang == 'undefined'){
@@ -1389,7 +1390,7 @@ var translate = {
 			//二维数组，取hash、value
 			for(var hash in translate.nodeQueue[uuid]['list'][lang]){
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'function'){
-					//跳出，增加容错率。  正常情况下应该不会这样
+					//跳出，增加容错。  正常情况下应该不会这样
 					continue;
 				}
 
@@ -1454,21 +1455,34 @@ var translate = {
 							//console.log(translate.inProgressNodes);
 							//加入 translate.inProgressNodes -- 结束
 
-
-							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+							//翻译结果的文本，包含了before  、 after 了
+							var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
+							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
 							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
-							
+							//console.log(translateResultText);
+
 							//重新扫描这个node,避免这种情况：
 							//localstorage缓存中有几个词的缓存了，但是从缓存中使用时，把原本识别的要翻译的数据给打散了，导致翻译结果没法赋予，导致用户展示时有些句子没成功翻译的问题 -- 2023.8.22
 							//console.log('继续扫描 + 1 - '+twoScanNodes.length);
 							var twoScanIndex = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
 							for(var i = 0; i<twoScanNodes[lang].length; i++){
 								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
+								//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
 									//如果已经加入过了，那么跳过
 									twoScanIndex = i;
 									break;
 								}
 							}
+							var twoScanIndex_cache = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
+							for(var i = 0; i<cacheScanNodes.length; i++){
+								//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
+								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
+									//如果已经加入过了，那么跳过
+									twoScanIndex_cache = i;
+									break;
+								}
+							}
+
 							if(twoScanIndex == -1){
 								//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node']);
 								twoScanIndex = twoScanNodes[lang].length;
@@ -1476,9 +1490,21 @@ var translate = {
 								twoScanNodes[lang][twoScanIndex]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
 								twoScanNodes[lang][twoScanIndex]['array'] = [];
 							}
+
+							if(twoScanIndex_cache == -1){
+								twoScanIndex_cache = cacheScanNodes.length;
+								cacheScanNodes[twoScanIndex_cache] = {};
+								cacheScanNodes[twoScanIndex_cache]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+								cacheScanNodes[twoScanIndex_cache]['array'] = [];
+							}
+
 							//未加入过，那么加入
 							var arrayIndex = twoScanNodes[lang][twoScanIndex]['array'].length;
-							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
+							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translateResultText;
+							
+							var arrayIndex_cache = cacheScanNodes[twoScanIndex_cache]['array'].length;
+							cacheScanNodes[twoScanIndex_cache]['array'][arrayIndex_cache] = translateResultText;
+							
 							//twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'];
 						}
 					//}
@@ -1488,7 +1514,6 @@ var translate = {
 					continue;	//跳出，不用在传入下面的翻译接口了
 				}
 				
-
 				/*
 				//取出数组
 				var queueNodes = this.nodeQueue[lang][hash];
@@ -1510,7 +1535,8 @@ var translate = {
 			task.execute(); //执行渲染任务
 		}
 		//console.log(twoScanNodes);
-
+		//console.log('cacheScanNodes:');
+		//console.log(cacheScanNodes);
 
 		/******* 进行第二次扫描、追加入翻译队列。目的是防止缓存打散扫描的待翻译文本 ********/
 		for(var lang in twoScanNodes){
@@ -1521,6 +1547,15 @@ var translate = {
 			//console.log(twoScanNodes[lang]);
 			for(var i = 0; i<twoScanNodes[lang].length; i++){
 				
+				//找到这个node元素命中缓存后的翻译记录
+				for(var ci = 0; ci<cacheScanNodes.length; ci++){
+					if(twoScanNodes[lang][i].node.isSameNode(cacheScanNodes[ci]['node'])){
+						//如果发现，那么赋予
+						twoScanNodes[lang][i].array = cacheScanNodes[ci].array;
+						break;
+					}
+				}
+
 				twoScanNodes[lang][i].array.sort(function(a, b) { return b.length - a.length; });
 				//console.log(twoScanNodes[lang][i].array);
 
@@ -3427,6 +3462,7 @@ var translate = {
 				str = str.replace(/\(/g,'\\\(');
 				str = str.replace(/\)/g,'\\\)');
 				str = str.replace(/\|/g,'\\\|');
+				str = str.replace(/\+/g,'\\\+');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理
@@ -3539,6 +3575,20 @@ var translate = {
 
 		*/
 		name:'translate.service',  
+		/*
+			其实就是设置 translate.service.name
+
+		*/
+		use: function(serviceName){
+			if(typeof(serviceName) == 'string' && serviceName == 'client.edge'){
+				translate.service.name = serviceName;
+
+				//增加元素整体翻译能力
+				translate.whole.tag.push('body');
+				translate.whole.tag.push('head');
+				translate.whole.tag.push('html');
+			}
+		},
 		//客户端方式的edge提供机器翻译服务
 		edge:{
 			api:{ //edge浏览器的翻译功能

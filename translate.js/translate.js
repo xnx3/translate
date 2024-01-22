@@ -848,7 +848,7 @@ var translate = {
 			// 当观察到变动时执行的回调函数
 			translate.listener.callback = function(mutationsList, observer) {
 				var documents = []; //有变动的元素
-				//console.log('--------- 变动');
+				//console.log('--------- lisetner 变动');
 			    // Use traditional 'for loops' for IE 11
 			    for(let mutation of mutationsList) {
 			    	let addNodes = [];
@@ -917,16 +917,16 @@ var translate = {
 						//不相同，才追加到新的 translateNodes
 						translateNodes.push(ipnode);
 						//console.log('listener ++ '+ipnode.nodeValue);
-						//console.log(ipnode.nodeType);
+						//console.log(ipnode);
 					}
 					if(translateNodes.length < 1){
 						return;
 					}
-					//console.log(translateNodes.length);
+					//console.log('translateNodeslength: '+translateNodes.length);
 
 
 					setTimeout(function() {
-						//console.log(documents);
+						//console.log(translateNodes);
 						translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
 					}, 10); //这个要比 task.execute() 中的 settimeout 延迟执行删除 translate.inpr.....nodes 的时间要小，目的是前一个发生变动后，记入 inpr...nodes 然后翻译完成后节点发生变化又触发了listener，此时 inpr....nodes 还有，那么这个变化将不做处理，然后 inp.....nodes 再删除这个标记
 				}
@@ -1074,12 +1074,13 @@ var translate = {
 									//console.log(ipnode);
 									//有记录了，那么出现次数 +1
 									translate.inProgressNodes[ini].number = translate.inProgressNodes[ini].number - 1;
+									//console.log("inProgressNodes -- number: "+translate.inProgressNodes[ini].number+', text:'+ipnode.nodeValue);
 									if(translate.inProgressNodes[ini].number < 1){
 										
 										
 											//console.log('ini-'+ini)
 											translate.inProgressNodes.splice(ini,1);	
-											//console.log("-- length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
+											//console.log("inProgressNodes -- 减去node length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
 										//
 									}
 									break;
@@ -1465,10 +1466,11 @@ var translate = {
 								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
 									//如果已经加入过了，那么跳过
 									twoScanIndex = i;
-									continue;
+									break;
 								}
 							}
 							if(twoScanIndex == -1){
+								//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node']);
 								twoScanIndex = twoScanNodes[lang].length;
 								twoScanNodes[lang][twoScanIndex] = {};
 								twoScanNodes[lang][twoScanIndex]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];

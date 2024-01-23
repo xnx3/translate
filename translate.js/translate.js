@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.7.20240122',
+	version:'2.11.8.20240123',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -98,7 +98,7 @@ var translate = {
 
 						//都转小写判断
 						var langs_indexof = (','+translate.selectLanguageTag.languages+',').toLowerCase();
-						console.log(langs_indexof)
+						//console.log(langs_indexof)
 						if(langs_indexof.indexOf(','+data.list[i].id.toLowerCase()+',') < 0){
 							//没发现，那不显示这个语种，调出
 							continue
@@ -3463,6 +3463,7 @@ var translate = {
 				str = str.replace(/\)/g,'\\\)');
 				str = str.replace(/\|/g,'\\\|');
 				str = str.replace(/\+/g,'\\\+');
+				str = str.replace(/\*/g,'\\\*');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理

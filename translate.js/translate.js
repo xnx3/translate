@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.9.20240123',
+	version:'2.11.10.20240123',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2218,8 +2218,8 @@ var translate = {
 	
 		//获取当前是什么语种
 		var langs = translate.language.get(text);
-		//console.log('langs');
-		//console.log(langs);
+		console.log('langs');
+		console.log(langs);
 
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
@@ -2322,9 +2322,17 @@ var translate = {
 
 
 		}else{
-			//直接翻译整个元素内的内容，不再做语种分类，将出现次数最多的语种作为原本语种
+			//直接翻译整个元素内的内容，不再做语种分类，首先删除英文，然后将出现次数最多的语种作为原本语种
+			
+			var langkeys = Object.keys(langs);
+			console.log(langkeys)
+			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
+				console.log('出现了english, 如果english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
+				langkeys.splice(langkeys.indexOf('english'), 1); 
+			}
+			console.log(langkeys)
 
-			var lang = Object.keys(langs)[0];
+			var lang = langkeys[0];
 			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
 		}
 

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.8.20240123',
+	version:'2.11.9.20240123',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3464,6 +3464,8 @@ var translate = {
 				str = str.replace(/\|/g,'\\\|');
 				str = str.replace(/\+/g,'\\\+');
 				str = str.replace(/\*/g,'\\\*');
+				str = str.replace(/\[/g,'\\\[');
+				str = str.replace(/\]/g,'\\\]');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理

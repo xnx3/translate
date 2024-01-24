@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.11.20240124',
+	version:'2.11.12.20240124',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1720,7 +1720,7 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
-			//console.log('url-'+url);
+			//console.log(data);
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				if(data.result == 0){
@@ -1745,6 +1745,11 @@ var translate = {
 					var lang = data.from;	
 					//翻译后的内容
 					var text = data.text[i];	
+					//如果text为null，那么这个可能是一次翻译字数太多，为了保持数组长度，拼上的null
+					if(text == null){
+						continue;
+					}
+
 					//翻译前的hash对应下标
 					var hash = translateHashArray[data.from][i];	
 					var cacheHash = translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'];
@@ -3576,7 +3581,117 @@ var translate = {
 			result = parseInt(vs[2]) + result;
 
 			return result;
+		},
+		/**
+		 * 将一个 JSONArray 数组，按照文字长度进行拆分。
+		 *  比如传入的 array 数组的文字长度是6200，传入的 size 是2000，那么就是将 array 数组拆分为多个长度不超出2000的数组返回。
+		 *  注意，这个长度是指 array.toString() 后的长度，也就是包含了 [""] 这种符号的长度
+		 * @param array 要被拆分的数组，其内都是String类型，传入格式如 ["你好","世界"]
+		 * @param size 要被拆分的长度
+		 * @return 被拆分后的数组列表
+		 * @author 刘晓腾
+		 */
+		 split:function(array, size) {
+		    let list = [];
+		    // 数组长度小于size，直接进行返回
+		    if(JSON.stringify(array).length <= size) {
+		        list.push(array);
+		    } else {
+		        // 转换成String
+		        let arrayStr = JSON.stringify(array).trim().substring(1, JSON.stringify(array).length - 1);
+
+		        // 判断size和字符串长度的差值，如果为1或者2，就直接拆成两段
+		        if (JSON.stringify(array).length - size <= 2) {
+		            size = size - 4;
+		            // 拆两段
+		            let str1 = arrayStr.substring(0, arrayStr.lastIndexOf("\",\"")+1);
+		            let str2 = arrayStr.substring(arrayStr.lastIndexOf("\",\"")+2);
+		            list.push(JSON.parse("[" + str1 + "]"));
+		            list.push(JSON.parse("[" + str2 + "]"));
+		        } else {
+		            size = size - 2;
+		            // 拆多段
+		            let index = 0;
+		            while (index - arrayStr.length < 0) {
+		                // 按照指定大小拆一段
+		                let s = "";
+		                if ((index+size) - arrayStr.length >= 0) {
+		                    s = arrayStr.substring(index);
+		                } else {
+		                    s = arrayStr.substring(index, (index+size));
+		                }
+		                // 结尾长度默认为字符串长度
+		                let endIndex = s.length;
+		                // 因为下次开始的第一个字符可能会是逗号，所以下次开始需要+1
+		                let startNeedAdd = 1;
+		                // 判断最后一个字符是否为双引号
+		                if (s.endsWith("\"")) {
+		                    // 判断倒数第二个是否为逗号
+		                    if (s.endsWith("\",\"")) {
+		                        // 删除两个字符
+		                        endIndex-=2;
+		                    } else if (!s.startsWith("\"")) {
+		                        // 如果开头不是引号，需要补一个引号，这就导致会超长，所以结尾就要找指定字符的
+		                        // 找出最后一个指定字符的位置
+		                        let la = s.lastIndexOf("\",\"");
+		                        endIndex = la + 1;
+		                    }
+		                } else if (s.endsWith("\",")) {
+		                    // 判断是否为逗号，是的话删除一个字符
+		                    endIndex-=1;
+		                } else {
+		                    // 都不是，那就是内容结尾
+		                    // 找出最后一个指定字符的位置
+		                    let la = s.lastIndexOf("\",\"");
+		                    endIndex = la + 1;
+		                    // 内容超长，endIndex就会变成0，这时需要手动赋值
+		                    if (endIndex <= 0) {
+		                        // 看看是否以引号开头，如果不是，需要拼两个引号
+		                        if (s.startsWith("\"")) {
+		                            // 拼一个引号，-1
+		                            endIndex = s.length() - 1;
+		                        } else {
+		                            // 拼两个引号，-2
+		                            endIndex = s.length() - 2;
+		                        }
+		                        if (!s.endsWith("\"")) {
+		                            // 开始不是逗号了，不能-1
+		                            startNeedAdd = 0;
+		                        }
+		                    }
+		                }
+		                // 根据处理的结尾长度进行第二次拆分
+		                let s2 = "";
+		                if (endIndex - s.length > 0 || endIndex - 0 == 0) {
+		                    s2 = s;
+		                    endIndex = endIndex + s2.length;
+		                } else {
+		                    s2 = s.substring(0, endIndex);
+		                }
+		                if (!s2.startsWith("\"") && !s2.startsWith(",\"")) {
+		                    // 拼一个引号
+		                    s2 = "\"" + s2;
+		                }
+		                if (!s2.endsWith("\"")) {
+		                    // 拼一个引号
+		                    s2 = s2 +"\"";
+		                }
+		                // 计算下次循环开始的长度
+		                index += (endIndex + startNeedAdd);
+		                // 加到list
+		                s2 = "[" + s2 + "]";
+		                try {
+		                    list.push(JSON.parse(s2));
+		                } catch (e) {
+		                    // 遇到错误，略过一个字符
+		                    index = index - (endIndex + startNeedAdd) + 1;
+		                }
+		            }
+		        }
+		    }
+		    return list;
 		}
+
 	},
 	//机器翻译采用哪种翻译服务
 	service:{  
@@ -3609,7 +3724,7 @@ var translate = {
 			},
 
 			language:{
-				json:[{"id":"ukrainian","name":"УкраїнськаName","serviceId":"uk"},{"id":"norwegian","name":"Norge","serviceId":"no"},{"id":"welsh","name":"color name","serviceId":"cy"},{"id":"dutch","name":"nederlands","serviceId":"nl"},{"id":"japanese","name":"しろうと","serviceId":"ja"},{"id":"filipino","name":"Pilipino","serviceId":"fil"},{"id":"english","name":"English","serviceId":"en"},{"id":"lao","name":"ກະຣຸນາ","serviceId":"lo"},{"id":"telugu","name":"తెలుగుQFontDatabase","serviceId":"te"},{"id":"romanian","name":"Română","serviceId":"ro"},{"id":"nepali","name":"नेपालीName","serviceId":"ne"},{"id":"french","name":"Français","serviceId":"fr"},{"id":"haitian_creole","name":"Kreyòl ayisyen","serviceId":"ht"},{"id":"czech","name":"český","serviceId":"cs"},{"id":"swedish","name":"Svenska","serviceId":"sv"},{"id":"russian","name":"Русский язык","serviceId":"ru"},{"id":"burmese","name":"ဗာရမ်","serviceId":"my"},{"id":"pashto","name":"پښتوName","serviceId":"ps"},{"id":"thai","name":"คนไทย","serviceId":"th"},{"id":"armenian","name":"Արմենյան","serviceId":"hy"},{"id":"chinese_simplified","name":"简体中文","serviceId":"zh-CHS"},{"id":"persian","name":"Persian","serviceId":"fa"},{"id":"chinese_traditional","name":"繁體中文","serviceId":"zh-CHT"},{"id":"kurdish","name":"Kurdî","serviceId":"ku"},{"id":"turkish","name":"Türkçe","serviceId":"tr"},{"id":"hindi","name":"हिन्दी","serviceId":"hi"},{"id":"bulgarian","name":"български","serviceId":"bg"},{"id":"malay","name":"Malay","serviceId":"ms"},{"id":"swahili","name":"Kiswahili","serviceId":"sw"},{"id":"icelandic","name":"ÍslandName","serviceId":"is"},{"id":"irish","name":"Íris","serviceId":"ga"},{"id":"khmer","name":"ខ្មែរKCharselect unicode block name","serviceId":"km"},{"id":"gujarati","name":"ગુજરાતી","serviceId":"gu"},{"id":"slovak","name":"Slovenská","serviceId":"sk"},{"id":"kannada","name":"ಕನ್ನಡ್Name","serviceId":"kn"},{"id":"hebrew","name":"היברית","serviceId":"he"},{"id":"hungarian","name":"magyar","serviceId":"hu"},{"id":"marathi","name":"मराठीName","serviceId":"mr"},{"id":"tamil","name":"தாமில்","serviceId":"ta"},{"id":"estonian","name":"eesti keel","serviceId":"et"},{"id":"malayalam","name":"മലമാലം","serviceId":"ml"},{"id":"arabic","name":"بالعربية","serviceId":"ar"},{"id":"deutsch","name":"Deutsch","serviceId":"de"},{"id":"slovene","name":"slovenščina","serviceId":"sl"},{"id":"bengali","name":"বেঙ্গালী","serviceId":"bn"},{"id":"urdu","name":"اوردو","serviceId":"ur"},{"id":"azerbaijani","name":"azerbaijani","serviceId":"az"},{"id":"portuguese","name":"português","serviceId":"pt"},{"id":"samoan","name":"lifiava","serviceId":"sm"},{"id":"afrikaans","name":"afrikaans","serviceId":"af"},{"id":"tongan","name":"汤加语","serviceId":"to"},{"id":"greek","name":"ελληνικά","serviceId":"el"},{"id":"spanish","name":"Español","serviceId":"es"},{"id":"danish","name":"dansk","serviceId":"da"},{"id":"amharic","name":"amharic","serviceId":"am"},{"id":"punjabi","name":"ਪੰਜਾਬੀName","serviceId":"pa"},{"id":"albanian","name":"albanian","serviceId":"sq"},{"id":"lithuanian","name":"Lietuva","serviceId":"lt"},{"id":"italian","name":"italiano","serviceId":"it"},{"id":"vietnamese","name":"Tiếng Việt","serviceId":"vi"},{"id":"korean","name":"한어","serviceId":"ko"},{"id":"maltese","name":"Malti","serviceId":"mt"},{"id":"finnish","name":"suomi","serviceId":"fi"},{"id":"catalan","name":"català","serviceId":"ca"},{"id":"croatian","name":"hrvatski","serviceId":"hr"},{"id":"bosnian","name":"bosnian","serviceId":"bs-Latn"},{"id":"polish","name":"Polski","serviceId":"pl"},{"id":"latvian","name":"latviešu","serviceId":"lv"},{"id":"maori","name":"Maori","serviceId":"mi"}],
+				json:[{"id":"ukrainian","name":"УкраїнськаName","serviceId":"uk"},{"id":"norwegian","name":"Norge","serviceId":"no"},{"id":"welsh","name":"color name","serviceId":"cy"},{"id":"dutch","name":"nederlands","serviceId":"nl"},{"id":"japanese","name":"しろうと","serviceId":"ja"},{"id":"filipino","name":"Pilipino","serviceId":"fil"},{"id":"english","name":"English","serviceId":"en"},{"id":"lao","name":"ກະຣຸນາ","serviceId":"lo"},{"id":"telugu","name":"తెలుగుQFontDatabase","serviceId":"te"},{"id":"romanian","name":"Română","serviceId":"ro"},{"id":"nepali","name":"नेपालीName","serviceId":"ne"},{"id":"french","name":"Français","serviceId":"fr"},{"id":"haitian_creole","name":"Kreyòl ayisyen","serviceId":"ht"},{"id":"czech","name":"český","serviceId":"cs"},{"id":"swedish","name":"Svenska","serviceId":"sv"},{"id":"russian","name":"Русский язык","serviceId":"ru"},{"id":"malagasy","name":"Malagasy","serviceId":"mg"},{"id":"burmese","name":"ဗာရမ်","serviceId":"my"},{"id":"pashto","name":"پښتوName","serviceId":"ps"},{"id":"thai","name":"คนไทย","serviceId":"th"},{"id":"armenian","name":"Արմենյան","serviceId":"hy"},{"id":"chinese_simplified","name":"简体中文","serviceId":"zh-CHS"},{"id":"persian","name":"Persian","serviceId":"fa"},{"id":"chinese_traditional","name":"繁體中文","serviceId":"zh-CHT"},{"id":"kurdish","name":"Kurdî","serviceId":"ku"},{"id":"turkish","name":"Türkçe","serviceId":"tr"},{"id":"hindi","name":"हिन्दी","serviceId":"hi"},{"id":"bulgarian","name":"български","serviceId":"bg"},{"id":"malay","name":"Malay","serviceId":"ms"},{"id":"swahili","name":"Kiswahili","serviceId":"sw"},{"id":"oriya","name":"ଓଡିଆ","serviceId":"or"},{"id":"icelandic","name":"ÍslandName","serviceId":"is"},{"id":"irish","name":"Íris","serviceId":"ga"},{"id":"khmer","name":"ខ្មែរKCharselect unicode block name","serviceId":"km"},{"id":"gujarati","name":"ગુજરાતી","serviceId":"gu"},{"id":"slovak","name":"Slovenská","serviceId":"sk"},{"id":"kannada","name":"ಕನ್ನಡ್Name","serviceId":"kn"},{"id":"hebrew","name":"היברית","serviceId":"he"},{"id":"hungarian","name":"magyar","serviceId":"hu"},{"id":"marathi","name":"मराठीName","serviceId":"mr"},{"id":"tamil","name":"தாமில்","serviceId":"ta"},{"id":"estonian","name":"eesti keel","serviceId":"et"},{"id":"malayalam","name":"മലമാലം","serviceId":"ml"},{"id":"inuktitut","name":"ᐃᓄᒃᑎᑐᑦ","serviceId":"iu"},{"id":"arabic","name":"بالعربية","serviceId":"ar"},{"id":"deutsch","name":"Deutsch","serviceId":"de"},{"id":"slovene","name":"slovenščina","serviceId":"sl"},{"id":"bengali","name":"বেঙ্গালী","serviceId":"bn"},{"id":"urdu","name":"اوردو","serviceId":"ur"},{"id":"azerbaijani","name":"azerbaijani","serviceId":"az"},{"id":"portuguese","name":"português","serviceId":"pt"},{"id":"samoan","name":"lifiava","serviceId":"sm"},{"id":"afrikaans","name":"afrikaans","serviceId":"af"},{"id":"tongan","name":"汤加语","serviceId":"to"},{"id":"greek","name":"ελληνικά","serviceId":"el"},{"id":"indonesian","name":"IndonesiaName","serviceId":"id"},{"id":"spanish","name":"Español","serviceId":"es"},{"id":"danish","name":"dansk","serviceId":"da"},{"id":"amharic","name":"amharic","serviceId":"am"},{"id":"punjabi","name":"ਪੰਜਾਬੀName","serviceId":"pa"},{"id":"albanian","name":"albanian","serviceId":"sq"},{"id":"lithuanian","name":"Lietuva","serviceId":"lt"},{"id":"italian","name":"italiano","serviceId":"it"},{"id":"vietnamese","name":"Tiếng Việt","serviceId":"vi"},{"id":"korean","name":"한어","serviceId":"ko"},{"id":"maltese","name":"Malti","serviceId":"mt"},{"id":"finnish","name":"suomi","serviceId":"fi"},{"id":"catalan","name":"català","serviceId":"ca"},{"id":"croatian","name":"hrvatski","serviceId":"hr"},{"id":"bosnian","name":"bosnian","serviceId":"bs-Latn"},{"id":"polish","name":"Polski","serviceId":"pl"},{"id":"latvian","name":"latviešu","serviceId":"lv"},{"id":"maori","name":"Maori","serviceId":"mi"}],
 				/*
 					获取map形式的语言列表 
 					key为 translate.service 的 name  
@@ -3627,48 +3742,107 @@ var translate = {
 					return translate.service.edge.language.map;
 				}
 			},
-						
-			getLanguage:function(){
-
-				console.log('client.edge.language');
-			},
 			/**
 			 * edge 进行翻译。 这个传入参数跟 translate.request.post 是一样的
 			 * @param path 请求的path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
-			 * @param data 请求的参数数据，传入如 {"goodsid":"1", "author":"管雷鸣"}
+			 * @param data 请求的参数数据
 			 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
 			 */
 			translate:function(path, data, func){
-				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
-					var textArray = JSON.parse(decodeURIComponent(data.text));
-					var json = [];
-					for(var i = 0; i<textArray.length; i++){
-						json.push({"Text":textArray[i]});
-					}
+				var textArray = JSON.parse(decodeURIComponent(data.text));
+				let translateTextArray = translate.util.split(textArray, 48000);
+				//console.log(translateTextArray);
+				
 
+				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
 					var from = translate.service.edge.language.getMap()[data.from];
 					var to = translate.service.edge.language.getMap()[data.to];
 					var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
-					translate.request.send(transUrl, JSON.stringify(json), function(result){
-						var d = {};
-						d.info = 'SUCCESS';
-						d.result = 1;
-						d.from = data.from;
-						d.to = data.to;
-						d.text = [];
-						for(var t = 0; t < result.length; t++){
-							d.text.push(result[t].translations[0].text);
+
+					//如果翻译量大，要拆分成多次翻译请求
+					for(var tai = 0; tai<translateTextArray.length; tai++){
+						var json = [];
+						for(var i = 0; i<translateTextArray[tai].length; i++){
+							json.push({"Text":translateTextArray[tai][i]});
 						}
-						func(d);
-					}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, function(xhr){
-						console.log('---------error--------');
-						console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
-					}, true);
+
+						translate.request.send(transUrl, JSON.stringify(json), function(result){
+							var d = {};
+							d.info = 'SUCCESS';
+							d.result = 1;
+							d.from = data.from;
+							d.to = data.to;
+							d.text = [];
+							for(var t = 0; t < result.length; t++){
+								d.text.push(result[t].translations[0].text);
+							}
+							
+
+							//判断当前翻译是否又被拆分过，比如一次超过5万字符的话就要拆分成多次请求了
+							if(translateTextArray.length > 1){
+								//这一次翻译呗拆分了多次请求，那么要进行补全数组，使数组个数能一致
+
+								/*
+
+									注意这里根据数组的长度来判断当前属于第几个数组，
+									有几率会是拆分的数组，其中有两组的长度是一样的，
+									这样的话是有问题的，只不过几率很小，就先这样了
+									但终归还是留了个坑 -- 记录
+
+								*/
+
+								var currentIndex = -1;	//当前翻译请求属于被拆分的第几个的数组下标，从0开始的
+								for(var cri = 0; cri < translateTextArray.length; cri++){
+									if(translateTextArray[cri].length - d.text.length == 0){
+										currentIndex = cri;
+										break;
+									}
+								}
+
+								//进行对前后进行补齐数组
+								if(currentIndex < 0){
+									console.log('------ERROR--------');
+									console.log('翻译内容过多，进行拆分，但拆分判断出现异常，currentIndex：-1 请联系 http://translate.zvo.cn/43006.html 说明');
+								}
+								//前插入空数组填充
+								for(var addbeforei = 0; addbeforei<currentIndex; addbeforei++){
+									var beforeItemArrayLength = translateTextArray[addbeforei].length;
+									//console.log('beforeItemArrayLength:'+beforeItemArrayLength);
+									for(var bi = 0; bi < beforeItemArrayLength; bi++){
+										d.text.unshift(null);
+									}
+								}
+								//后插入空数组填充
+								for(var addafteri = translateTextArray.length-1; addafteri>currentIndex; addafteri--){
+									var afterItemArrayLength = translateTextArray[addafteri].length;
+									for(var bi = 0; bi < afterItemArrayLength; bi++){
+										d.text.push(null);
+									}
+								}
+								
+							}
+							
+							func(d);
+						}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, function(xhr){
+							console.log('---------error--------');
+							console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
+						}, true);
+						
+
+					}
+					//console.log('translateResultArray')
+					//console.log(translateResultArray);
+					
+
 				}, 'get', true, {'content-type':'application/x-www-form-urlencoded'}, function(xhr){
 					console.log('---------error--------');
 					console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
 				}, true);
 
+
+				
+
+				
 			}
 		}
 	},
@@ -3917,7 +4091,13 @@ var translate = {
 		/**
 		 * post请求
 		 * @param path 请求的path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
-		 * @param data 请求的参数数据，传入如 {"goodsid":"1", "author":"管雷鸣"}
+		 * @param data 请求的参数数据，传入如 
+		 * 		{
+		 * 			from: "chinese_simplified",
+		 * 			text: "%5B%22%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91",
+		 * 			to: "chinese_traditional
+		 * 		}
+		 * 		
 		 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
 		 */
 		post:function(path, data, func){
@@ -3937,8 +4117,12 @@ var translate = {
 					return;
 				}
 				if(path == translate.request.api.language){
-					//console.log('----language');
-					//translate.service.edge.translate(path, data, func);
+					var d = {};
+					d.info = 'SUCCESS';
+					d.result = 1;
+					d.list = translate.service.edge.language.json;
+					func(d);
+					return;
 				}
 				
 				//return;
@@ -3953,7 +4137,7 @@ var translate = {
 		 * data 请求的数据，如 {"author":"管雷鸣",'site':'www.guanleiming.com'} 
 		 * func 请求完成的回调，传入如 function(data){}
 		 * method 请求方式，可传入 post、get
-		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求
+		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求。 如果传入false，则本方法返回xhr
 		 * headers 设置请求的header，传入如 {'content-type':'application/x-www-form-urlencoded'};
 		 * abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}
 		 * showErrorLog 是否控制台打印出来错误日志，true打印， false 不打印
@@ -4052,6 +4236,7 @@ var translate = {
 			        }
 			    }
 			}
+			return xhr;
 		},
 		/*
 

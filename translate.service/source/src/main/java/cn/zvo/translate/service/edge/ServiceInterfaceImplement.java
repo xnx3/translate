@@ -145,6 +145,17 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		Language lang = new Language("edge");
 		/*
 		 * 向语种列表中追加支持的语种，以下注意只需要改第二个参数为对接的翻译服务中，人家的api语种标识即可
+   		 * ʻŌleloHawaiʻi
+		 * भोजपुरी
+		 * беларускі
+		 * tur
+		 * অসমীয়া
+		 * galego
+		 * डोग्रिड ने दी
+		 * Hmoob
+		 * ދިވެހި
+		 * کوردیسۆرانی
+		 * euskara	
 		 */
 		lang.append(LanguageEnum.CHINESE_SIMPLIFIED, "zh-CHS");	 //简体中文
 		lang.append(LanguageEnum.CHINESE_TRADITIONAL, "zh-CHT"); //繁体中文
@@ -155,13 +166,12 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.AZERBAIJANI, "az"); //阿塞拜疆语
 		lang.append(LanguageEnum.IRISH, "ga"); //爱尔兰语
 		lang.append(LanguageEnum.ESTONIAN, "et"); //爱沙尼亚语
-		//lang.append(LanguageEnum.ORIYA, "or"); //奥里亚语
+		lang.append(LanguageEnum.ORIYA, "or"); //奥里亚语
 		lang.append(LanguageEnum.BULGARIAN, "bg"); //保加利亚语
 		lang.append(LanguageEnum.ICELANDIC, "is"); //冰岛语
 		lang.append(LanguageEnum.POLISH, "pl"); //波兰语
 		lang.append(LanguageEnum.BOSNIAN, "bs-Latn"); //波斯尼亚语（拉丁文）
 		lang.append(LanguageEnum.PERSIAN, "fa"); //波斯语
-		//lang.append(LanguageEnum.FARSI, "prs"); //波斯语（阿富汗）
 		lang.append(LanguageEnum.DANISH, "da"); //丹麦语
 		lang.append(LanguageEnum.DEUTSCH, "de"); //德语
 		lang.append(LanguageEnum.RUSSIAN, "ru"); //俄语
@@ -184,7 +194,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.ROMANIAN, "ro"); //罗马尼亚语
 		lang.append(LanguageEnum.MALTESE, "mt"); //马耳他语
 		lang.append(LanguageEnum.MARATHI, "mr"); //马拉地语
-		//lang.append(LanguageEnum.MALAGASY, "mg"); //马拉加斯语
+		lang.append(LanguageEnum.MALAGASY, "mg"); //马拉加斯语
 		lang.append(LanguageEnum.MALAYALAM, "ml"); //马拉雅拉姆语
 		lang.append(LanguageEnum.MALAY, "ms"); //马来语
 		lang.append(LanguageEnum.MAORI, "mi"); //毛利语
@@ -195,13 +205,11 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.NORWEGIAN, "no"); //挪威语
 		lang.append(LanguageEnum.PUNJABI, "pa"); //旁遮普语
 		lang.append(LanguageEnum.PORTUGUESE, "pt"); //葡萄牙语
-		//lang.append(LanguageEnum.PORTUGAL, "pt-pt"); //葡萄牙语（葡萄牙）
 		lang.append(LanguageEnum.PASHTO, "ps"); //普什图语
 		lang.append(LanguageEnum.JAPANESE, "ja"); //日语
 		lang.append(LanguageEnum.SWEDISH, "sv"); //瑞典语
 		lang.append(LanguageEnum.SAMOAN, "sm"); //萨摩亚语
-		//lang.append(LanguageEnum.SERBIA, "sr-Latn"); //塞尔维亚语（拉丁文）
-		//lang.append(LanguageEnum.SERBIA, "sr-Cyrl"); //塞尔维亚语（西里尔文）
+		lang.append(LanguageEnum.SERBIA, "sr-Latn"); //塞尔维亚语
 		lang.append(LanguageEnum.SLOVAK, "sk"); //斯洛伐克语
 		lang.append(LanguageEnum.SLOVENE, "sl"); //斯洛文尼亚语
 		lang.append(LanguageEnum.SWAHILI, "sw"); //斯瓦希里语
@@ -219,9 +227,9 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.HUNGARIAN, "hu"); //匈牙利语
 		lang.append(LanguageEnum.ARMENIAN, "hy"); //亚美尼亚语
 		lang.append(LanguageEnum.ITALIAN, "it"); //意大利语
-		//lang.append(LanguageEnum.INUKTITUT, "iu"); //因纽特语
+		lang.append(LanguageEnum.INUKTITUT, "iu"); //因纽特语
 		lang.append(LanguageEnum.HINDI, "hi"); //印地语
-		//lang.append(LanguageEnum.INDONESIAN, "id"); //印度尼西亚语
+		lang.append(LanguageEnum.INDONESIAN, "id"); //印度尼西亚语
 		lang.append(LanguageEnum.VIETNAMESE, "vi"); //越南语
 	}
 	

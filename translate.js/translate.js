@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'2.11.10.20240123',
+	version:'2.11.11.20240124',
 	useVersion:'v2',	//当前使用的版本，默认使用v1. 可使用 setUseVersion2(); //来设置使用v2
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -181,8 +181,8 @@ var translate = {
 	 * 初始化，如加载js、css资源
 	 * 已废弃，v1使用的
 	 */
+	/* v2.11.11.20240124 彻底注释掉，有新的init方法替代
 	init:function(){
-		/****** 先判断当前协议，定义资源路径  ******/
 		var protocol = window.location.protocol;
 		if(window.location.protocol == 'file:'){
 			//本地的，那就用http
@@ -196,6 +196,7 @@ var translate = {
 		//this.resourcesUrl = 'file://G:/git/translate';
 		
 	},
+	*/
 	/**
 	 * 执行翻译操作
 	 * 已废弃，v1使用的
@@ -1203,7 +1204,7 @@ var translate = {
 		
 		//版本检测
 		try{
-			translate.versionCheck();
+			translate.init();
 		}catch(e){  }
 
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
@@ -2218,8 +2219,8 @@ var translate = {
 	
 		//获取当前是什么语种
 		var langs = translate.language.get(text);
-		console.log('langs');
-		console.log(langs);
+		//console.log('langs');
+		//console.log(langs);
 
 		
 		//过滤掉要转换为的目标语种，比如要转为英语，那就将本来是英语的部分过滤掉，不用再翻译了
@@ -2325,12 +2326,12 @@ var translate = {
 			//直接翻译整个元素内的内容，不再做语种分类，首先删除英文，然后将出现次数最多的语种作为原本语种
 			
 			var langkeys = Object.keys(langs);
-			console.log(langkeys)
+			//console.log(langkeys)
 			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
-				console.log('出现了english, 如果english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
+				//console.log('出现了english, 如果english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
 				langkeys.splice(langkeys.indexOf('english'), 1); 
 			}
-			console.log(langkeys)
+			//console.log(langkeys)
 
 			var lang = langkeys[0];
 			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
@@ -3689,7 +3690,7 @@ var translate = {
 			translate:'translate.json', //翻译接口
 			ip:'ip.json', //根据用户当前ip获取其所在地的语种
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
-			version:'version.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
+			init:'init.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
 			
 		},
 		/*
@@ -3997,7 +3998,9 @@ var translate = {
 					xhr.setRequestHeader(index,headers[index]);
 				}
 			}
-			xhr.setRequestHeader('currentpage', window.location.href+'');
+			if(translate.service.name == 'translate.service'){
+				xhr.setRequestHeader('currentpage', window.location.href+'');
+			}
 			xhr.send(params);
 			//4.请求状态改变事件
 			xhr.onreadystatechange=function(){
@@ -4326,24 +4329,26 @@ var translate = {
 		}
 	},
 
-	//版本检测，看是否有新版本
-	versionCheck:function(){
-		if(typeof(translate.versionCheck_execute) != 'undefined'){
+	/*
+		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加
+	*/
+	init:function(){
+		if(typeof(translate.init_execute) != 'undefined'){
 			return;
 		}
-		translate.versionCheck_execute = '已进行';
-		translate.request.post(translate.request.api.version, {}, function(data) {
+		translate.init_execute = '已进行';
+		translate.request.post(translate.request.api.init, {}, function(data) {
 			if (data.result == 0){
-				console.log('版本检测异常：'+data.info);
+				console.log('translate.js init 初始化异常：'+data.info);
 				return;
 			}else if(data.result == 1){
 				//服务端返回的最新版本
-				var newVersion = translate.util.versionStringToInt(data.info);
+				var newVersion = translate.util.versionStringToInt(data.version);
 				//当前translate.js的版本
 				var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
 
 				if(newVersion > currentVersion){
-					console.log('Tip : translate.js find new version : '+data.info);
+					console.log('Tip : translate.js find new version : '+data.version);
 				}
 			}else{
 				eval(data.info);
@@ -4403,8 +4408,7 @@ var nodeuuid = {
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
 
-//这个只是v1使用到
+
 try{
 	translate.init();
-	//translate.execute();
 }catch(e){ console.log(e); }

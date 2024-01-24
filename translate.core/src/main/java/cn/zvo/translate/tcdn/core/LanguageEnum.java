@@ -434,7 +434,8 @@ public enum LanguageEnum {
     CENTRAL_DUSUN("central_dusun","中部杜顺语","中部杜顺语"),
     CENTRAL_BIKOL("central_bikol","中比科尔语","中比科尔语"),
     TZELTAL("tzeltal","泽塔尔语","泽塔尔语"),
-    ZANDE("zande","赞德语","赞德语");
+    ZANDE("zande","赞德语","赞德语"),
+    INUKTITUT("inuktitut","ᐃᓄᒃᑎᑐᑦ","因纽特语");
 
     //百度/谷歌---Null---end----------------------------------------
     //百度/谷歌---Null---end----------------------------------------

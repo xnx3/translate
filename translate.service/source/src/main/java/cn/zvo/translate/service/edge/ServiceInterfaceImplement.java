@@ -209,7 +209,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append(LanguageEnum.JAPANESE, "ja"); //日语
 		lang.append(LanguageEnum.SWEDISH, "sv"); //瑞典语
 		lang.append(LanguageEnum.SAMOAN, "sm"); //萨摩亚语
-		lang.append(LanguageEnum.SERBIA, "sr-Latn"); //塞尔维亚语
+//		lang.append(LanguageEnum.SERBIA, "sr-Latn"); //塞尔维亚语
 		lang.append(LanguageEnum.SLOVAK, "sk"); //斯洛伐克语
 		lang.append(LanguageEnum.SLOVENE, "sl"); //斯洛文尼亚语
 		lang.append(LanguageEnum.SWAHILI, "sw"); //斯瓦希里语

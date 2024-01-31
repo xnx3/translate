@@ -225,7 +225,7 @@ public class ServiceInterfaceImplement implements ServiceInterface{
 		lang.append("english", "en", "English");
 		lang.append("chinese_simplified", "zh-CN", "简体中文");
 		lang.append("chinese_traditional", "zh-TW", "繁體中文");
-		lang.append("korean", "ko", "한어");
+		lang.append("korean", "ko", "한국어");
 		lang.append("japanese", "ja", "日本語");	//日语
 		lang.append("russian", "ru", "Русский язык");
 		lang.append("arabic", "ar", "بالعربية");	//阿拉伯语

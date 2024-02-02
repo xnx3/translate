@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.0.20240131',
+	version:'3.0.1.20240202',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -800,7 +800,7 @@ var translate = {
 		}
 		//清空翻译队列，下次翻译时重新检索
 		translate.nodeQueue = {};
-		console.log('set documents , clear translate.nodeQueue');
+		//console.log('set documents , clear translate.nodeQueue');
 	},
 	//获取当前指定翻译的元素（数组形式 [document,document,...]）
 	//如果用户未使用setDocuments 指定的，那么返回整个网页
@@ -2552,6 +2552,13 @@ var translate = {
 				translate.to = languageName;
 			}
 		},
+		/*
+			清除历史翻译语种的缓存
+		*/
+		clearCacheLanguage:function(){
+			translate.to = '';
+			translate.storage.set('to','');
+		},
 		//根据URL传参控制以何种语种显示
 		//设置可以根据当前访问url的某个get参数来控制使用哪种语言显示。
 		//比如当前语种是简体中文，网页url是http://translate.zvo.cn/index.html ,那么可以通过在url后面增加 language 参数指定翻译语种，来使网页内容以英文形态显示 http://translate.zvo.cn/index.html?language=english
@@ -3865,7 +3872,7 @@ var translate = {
 			ip:'ip.json', //根据用户当前ip获取其所在地的语种
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
 			init:'init.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
-			
+
 		},
 		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
@@ -4516,6 +4523,7 @@ var translate = {
 
 	/*
 		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加
+		会自动在 translate.js 加载后的 200毫秒后 执行，进行初始化。同时也是节点测速
 	*/
 	init:function(){
 		if(typeof(translate.init_execute) != 'undefined'){
@@ -4595,5 +4603,5 @@ console.log('------ translate.js ------\nTwo lines of js html automatic translat
 
 
 try{
-	translate.init();
+	setTimeout(translate.init, 200);
 }catch(e){ console.log(e); }

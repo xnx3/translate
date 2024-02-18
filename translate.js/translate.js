@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.2.20240203',
+	version:'3.0.3.20240218',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1421,13 +1421,11 @@ var translate = {
 				if(cache != null && cache.length > 0){
 					//有缓存了
 					//console.log('find cache：'+cache);
-					//console.log(this.nodeQueue[lang][hash]['nodes']);
 					//直接将缓存赋予
 					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
 						//this.nodeQueue[lang][hash][index].nodeValue = cache;
 
 						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = cache;
 							//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
 
 
@@ -1723,6 +1721,7 @@ var translate = {
 			//console.log(data);
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
+				//console.log(translateTextArray[data.from]);
 				if(data.result == 0){
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
@@ -1749,6 +1748,14 @@ var translate = {
 					if(text == null){
 						continue;
 					}
+
+					// v3.0.3 添加，避免像是 JavaScript 被错误翻译为 “JavaScript的” ，然后出现了多个句子中都出现了Javascript时，会出现翻译后文本重复的问题
+					// 这里就是验证一下，翻译后的文本，是否会完全包含翻以前的文本，如果包含了，那么强制将翻译后的文本赋予翻译前的原始文本（也就是不被翻译）
+					if(text.toLowerCase().indexOf(translateTextArray[data.from][i].toLowerCase()) > -1){
+						//发现了，那么强制赋予翻以前内容
+						text = translateTextArray[data.from][i];
+					}
+
 
 					//翻译前的hash对应下标
 					var hash = translateHashArray[data.from][i];	

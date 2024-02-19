@@ -49,9 +49,10 @@ http://res.zvo.cn/translate/demo.html
 在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
-<script src="https://cdn.jsdelivr.net/gh/xnx3/translate@latest/translate.js/translate.min.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.0.3/translate.js"></script>
 <script>
 translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
+translate.service.use('client.edge'); //设置机器翻译服务通道，直接客户端本身，不依赖服务端 。相关说明参考 http://translate.zvo.cn/43086.html
 translate.execute();//进行翻译 
 </script>
 ````
@@ -97,9 +98,10 @@ translate.execute();//进行翻译
 </ul>
 
 <!-- 引入多语言切换的js -->
-<script src="https://cdn.jsdelivr.net/gh/xnx3/translate@latest/translate.js/translate.min.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.0.3/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
+    translate.service.use('client.edge'); //设置机器翻译服务通道
 	translate.execute();
 </script>
 ````
@@ -223,7 +225,9 @@ gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/transl
 
 
 # 感谢赞助
-* [指点云](https://www.zhidianyun.cn/?i125cc1) 赞助服务器，用于开放公共、免费API给大家使用。指点云服务器便宜，性能很不错。  
+* [指点云](https://www.zhidianyun.cn/?i125cc1) 赞助服务器，用于开放公共、免费API给大家使用。指点云服务器便宜，性能很不错。   
+* AO3读者们，赞助美国服务器，部署全球网络加速节点
+* 微软  提供 client.edge 方式的翻译通道
 *  [小牛翻译](https://niutrans.com/register?userSource=translate-js)  赞助在线翻译接口，小牛翻译提供三百八十多种语种翻译能力，需要的语种，它基本都包含了！  
 * [如果您想参与赞助，可点此查看更多](https://gitee.com/mail_osc/translate/issues/I7OXEQ),如果有没列出来的，您感觉可以对本项目有帮助的，也欢迎联系我的，感谢大家的支持
 

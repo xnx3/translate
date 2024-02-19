@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.3.20240218',
+	version:'3.0.4.20240219',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1089,7 +1089,7 @@ var translate = {
 							}
 						}, 50, ipnode);
 
-						//console.log(this.nodes[hash][task_index]);
+						
 						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 
 
@@ -3482,6 +3482,7 @@ var translate = {
 		regExp:{
 			// new RegExp(pattern, resultText); 中的 pattern 字符串的预处理
 			pattern:function(str){
+				str = str.replace(/\\/g,'\\\\'); //这个一定要放在第一个，不然会被下面的影响
 				//str = str.replace(/'/g,'\\\'');
 				str = str.replace(/\"/g,'\\\"');
 				//str = str.replace(/./g,'\\\.');
@@ -3494,6 +3495,9 @@ var translate = {
 				str = str.replace(/\*/g,'\\\*');
 				str = str.replace(/\[/g,'\\\[');
 				str = str.replace(/\]/g,'\\\]');
+				str = str.replace(/\^/g,'\\\^');
+				str = str.replace(/\{/g,'\\\{');
+				str = str.replace(/\}/g,'\\\}');
 				return str;
 			},
 			// new RegExp(pattern, resultText); 中的 resultText 字符串的预处理

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.4.20240219',
+	version:'3.0.5.20240223',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -47,6 +47,21 @@ var translate = {
 		selectOnChange:function(event){
 			var language = event.target.value;
 			translate.changeLanguage(language);
+		},
+		//重新绘制 select 语种下拉选择。比如进行二次开发过translate.js，手动进行了设置 translate.to ，但是手动改动后的，在select语种选择框中并不会自动进行改变，这是就需要手动重新绘制一下 select语种选择的下拉选择框
+		refreshRender:function(){
+			// 获取元素
+			let element = document.getElementById("translateSelectLanguage");
+
+			// 删除元素
+			if (element) {
+				element.parentNode.removeChild(element);
+			}
+
+			//设置为未 render 状态，允许进行 render
+			translate.selectLanguageTag.alreadyRender = false;	
+
+			translate.selectLanguageTag.render();
 		},
 		render:function(){ //v2增加
 			if(translate.selectLanguageTag.alreadyRender){
@@ -2230,7 +2245,9 @@ var translate = {
 		//console.log(node.nodeValue);
 	
 		//获取当前是什么语种
-		var langs = translate.language.get(text);
+		//var langs = translate.language.get(text);
+		var textRecognition = translate.language.recognition(text);
+		langs = textRecognition.languageArray;
 		//console.log('langs');
 		//console.log(langs);
 
@@ -2336,16 +2353,7 @@ var translate = {
 
 		}else{
 			//直接翻译整个元素内的内容，不再做语种分类，首先删除英文，然后将出现次数最多的语种作为原本语种
-			
-			var langkeys = Object.keys(langs);
-			//console.log(langkeys)
-			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
-				//console.log('出现了english, 如果english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
-				langkeys.splice(langkeys.indexOf('english'), 1); 
-			}
-			//console.log(langkeys)
-
-			var lang = langkeys[0];
+			var lang = textRecognition.languageName;
 			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
 		}
 
@@ -2745,6 +2753,56 @@ var translate = {
 			//console.log('get end');
 			return langStrs;
 		},
+
+		/*
+		 * 识别字符串是什么语种。它是 get() 的扩展，以代替get返回更多
+		 * str : 要识别的字符串
+		 *
+		 * 返回 存放不同语言的数组，格式如
+		 *  	
+			{
+				languageName: 'english',
+		 		languageArray:[
+					"english":[
+						{beforeText: '', afterText: '', text: 'emoambue hag'},
+						......
+					],
+					"japanese":[
+						{beforeText: ' ', afterText: ' ', text: 'ẽ '},
+						......
+					]
+		 		]
+		 	}
+		 	languageName 是当前字符串是什么语种。它的识别有以下特点：
+		 		1. 如果出现英语跟中文、法语、德语等混合的情况，也就是不纯粹英语的情况，那么会以其他语种为准，而不是识别为英语。不论英语字符出现的比例占多少。
+		 		2. 如果出现简体中文跟繁体中文混合的情况，那么识别为繁体中文。不论简体中文字符出现的比例占多少。
+				3. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。
+			languageArray 对传入字符串进行分析，识别出都有哪些语种，每个语种的字符是什么
+		 * 		
+		 */
+		recognition:function(str){
+			var langs = translate.language.get(str);
+			//console.log(langs);
+			var langkeys = Object.keys(langs);
+			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
+				//console.log('出现了english, 并且english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
+				langkeys.splice(langkeys.indexOf('english'), 1); 
+			}
+			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
+				//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文。
+				langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
+			}
+			//console.log(langkeys)
+
+			var lang = langkeys[0];
+			//console.log(langs);
+
+			var result = {
+				languageName: lang,
+				languageArray: langs
+			};
+			return result;
+		},
 		// 传入一个char，返回这个char属于什么语种，返回如 chinese_simplified、english  如果返回空字符串，那么表示未获取到是什么语种
 		getCharLanguage:function(charstr){
 			if(charstr == null || typeof(charstr) == 'undefined'){
@@ -2753,22 +2811,36 @@ var translate = {
 			
 			if(this.italian(charstr)){
 				return 'italian';
-			}else if(this.english(charstr)){
-				return 'english';
-			}else if(this.specialCharacter(charstr)){
-				return 'specialCharacter';
-			}else if(this.number(charstr)){
-				return 'number';	
-			}else if(this.chinese_simplified(charstr)){
-				return 'chinese_simplified';
-			}else if(this.japanese(charstr)){
-				return 'japanese';
-			}else if(this.korean(charstr)){
-				return 'korean';
-			}else{
-				//console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
-				return '';
 			}
+			if(this.english(charstr)){
+				return 'english';
+			}
+			if(this.specialCharacter(charstr)){
+				return 'specialCharacter';
+			}
+			if(this.number(charstr)){
+				return 'number';	
+			}
+
+			//中文的判断包含两种，简体跟繁体
+			var chinesetype = this.chinese(charstr);
+			if(chinesetype == 'simplified'){
+				return 'chinese_simplified';
+			}else if(chinesetype == 'traditional'){
+				return 'chinese_traditional';
+			}
+
+			if(this.japanese(charstr)){
+				return 'japanese';
+			}
+			if(this.korean(charstr)){
+				return 'korean';
+			}
+
+			//未识别是什么语种
+			//console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
+			return '';
+			
 		},
 		/*
 		 * 对字符串进行分析，分析字符串是有哪几种语言组成。
@@ -3030,7 +3102,7 @@ var translate = {
 			//不是，返回false
 			return false;
 		},
-		//语种的单词连接符是否需要空格，比如中文、韩文、日语都不需要空格，则返回false, 但是像是英文的单词间需要空格进行隔开，则返回true
+		//语种的单词连接符是否需要空格，比如中文简体、繁体、韩文、日语都不需要空格，则返回false, 但是像是英文的单词间需要空格进行隔开，则返回true
 		//如果未匹配到，默认返回true
 		//language：语种，传入如  english
 		wordBlankConnector:function(language){
@@ -3050,12 +3122,24 @@ var translate = {
 		  	//其他情况则返回true
 		  	return true;
 		},
-		//是否包含中文，true:包含
-		chinese_simplified:function(str){
+		//繁体中文的字典，判断繁体中文就是通过此判断
+		chinese_traditional_dict: '皚藹礙愛翺襖奧壩罷擺敗頒辦絆幫綁鎊謗剝飽寶報鮑輩貝鋇狽備憊繃筆畢斃閉邊編貶變辯辮鼈癟瀕濱賓擯餅撥缽鉑駁蔔補參蠶殘慚慘燦蒼艙倉滄廁側冊測層詫攙摻蟬饞讒纏鏟産闡顫場嘗長償腸廠暢鈔車徹塵陳襯撐稱懲誠騁癡遲馳恥齒熾沖蟲寵疇躊籌綢醜櫥廚鋤雛礎儲觸處傳瘡闖創錘純綽辭詞賜聰蔥囪從叢湊竄錯達帶貸擔單鄲撣膽憚誕彈當擋黨蕩檔搗島禱導盜燈鄧敵滌遞締點墊電澱釣調叠諜疊釘頂錠訂東動棟凍鬥犢獨讀賭鍍鍛斷緞兌隊對噸頓鈍奪鵝額訛惡餓兒爾餌貳發罰閥琺礬釩煩範販飯訪紡飛廢費紛墳奮憤糞豐楓鋒風瘋馮縫諷鳳膚輻撫輔賦複負訃婦縛該鈣蓋幹趕稈贛岡剛鋼綱崗臯鎬擱鴿閣鉻個給龔宮鞏貢鈎溝構購夠蠱顧剮關觀館慣貫廣規矽歸龜閨軌詭櫃貴劊輥滾鍋國過駭韓漢閡鶴賀橫轟鴻紅後壺護滬戶嘩華畫劃話懷壞歡環還緩換喚瘓煥渙黃謊揮輝毀賄穢會燴彙諱誨繪葷渾夥獲貨禍擊機積饑譏雞績緝極輯級擠幾薊劑濟計記際繼紀夾莢頰賈鉀價駕殲監堅箋間艱緘繭檢堿鹼揀撿簡儉減薦檻鑒踐賤見鍵艦劍餞漸濺澗漿蔣槳獎講醬膠澆驕嬌攪鉸矯僥腳餃繳絞轎較稭階節莖驚經頸靜鏡徑痙競淨糾廄舊駒舉據鋸懼劇鵑絹傑潔結誡屆緊錦僅謹進晉燼盡勁荊覺決訣絕鈞軍駿開凱顆殼課墾懇摳庫褲誇塊儈寬礦曠況虧巋窺饋潰擴闊蠟臘萊來賴藍欄攔籃闌蘭瀾讕攬覽懶纜爛濫撈勞澇樂鐳壘類淚籬離裏鯉禮麗厲勵礫曆瀝隸倆聯蓮連鐮憐漣簾斂臉鏈戀煉練糧涼兩輛諒療遼鐐獵臨鄰鱗凜賃齡鈴淩靈嶺領餾劉龍聾嚨籠壟攏隴樓婁摟簍蘆盧顱廬爐擄鹵虜魯賂祿錄陸驢呂鋁侶屢縷慮濾綠巒攣孿灤亂掄輪倫侖淪綸論蘿羅邏鑼籮騾駱絡媽瑪碼螞馬罵嗎買麥賣邁脈瞞饅蠻滿謾貓錨鉚貿麽黴沒鎂門悶們錳夢謎彌覓綿緬廟滅憫閩鳴銘謬謀畝鈉納難撓腦惱鬧餒膩攆撚釀鳥聶齧鑷鎳檸獰甯擰濘鈕紐膿濃農瘧諾歐鷗毆嘔漚盤龐國愛賠噴鵬騙飄頻貧蘋憑評潑頗撲鋪樸譜臍齊騎豈啓氣棄訖牽扡釺鉛遷簽謙錢鉗潛淺譴塹槍嗆牆薔強搶鍬橋喬僑翹竅竊欽親輕氫傾頃請慶瓊窮趨區軀驅齲顴權勸卻鵲讓饒擾繞熱韌認紉榮絨軟銳閏潤灑薩鰓賽傘喪騷掃澀殺紗篩曬閃陝贍繕傷賞燒紹賒攝懾設紳審嬸腎滲聲繩勝聖師獅濕詩屍時蝕實識駛勢釋飾視試壽獸樞輸書贖屬術樹豎數帥雙誰稅順說碩爍絲飼聳慫頌訟誦擻蘇訴肅雖綏歲孫損筍縮瑣鎖獺撻擡攤貪癱灘壇譚談歎湯燙濤縧騰謄銻題體屜條貼鐵廳聽烴銅統頭圖塗團頹蛻脫鴕馱駝橢窪襪彎灣頑萬網韋違圍爲濰維葦偉僞緯謂衛溫聞紋穩問甕撾蝸渦窩嗚鎢烏誣無蕪吳塢霧務誤錫犧襲習銑戲細蝦轄峽俠狹廈鍁鮮纖鹹賢銜閑顯險現獻縣餡羨憲線廂鑲鄉詳響項蕭銷曉嘯蠍協挾攜脅諧寫瀉謝鋅釁興洶鏽繡虛噓須許緒續軒懸選癬絢學勳詢尋馴訓訊遜壓鴉鴨啞亞訝閹煙鹽嚴顔閻豔厭硯彥諺驗鴦楊揚瘍陽癢養樣瑤搖堯遙窯謠藥爺頁業葉醫銥頤遺儀彜蟻藝億憶義詣議誼譯異繹蔭陰銀飲櫻嬰鷹應纓瑩螢營熒蠅穎喲擁傭癰踴詠湧優憂郵鈾猶遊誘輿魚漁娛與嶼語籲禦獄譽預馭鴛淵轅園員圓緣遠願約躍鑰嶽粵悅閱雲鄖勻隕運蘊醞暈韻雜災載攢暫贊贓髒鑿棗竈責擇則澤賊贈紮劄軋鍘閘詐齋債氈盞斬輾嶄棧戰綻張漲帳賬脹趙蟄轍鍺這貞針偵診鎮陣掙睜猙幀鄭證織職執紙摯擲幟質鍾終種腫衆謅軸皺晝驟豬諸誅燭矚囑貯鑄築駐專磚轉賺樁莊裝妝壯狀錐贅墜綴諄濁茲資漬蹤綜總縱鄒詛組鑽緻鐘麼為隻兇準啟闆裡靂餘鍊洩',
+		/*
+			中文判断
+			返回：
+				simplified：简体中文
+				traditional：繁体中文
+				空字符串：不是中文
+		*/   
+		chinese:function(str){
 			if(/.*[\u4e00-\u9fa5]+.*$/.test(str)){ 
-				return true
+				if(this.chinese_traditional_dict.indexOf(str) > -1){ 
+					return 'traditional';
+				} else {
+					return 'simplified';
+				}
 			} else {
-				return false;
+				return '';
 			}
 		},
 		//是否包含英文，true:包含
@@ -3388,8 +3472,6 @@ var translate = {
 				console.log(data.info);
 				console.log('==== ERROR END ====');
 			}else{
-				//translate.setUseVersion2();
-				translate.useVersion = 'v2';
 				translate.storage.set('to',data.language);	//设置目标翻译语言
 				translate.to = data.language; //设置目标语言
 				translate.selectLanguageTag

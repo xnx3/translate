@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.5.20240223',
+	version:'3.0.6.20240226',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1314,6 +1314,20 @@ var translate = {
 			translate.element.whileNodes(uuid, node);	
 		}
 
+		/***** translate.language.translateLanguagesRange 开始 *****/
+		if(translate.language.translateLanguagesRange.length > 0){
+			//如果大于0，则是有设置，那么只翻译有设置的语种，不在设置中的语种不会参与翻译
+			for(var lang in translate.nodeQueue[uuid].list){
+				if(translate.language.translateLanguagesRange.indexOf(lang) < 0){
+					//删除这个语种
+					delete translate.nodeQueue[uuid].list[lang];
+				}
+			}
+		}
+		
+		/***** translate.language.translateLanguagesRange 结束 *****/
+		
+
 		//console.log(translate.nodeHistory);
 		//console.log(translate.nodeQueue[uuid])
 		for(var lang in translate.nodeQueue[uuid].list){
@@ -2528,6 +2542,13 @@ var translate = {
 	language:{
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
+		/*
+			翻译语种范围
+			比如传入 ['chinese_simplified','chinese_traditional','english'] 则表示仅对网页中的简体中文、繁体中文、英文 进行翻译，而网页中出现的其他的像是法语、韩语则不会进行翻译
+			如果为空 []，则是翻译时，翻译网页中的所有语种			
+			设置方式为：  translate.language.translateLanguagesRange = ['chinese_simplified','chinese_traditional']
+		*/
+		translateLanguagesRange: [], 
 		//传入语种。具体可传入哪些参考： http://api.translate.zvo.cn/doc/language.json.html
 		setLocal:function(languageName){
 			//translate.setUseVersion2(); //Set to use v2.x version

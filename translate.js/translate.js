@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.6.20240226',
+	version:'3.0.7.20240301',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -4405,6 +4405,120 @@ var translate = {
 
 				func(data);
 			});
+		},
+		listener:{
+			minIntervalTime:800, // 两次触发的最小间隔时间，单位是毫秒，这里默认是800毫秒。最小填写时间为 200毫秒
+			lasttime:0,// 最后一次触发执行 translate.execute() 的时间，进行执行的那一刻，而不是执行完。13位时间戳
+			/*
+				设置要在未来的某一时刻执行，单位是毫秒，13位时间戳。
+				执行时如果当前时间大于这个数，则执行，并且将这个数置为0。
+				会有一个循环执行函数每间隔200毫秒触发一次
+			*/
+			executetime:0,
+			/*
+				满足ajax出发条件，设置要执行翻译。
+				注意，设置这个后并不是立马就会执行，而是加入了一个执行队列，避免1秒请求了10次会触发10次执行的情况
+			*/
+			addExecute:function(){
+				var currentTime = Date.now();
+				if(currentTime < translate.request.listener.lasttime + translate.request.listener.minIntervalTime){
+					//如果当前时间小于最后一次执行时间+间隔时间，那么就是上次才刚刚执行过，这次执行的太快了，那么赋予未来执行翻译的时间为最后一次时间+间隔时间
+					translate.request.listener.executetime = translate.request.listener.lasttime + translate.request.listener.minIntervalTime;
+				}else{
+					if(translate.request.listener.executetime - 0 == 0){
+						//只有当未来执行时间被重置后，才能对其进行赋予值
+						translate.request.listener.executetime = currentTime;
+					}
+				}
+			},
+			/*
+				自定义是否会被触发的方法判断
+				url 当前ajax请求的url，注意是这个url请求完毕获取到200相应的内容时才会触发此方法
+				返回值 return true; 默认是不管什么url，全部返回true，表示会触发翻译自动执行 translate.execute; ,如果你不想让某个url触发翻译，那么你可以自行在这个方法中用代码进行判断，然后返回false，那么这个url将不会自动触发翻译操作。
+			*/
+			trigger:function(url){
+				return true;
+			},
+			/*
+				启动根据ajax请求来自动触发执行翻译，避免有时候有的框架存在漏翻译的情况。
+				这个只需要执行一次即可，如果执行多次，只有第一次会生效
+			*/
+			start:function(){
+				
+				//确保这个方法只会触发一次，不会过多触发
+				if(typeof(translate.request.listener.isStart) != 'undefined'){
+					return;
+				}else{
+					translate.request.listener.isStart = true;
+				}
+
+				//增加一个没100毫秒检查一次执行任务的线程
+				setInterval(function(){
+					var currentTime = Date.now();
+					if(translate.request.listener.executetime > 0 && currentTime > translate.request.listener.executetime){
+						translate.request.listener.executetime = 0;
+						try{
+							console.log('执行翻译 --'+currentTime);
+							translate.execute();
+						}catch(e){
+							console.log(e);
+						}
+					}
+				}, 100);
+
+				const observer = new PerformanceObserver((list) => {
+					var translateExecute = false;	//是否需要执行翻译 true 要执行
+				    for(var e = 0; e < list.getEntries().length; e++){
+				    	var entry = list.getEntries()[e];
+
+				    	if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
+				        	var url = entry.name;
+				        	console.log(url);
+				        	//判断url是否是当前translate.js本身使用的
+				        	if(typeof(translate.request.api.host) == 'string'){
+				        		translate.request.api.host = [translate.request.api.host];
+				        	}
+				        	var ignoreUrl = false; // 是否是忽略的url true是
+
+				        	//translate.service 模式判断
+				        	for(var i = 0; i < translate.request.api.host.length; i++){
+				        		if(url.indexOf(translate.request.api.host[i]) > -1){
+				        			//是，那么直接忽略
+				        			ignoreUrl = true;
+				        			break;
+				        		}
+				        	}
+				        	//client.edge 判断
+				        	if(url.indexOf(translate.service.edge.api.auth) > -1){
+				        		ignoreUrl = true;
+				        	}
+				        	if(url.indexOf('.microsofttranslator.com/translate') > -1){
+				        		ignoreUrl = true;
+				        	}
+
+				        	if(ignoreUrl){
+				        		console.log('忽略：'+url);
+								continue;
+				        	}
+				        	if(traslate.request.listener.trigger()){
+				        		//正常，会触发翻译，也是默认的
+				        	}else{
+				        		//不触发翻译，跳过
+				        		continue;
+				        	}
+
+				        	translateExecute = true;
+				        	break;
+				        }
+				    }
+				    if(translateExecute){
+				    	console.log('translate.request.listener.addExecute()');
+				    	translate.request.listener.addExecute();
+				    }
+				});
+				// 配置observer观察的类型为"resource"
+				observer.observe({ type: "resource", buffered: true });
+			}
 		}
 	},
 	//存储，本地缓存

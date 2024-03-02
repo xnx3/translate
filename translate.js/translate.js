@@ -4482,7 +4482,7 @@ var translate = {
 						translate.request.listener.executetime = 0;
 						translate.request.listener.lasttime = currentTime;
 						try{
-							console.log('执行翻译 --'+currentTime);
+							//console.log('执行翻译 --'+currentTime);
 							translate.execute();
 						}catch(e){
 							console.log(e);

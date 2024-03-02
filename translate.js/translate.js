@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.7.20240301',
+	version:'3.0.8.20240301',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -4416,20 +4416,43 @@ var translate = {
 			*/
 			executetime:0,
 			/*
+				进行翻译时，延迟翻译执行的时间
+				当ajax请求结束后，延迟这里设置的时间，然后自动触发 translate.execute() 执行
+			*/
+			delayExecuteTime:200, 
+			/*
 				满足ajax出发条件，设置要执行翻译。
 				注意，设置这个后并不是立马就会执行，而是加入了一个执行队列，避免1秒请求了10次会触发10次执行的情况
 			*/
 			addExecute:function(){
 				var currentTime = Date.now();
-				if(currentTime < translate.request.listener.lasttime + translate.request.listener.minIntervalTime){
-					//如果当前时间小于最后一次执行时间+间隔时间，那么就是上次才刚刚执行过，这次执行的太快了，那么赋予未来执行翻译的时间为最后一次时间+间隔时间
-					translate.request.listener.executetime = translate.request.listener.lasttime + translate.request.listener.minIntervalTime;
+				if(translate.request.listener.lasttime == 0){
+					//是第一次，lasttime还没设置过，那么直接设置执行时间为当前时间
+					translate.request.listener.executetime = currentTime;
+					translate.request.listener.lasttime = 1;
 				}else{
-					if(translate.request.listener.executetime - 0 == 0){
-						//只有当未来执行时间被重置后，才能对其进行赋予值
-						translate.request.listener.executetime = currentTime;
+					//不是第一次了
+
+					if(translate.request.listener.executetime > 1){
+						//当前有执行队列等待，不用再加入执行等待了
+						//console.log('已在执行队列，不用再加入了 '+currentTime);
+					}else{
+						//执行队列中还没有，可以加入执行命令
+
+						if(currentTime < translate.request.listener.lasttime + translate.request.listener.minIntervalTime){
+							//如果当前时间小于最后一次执行时间+间隔时间，那么就是上次才刚刚执行过，这次执行的太快了，那么赋予未来执行翻译的时间为最后一次时间+间隔时间
+							translate.request.listener.executetime = translate.request.listener.lasttime + translate.request.listener.minIntervalTime;
+							//console.log('addexecute - < 如果当前时间小于最后一次执行时间+间隔时间，那么就是上次才刚刚执行过，这次执行的太快了，那么赋予未来执行翻译的时间为最后一次时间+间隔时间');
+						}else{
+							translate.request.listener.executetime = currentTime;
+							//console.log('addexecute -- OK ');
+						}
 					}
+					
+
 				}
+
+				
 			},
 			/*
 				自定义是否会被触发的方法判断
@@ -4455,8 +4478,9 @@ var translate = {
 				//增加一个没100毫秒检查一次执行任务的线程
 				setInterval(function(){
 					var currentTime = Date.now();
-					if(translate.request.listener.executetime > 0 && currentTime > translate.request.listener.executetime){
+					if(translate.request.listener.executetime > 1 && currentTime > translate.request.listener.executetime+translate.request.listener.delayExecuteTime){
 						translate.request.listener.executetime = 0;
+						translate.request.listener.lasttime = currentTime;
 						try{
 							console.log('执行翻译 --'+currentTime);
 							translate.execute();
@@ -4473,7 +4497,7 @@ var translate = {
 
 				    	if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
 				        	var url = entry.name;
-				        	console.log(url);
+				        	//console.log(url);
 				        	//判断url是否是当前translate.js本身使用的
 				        	if(typeof(translate.request.api.host) == 'string'){
 				        		translate.request.api.host = [translate.request.api.host];
@@ -4497,10 +4521,10 @@ var translate = {
 				        	}
 
 				        	if(ignoreUrl){
-				        		console.log('忽略：'+url);
+				        		//console.log('忽略：'+url);
 								continue;
 				        	}
-				        	if(traslate.request.listener.trigger()){
+				        	if(translate.request.listener.trigger()){
 				        		//正常，会触发翻译，也是默认的
 				        	}else{
 				        		//不触发翻译，跳过
@@ -4512,7 +4536,7 @@ var translate = {
 				        }
 				    }
 				    if(translateExecute){
-				    	console.log('translate.request.listener.addExecute()');
+				    	//console.log('translate.request.listener.addExecute() -- '+Date.now());
 				    	translate.request.listener.addExecute();
 				    }
 				});

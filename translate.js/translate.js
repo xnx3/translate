@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.0.8.20240301',
+	version:'3.1.0.20240305',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -35,6 +35,11 @@ var translate = {
 	 * 默认出现的选择语言的 select 选择框，可以通过这个选择切换语言。
 	 */
 	selectLanguageTag:{
+		/*
+			v3.1 增加，将 select切换语言的选择框赋予哪个id，这里是具体的id的名字。
+			如果这个id不存在，会创建这个id的元素
+		*/
+		documentId:'translate',
 		/* 是否显示 select选择语言的选择框，true显示； false不显示。默认为true */
 		show:true,
 		/* 
@@ -51,7 +56,7 @@ var translate = {
 		//重新绘制 select 语种下拉选择。比如进行二次开发过translate.js，手动进行了设置 translate.to ，但是手动改动后的，在select语种选择框中并不会自动进行改变，这是就需要手动重新绘制一下 select语种选择的下拉选择框
 		refreshRender:function(){
 			// 获取元素
-			let element = document.getElementById("translateSelectLanguage");
+			let element = document.getElementById(translate.selectLanguageTag.documentId+"SelectLanguage");
 
 			// 删除元素
 			if (element) {
@@ -75,14 +80,14 @@ var translate = {
 			}
 			
 			//判断translate 的id是否存在，不存在就创建一个
-			if(document.getElementById('translate') == null){
+			if(document.getElementById(translate.selectLanguageTag.documentId) == null){
 				var body_trans = document.getElementsByTagName('body')[0];
 				var div = document.createElement("div");  //创建一个script标签
-				div.id="translate";
+				div.id=translate.selectLanguageTag.documentId;
 				body_trans.appendChild(div);
 			}else{
 				//存在，那么判断一下 select是否存在，要是存在就不重复创建了
-				if(document.getElementById('translateSelectLanguage') != null){
+				if(document.getElementById(translate.selectLanguageTag.documentId+'SelectLanguage') != null){
 					//select存在了，就不重复创建了
 					return;
 				}
@@ -100,8 +105,8 @@ var translate = {
 				
 				//创建 select 标签
 				var selectLanguage = document.createElement("select"); 
-				selectLanguage.id = 'translateSelectLanguage';
-				selectLanguage.className = 'translateSelectLanguage';
+				selectLanguage.id = translate.selectLanguageTag.documentId+'SelectLanguage';
+				selectLanguage.className = translate.selectLanguageTag.documentId+'SelectLanguage';
 				for(var i = 0; i<data.list.length; i++){
 					var option = document.createElement("option"); 
 				    option.setAttribute("value",data.list[i].id);
@@ -144,7 +149,7 @@ var translate = {
 					selectLanguage.attachEvent('onchange',onchange); 
 				} 
 				//将select加入进网页显示
-				document.getElementById('translate').appendChild(selectLanguage);
+				document.getElementById(translate.selectLanguageTag.documentId).appendChild(selectLanguage);
 				/*
 				try{
 					document.getElementById('translateSelectLanguage').style.width = '94px';
@@ -2629,6 +2634,12 @@ var translate = {
 
 			bodyText = bodyText.replace(/\n|\t|\r/g,''); //将回车换行等去掉
 
+			//默认赋予简体中文
+			translate.language.local = 'chinese_simplified';
+			var recognition = translate.language.recognition(bodyText);
+			translate.language.local = recognition.languageName;
+			return translate.language.local;
+			/* v3.1优化
 			var langs = new Array(); //上一个字符的语种是什么，当前字符向上数第一个字符。格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。 
 			for(var i=0; i<bodyText.length; i++){
 				var charstr = bodyText.charAt(i);
@@ -2657,6 +2668,7 @@ var translate = {
 				//没有，默认赋予简体中文
 				translate.language.local = 'chinese_simplified';
 			}
+			*/
 		},
 		
 		/*
@@ -2797,29 +2809,48 @@ var translate = {
 		 	languageName 是当前字符串是什么语种。它的识别有以下特点：
 		 		1. 如果出现英语跟中文、法语、德语等混合的情况，也就是不纯粹英语的情况，那么会以其他语种为准，而不是识别为英语。不论英语字符出现的比例占多少。
 		 		2. 如果出现简体中文跟繁体中文混合的情况，那么识别为繁体中文。不论简体中文字符出现的比例占多少。
-				3. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。
+				3. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。（注意是字符数，而不是语种的数组数）
 			languageArray 对传入字符串进行分析，识别出都有哪些语种，每个语种的字符是什么
 		 * 		
 		 */
 		recognition:function(str){
 			var langs = translate.language.get(str);
-			//console.log(langs);
 			var langkeys = Object.keys(langs);
-			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
-				//console.log('出现了english, 并且english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
-				langkeys.splice(langkeys.indexOf('english'), 1); 
-			}
-			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
-				//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文。
-				langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
-			}
-			//console.log(langkeys)
-
-			var lang = langkeys[0];
 			//console.log(langs);
+			var langsNumber = []; //key  语言名，  value 语言字符数
+			for(var key in langs){
+				var langStrLength = 0;
+				for(var ls = 0; ls < langs[key].length; ls++){
+					langStrLength = langStrLength + langs[key][ls].text.length;
+				}
+				langsNumber[key] = langStrLength;
+			}
+
+			if(langkeys.length > 1 && typeof(langsNumber['english']) != 'undefined'){
+				//console.log('出现了english, 并且english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
+				//langkeys.splice(langkeys.indexOf('english'), 1); 
+				langsNumber['english'] = 0;
+			}
+
+			if(typeof(langsNumber['chinese_simplified']) != 'undefined' && typeof(langsNumber['chinese_traditional']) != 'undefined'){
+				//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文。
+				//langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
+				langsNumber['chinese_simplified'] = 0;
+			}
+
+			//console.log(langsNumber);
+
+			//从 langsNumber 中找出字数最多的来
+			var maxLang = ''; //字数最多的语种
+			var maxNumber = 0;
+			for(var lang in langsNumber){
+				if(langsNumber[lang] > maxNumber){
+					maxLang = lang;
+				}
+			}
 
 			var result = {
-				languageName: lang,
+				languageName: maxLang,
 				languageArray: langs
 			};
 			return result;

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.1.0.20240305',
+	version:'3.1.1.20240306',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2815,30 +2815,42 @@ var translate = {
 		 */
 		recognition:function(str){
 			var langs = translate.language.get(str);
-			var langkeys = Object.keys(langs);
-			//console.log(langs);
+			//var langkeys = Object.keys(langs);
+			//console.log(langkeys);
 			var langsNumber = []; //key  语言名，  value 语言字符数
+			var langsNumberOriginal = []; //同上，只不过这个不会进行清空字符数
+			var allNumber = 0;//总字数
 			for(var key in langs){
 				var langStrLength = 0;
 				for(var ls = 0; ls < langs[key].length; ls++){
 					langStrLength = langStrLength + langs[key][ls].text.length;
 				}
+				allNumber = allNumber + langStrLength;
 				langsNumber[key] = langStrLength;
+				langsNumberOriginal[key] = langStrLength;
 			}
 
-			if(langkeys.length > 1 && typeof(langsNumber['english']) != 'undefined'){
+			//过滤 语种的字符数小于总字符数 百分之五的，低于这个数，将忽略
+			var langkeys = [];
+			for(var lang in langsNumber){
+				if(langsNumber[lang]/allNumber > 0.05){
+					langkeys[langkeys.length] = lang+'';
+				}
+			}
+
+
+			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
 				//console.log('出现了english, 并且english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
 				//langkeys.splice(langkeys.indexOf('english'), 1); 
 				langsNumber['english'] = 0;
 			}
 
-			if(typeof(langsNumber['chinese_simplified']) != 'undefined' && typeof(langsNumber['chinese_traditional']) != 'undefined'){
+			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
 				//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文。
 				//langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
 				langsNumber['chinese_simplified'] = 0;
 			}
 
-			//console.log(langsNumber);
 
 			//从 langsNumber 中找出字数最多的来
 			var maxLang = ''; //字数最多的语种
@@ -2846,12 +2858,21 @@ var translate = {
 			for(var lang in langsNumber){
 				if(langsNumber[lang] > maxNumber){
 					maxLang = lang;
+					maxNumber = langsNumber[lang];
 				}
+			}
+
+			//重新组合返回值的 languageArray
+			var languageArray = {};
+			for(var lang in langs){
+				languageArray[lang] = {};
+				languageArray[lang].number = langsNumberOriginal[lang];
+				languageArray[lang].list = langs[lang];
 			}
 
 			var result = {
 				languageName: maxLang,
-				languageArray: langs
+				languageArray: languageArray
 			};
 			return result;
 		},
@@ -3206,7 +3227,7 @@ var translate = {
 		},
 		//是否包含日语，true:包含
 		japanese:function(str){
-			if(/.*[\u0800-\u4e00]+.*$/.test(str)){ 
+			if(/.*[\u3040-\u309F\u30A0-\u30FF]+.*$/.test(str)){ 
 				return true
 			} else {
 				return false;

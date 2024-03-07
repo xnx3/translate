@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.1.1.20240306',
+	version:'3.1.2.20240307',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2143,7 +2143,7 @@ var translate = {
 				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
 				translate.addNodeToQueue(uuid, nodeAnaly['node'], nodeAnaly['text']);
 			}
-			
+			//console.log(nodeAnaly);
 			/*
 			//console.log(node.nodeName+', type:'+node.nodeType+', '+node.nodeValue);
 			var nodename = translate.element.getNodeName(node);
@@ -2303,16 +2303,16 @@ var translate = {
 				*/
 				//console.log('|'+langs[lang].length);
 				//遍历出该语种下有哪些词需要翻译
-				for(var word_index = 0; word_index < langs[lang].length; word_index++){
+				for(var word_index = 0; word_index < langs[lang].list.length; word_index++){
 					//console.log('start:'+word_index)
-					//console.log(langs[lang][word_index]);
-					if(typeof(langs[lang][word_index]) == 'undefined' || typeof(langs[lang][word_index]['text']) == 'undefined'){
+					//console.log(langs[lang].list[word_index]);
+					if(typeof(langs[lang].list[word_index]) == 'undefined' || typeof(langs[lang].list[word_index]['text']) == 'undefined'){
 						//理论上应该不会，但多加个判断
 						continue;
 					}
-					var word = langs[lang][word_index]['text']; //要翻译的词
-					var beforeText = langs[lang][word_index]['beforeText'];
-					var afterText = langs[lang][word_index]['afterText'];
+					var word = langs[lang].list[word_index]['text']; //要翻译的词
+					var beforeText = langs[lang].list[word_index]['beforeText'];
+					var afterText = langs[lang].list[word_index]['afterText'];
 
 					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
 

@@ -26,7 +26,7 @@
 * [**瞬间翻译能力。** 内置缓存预加载机制，只要翻译过的网页，再次看时会达到瞬间翻译的效果，给用户的感觉就是，这个页面本来就是这种语言的，而不是经过第三方翻译的。](http://translate.zvo.cn/41750.html)
 * [**永久免费使用。** 采用Apache-2.0开源协议，您可永久免费使用。](https://github.com/xnx3/translate/blob/master/LICENSE)
 * **搜索引擎友好。** 完全不影响你本身网站搜索引擎的收录。爬虫所爬取的网页源代码，它不会对其进行任何改动，你可完全放心。
-* [**后端翻译开源。** 在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或您对自有客户希望提供自建高可靠翻译服务场景时，您可将后端翻译接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。](http://translate.zvo.cn/41160.html) 
+* [**支持私有部署。** 在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或您对自有客户希望提供自建高可靠翻译服务场景时，您可将后端翻译接口进行私有化部署，不走我们公开开放的翻译接口，以做到安全保密及后端服务全部自行掌控。](http://translate.zvo.cn/41160.html) 
 * **多个翻译节点**。每间隔1分钟自动获取一次延迟最小的节点进行接入使用，全面规避全球使用时，某个地域网络波动导致后端翻译接口无法响应的情况发生。自动适配最快节点，做到更好的使用体验！
 
 
@@ -49,7 +49,7 @@ http://res.zvo.cn/translate/demo.html
 在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
-<script src="https://cdn.staticfile.net/translate.js/3.0.3/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.1.1/translate.js"></script>
 <script>
 translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
 translate.service.use('client.edge'); //设置机器翻译服务通道，直接客户端本身，不依赖服务端 。相关说明参考 http://translate.zvo.cn/43086.html
@@ -98,7 +98,7 @@ translate.execute();//进行翻译
 </ul>
 
 <!-- 引入多语言切换的js -->
-<script src="https://cdn.staticfile.net/translate.js/3.0.3/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.1.1/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
     translate.service.use('client.edge'); //设置机器翻译服务通道

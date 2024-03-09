@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.1.2.20240307',
+	version:'3.1.4.20240309',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -222,32 +222,8 @@ var translate = {
 	 * 已废弃，v1使用的
 	 */
 	execute_v1:function(){
-		/*********** 判断translate 的id是否存在，不存在就创建一个  */
-		if(document.getElementById('translate') == null){
-			if(translate.selectLanguageTag.show){
-				var body_trans = document.getElementsByTagName('body')[0];
-				var div = document.createElement("div");  //创建一个script标签
-				div.id="translate";
-				body_trans.appendChild(div);
-			}
-		}
-		
-		/* 处理1.0 - 1.1 升级的 */
-		if(translate.includedLanguages == ''){
-			//如果未设置，用默认的
-			translate.selectLanguageTag.languages = translate.includedLanguages;
-		}
-		/* 用户1.0版本设置过这个，那么就以这个为主 */
-		console.log('translate.js tip: translate.includedLanguages obsolete, please use the translate.selectLanguageTag.languages are set');
-		
-		
-		/****** 先加载资源  ******/
-		var head0 = document.getElementsByTagName('head')[0];
-		var script = document.createElement("script");  //创建一个script标签
-		script.type = "text/javascript";
-		//script.async = true;
-		script.src = this.resourcesUrl+'/js/element.js';
-		head0.appendChild(script);
+		console.log('=====ERROR======');
+		console.log('The v1 version has been discontinued since 2022. Please use the latest V3 version and refer to: http://translate.zvo.cn/41162.html');
 	},
 	
 	/**
@@ -3719,7 +3695,7 @@ var translate = {
 			if(typeof(msg) != 'undefined'){
 				return;
 			}
-			translate.util.synchronizesLoadJs('http://res.zvo.cn/msg/msg.js');
+			translate.util.synchronizesLoadJs('https://res.zvo.cn/msg/msg.js');
 		},
 		/*
 			对一个对象，按照对象的key的长度进行排序，越长越在前面

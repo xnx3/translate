@@ -49,7 +49,7 @@ http://res.zvo.cn/translate/demo.html
 在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
-<script src="https://cdn.staticfile.net/translate.js/3.1.1/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.1.2/translate.js"></script>
 <script>
 translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
 translate.service.use('client.edge'); //设置机器翻译服务通道，直接客户端本身，不依赖服务端 。相关说明参考 http://translate.zvo.cn/43086.html
@@ -98,7 +98,7 @@ translate.execute();//进行翻译
 </ul>
 
 <!-- 引入多语言切换的js -->
-<script src="https://cdn.staticfile.net/translate.js/3.1.1/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.1.2/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
     translate.service.use('client.edge'); //设置机器翻译服务通道

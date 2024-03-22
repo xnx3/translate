@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.1.5.20240318',
+	version:'3.1.7.20240322',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3869,7 +3869,7 @@ var translate = {
 		edge:{
 			api:{ //edge浏览器的翻译功能
 				auth:'https://edge.microsoft.com/translate/auth', //auth授权拉取
-				translate:'https://api-edge.cognitive.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
+				translate:'https://api.cognitive.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
 			},
 
 			language:{
@@ -4629,13 +4629,14 @@ var translate = {
 				if(typeof(img.src) == 'undefined' || img.src == null || img.src.length == 0){
 					continue;
 				}
-				
+				var imgSrc = img.getAttribute('src');  //这样获取到的才是src原始的值，不然 img.src 是拿到一个绝对路径
+
 				for(var key in translate.images.queues){
 					var oldImage = key; //原本的图片src
 					var newImage = translate.images.queues[key]; //新的图片src，要替换为的
-					//console.log('queue+'+oldImage);
-					if(oldImage == img.src){
-						//console.log('发现匹配图片:'+img.src);
+					//console.log('queue : '+oldImage + ' , img.src: '+imgSrc);
+					if(oldImage == imgSrc){
+						//console.log('发现匹配图片:'+imgSrc);
 						/*
 						//判断当前元素是否在ignore忽略的tag、id、class name中
 						if(translate.ignore.isIgnore(node)){

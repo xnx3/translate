@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.1.7.20240322',
+	version:'3.2.0.20240327',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -4071,7 +4071,9 @@ var translate = {
 			*/
 			hostQueue:[],	
 			hostQueueIndex:-1,	//当前使用的 hostQueue的数组下标，  -1表示还未初始化赋予值，不可直接使用，通过 getHostQueueIndex() 使用
-			
+			disableTime:1000000,	//不可用的时间，storage中存储的 speedDetectionControl_hostQueue 其中 time 这里，如果值是 这个，便是代表这个host处于不可用状态
+
+
 			//获取 host queue 队列
 			getHostQueue:function(){
 				if(translate.request.speedDetectionControl.hostQueue.length == 0){
@@ -4126,6 +4128,23 @@ var translate = {
 				return translate.request.speedDetectionControl.hostQueue;
 			},
 
+			/*
+				服务于 checkResponseSpeed 用于将测试结果存入 storage
+				time: 当前接口请求的耗时，单位是毫秒。如果是 1000000 那么表示这个接口不可用
+			*/
+			checkResponseSpeed_Storage:function(host, time){
+
+				translate.request.speedDetectionControl.checkHostQueue.push({"host":host, "time":time });
+				//按照time进行排序
+				translate.request.speedDetectionControl.checkHostQueue.sort((a, b) => a.time - b.time);
+
+				//存储到 storage 持久化
+				translate.storage.set('speedDetectionControl_hostQueue',JSON.stringify(translate.request.speedDetectionControl.checkHostQueue));
+				translate.storage.set('speedDetectionControl_lasttime', new Date().getTime());
+
+				translate.request.speedDetectionControl.hostQueue = translate.request.speedDetectionControl.checkHostQueue;
+			},
+
 			//测试响应速度
 			checkResponseSpeed:function(){
 				var headers = {
@@ -4166,6 +4185,8 @@ var translate = {
 									}
 								}
 
+								translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, time);
+								/*
 								translate.request.speedDetectionControl.checkHostQueue.push({"host":host, "time":time });
 								//按照time进行排序
 								translate.request.speedDetectionControl.checkHostQueue.sort((a, b) => a.time - b.time);
@@ -4176,18 +4197,21 @@ var translate = {
 
 								translate.request.speedDetectionControl.hostQueue = translate.request.speedDetectionControl.checkHostQueue;
 								//console.log(translate.request.speedDetectionControl.hostQueue);
+								*/
 							},
 							'post',
 							true,
 							headers,
 							function(data){
-								//console.log('eeerrr');
+								//translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, time);
+								var hostUrl = data.requestURL.replace('connectTest.json','');
+								translate.request.speedDetectionControl.checkResponseSpeed_Storage(hostUrl, translate.request.speedDetectionControl.disableTime);
 							},
 							false
 						);
 					}catch(e){
 						//console.log('e0000');
-						//console.log(e);
+						console.log(e);
 						//time = 300000; //无法连接的，那么赋予 300 秒吧
 					}
 
@@ -4257,6 +4281,9 @@ var translate = {
 				return;
 			}
 
+			//企业级翻译自动检测
+			translate.enterprise.automaticAdaptationService();
+
 			// ------- edge start --------
 			var url = translate.request.getUrl(path);
 			//if(url.indexOf('edge') > -1 && path == translate.request.api.translate){
@@ -4288,7 +4315,7 @@ var translate = {
 		 * method 请求方式，可传入 post、get
 		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求。 如果传入false，则本方法返回xhr
 		 * headers 设置请求的header，传入如 {'content-type':'application/x-www-form-urlencoded'};
-		 * abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}
+		 * abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}  另外这里的 xhr 会额外有个参数  xhr.requestURL 返回当前请求失败的url
 		 * showErrorLog 是否控制台打印出来错误日志，true打印， false 不打印
 		 */
 		send:function(url, data, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
@@ -4378,7 +4405,7 @@ var translate = {
 			        		}
 			        		
 			        	}
-			        	
+			        	xhr.requestURL = url;
 			        	if(abnormalFunc != null){
 			        		abnormalFunc(xhr);
 			        	}
@@ -4803,6 +4830,37 @@ var translate = {
 	},
 
 	/*
+		企业级翻译服务
+		注意，这个企业级翻译中的不在开源免费之中，企业级翻译服务追求的是高稳定，这个是收费的！详情可参考：http://translate.zvo.cn/43262.html
+
+	*/
+	enterprise:{
+		//默认不启用企业级，除非设置了 translate.enterprise.use() 这里才会变成true
+		isUse:false,	
+		use:function(){
+			translate.enterprise.isUse = true; //设置为使用企业级翻译服务
+
+			//主节点额外权重降低，更追求响应速度
+			translate.request.speedDetectionControl.hostMasterNodeCutTime = 300; 
+			translate.request.api.host=['https://beijing.enterprise.api.translate.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn/', 'https://america.api.translate.zvo.cn:666/'];
+		},
+		/*
+			自动适配翻译服务通道，如果当前所有网络节点均不可用，会自动切换到 edge.client 进行使用
+			这个会在 post请求 执行前开始时进行触发
+		*/
+		automaticAdaptationService:function(){
+			var hosts = translate.request.speedDetectionControl.getHostQueue();
+			//console.log(hosts);
+			if(hosts.length > 0){
+				if(hosts[0].time + 1 > translate.request.speedDetectionControl.disableTime){
+					//所有节点都处于不可用状态，自动切换到 client.edge 模式
+					translate.service.name = 'client.edge';
+				} 
+			}
+		}
+	},
+
+	/*
 		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加
 		会自动在 translate.js 加载后的 200毫秒后 执行，进行初始化。同时也是节点测速
 	*/
@@ -4891,11 +4949,7 @@ var nodeuuid = {
 			n = n.parentNode;
 		}
 		return uuid;
-	}
+	},
+
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
-
-
-try{
-	setTimeout(translate.init, 200);
-}catch(e){ console.log(e); }

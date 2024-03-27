@@ -49,7 +49,7 @@ http://res.zvo.cn/translate/demo.html
 在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
-<script src="https://cdn.staticfile.net/translate.js/3.1.7/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.2.1/translate.js"></script>
 <script>
 translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
 translate.service.use('client.edge'); //设置机器翻译服务通道，直接客户端本身，不依赖服务端 。相关说明参考 http://translate.zvo.cn/43086.html
@@ -82,6 +82,16 @@ translate.execute();//进行翻译
 * [离线翻译及自动生成配置](http://translate.zvo.cn/41936.html)
 * [手动调用接口进行翻译操作](http://translate.zvo.cn/41961.html)
 * [元素的内容整体翻译能力配置](http://translate.zvo.cn/42563.html)
+* [翻译接口响应捕获处理](http://translate.zvo.cn/42678.html)
+* [清除历史翻译语种的缓存](http://translate.zvo.cn/43070.html)
+* [网页ajax请求触发自动翻译](http://translate.zvo.cn/43170.html)
+* [设置只对指定语种进行翻译](http://translate.zvo.cn/43133.html)
+* [重新绘制 select 语种下拉选择](http://translate.zvo.cn/43129.html)
+* [识别字符串语种及分析](http://translate.zvo.cn/43128.html)
+* [重写一级缓存（浏览器缓存）](http://translate.zvo.cn/43114.html)
+* [设置使用的翻译服务 translate.service.use](http://translate.zvo.cn/43086.html)
+* [启用企业级稳定翻译](http://translate.zvo.cn/43262.html)
+
 
 # 使用示例
 **普通网站中点击某个语言进行切换**
@@ -98,7 +108,7 @@ translate.execute();//进行翻译
 </ul>
 
 <!-- 引入多语言切换的js -->
-<script src="https://cdn.staticfile.net/translate.js/3.1.7/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.2.1/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
     translate.service.use('client.edge'); //设置机器翻译服务通道

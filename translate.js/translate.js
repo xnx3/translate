@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.2.0.20240327',
+	version:'3.2.1.20240327',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -4849,6 +4849,9 @@ var translate = {
 			这个会在 post请求 执行前开始时进行触发
 		*/
 		automaticAdaptationService:function(){
+			if(!translate.enterprise.isUse){
+				return;
+			}
 			var hosts = translate.request.speedDetectionControl.getHostQueue();
 			//console.log(hosts);
 			if(hosts.length > 0){

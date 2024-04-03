@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.2.1.20240327',
+	version:'3.2.2.20240403',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -4394,6 +4394,13 @@ var translate = {
 			        		if(url.indexOf(translate.request.api.connectTest) > -1){
 			        			//测试链接速度的不在报错里面
 			        		}else{
+
+			        			//判断是否是v2版本的翻译，如果是 translate.service 模式并且没有使用企业级翻译，参会提示
+			        			//2024.3月底开始，翻译使用量增加的太快，开源的翻译服务器有点扛不住经常出故障，所以直接把这个提示加到这里
+			        			if(translate.service.name == 'translate.service' && !translate.enterprise.isUse){
+			        				console.log('----- translate.js 提示 -----\n检测到您正在使用v2的旧版本，并且当前的v2接口恰好处于不稳定状态！所以您当前的翻译是并没有生效，也就是并没有正常进行翻译的，不过这不是您的问题，是v2版本的翻译通道因为开源免费，使用的人太多导致的偶尔不稳定。如果您想正常使用，建议您进行一下操作：\n建议一：切换到v3最新版本的 client.edge 翻译模式，设置方式可以参考： http://translate.zvo.cn/43086.html 它是2024年初新出的V3版本的翻译模式，翻译效果更稳定，而且也是完全免费使用。\n建议二：启用企业级稳定翻译，有些网站对翻译稳定性、实时性要求比较高的，可以考虑采用这种方式. 使用方式可参考： http://translate.zvo.cn/43262.html  这种方式是 2024.3月底应不少用户建议推出的一个独立翻译通道，这个翻译通道仅仅只有提供赞助的人才能使用，使用人数少，多台翻译服务器组件的自动负载以及健康检查耗时最短的最优翻译方案，使翻译更稳定。\n\n建议一跟建议二的区别是建议一延续了translate.js三年以来一直贯彻的开源免费的方针，同时也提供了相对稳定的翻译支持，它的翻译稳定性还是信得过的，一般使用这种就行。而建议二它对稳定性及翻译速度接口响应专门进行了深度优化，它的唯一缺点就是花钱。\n-------------');
+			        			}
+
 			        			//console.log(xhr);
 					        	console.log('------- translate.js service api response error --------');
 					        	console.log('    http code : '+xhr.status);

@@ -4,7 +4,7 @@
 	作者：管雷鸣
 	开原仓库：https://github.com/xnx3/translate
 
- */
+ */ 
 var translate = {
 	/*
 	 * 当前的版本

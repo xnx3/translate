@@ -159,7 +159,6 @@ var translate = {
 					return;
 				}
 				
-				console.log('---');
 				translate.selectLanguageTag.customUI(data.list);
 
 				/*

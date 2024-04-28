@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.2.3.20240403',
+	version:'3.2.4.20240428',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -68,6 +68,65 @@ var translate = {
 
 			translate.selectLanguageTag.render();
 		},
+
+		/*
+			自定义切换语言的样式渲染 v3.2.4 增加
+			
+		*/
+		customUI:function(languageList){
+			//select的onchange事件
+			var onchange = function(event){ translate.selectLanguageTag.selectOnChange(event); }
+			
+			//创建 select 标签
+			var selectLanguage = document.createElement("select"); 
+			selectLanguage.id = translate.selectLanguageTag.documentId+'SelectLanguage';
+			selectLanguage.className = translate.selectLanguageTag.documentId+'SelectLanguage';
+			for(var i = 0; i<languageList.length; i++){
+				var option = document.createElement("option"); 
+			    option.setAttribute("value",languageList[i].id);
+
+			    //判断 selectLanguageTag.languages 中允许使用哪些
+
+				if(translate.selectLanguageTag.languages.length > 0){
+					//设置了自定义显示的语言
+
+					//都转小写判断
+					var langs_indexof = (','+translate.selectLanguageTag.languages+',').toLowerCase();
+					//console.log(langs_indexof)
+					if(langs_indexof.indexOf(','+languageList[i].id.toLowerCase()+',') < 0){
+						//没发现，那不显示这个语种，调出
+						continue
+					}
+				}
+
+				/*判断默认要选中哪个语言*/
+			    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
+					//设置了目标语言，那就进行判断显示目标语言
+					
+					if(translate.to == languageList[i].id){
+						option.setAttribute("selected",'selected');
+					}
+			    }else{
+					//没设置目标语言，那默认选中当前本地的语种
+					if(languageList[i].id == translate.language.getLocal()){
+						option.setAttribute("selected",'selected');
+					}
+				}
+				
+			    option.appendChild(document.createTextNode(languageList[i].name)); 
+			    selectLanguage.appendChild(option);
+			}
+			//增加 onchange 事件
+			if(window.addEventListener){ // Mozilla, Netscape, Firefox 
+				selectLanguage.addEventListener('change', onchange,false); 
+			}else{ // IE 
+				selectLanguage.attachEvent('onchange',onchange); 
+			} 
+
+			//将select加入进网页显示
+			document.getElementById(translate.selectLanguageTag.documentId).appendChild(selectLanguage);
+				
+		},
 		render:function(){ //v2增加
 			if(translate.selectLanguageTag.alreadyRender){
 				return;
@@ -99,57 +158,10 @@ var translate = {
 					console.log('load language list error : '+data.info);
 					return;
 				}
-			
-				//select的onchange事件
-				var onchange = function(event){ translate.selectLanguageTag.selectOnChange(event); }
 				
-				//创建 select 标签
-				var selectLanguage = document.createElement("select"); 
-				selectLanguage.id = translate.selectLanguageTag.documentId+'SelectLanguage';
-				selectLanguage.className = translate.selectLanguageTag.documentId+'SelectLanguage';
-				for(var i = 0; i<data.list.length; i++){
-					var option = document.createElement("option"); 
-				    option.setAttribute("value",data.list[i].id);
+				console.log('---');
+				translate.selectLanguageTag.customUI(data.list);
 
-				    //判断 selectLanguageTag.languages 中允许使用哪些
-
-					if(translate.selectLanguageTag.languages.length > 0){
-						//设置了自定义显示的语言
-
-						//都转小写判断
-						var langs_indexof = (','+translate.selectLanguageTag.languages+',').toLowerCase();
-						//console.log(langs_indexof)
-						if(langs_indexof.indexOf(','+data.list[i].id.toLowerCase()+',') < 0){
-							//没发现，那不显示这个语种，调出
-							continue
-						}
-					}
-
-					/*判断默认要选中哪个语言*/
-				    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
-						//设置了目标语言，那就进行判断显示目标语言
-						
-						if(translate.to == data.list[i].id){
-							option.setAttribute("selected",'selected');
-						}
-				    }else{
-						//没设置目标语言，那默认选中当前本地的语种
-						if(data.list[i].id == translate.language.getLocal()){
-							option.setAttribute("selected",'selected');
-						}
-					}
-					
-				    option.appendChild(document.createTextNode(data.list[i].name)); 
-				    selectLanguage.appendChild(option);
-				}
-				//增加 onchange 事件
-				if(window.addEventListener){ // Mozilla, Netscape, Firefox 
-					selectLanguage.addEventListener('change', onchange,false); 
-				}else{ // IE 
-					selectLanguage.attachEvent('onchange',onchange); 
-				} 
-				//将select加入进网页显示
-				document.getElementById(translate.selectLanguageTag.documentId).appendChild(selectLanguage);
 				/*
 				try{
 					document.getElementById('translateSelectLanguage').style.width = '94px';

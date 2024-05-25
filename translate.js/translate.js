@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.3.0.20240430',
+	version:'3.4.0.20240525',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1300,8 +1300,13 @@ var translate = {
 		//console.log('----要翻译的目标元素-----');
 		//console.log(all)
 		
+		if(all.length > 500){
+			console.log('------tip------');
+			console.log('translate.execute( docs ) 传入的docs.length 过大，超过500，这很不正常，当前 docs.length : '+docs.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前500个元素进行翻译');
+		}
+
 		//检索目标内的node元素
-		for(var i = 0; i< all.length & i < 20; i++){
+		for(var i = 0; i< all.length & i < 500; i++){
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}

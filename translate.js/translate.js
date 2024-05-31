@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.4.1.20240530',
+	version:'3.4.2.20240531',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1656,6 +1656,11 @@ var translate = {
 			if(translateTextArray[lang].length < 1){
 				continue;
 			}
+
+			//如果当前语种就是需要显示的语种（也就是如果要切换的语种），那么也不会进行翻译，直接忽略
+			if(lang == translate.language.getCurrent()){
+				continue;
+			}
 			fanyiLangs.push(lang);
 		}
 		
@@ -2447,6 +2452,15 @@ var translate = {
 
 	//全部翻译，node内容全部翻译，而不是进行语种提取，直接对node本身的全部内容拿出来进行直接全部翻译
 	whole:{
+		isEnableAll:false, //是否开启对整个html页面的整体翻译，也就是整个页面上所有存在的能被翻译的全部会采用整体翻译的方式。默认是 false不开启		
+
+		enableAll:function(){
+			translate.whole.isEnableAll = true;
+		},
+
+		/*
+			一下三个，也就是  class tag id 分别存储加入的值。使用参考：http://translate.zvo.cn/42563.html
+		*/
 		class:[],
 		tag:[],
 		id:[],
@@ -2471,12 +2485,17 @@ var translate = {
 			return true是在其中，false不再其中
 		*/
 		isWhole:function(ele){
-			if(translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0){
+
+			//如果设置了 class|tag|id 其中某个，或者 all=true ，那么就是启用，反之未启用
+			if((translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0) && translate.whole.isEnableAll == false){
 				//未设置，那么直接返回false
 				return false;
 			}
 			if(ele == null || typeof(ele) == 'undefined'){
 				return false;
+			}
+			if(translate.whole.isEnableAll){
+				return true;
 			}
 
 			var parentNode = ele;
@@ -2541,6 +2560,14 @@ var translate = {
 	},
 
 	language:{
+		/*	
+			英语的变种语种，也就是在英语26个字母的基础上加了点别的特殊字母另成的一种语言，而这些语言是没法直接通过识别字符来判断出是哪种语种的
+			v3.4.2 增加
+			当前先只加上:
+			法语、意大利语、德语
+		*/
+		englishVarietys : ['french','italian','deutsch'],
+
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
 		/*
@@ -2873,6 +2900,18 @@ var translate = {
 				languageName: maxLang,
 				languageArray: languageArray
 			};
+
+			//v3.4.2 增加，增加对法语等英文变种的小语种的识别
+			if(result.languageName == 'english'){
+				//如果识别的语种是英语，那便不仅仅是英语，因为法语、德语、意大利语也是在英语里面，还要判断一下是否用户自己设置了具体语种是否是英语延伸的小语种
+
+				var localLang = translate.language.getLocal(); //本地语种
+				if(translate.language.englishVarietys.indexOf(localLang) > -1){
+					//发现当前设置的是小语种，那么将当前识别的语种识别为 本地设置的这个小语种。
+					result.languageName = localLang;
+				}
+			}
+
 			return result;
 		},
 		// 传入一个char，返回这个char属于什么语种，返回如 chinese_simplified、english  如果返回空字符串，那么表示未获取到是什么语种
@@ -2881,9 +2920,7 @@ var translate = {
 				return '';
 			}
 			
-			if(this.italian(charstr)){
-				return 'italian';
-			}
+
 			if(this.english(charstr)){
 				return 'english';
 			}
@@ -3247,14 +3284,7 @@ var translate = {
 			}
 			return false;
 		},
-		//意大利语
-		italian:function(str){
-			if(/.*[\u00E0-\u00F6]+.*$/.test(str)){
-				return true;
-			}
-			return false;
-		},
-
+		
 		//是否包含特殊字符
 		specialCharacter:function(str){
 			//如：① ⑴ ⒈ 
@@ -3883,9 +3913,7 @@ var translate = {
 				translate.service.name = serviceName;
 
 				//增加元素整体翻译能力
-				translate.whole.tag.push('body');
-				translate.whole.tag.push('head');
-				translate.whole.tag.push('html');
+				translate.whole.enableAll();
 			}
 		},
 		//客户端方式的edge提供机器翻译服务

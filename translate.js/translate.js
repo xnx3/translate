@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.4.2.20240531',
+	version:'3.5.0.20240607',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -2920,7 +2920,9 @@ var translate = {
 				return '';
 			}
 			
-
+			if(this.russian(charstr)){
+				return 'russian';
+			}
 			if(this.english(charstr)){
 				return 'english';
 			}
@@ -3272,6 +3274,15 @@ var translate = {
 		//是否包含韩语，true:包含
 		korean:function(str){
 			if(/.*[\uAC00-\uD7AF]+.*$/.test(str)){ 
+				return true
+			} else {
+				return false;
+			}
+		},
+		//是否包含俄语
+		russian:function(str){
+			//判断字符有  БВДЖЗИЙКЛМНОПСТУФХЦЧШЩЪЫЬЮЯЇІ
+			if(/.*[\u0411\u0412\u0414\u0416\u0417\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042E\u042F\u0407\u0406]+.*$/.test(str)){ 
 				return true
 			} else {
 				return false;

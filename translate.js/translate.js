@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.5.1.20240609',
+	version:'3.5.2.20240613',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -948,7 +948,8 @@ var translate = {
 			// 创建一个观察器实例并传入回调函数
 			translate.listener.observer = new MutationObserver(translate.listener.callback);
 			// 以上述配置开始观察目标节点
-			var docs = translate.getDocuments();
+			var docs = new Array();
+			docs[0] = translate.getDocuments();
 			for(var docs_index = 0; docs_index < docs.length; docs_index++){
 				var doc = docs[docs_index];
 				if(doc != null){
@@ -1331,9 +1332,13 @@ var translate = {
 		
 		/***** translate.language.translateLanguagesRange 结束 *****/
 		
-
-		//console.log(translate.nodeHistory);
-		//console.log(translate.nodeQueue[uuid])
+		//修复如果translate放在了页面最顶部，此时执行肯定扫描不到任何东西的，避免这种情况出现报错
+		if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
+			translate.nodeQueue[uuid] = new Array();
+			translate.nodeQueue[uuid].list = [];
+			console.log('--- translate.js warn tip 警告！！ ---');
+			console.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
+		}
 		for(var lang in translate.nodeQueue[uuid].list){
 			//console.log('lang:'+lang)
 			for(var hash in translate.nodeQueue[uuid].list[lang]){
@@ -1661,7 +1666,7 @@ var translate = {
 			}
 
 			//如果当前语种就是需要显示的语种（也就是如果要切换的语种），那么也不会进行翻译，直接忽略
-			if(lang == translate.language.getCurrent()){
+			if(lang == translate.to){
 				continue;
 			}
 			fanyiLangs.push(lang);

@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.5.3.20240711',
+	version:'3.6.0.20240718',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -1989,7 +1989,12 @@ var translate = {
 					//meta标签，如是关键词、描述等
 					if(typeof(node.name) != 'undefined' && node.name != null){
 						var nodeAttributeName = node.name.toLowerCase();  //取meta 标签的name 属性
-						if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description'){
+						var nodeAttributePropertyOri = node.getAttribute('property'); //取 property的值
+						var nodeAttributeProperty = '';
+						if(typeof(nodeAttributePropertyOri) != 'undefined' && nodeAttributePropertyOri != null && nodeAttributePropertyOri.length > 0){
+							nodeAttributeProperty = nodeAttributePropertyOri.toLowerCase();
+						}
+						if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description' || nodeAttributeName == 'sharetitle' || nodeAttributeProperty == 'og:title' || nodeAttributeProperty == 'og:description' || nodeAttributeProperty == 'og:site_name'){
 							//替换渲染
 							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 								//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));

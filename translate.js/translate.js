@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.6.0.20240718',
+	version:'3.6.1.20240801',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3916,8 +3916,14 @@ var translate = {
 		        }
 		    }
 		    return list;
+		},
+		//获取浏览器中设置的默认使用语言
+		browserDefaultLanguage:function(){
+			var language = navigator.language || navigator.userLanguage;
+			console.log(language);
+			//将其转化为  translate.js 的语言id，比如简体中文是 chinese_simplified 、 英语是 english
+			return language;
 		}
-
 	},
 	//机器翻译采用哪种翻译服务
 	service:{  
@@ -4396,22 +4402,25 @@ var translate = {
 		send:function(url, data, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
 			//post提交的参数
 			var params = '';
-			if(data != null){
-				if(typeof(data) == 'string'){
-					params = data; //payload 方式
-				}else{
-					//表单提交方式
-					for(var index in data){
-						if(params.length > 0){
-							params = params + '&';
-						}
-						params = params + index + '=' + data[index];
+
+			if(data == null || typeof(data) == 'undefined'){
+				data = {};
+			}
+			//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
+			data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
+
+			if(typeof(data) == 'string'){
+				params = data; //payload 方式
+			}else{
+				//表单提交方式
+				for(var index in data){
+					if(params.length > 0){
+						params = params + '&';
 					}
+					params = params + index + '=' + data[index];
 				}
 			}
-
 			
-
 			if(url.indexOf('https://') == 0 || url.indexOf('http://') == 0){
 				//采用的url绝对路径
 			}else{

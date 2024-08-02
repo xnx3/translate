@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.6.1.20240801',
+	version:'3.6.2.20240802',
 	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
@@ -3591,6 +3591,14 @@ var translate = {
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
 	//如果使用后，第二次在用，那就优先以用户所选择的为主
 	executeByLocalLanguage:function(){
+		//先读用户自己浏览器的默认语言
+		var browserDefaultLanguage = translate.util.browserDefaultLanguage();
+		if(typeof(browserDefaultLanguage) != 'undefined' && browserDefaultLanguage.length > 0){
+			translate.changeLanguage(browserDefaultLanguage);
+			return;
+		}
+
+		//如果用户浏览器没读到默认语言，或者默认语言没有对应到translate.js支持的语种，那么在采用ip识别的方式
 		translate.request.post(translate.request.api.ip, {}, function(data){
 			//console.log(data); 
 			if(data.result == 0){
@@ -3917,12 +3925,145 @@ var translate = {
 		    }
 		    return list;
 		},
-		//获取浏览器中设置的默认使用语言
+		/* 
+			浏览器的语种标识跟translate.js的语种标识的对应
+			key: 浏览器的语种标识
+			value: translate.js 的语种标识
+		 */
+		browserLanguage:{
+			'zh-CN':'chinese_simplified',
+			'co':'corsican',
+			'gn':'guarani',
+			'rw':'kinyarwanda',
+			'ha':'hausa',
+			'no':'norwegian',
+			'nl':'dutch',
+			'yo':'yoruba',
+			'en':'english',
+			'kok':'gongen',
+			'la':'latin',
+			'ne':'nepali',
+			'fr':'french',
+			'cs':'czech',
+			'haw':'hawaiian',
+			'ka':'georgian',
+			'ru':'russian',
+			'fa':'persian',
+			'bho':'bhojpuri',
+			'hi':'hindi',
+			'be':'belarusian',
+			'sw':'swahili',
+			'is':'icelandic',
+			'yi':'yiddish',
+			'tw':'twi',
+			'ga':'irish',
+			'gu':'gujarati',
+			'km':'khmer',
+			'sk':'slovak',
+			'he':'hebrew',
+			'kn':'kannada',
+			'hu':'hungarian',
+			'ta':'tamil',
+			'ar':'arabic',
+			'bn':'bengali',
+			'az':'azerbaijani',
+			'sm':'samoan',
+			'af':'afrikaans',
+			'id':'indonesian',
+			'da':'danish',
+			'sn':'shona',
+			'bm':'bambara',
+			'lt':'lithuanian',
+			'vi':'vietnamese',
+			'mt':'maltese',
+			'tk':'turkmen',
+			'as':'assamese',
+			'ca':'catalan',
+			'si':'singapore',
+			'ceb':'cebuano',
+			'gd':'scottish-gaelic',
+			'sa':'sanskrit',
+			'pl':'polish',
+			'gl':'galician',
+			'lv':'latvian',
+			'uk':'ukrainian',
+			'tt':'tatar',
+			'cy':'welsh',
+			'ja':'japanese',
+			'fil':'filipino',
+			'ay':'aymara',
+			'lo':'lao',
+			'te':'telugu',
+			'ro':'romanian',
+			'ht':'haitian_creole',
+			'doi':'dogrid',
+			'sv':'swedish',
+			'mai':'maithili',
+			'th':'thai',
+			'hy':'armenian',
+			'my':'burmese',
+			'ps':'pashto',
+			'hmn':'hmong',
+			'dv':'dhivehi',
+			'zh-TW':'chinese_traditional',
+			'lb':'luxembourgish',
+			'sd':'sindhi',
+			'ku':'kurdish',
+			'tr':'turkish',
+			'mk':'macedonian',
+			'bg':'bulgarian',
+			'ms':'malay',
+			'lg':'luganda',
+			'mr':'marathi',
+			'et':'estonian',
+			'ml':'malayalam',
+			'de':'deutsch',
+			'sl':'slovene',
+			'ur':'urdu',
+			'pt':'portuguese',
+			'ig':'igbo',
+			'ckb':'kurdish_sorani',
+			'om':'oromo',
+			'el':'greek',
+			'es':'spanish',
+			'fy':'frisian',
+			'so':'somali',
+			'am':'amharic',
+			'ny':'nyanja',
+			'pa':'punjabi',
+			'eu':'basque',
+			'it':'italian',
+			'sq':'albanian',
+			'ko':'korean',
+			'tg':'tajik',
+			'fi':'finnish',
+			'ky':'kyrgyz',
+			'ee':'ewe',
+			'hr':'croatian',
+			'kri':'creole',
+			'qu':'quechua',
+			'bs':'bosnian',
+			'mi':'maori'
+		},
+		/*
+			获取浏览器中设置的默认使用语言
+			返回的是 translate.js 的语言唯一标识
+			如果返回的是空字符串，则是没有匹配到（可能是没有获取到本地语言，也可能是本地语言跟translate.js 翻译通道没有对应上）
+		*/
 		browserDefaultLanguage:function(){
 			var language = navigator.language || navigator.userLanguage;
-			console.log(language);
+			if(typeof(language) == 'string' && language.length > 0){
+				var tLang = translate.util.browserLanguage[language];
+				if(typeof(tLang) == 'undefined'){
+					//没有在里面
+					console.log('browser default language : '+language +', translate.js current translate channel not support this language ');
+				}else{
+					return tLang;
+				}
+			}
+			
 			//将其转化为  translate.js 的语言id，比如简体中文是 chinese_simplified 、 英语是 english
-			return language;
+			return '';
 		}
 	},
 	//机器翻译采用哪种翻译服务

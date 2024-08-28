@@ -9,8 +9,12 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.7.2.20240816',
-	useVersion:'v2',	//当前使用的版本，默认使用v2. 可使用 setUseVersion2(); //来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
+	version:'3.8.0.20240828',
+	/*
+		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
+		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
+	*/
+	useVersion:'v2',	
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
 		console.log('提示：自 v2.10 之后的版本默认就是使用V2版本（当前版本为:'+translate.version+'）， translate.setUseVersion2() 可以不用再加这一行了。当然加了也无所谓，只是加了跟不加是完全一样的。');
@@ -5094,6 +5098,18 @@ var translate = {
 			}
 		}
 	},
+
+	/*
+		如果使用的是 translate.service 翻译通道，那么翻译后的语种会自动以小写的方式进行显示。
+		如果你不想将翻译后的文本全部以小写显示，而是首字母大写，那么可以通过此方法设置一下
+		v3.8.0.20240828 增加
+		目前感觉应该用不到，所以先忽略
+	*/
+	/*
+	notConvertLowerCase:function(){
+
+	},
+	*/
 
 	/*
 		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Content-Language" content="zh-CN">
+	<meta name="author" content="管雷鸣">
+	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+</head>
+<body>
+
+<div>让我们面向世界，一起探索星辰与大海</div>
+<div>开原仓库：<a href="https://gitee.com/mail_osc/translate_layui" class="ignore">https://gitee.com/mail_osc/translate_layui</a></div>
+<div>交流 QQ 群：181781514</div>
+
+
+<script src="https://res.zvo.cn/module/layui/layui.js?v=2.4.5"></script>
+<script>
+//你也可以忽略 base 设定的根目录，直接在 extend 指定路径（主要：该功能为 layui 2.2.0 新增）
+layui.extend({
+	translate: '{/}https://res.zvo.cn/translate/else/layui_exts/translate/translate' // {/}的意思即代表采用自有路径，即不跟随 base 路径
+	//translate: '{/}./translate/translate' // js文件下载下来放在了本地，可以用这个
+})
+//使用拓展模块
+layui.use(['translate'], function(){
+	var translate = layui.translate;
+	//设置本地语种
+	translate.language.setLocal('chinese_simplified');
+	//设置翻译通道
+	translate.service.use('client.edge');
+
+	//更多设置项，可以参考  https://translate.zvo.cn/4019.html  可以更灵活的配置你的项目
+
+	//当页面加载完后执行翻译操作
+	window.onload = function () {
+		translate.execute();
+	};  
+});
+</script>
+</body>
+</html>

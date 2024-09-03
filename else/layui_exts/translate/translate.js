@@ -1,6 +1,6 @@
 /*
  * 多语言翻译，作者：管雷鸣
- * 开源仓库： https://github.com/xnx3/translate
+ * 开源仓库： https://github.com/xnx3/translate/tree/master/else/layui_exts
  */      
 layui.define([], function (exports) {
 	//下行是直接将https://gitee.com/mail_osc/translate 压缩后粘贴过来

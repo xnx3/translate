@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.8.0.20240828',
+	version:'3.8.1.20240905',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -2091,6 +2091,9 @@ var translate = {
 			}
 			
 			var childNodes = node.childNodes;
+			if(childNodes == null || typeof(childNodes) == 'undefined'){
+				return;
+			}
 			if(childNodes.length > 0){
 				for(var i = 0; i<childNodes.length; i++){
 					translate.element.whileNodes(uuid, childNodes[i]);

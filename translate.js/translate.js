@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.8.1.20240905',
+	version:'3.8.2.20240905',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -799,7 +799,7 @@ var translate = {
 	*/
 	nodeQueue:{},
 	//指定要翻译的元素的集合,可传入一个元素或多个元素
-	//如设置一个元素，可传入如： document.getElementsById('test')
+	//如设置一个元素，可传入如： document.getElementById('test')
 	//如设置多个元素，可传入如： document.getElementsByTagName('DIV')
 	setDocuments:function(documents){
 		if (documents == null || typeof(documents) == 'undefined') {
@@ -819,6 +819,7 @@ var translate = {
 	},
 	//获取当前指定翻译的元素（数组形式 [document,document,...]）
 	//如果用户未使用setDocuments 指定的，那么返回整个网页
+	//它返回的永远是个数组形式
 	getDocuments:function(){
 		if(translate.documents != null && typeof(translate.documents) != 'undefined' && translate.documents.length > 0){
 			// setDocuments 指定的
@@ -827,7 +828,9 @@ var translate = {
 			//未使用 setDocuments指定，那就是整个网页了
 			//return document.all; //翻译所有的  这是 v3.5.0之前的
 			//v3.5.0 之后采用 拿 html的最上层的demo，而不是 document.all 拿到可能几千个dom
-			return document.documentElement;
+			var doms = new Array();
+			doms[0] = document.documentElement;
+			return doms;
 		}
 	},
 	listener:{
@@ -952,8 +955,7 @@ var translate = {
 			// 创建一个观察器实例并传入回调函数
 			translate.listener.observer = new MutationObserver(translate.listener.callback);
 			// 以上述配置开始观察目标节点
-			var docs = new Array();
-			docs[0] = translate.getDocuments();
+			var docs = translate.getDocuments();
 			for(var docs_index = 0; docs_index < docs.length; docs_index++){
 				var doc = docs[docs_index];
 				if(doc != null){
@@ -1306,8 +1308,7 @@ var translate = {
 			
 		}else{
 			//2、3
-			all = new Array();
-			all[0] = translate.getDocuments();
+			all = translate.getDocuments();
 		}
 		//console.log('----要翻译的目标元素-----');
 		//console.log(all)

@@ -7,6 +7,20 @@
 export propertiesDownUrl=http://down.zvo.cn/properties/properties-1.0.1.jar
 
 
+yum -y install wget
+yum -y install gzip
+yum -y install zip
+yum -y install unzip
+
+
+# 校验down.zvo.cn下载源的通畅
+cd ~
+wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/hosts.sh -O hosts.sh
+chmod -R 777 hosts.sh
+source ./hosts.sh
+echo "校验down.zvo.cn下载源的通畅 - 校验完毕"
+rm -rf ~/hosts.sh
+
 ##### JDK、Tomcat安装开始####
 wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/tomcat.sh -O tomcat.sh
 chmod -R 777 tomcat.sh

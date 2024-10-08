@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.8.3.20240925',
+	version:'3.8.4.20241008',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -3940,6 +3940,8 @@ var translate = {
 		 */
 		browserLanguage:{
 			'zh-CN':'chinese_simplified',
+			'zh-TW':'chinese_traditional',
+			'zh-HK':'chinese_traditional',
 			'co':'corsican',
 			'gn':'guarani',
 			'rw':'kinyarwanda',
@@ -4013,7 +4015,6 @@ var translate = {
 			'ps':'pashto',
 			'hmn':'hmong',
 			'dv':'dhivehi',
-			'zh-TW':'chinese_traditional',
 			'lb':'luxembourgish',
 			'sd':'sindhi',
 			'ku':'kurdish',

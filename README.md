@@ -135,8 +135,19 @@ translate.execute();//进行翻译
 另外，很多开源框架及产品也都已将此翻译能力接入了自身系统，赋予自身系统多语言切换能力。
 
 
-## 这些开源产品已内置本多语言能力
-* [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)、[Discuz](https://addon.dismall.com/plugins/domi_translate.html)、[kefu.js](https://gitee.com/mail_osc/kefu.js)、[Layui](https://gitee.com/mail_osc/translate_layui)、[wangmarket CMS](http://cms.zvo.cn)、[易优CMS](https://www.eyoucms.com/mall/plus/29751.html)、[迅睿CMS](https://www.xunruicms.com/shop/1285.html)、[chanyue-cms](https://gitee.com/yanyutao0402/chanyue-cms)、[phpok cms](https://gitee.com/phpok/phpok)、[RPCMS](https://app.rpcms.cn/app/149.html)、[Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs)、[WoShop](https://www.wo-shop.net/)
+## 这些开源产品已内置本功能
+* [Discuz](https://addon.dismall.com/plugins/domi_translate.html)
+* [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)
+* [kefu.js](https://gitee.com/mail_osc/kefu.js)
+* [Layui](https://gitee.com/mail_osc/translate_layui)
+* [wangmarket CMS](http://cms.zvo.cn)
+* [易优CMS](https://www.eyoucms.com/mall/plus/29751.html)
+* [迅睿CMS](https://www.xunruicms.com/shop/1285.html)
+* [chanyue-cms](https://gitee.com/yanyutao0402/chanyue-cms)
+* [phpok cms](https://gitee.com/phpok/phpok)
+* [RPCMS](https://app.rpcms.cn/app/149.html)
+* [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs)
+* [WoShop](https://www.wo-shop.net/)  
 ...  
 如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好  
 

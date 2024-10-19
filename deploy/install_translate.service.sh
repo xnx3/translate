@@ -64,5 +64,14 @@ yum -y install cpulimit
 # 开机启动时清空缓存文件
 echo 'cpulimit -l 10 rm -rf /mnt/tomcat8/fileupload/* &'>>/etc/rc.d/rc.local
 
+# 同步时区，设为 UTC/GMT  格林威治时间
+sudo timedatectl set-timezone UTC
+# 增加时间自动同步  
+sudo yum -y install ntp
+sudo systemctl start ntpd
+sudo systemctl enable ntpd
+sudo systemctl status ntpd
+sudo ntpd -gq
+
 # 输出提示
 echo "自动部署完成，您可以正常使用了！打开浏览器，访问ip即可使用"

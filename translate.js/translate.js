@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.9.1.20241022',
+	version:'3.10.0.20241102',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -1109,7 +1109,6 @@ var translate = {
 							}
 						}, 50, ipnode);
 
-						
 						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 
 
@@ -1856,6 +1855,19 @@ var translate = {
 	*/
 	nodeHistory:{},
 	element:{
+
+		/*
+			注意，里面全部的必须小写。
+			第一个是tag，第二个是tag的属性。比如要翻译 input 的 value 属性，那么如下：
+				translate.element.tagAttribute['input']=['value'];
+			比如要翻译 input 的 value 、 data-value 这两个属性，那么如下：
+				translate.element.tagAttribute['input']=['value','data-value'];
+			有几个要翻译的属性，就写上几个。
+			同样，有几个要额外翻译的tag，就加上几行。  
+			详细文档参考：  http://translate.zvo.cn/231504.html
+		*/
+		tagAttribute : {},
+
 		//对翻译前后的node元素的分析（翻以前）及渲染（翻译后）
 		nodeAnalyse:{
 			/*
@@ -1910,11 +1922,13 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						if(typeof(node[attribute]) != 'undefined'){
+							//这种将在 v3.9.2 之后废弃，有下面的setAttribute的方式取代
 							node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
-						}else{
-							console.log(node);
 						}
-						
+						if(typeof(node.getAttribute(attribute)) != 'undefined'){
+							//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
+							node.setAttribute(attribute, node.getAttribute(attribute).replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
+						}
 					}
 					return result;
 				}
@@ -2090,6 +2104,26 @@ var translate = {
 					translate.addNodeToQueue(uuid, node, node['title'], 'title');
 				}
 			}
+
+			//v3.9.2 增加, 用户可自定义标签内 attribute 的翻译
+			var nodeNameLowerCase = translate.element.getNodeName(node).toLowerCase();
+			if(typeof(translate.element.tagAttribute[nodeNameLowerCase]) != 'undefined'){
+				//console.log('find:'+nodeNameLowerCase);
+				//console.log(translate.element.tagAttribute[nodeNameLowerCase]);
+
+				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase]){
+					
+					var attributeName = translate.element.tagAttribute[nodeNameLowerCase][attributeName_index];
+					if(typeof(node.getAttribute(attributeName)) == 'undefined'){
+						//这个tag标签没有这个 attribute，忽略
+						continue
+					}
+					//加入翻译
+					translate.addNodeToQueue(uuid, node, node.getAttribute(attributeName), attributeName);
+				}
+
+			}
+
 			
 			var childNodes = node.childNodes;
 			if(childNodes == null || typeof(childNodes) == 'undefined'){

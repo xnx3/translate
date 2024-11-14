@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.10.0.20241102',
+	version:'3.10.1.20241114',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -5163,8 +5163,16 @@ var nodeuuid = {
         	//console.log(Array.prototype.indexOf.call(childs, node));
         }else{
         	// 使用querySelectorAll()方法获取所有与node元素相同标签名的子节点
-	        childs = parent.querySelectorAll(node.tagName);
-	        // 使用indexOf()方法获取node元素在子节点集合中的位置
+	        //childs = parent.querySelectorAll(node.tagName);
+
+	        // 不使用querySelectorAll，手动遍历子节点来找到相同标签名的子节点
+            childs = [];
+            var allChilds = parent.childNodes;
+            for (var i = 0; i < allChilds.length; i++) {
+                if (allChilds[i].tagName === node.tagName) {
+                    childs.push(allChilds[i]);
+                }
+            }
         }
         var index = Array.prototype.indexOf.call(childs, node); 
         //console.log('--------'+node.tagName);

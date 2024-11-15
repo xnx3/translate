@@ -21,7 +21,7 @@
 
 1. html源码翻译开放API http://doc.zvo.cn/tcdn/api/doc.html
 2. 企业级翻译通道代理 http://translate.zvo.cn/43262.html
-3. TCDN全自动网站源码级翻译，适合翻译后语种的SEO优化 http://translate.zvo.cn/43504.html
+3. TCDN全自动网站源码级翻译，适合翻译后语种的SEO优化 http://translate.zvo.cn/236896.html
 
 联系：17076012262(微信同号) 我们是纯技术团队，欢迎联系，希望能跟你探讨合作盈利商机，我们专心技术，您来拓展商务销售
 

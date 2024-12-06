@@ -9,7 +9,7 @@ var translate = {
 	/*
 	 * 当前的版本
 	 */
-	version:'3.10.1.20241114',
+	version:'3.11.0.20241206',
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -450,7 +450,15 @@ var translate = {
 			}
 
 			return false;
-		}
+		},
+
+		/*
+		 * 忽略不被翻译的文本，这里出现的文本将不会被翻译。
+		 * 这个其实是借用了 自定义术语 的能力，设置了自定义术语的原字符等于翻译后的字符， 于是这个字符就不会被翻译了
+		 * 这里可以是多个，数组，如 ['你好','世界']
+		 */
+		text:[]
+
 	},
 	//刷新页面，你可以自定义刷新页面的方式，比如在 uniapp 打包生成 apk 时，apk中的刷新页面就不是h5的这个刷新，而是app的刷新方式，就需要自己进行重写这个刷新页面的方法了
 	refreshCurrentPage:function(){
@@ -649,6 +657,7 @@ var translate = {
 		},
 		
 	},
+
 	office:{
 		/*
 			网页上翻译之后，自动导出当前页面的术语库
@@ -1712,6 +1721,9 @@ var translate = {
 				var thhash = translateHashArray[lang][hai];
 				//取得这个翻译的node
 				//var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
+				//console.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\'chinese_simplified\'][\''+thhash+'\']');
+				//console.log(lang);
+				//console.log(translate.nodeQueue[uuid]['list'][lang][thhash].nodes);
 				for(var ipni = 0; ipni < translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length; ipni++){
 					//取得这个翻译的node
 					var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
@@ -2318,7 +2330,215 @@ var translate = {
 			}
 		}
 		//console.log(node.nodeValue);
-	
+
+
+		//原本传入的text会被切割为多个小块
+		var textArray = new Array();
+		textArray.push(text); //先将主 text 赋予 ，后面如果对主text进行加工分割，分割后会将主text给删除掉
+		//console.log(textArray);
+
+		/**** v3.10.2.20241206 - 增加自定义忽略翻译的文本，忽略翻译的文本不会被翻译 - 当然这样会打乱翻译之后阅读的连贯性 ****/
+		for(var ti = 0; ti<translate.ignore.text.length; ti++){
+			if(translate.ignore.text[ti].trim().length == 0){
+				continue;
+			}
+
+			textArray = translate.addNodeToQueueTextAnalysis(uuid, node, textArray, attribute, translate.ignore.text[ti], translate.ignore.text[ti]);
+			
+			//console.log(textArray);
+		}
+
+
+
+		/**** v3.10.2.20241206 - 自定义术语能力全面优化 - 当然这样会打乱翻译之后阅读的连贯性 ****/
+		//判断是否进行了翻译，也就是有设置目标语种，并且跟当前语种不一致
+		if(typeof(translate.temp_nomenclature) == 'undefined'){
+			translate.temp_nomenclature = new Array();
+		}
+		if(typeof(translate.temp_nomenclature[translate.language.getLocal()]) == 'undefined'){
+			nomenclatureKeyArray = new Array();
+		}
+		if(typeof(translate.nomenclature.data[translate.language.getLocal()]) != 'undefined' && typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) != 'undefined'){
+			var nomenclatureKeyArray;
+			for(var nomenclatureKey in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
+				//nomenclatureKey 便是自定义术语的原始文本，值是要替换为的文本
+				//console.log(nomenclatureKey);
+				//自定义属于的指定的结果字符串
+				var nomenclatureValue = translate.nomenclature.data[translate.language.getLocal()][translate.to][nomenclatureKey];
+				
+				textArray = translate.addNodeToQueueTextAnalysis(uuid, node, textArray, attribute, nomenclatureKey, nomenclatureValue);
+			
+				if(typeof(nomenclatureKeyArray) != 'undefined'){
+					nomenclatureKeyArray.push(nomenclatureKey);
+				}
+
+			}
+
+			if(typeof(translate.temp_nomenclature[translate.language.getLocal()]) == 'undefined'){
+				translate.temp_nomenclature[translate.language.getLocal()] = nomenclatureKeyArray;
+			}
+		}
+		/**** v3.10.2.20241206 - 自定义术语能力全面优化 - end ****/
+		
+
+
+
+
+		
+		for(var tai = 0; tai<textArray.length; tai++){
+			if(textArray[tai].trim().length == 0){
+				continue;
+			}
+
+			//判断是否出现在自定义忽略字符串
+			if(translate.ignore.text.indexOf(textArray[tai].trim()) > -1){
+				//console.log(textArray[tai]+' 是忽略翻译的文本，不翻译');
+				continue;
+			}
+
+			//判断是否出现在自定义术语的
+			if(typeof(translate.temp_nomenclature[translate.language.getLocal()]) != 'undefined'){
+				if(translate.temp_nomenclature[translate.language.getLocal()].indexOf(textArray[tai].trim()) > -1){
+					//console.log(textArray[tai]+' 是自定义术语，不翻译');
+					continue;
+				}
+			}
+
+			translate.addNodeToQueueAnalysis(uuid, node, textArray[tai], attribute);
+		}
+		
+		//this.nodeQueue[lang][key][this.nodeQueue[lang][key].length]=node; //往数组中追加
+	},
+
+	/**
+	 * 服务于上面的 addNodeToQueue ，用于区分不同type情况，进行调用此加入 translate.nodeQueue
+	 * uuid, node, attribute 这及个参数说明见 addNodeToQueue 的参数说明，相同
+	 * textArray 进行处理的要翻译的文本数组。这个最开始只是一个，但是命中后分割的多了也就变成多个了
+	 * nomenclatureKey 替换的原始文本，也就是自定义术语的key部分
+	 * nomenclatureValue 替换的目标文本，也就是自定义术语的value部分 。 如果 nomenclatureKey = nomenclatureValue 则是自定义忽略翻译的文本。这个文本不被翻译
+	 * @return 处理过后的 textArray 如果没有命中则返回的是传入的 textArray ，命中了则是切割以及删除原本判断的text之后的 textArray
+	 */
+	addNodeToQueueTextAnalysis:function(uuid, node,textArray, attribute, nomenclatureKey, nomenclatureValue){
+		var deleteTextArray = new Array();	//记录要从 textArray 中删除的字符串
+
+		for(var tai = 0; tai<textArray.length; tai++){
+			var text = textArray[tai];
+
+			if(text.trim() == nomenclatureValue.trim()){
+				//这里是自定义术语被替换后，重新扫描时扫出来的，那么直接忽略，不做任何处理。因为自定义术语的结果就是最终结果了
+				continue;
+			}
+
+			//判断一下原始文本是否有出现在了这个word要翻译的字符串中
+			var wordKeyIndex = text.indexOf(nomenclatureKey);
+			if(wordKeyIndex > -1){
+				//出现了，那么需要将其立即进行更改，将自定义术语定义的结果渲染到页面中，并且将 word 要翻译的字符串中，自定义术语部分删除，只翻译除了自定义术语剩余的部分
+				//console.log(text+' --> '+nomenclatureKey);
+
+				
+				/*
+				 * 判断一下这个text中，出现匹配自定义术语的部分，是否是已经被替换过了，比如要将 好 替换为  你好 ，这里的好会重复替换。这里是判断这种情况
+				 * 其中要判断一下 key 不等于value，因为key等于value，属于是指定这个key不被翻译的情况
+				 */
+				if(nomenclatureKey != nomenclatureValue){
+					var substringStart = wordKeyIndex-nomenclatureValue.length;
+					if(substringStart < 0){
+						substringStart = 0;
+					}
+					var substringEnd = wordKeyIndex+nomenclatureValue.length;
+					if(substringEnd > text.length){
+						substringEnd = text.length;
+					}
+					var nomenclatureValueJudgement = text.substring(substringStart, substringEnd);
+					//console.log(text+', '+nomenclatureValueJudgement);
+					if(nomenclatureValueJudgement.indexOf(nomenclatureValue) > -1){
+						//已经替换过了，可能会重复替换，所以忽略掉
+						continue;
+					}
+				}
+
+
+				//判断当前是否是英语及变种，也就是单词之间需要有空格的，如果前后没有空格，要补充上空格
+				if(translate.language.wordBlankConnector(translate.to)){
+					if(wordKeyIndex > 0){
+						//它前面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
+						var before = text.charAt(wordKeyIndex-1);
+						//console.log(before);
+						if(!(/\s/.test(before))){
+							//不是空白字符，补充上一个空格，用于将两个单词隔开
+							nomenclatureValue = ' '+nomenclatureValue
+						}
+					}
+					if(wordKeyIndex + nomenclatureKey.length < text.length){
+						//它后面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
+						var after = text.charAt(wordKeyIndex + nomenclatureKey.length);
+						//console.log(after);
+						if(!(/\s/.test(before))){
+							//不是空白字符，补充上一个空格，用于将两个单词隔开
+							nomenclatureValue = nomenclatureValue+' ';
+						}
+					}
+				}
+				
+				//如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下
+				//console.log(nomenclatureKey+':'+nomenclatureValue);
+				if(nomenclatureKey != nomenclatureValue){
+					translate.element.nodeAnalyse.set(node, nomenclatureKey, nomenclatureValue, attribute);
+				}
+				
+				
+				//从 text 中将自定义术语的部分删掉，自定义术语的不被翻译
+				var wordSplits = text.split(nomenclatureKey);
+				var isPushTextArray = false;
+				for(var index = 0; index < wordSplits.length; index++){
+					//console.log(index);
+					var subWord = wordSplits[index]; //分割后的子字符串
+					if(subWord.trim().length == 0){
+						continue;
+					}
+					//console.log(subWord);
+
+					//将其加入 textArray 中
+					textArray.push(subWord);
+					deleteTextArray.push(text);
+				}
+				
+				//console.log(wordSplits);
+				//自定义术语适配完后就直接退出了
+				//return wordSplits;
+			}
+
+		}
+
+		//console.log(deleteTextArray)
+		//从 textArray 中删除
+		if(deleteTextArray.length > 0){
+			for(var di = 0; di<deleteTextArray.length; di++){
+				let index = textArray.indexOf(deleteTextArray[di]); 
+				if (index > -1) {   
+					//console.log(textArray);
+					//console.log(deleteTextArray[di]);
+					textArray.splice(index, 1); 
+					//console.log(textArray);
+				}
+			}
+		}
+
+		return textArray;
+	},
+
+	/*
+
+		服务于上面的 addNodeToQueue ，用于区分不同type情况，进行调用此加入 translate.nodeQueue
+		uuid, node, attribute 这五个参数说明见 addNodeToQueue 的参数说明，相同
+		
+		word 要实际进行翻译的文本，也就是要把它拿来进行通过后端翻译接口进行翻译的文本
+		lang 当前要翻译的文本的语种，如 english
+		beforeText 参见 translate.nodeQueue 注释中第七维的解释
+		afterText 参见 translate.nodeQueue 注释中第七维的解释
+
+	*/
+	addNodeToQueueAnalysis:function(uuid, node, text, attribute){
 		//获取当前是什么语种
 		//var langs = translate.language.get(text);
 		var textRecognition = translate.language.recognition(text);
@@ -2370,6 +2590,7 @@ var translate = {
 					var beforeText = langs[lang].list[word_index]['beforeText'];
 					var afterText = langs[lang].list[word_index]['afterText'];
 
+					//console.log(lang+' - '+word);
 					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
 
 					/*
@@ -2429,12 +2650,11 @@ var translate = {
 		}else{
 			//直接翻译整个元素内的内容，不再做语种分类，首先删除英文，然后将出现次数最多的语种作为原本语种
 			var lang = textRecognition.languageName;
+			//console.log(lang+' - '+text);
 			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
 		}
 
-		
-		
-		//this.nodeQueue[lang][key][this.nodeQueue[lang][key].length]=node; //往数组中追加
+
 	},
 
 	/*
@@ -2453,14 +2673,14 @@ var translate = {
 		if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
 			translate.nodeQueue[uuid]['list'][lang] = new Array();
 		}
-
+		//console.log(word)
 		//var word = text;	//要翻译的文本
 		var hash = translate.util.hash(word); 	//要翻译的文本的hash
 
 		//创建三维数组， key为要通过接口翻译的文本词或句子的 hash 。这里翻译的文本也就是整个node元素的内容了，不用在做拆分了
 		if(translate.nodeQueue[uuid]['list'][lang][hash] == null || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
 			translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
-			
+
 			/*
 			 * 创建四维数组，存放具体数据
 			 * key: nodes 包含了这个hash的node元素的数组集合，array 多个。其中
@@ -2471,7 +2691,12 @@ var translate = {
 			 */
 			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
 			translate.nodeQueue[uuid]['list'][lang][hash]['original'] = word;
-			translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); //自定义术语处理
+			//自定义术语处理在此前面已经执行过了，所以这个废弃，不需要处理自定义术语部分了
+			//translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = translate.nomenclature.dispose(word); 
+			translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = word;
+			//console.log(word)
+
+
 
 			//其中key： nodes 是第四维数组，里面存放具体的node元素对象
 		}

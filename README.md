@@ -8,12 +8,12 @@
 </h4> 
 <h4 align="center">
     简体中文 | 
-    <a href="http://translate.zvo.cn/41162.html?language=chinese_traditional">繁體中文</a> | 
-    <a href="http://translate.zvo.cn/41162.html?language=english">English</a> | 
-    <a href="http://translate.zvo.cn/41162.html?language=japanese">しろうと</a> | 
-    <a href="http://translate.zvo.cn/41162.html?language=russian">Русский язык</a> | 
-    <a href="http://translate.zvo.cn/41162.html?language=german">deutsch</a> | 
-    <a href="http://translate.zvo.cn/41162.html?language=french">Français</a> 
+    <a href="http://translate.zvo.cn/4019.html?language=chinese_traditional">繁體中文</a> | 
+    <a href="http://translate.zvo.cn/4019.html?language=english">English</a> | 
+    <a href="http://translate.zvo.cn/4019.html?language=japanese">しろうと</a> | 
+    <a href="http://translate.zvo.cn/4019.html?language=russian">Русский язык</a> | 
+    <a href="http://translate.zvo.cn/4019.html?language=german">deutsch</a> | 
+    <a href="http://translate.zvo.cn/4019.html?language=french">Français</a> 
 </h4> 
 
 # 寻找合作
@@ -78,6 +78,7 @@ translate.execute();//进行翻译
 * [翻译时忽略指定的id](http://translate.zvo.cn/41547.html)
 * [翻译时忽略指定的class属性](http://translate.zvo.cn/41546.html)
 * [翻译时忽略指定的tag标签](http://translate.zvo.cn/41545.html)
+* [翻译时忽略指定的文字不翻译](http://translate.zvo.cn/283381.html)
 * [对网页中图片进行翻译](http://translate.zvo.cn/41538.html)
 * [设定切换语言所支持的语种](http://translate.zvo.cn/41544.html)
 * [设定是否自动出现 select 切换语言](http://translate.zvo.cn/41543.html)
@@ -99,6 +100,7 @@ translate.execute();//进行翻译
 * [重写一级缓存（浏览器缓存）](http://translate.zvo.cn/43114.html)
 * [设置使用的翻译服务 translate.service.use](http://translate.zvo.cn/43086.html)
 * [启用企业级稳定翻译](http://translate.zvo.cn/43262.html)
+* [增加对指定标签的属性进行翻译](http://translate.zvo.cn/231504.html)
 
 
 # 使用示例
@@ -147,14 +149,14 @@ translate.execute();//进行翻译
 * [phpok cms](https://gitee.com/phpok/phpok)
 * [RPCMS](https://app.rpcms.cn/app/149.html)
 * [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs)
-* [WoShop](https://www.wo-shop.net/)  
+* [FixIt](https://github.com/hugo-fixit/cmpt-translate)
 ...  
 如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好  
 
 
 # 哪些能力
 #### 能力一：前端翻译
-加入一个js文件及两行js代码，即可让你现有页面具有几百种语种切换能力。零门槛！详细参见 [translate.js](http://translate.zvo.cn/41162.html)
+加入一个js文件及两行js代码，即可让你现有页面具有几百种语种切换能力。零门槛！详细参见 [translate.js](http://translate.zvo.cn/4019.html)
 #### 能力二：翻译html的能力
 传入html源码，指定要范围为什么语种，能将翻译之后的html源码返回。详细参见 [translate.api](http://translate.zvo.cn/41165.html)
 #### 能力三：整站翻译及独立绑定域名
@@ -169,7 +171,7 @@ translate.execute();//进行翻译
 * **translate.admin** - [TCDN的管理后台,PC端的WEB管理后台，可以通过此添加翻译的源站、绑定别的域名及设置域名所展现的语言、针对翻译的过程中支持使用JavaScript脚本自定义调优，比如设置哪些不被翻译、设置一些自定义术语库等。并且提供了CDN的基本能力，比如根据URL清除缓存、根据域名清除缓存等。](http://translate.zvo.cn/41163.html)
 * **translate.api** - [翻译开放接口，他不同于 translate service 的点在于 translate service 开放的是文本翻译接口，而 translate api 开放的是html翻译接口，你传入一个网页的url，它返回的是这个网页被翻译之后源码（此特性非常适合对不同语言上SEO优化）](http://translate.zvo.cn/41165.html)
 * **translate.core** - [TCDN的公共模块,无具体功能]
-* **translate.js** - [提供了针对html的分析及翻译能力。在现有的html页面中引入一个js可以快速实现当前页面语种切换的能力。且适配面非常广泛！只要是html的，它都能适配（包含VUE、uniapp等），在很多情况下，它是单独进行使用的，在你的老网站中加入几行js代码即可植入，使其快速具备语种切换能力。](http://translate.zvo.cn/41162.html)
+* **translate.js** - [提供了针对html的分析及翻译能力。在现有的html页面中引入一个js可以快速实现当前页面语种切换的能力。且适配面非常广泛！只要是html的，它都能适配（包含VUE、uniapp等），在很多情况下，它是单独进行使用的，在你的老网站中加入几行js代码即可植入，使其快速具备语种切换能力。](http://translate.zvo.cn/4019.html)
 * **translate.service** - [翻译服务，它对接了 小牛翻译、google翻译、华为云翻译 等翻译服务，如果需要别的翻译服务或者局域网无网环境下部署，也可以快速对接自有翻译接口。它的作用是开放文本翻译接口，将 translate.js中 需要翻译的文本传入，然后将翻译之后的文本输出。提供批量翻译能力（一个翻译请求可以包含数千段需要翻译的文本）。
 并且它开放翻译接口，不止适用于 translate.js，你可以用在任何需要对接翻译接口的地方进行使用。其开放接口，说明参见：http://api.translate.zvo.cn/doc/translate.json.html](http://translate.zvo.cn/41164.html)
 * **translate.user** - [TCDN 对用户开放访问的，当在 translate admin 中添加源站，并绑定域名指向某个语种后，用户访问这个域名时，便会访问进此，有此进行网页翻译的调度、缓存的处理等。当用户第一次访问某个页面时，缓存中没有，会通过 translate api 从源站获取网页源码，然后进行翻译，将翻译之后的html源码在此进行缓存，然后返回给用户浏览器进行显示。 当有用户在此访问这个页面时，便会直接从缓存中取。](http://translate.zvo.cn/41166.html)

@@ -104,6 +104,9 @@ translate.execute();//进行翻译
 
 
 # 使用示例
+
+## 在浏览器使用
+
 **普通网站中点击某个语言进行切换**
 如下图所示，网站中的某个位置要有几种语言切换  
 ![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
@@ -125,6 +128,24 @@ translate.execute();//进行翻译
 	translate.execute();
 </script>
 ````
+
+## 在 NPM 中使用
+
+1. Install
+
+    ```bash
+    npm i i18n-jsautotranslate
+    ```
+
+2. Import
+
+    ```javascript
+    import translate from 'i18n-jsautotranslate'
+    /* Or */
+    connt translate = require("i18n-jsautotranslate")
+    ```
+
+[Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js)
 
 # 谁在使用
 截止 2023.7 月份时，本项目的后端免费翻译服务的请求量就已经达到了 1.5亿次/月 的规模，并且还在非常快速的持续增大，包括一些城投集团像是长沙城投、以及一些政府单位像是环境保障局、企业国际化经营服务平台、海外矿业产业联合、国际潮青联谊年会、人力资源和社会保障局、政务服务网、海外的一些平台如futrom智能住宅、bitheime全球区块链等等都在广泛使用。

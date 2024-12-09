@@ -30,8 +30,8 @@ jobs:
         with:
           node-version: 14
       
-      - name: Install dependencies
-        run: npm ci
+      # - name: Install dependencies
+      #  run: npm ci
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v2

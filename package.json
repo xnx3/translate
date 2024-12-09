@@ -14,6 +14,14 @@
   "files": [
     "translate.js/translate.js"
   ],
+  "homepage": "https://github.com/xnx3/translate#readme",
+  "bugs": {
+    "url": "https://github.com/xnx3/translate/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xnx3/translate.git"
+  },
   "author": "管雷鸣",
   "license": "Apache-2.0"
 }

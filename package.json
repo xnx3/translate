@@ -2,7 +2,7 @@
   "name": "i18n-jsautotranslate",
   "version": "3.11.11",
   "description": "Two lines of js realize automatic html translation. No need to change the page, no language configuration file, no API key, SEO friendly!",
-  "main": "translate.js/translate.js",
+  "main": "translate.js",
   "scripts": {
     "version": "node dev/update-version.js",
     "postversion": "git push && git push --tags"
@@ -13,7 +13,7 @@
     "i18n-translatejs"
   ],
   "files": [
-    "translate.js/translate.js"
+    "translate.js"
   ],
   "homepage": "https://github.com/xnx3/translate#readme",
   "bugs": {

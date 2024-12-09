@@ -6,10 +6,14 @@
 
  */ 
 var translate = {
-	/*
+	/**
 	 * 当前的版本
+   * 由 npm 脚本自动更新，无需手动修改
+   * 格式：major.minor.patch.date
 	 */
-	version:'3.11.0.20241206',
+  // AUTO_VERSION_START
+  version: '3.11.0.20241208',
+  // AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
@@ -5423,3 +5427,19 @@ var nodeuuid = {
 
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
+
+/**
+ * 兼容 AMD、CMD、CommonJS 规范
+ * node 环境使用：`npm i i18n-jsautotranslate` 安装包
+ */
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define([], () => factory());
+  } else if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root['translate'] = factory();
+  }
+})(this, function () {
+  return translate;
+});

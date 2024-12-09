@@ -142,7 +142,7 @@ translate.execute();//进行翻译
     ```javascript
     import translate from 'i18n-jsautotranslate'
     /* Or */
-    connt translate = require("i18n-jsautotranslate")
+    const translate = require("i18n-jsautotranslate")
     ```
 
 [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js)

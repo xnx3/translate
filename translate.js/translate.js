@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.11.13.20241210'
+	version: '3.12.0.20241210',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4898,16 +4898,63 @@ var translate = {
 				//打印翻译结果
 				console.log(data);
 			});
-		*/
-		translateText:function(texts, func){
-			if(typeof(texts) == 'string'){
-				texts = [texts];
+
+			使用案例三：
+			var obj = {
+				from:'chinese_simplified',
+				to:'english',
+				texts: ['我是翻译的第一句','我是翻译的第二句','我是翻译的第三句']
 			}
+			translate.request.translateText(obj, function(data){
+				//打印翻译结果
+				console.log(data);
+			});
+		*/
+		translateText:function(obj, func){
+			var texts = new Array();
+			var from = translate.language.getLocal();
+			var to = translate.language.getCurrent();
+
+			if(typeof(obj) == 'string'){
+				//案例一的场景，传入单个字符串
+				texts[0] = [obj];
+			}else{
+				//不是字符串了，而是对象了，判断是案例二还是案例三
+
+				var type = Object.prototype.toString.call(obj);
+				//console.log(type);
+				if(type == '[object Array]'){
+					//案例二
+					texts = obj;
+				}else if(type == '[object Object]'){
+					//案例三
+					if(typeof(obj.texts) == 'undefined'){
+						console.log('translate.request.translateText 传入的值类型异常，因为你没有传入 obj.texts 要翻译的具体文本！ 请查阅文档： https://translate.zvo.cn/4077.html');	
+					}
+					if(typeof(obj.texts) == 'string'){
+						//单个字符串
+						texts = [obj.texts];
+					}else{
+						//多个字符串，数组形态
+						texts = obj.texts;
+					}
+					if(typeof(obj.from) == 'string' && obj.from.length > 0){
+						from = obj.from;
+					}
+					if(typeof(obj.to) == 'string' && obj.to.length > 0){
+						to = obj.to;
+					}
+				}else{
+					console.log('translate.request.translateText 传入的值类型错误，请查阅文档： https://translate.zvo.cn/4077.html');
+					return;
+				}
+			}
+			
 
 			var url = translate.request.api.translate;
 			var data = {
-				from:translate.language.getLocal(),
-				to: translate.language.getCurrent(),
+				from:from,
+				to: to,
 				text:encodeURIComponent(JSON.stringify(texts))
 			};
 			//console.log(data);

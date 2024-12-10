@@ -564,6 +564,7 @@ var translate = {
 			return translate.nomenclature.data;
 		},
 		//对传入的str字符进行替换，将其中的自定义术语提前进行替换，然后将替换后的结果返回
+		//v3.11 后此方法已废弃，不再使用
 		dispose:function(str){
 			if(str == null || str.length == 0){
 				return str;
@@ -2854,6 +2855,14 @@ var translate = {
 
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
+
+		/*
+		 * v3.12增加, 是否会翻译本地语种，默认是false，不会翻译。
+		 * 比如当前设置的本地语种是简体中文， 但是网页中也有一段英文， 如果设置了translate.to 为中文，也就是要以中文显示 默认是false的情况下，整个页面是不会被任何翻译的，也就是有的那段英文也不会进行任何翻译，依旧是显示英文。
+		 * 如果这里设置为 true， 则英文也会被翻译，只要不是中文的，都会被翻译为要显示的语种，也就是都会被翻译为中文。
+		 */
+		translateLocal:false,
+
 		/*
 			翻译语种范围
 			比如传入 ['chinese_simplified','chinese_traditional','english'] 则表示仅对网页中的简体中文、繁体中文、英文 进行翻译，而网页中出现的其他的像是法语、韩语则不会进行翻译

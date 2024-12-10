@@ -4294,11 +4294,16 @@ var translate = {
 
 		*/
 		name:'translate.service',  
+
 		/*
 			其实就是设置 translate.service.name
-
+	
 		*/
 		use: function(serviceName){
+			if(translate.enterprise.isUse == true){
+				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
+				return;
+			}
 			if(typeof(serviceName) == 'string' && serviceName == 'client.edge'){
 				translate.service.name = serviceName;
 
@@ -5294,6 +5299,12 @@ var translate = {
 			//主节点额外权重降低，更追求响应速度
 			translate.request.speedDetectionControl.hostMasterNodeCutTime = 300; 
 			translate.request.api.host=['https://america-enterprise-api-translate.zvo.cn/','https://beijing.enterprise.api.translate.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn/', 'https://america.api.translate.zvo.cn:666/', 'https://api.translate.zvo.cn:666/', 'https://api.translate.zvo.cn:888/'];
+			
+			if(translate.service.name == 'client.edge'){
+				translate.service.name = 'translate.service';
+				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\'client.edge\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
+				return;
+			}
 		},
 		/*
 			自动适配翻译服务通道，如果当前所有网络节点均不可用，会自动切换到 edge.client 进行使用

@@ -37,10 +37,26 @@ Repository secrets -> New respository srcret
 
 
 ## 设置版本号
+#### 方式一（不使用）
 powershell   
 进入 G:\git\translate  
 npm version 3.11.2 
 会吧 package.json 、 translate.js 的版本更改
-然后github客户端吧更改提交git
 
+#### 方式二（使用）
+dev/update-version.bat 直接执行，按提示输入版本号
+````
+Please enter the version number, there is no 'v' before it, in the format of 3.11.2  :3.12.0
+
+> version
+> node dev/update-version.js
+
+
+> postversion
+> git push && git push --tags
+````
+便会做到方式一的效果
+
+#### 提交发布
+github客户端吧更改提交git  
 然后正常添加 https://github.com/xnx3/translate/releases 后就会自动往 npm 推送更新了

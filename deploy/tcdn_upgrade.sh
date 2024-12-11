@@ -1,5 +1,5 @@
 #!/bin/bash
-# yum -y install wget && wget https://gitee.com/mail_osc/translate/raw/master/deploy/tcdn_upgrade.sh -O ~/upgrade.sh && chmod -R 777 ~/upgrade.sh && sh ~/upgrade.sh
+# yum -y install wget && wget https://raw.githubusercontent.com/xnx3/translate/refs/heads/master/deploy/tcdn_upgrade.sh -O ~/upgrade.sh && chmod -R 777 ~/upgrade.sh && sh ~/upgrade.sh
 #
 
 # 结束当前tcdn进程

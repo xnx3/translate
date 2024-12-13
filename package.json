@@ -13,7 +13,7 @@
     "i18n-translatejs"
   ],
   "files": [
-    "translate.js"
+    "index.js"
   ],
   "homepage": "https://github.com/xnx3/translate#readme",
   "bugs": {

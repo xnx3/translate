@@ -185,6 +185,15 @@ translate.execute();//进行翻译
 翻译是基于您现有的网站内容，不需要重新建设多语种网站，只需要解析域名到您私有部署的服务器，就可以完成全站翻译。
 详细参见 [TCDN](http://translate.zvo.cn/41159.html)
 
+# TCDN部署
+tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以用不同的域名访问到不同的语种。而不同的语种，都可以被收录！它可以免费部署到服务器进行使用。注意，它需要使用个1核2G的服务器进行部署的。    
+部署方式有两种： 
+### 宝塔部署
+首选需要你的宝塔面板需要 9.2.0 及以上版本。 不然你在下一步部署时，是搜索不到我们 TCDN 这个服务的。  
+如果你没有安装宝塔面板，可以先去安装宝塔面板： [https://www.bt.cn/new/download.html?r=dk_tcdn](https://www.bt.cn/new/download.html?r=dk_tcdn)  
+详细部署步骤可参考：  [https://translate.zvo.cn/302663.html](https://translate.zvo.cn/302663.html)
+### 服务器部署
+需要一个干净的服务器，不依赖任何环境的情况下进行的部署，需要你懂点linux命令行， 部署方式参考：  [https://translate.zvo.cn/236899.html](https://translate.zvo.cn/236899.html)
 
 # 开源仓库目录结构
 * **deploy** - 部署相关，比如shell文件、sql数据库文件等

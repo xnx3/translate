@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-  version: '3.12.0.20241210',
+  version: '3.12.1.20241221',
   // AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1285,9 +1285,15 @@ var translate = {
 		
 		//判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译
 		if(translate.to == translate.language.getLocal()){
-			return;
+			if(translate.language.translateLocal){
+				//这是自定义设置的允许翻译本地语种中，跟本地语种不一致的语言进行翻译
+
+			}else{
+				return;
+			}
 		}
 		
+
 		/********** 翻译进行 */
 		
 		//先进行图片的翻译替换，毕竟图片还有加载的过程

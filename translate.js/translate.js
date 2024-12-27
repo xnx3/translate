@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-  version: '3.12.1.20241221',
+  version: '3.12.2.20241227',
   // AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1945,12 +1945,15 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						if(typeof(node[attribute]) != 'undefined'){
-							//这种将在 v3.9.2 之后废弃，有下面的setAttribute的方式取代
+							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
 							node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
 						}
-						if(typeof(node.getAttribute(attribute)) != 'undefined'){
+
+						//这种 Html Attribute 方式 是 v3.12 版本之前一直使用的方式，速度上要慢于 上面的，为了向前兼容不至于升级出问题，后面可能会优化掉
+						var htmlAttributeValue = node.getAttribute(attribute);
+						if(htmlAttributeValue != null && typeof(htmlAttributeValue) != 'undefined'){
 							//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
-							node.setAttribute(attribute, node.getAttribute(attribute).replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
+							node.setAttribute(attribute, htmlAttributeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
 						}
 					}
 					return result;
@@ -2137,12 +2140,33 @@ var translate = {
 				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase]){
 					
 					var attributeName = translate.element.tagAttribute[nodeNameLowerCase][attributeName_index];
-					if(typeof(node.getAttribute(attributeName)) == 'undefined'){
-						//这个tag标签没有这个 attribute，忽略
-						continue
+					//console.log(attributeName);
+					//console.log(node.getAttribute(attributeName));
+
+					/*
+					 * 默认是 HtmlAtrribute 也就是 HTML特性。取值有两个:
+					 * HTMLAtrribute : HTML特性
+					 * DOMProperty : DOM属性
+					 */
+					var DOMPropOrHTMLAttr = 'HTMLAtrribute'; 
+					var attributeValue = node.getAttribute(attributeName);
+					if(typeof(attributeValue) == 'undefined' || attributeValue == null){
+						//vue、element、react 中的一些动态赋值，比如 element 中的 el-select 选中后赋予显示出来的文本，getAttribute 就取不到，因为是改动的 DOM属性，所以要用这种方式才能取出来
+						attributeValue = node[attributeName];
+						DOMPropOrHTMLAttr = 'DOMProperty';
 					}
+					if(typeof(attributeValue) == 'undefined' || attributeValue == null){
+						//这个tag标签没有这个属性，忽略
+						continue;
+					}
+
+					//if(typeof(node.getAttribute(attributeName)) == 'undefined' && typeof(node[attributeName]) == 'undefined'){
+					//	//这个tag标签没有这个 attribute，忽略
+					//	continue
+					//}
+					
 					//加入翻译
-					translate.addNodeToQueue(uuid, node, node.getAttribute(attributeName), attributeName);
+					translate.addNodeToQueue(uuid, node, attributeValue, attributeName);
 				}
 
 			}
@@ -2165,7 +2189,6 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
-			//console.log(node)
 			if(node.parentNode == null){
 				return;
 			}
@@ -2222,6 +2245,7 @@ var translate = {
 				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
 				translate.addNodeToQueue(uuid, nodeAnaly['node'], nodeAnaly['text']);
 			}
+			
 			//console.log(nodeAnaly);
 			/*
 			//console.log(node.nodeName+', type:'+node.nodeType+', '+node.nodeValue);

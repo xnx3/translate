@@ -4812,6 +4812,9 @@ var translate = {
 			}
 			//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
 			data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
+			if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
+				data.key = translate.enterprise.key;
+			}
 
 			if(typeof(data) == 'string'){
 				params = data; //payload 方式
@@ -5408,7 +5411,9 @@ var translate = {
 					translate.service.name = 'client.edge';
 				} 
 			}
-		}
+		},
+		/* 企业级翻译通道的key， v3.12.3.20250107 增加，针对打包成APP的场景 */
+		key:'', 
 	},
 
 	/*

@@ -10,7 +10,7 @@ rm -rf ~/hosts.sh
 
 # 安装 redis
 wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/redis_no_install.sh -O ~/redis.sh && chmod -R 777 ~/redis.sh &&  sh ~/redis.sh
-~/redis.sh
+rm -rf ~/redis.sh
 
 # 下载 TCDN 应用程序
 mkdir /mnt 

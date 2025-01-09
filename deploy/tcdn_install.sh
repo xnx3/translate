@@ -9,14 +9,13 @@ wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarke
 rm -rf ~/hosts.sh
 
 # 安装 redis
-wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/redis.sh -O ~/redis.sh && chmod -R 777 ~/redis.sh &&  sh ~/redis.sh
-rm -rf ~/redis.sh
+wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/redis_no_install.sh -O ~/redis.sh && chmod -R 777 ~/redis.sh &&  sh ~/redis.sh
+~/redis.sh
 
 # 下载 TCDN 应用程序
 mkdir /mnt 
-cd /mnt
-mkdir tcdn
-cd tcdn
+mkdir /mnt/tcdn
+cd /mnt/tcdn/
 wget http://down.zvo.cn/translate/tcdn/linux/tcdn.zip -O tcdn.zip
 unzip tcdn.zip
 chmod -R 777 /mnt/tcdn/start.sh
@@ -39,6 +38,10 @@ echo '/mnt/tcdn/start.sh'>>/etc/rc.d/rc.local
 # 赋予可执行权限
 chmod +x /mnt/tcdn/start.sh
 chmod +x /etc/rc.d/rc.local
+
+# 关闭防火墙
+systemctl stop firewalld
+systemctl disable firewalld
 
 # 启动 TCDN
 cd /mnt/tcdn/

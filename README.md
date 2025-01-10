@@ -159,6 +159,7 @@ translate.execute();//进行翻译
 
 
 ## 这些开源产品已内置本功能
+* [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP)
 * [Discuz](https://addon.dismall.com/plugins/domi_translate.html)
 * [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)
 * [kefu.js](https://gitee.com/mail_osc/kefu.js)

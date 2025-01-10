@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-  version: '3.12.3.20250107',
+  version: '3.12.4.20250110',
   // AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -148,7 +148,12 @@ var translate = {
 			
 			//判断translate 的id是否存在，不存在就创建一个
 			if(document.getElementById(translate.selectLanguageTag.documentId) == null){
-				var body_trans = document.getElementsByTagName('body')[0];
+				var findBody = document.getElementsByTagName('body');
+				if(findBody.length == 0){
+					console.log('body tag not find, translate.selectLanguageTag.render() is not show Select Language');
+					return;
+				}
+				var body_trans = findBody[0];
 				var div = document.createElement("div");  //创建一个script标签
 				div.id=translate.selectLanguageTag.documentId;
 				body_trans.appendChild(div);

@@ -152,29 +152,28 @@ translate.execute();//进行翻译
 这里给出两个使用比较好的网站作为实际示例参考：
   
 * [**RICE中国大米展**](https://www.cnrice.com.cn)
-* [**北京长城航空集团红十字会**](https://hh.changhang.org.cn)
-* [**第十一届国际潮青联谊年会组委会**](https://ityc.org.cn)
+* [**第十一届国际潮青联谊年会组委会**](http://ityc.org.cn)
 
 另外，很多开源框架及产品也都已将此翻译能力接入了自身系统，赋予自身系统多语言切换能力。
 
 
 ## 这些开源产品已内置本功能
-* [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP)
-* [Z-Blog](https://app.zblogcn.com/?id=49226)
-* [Discuz](https://addon.dismall.com/plugins/domi_translate.html)
-* [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/)
-* [kefu.js](https://gitee.com/mail_osc/kefu.js)
-* [Layui](https://gitee.com/mail_osc/translate_layui)
-* [wangmarket CMS](http://cms.zvo.cn)
-* [易优CMS](https://www.eyoucms.com/mall/plus/29751.html)
-* [迅睿CMS](https://www.xunruicms.com/shop/1285.html)
-* [chanyue-cms](https://gitee.com/yanyutao0402/chanyue-cms)
-* [phpok cms](https://gitee.com/phpok/phpok)
-* [RPCMS](https://app.rpcms.cn/app/149.html)
-* [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs)
-* [FixIt](https://github.com/hugo-fixit/cmpt-translate)
+* [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP) 国产开源ERP系统关注度第一，专注进销存、生产、总账
+* [Z-Blog](https://app.zblogcn.com/?id=49226) 易用的博客程序，功能丰富，模板多样，助轻松搭建个性博客。
+* [Discuz](https://addon.dismall.com/plugins/domi_translate.html) 知名论坛系统，功能强大，插件众多，打造活跃互动的网络社区。
+* [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/) Pear Admin Layui 是基于 Layui 的后台管理模板，简洁美观，实用高效。
+* [kefu.js](https://gitee.com/mail_osc/kefu.js) 开源js聊天界面插件，方便快捷，助力网站沟通服务。
+* [Layui](https://gitee.com/mail_osc/translate_layui) 简洁好用的前端框架，组件丰富，上手容易，广受开发者青睐。
+* [wangmarket CMS](http://cms.zvo.cn) 开源的SAAS云建站系统，可私有部署，可通过后台任意开通多个网站，每个网站独立管理
+* [易优CMS](https://www.eyoucms.com/mall/plus/29751.html) 功能强大的内容管理系统，操作简便，模板随心选。
+* [迅睿CMS](https://www.xunruicms.com/shop/1285.html) 一款功能完善的内容管理系统，性能卓越，易于使用。
+* [chanyue-cms](https://gitee.com/yanyutao0402/chanyue-cms) 基于Node、Express、MySQL、Vue3研发的高质量实用型CMS系统
+* [phpok cms](https://gitee.com/phpok/phpok) 极其自由的企业站程序，支持各种自定义配置。
+* [RPCMS](https://app.rpcms.cn/app/149.html) 轻量型php内容管理系统，小型、轻量，但功能丰富，可扩展性强。
+* [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs) 高性能高安全性低占用的个人博客系统
+* [FixIt](https://github.com/hugo-fixit/cmpt-translate) 一款简洁、优雅且先进的Hugo 博客主题
 ...  
-如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好  
+如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好。如果你的项目在这个列表中没有，欢迎联系我说明，我给加入进去  
 
 
 # 哪些能力

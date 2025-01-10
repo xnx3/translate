@@ -159,6 +159,7 @@ translate.execute();//进行翻译
 
 ## 这些开源产品已内置本功能
 * [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP) 国产开源ERP系统关注度第一，专注进销存、生产、总账
+* [FixIt](https://github.com/hugo-fixit/cmpt-translate) 一款简洁、优雅且先进的Hugo 博客主题
 * [Z-Blog](https://app.zblogcn.com/?id=49226) 易用的博客程序，功能丰富，模板多样，助轻松搭建个性博客。
 * [Discuz](https://addon.dismall.com/plugins/domi_translate.html) 知名论坛系统，功能强大，插件众多，打造活跃互动的网络社区。
 * [Pear Admin Layui](https://gitee.com/pear-admin/Pear-Admin-Layui/tree/i18n/) Pear Admin Layui 是基于 Layui 的后台管理模板，简洁美观，实用高效。
@@ -171,7 +172,6 @@ translate.execute();//进行翻译
 * [phpok cms](https://gitee.com/phpok/phpok) 极其自由的企业站程序，支持各种自定义配置。
 * [RPCMS](https://app.rpcms.cn/app/149.html) 轻量型php内容管理系统，小型、轻量，但功能丰富，可扩展性强。
 * [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs) 高性能高安全性低占用的个人博客系统
-* [FixIt](https://github.com/hugo-fixit/cmpt-translate) 一款简洁、优雅且先进的Hugo 博客主题
 ...  
 如果您有开源项目，比如文档、cms、UI 框架、后台管理框架、等等，需要采用此进行多语言切换，欢迎喊我，无偿提供全程接入讨论及遇到的问题跟随优化，希望我们的开源项目能互相产生作用一起越来越好。如果你的项目在这个列表中没有，欢迎联系我说明，我给加入进去  
 

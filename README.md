@@ -226,7 +226,6 @@ tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以
 
 # 优秀开源项目及社区推荐
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具  
-[LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat 是基于企业微信的开源 SCRM 系统，是企业私域流量管理与营销的综合解决方案。    
 [IoTSharp](https://gitee.com/IoTSharp) IoTSharp 是一个 基于.Net Core 开源的物联网基础平台， 支持 HTTP、MQTT 、CoAp 协议    
 [流之云](https://gitee.com/ntdgg) 信息化、数字化服务提供商    
 

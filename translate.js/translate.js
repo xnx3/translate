@@ -4815,16 +4815,21 @@ var translate = {
 			if(data == null || typeof(data) == 'undefined'){
 				data = {};
 			}
-			//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
-			data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
-			if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
-				data.key = translate.enterprise.key;
-			}
-
+			
 			if(typeof(data) == 'string'){
 				params = data; //payload 方式
 			}else{
 				//表单提交方式
+				
+				//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
+				data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
+				
+				//加入key
+				if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
+					data.key = translate.enterprise.key;
+				}
+				
+				//组合参数
 				for(var index in data){
 					if(params.length > 0){
 						params = params + '&';

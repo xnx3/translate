@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-  version: '3.12.4.20250110',
+  version: '3.12.4.20250111',
   // AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2582,7 +2582,7 @@ var translate = {
 		//获取当前是什么语种
 		//var langs = translate.language.get(text);
 		var textRecognition = translate.language.recognition(text);
-		langs = textRecognition.languageArray;
+		var langs = textRecognition.languageArray;
 		//console.log('langs');
 		//console.log(langs);
 

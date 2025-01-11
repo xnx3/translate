@@ -13,7 +13,7 @@ const dateSuffix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 const translateJsVersion = `${packageJson.version}.${dateSuffix}`;
 const start = translateJs.indexOf('// AUTO_VERSION_START') + '// AUTO_VERSION_START'.length;
 const end = translateJs.indexOf('// AUTO_VERSION_END');
-const newTranslateJs = `${translateJs.slice(0, start)}\n  version: '${translateJsVersion}',\n  ${translateJs.slice(end)}`;
+const newTranslateJs = `${translateJs.slice(0, start)}\n\tversion: '${translateJsVersion}',\n\t${translateJs.slice(end)}`;
 fs.writeFileSync(translateJsPath, newTranslateJs, 'utf-8');
 
 // 添加更新的文件到 git stage

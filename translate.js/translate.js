@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.12.7.20250111',
+	version: '3.12.8.20250111',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -852,6 +852,14 @@ var translate = {
 			return doms;
 		}
 	},
+	/*
+		当前状态，执行状态
+		0 空闲(或者执行翻译完毕)
+		10 扫描要翻译的node
+		20 ajax通过文本翻译接口开始请求，在发起ajax请求前，状态变为20，然后再发起ajax请求
+		至于翻译完毕后进行渲染，这个就不单独记录了，因为如果页面存在不同的语种，不同的语种是按照不同的请求来的，是多个异步同时进行的过程
+	*/
+	state:0,
 	listener:{
 		//当前页面打开后，是否已经执行完execute() 方法进行翻译了，只要执行完一次，这里便是true。 （多种语言的API请求完毕并已渲染html）
 		//isExecuteFinish:false,
@@ -1116,16 +1124,22 @@ var translate = {
 									translate.inProgressNodes[ini].number = translate.inProgressNodes[ini].number - 1;
 									//console.log("inProgressNodes -- number: "+translate.inProgressNodes[ini].number+', text:'+ipnode.nodeValue);
 									if(translate.inProgressNodes[ini].number < 1){
-										
-										
-											//console.log('ini-'+ini)
-											translate.inProgressNodes.splice(ini,1);	
-											//console.log("inProgressNodes -- 减去node length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
-										//
+										translate.inProgressNodes.splice(ini,1);	
+										//console.log("inProgressNodes -- 减去node length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
 									}
+
+									//当前已经全部翻译并渲染完毕，则将其恢复到闲置状态，闲置状态则可以进行下一轮翻译。
+									if(translate.inProgressNodes.length == 0){
+										setTimeout(function(){
+											translate.state = 0;
+										}, 50);
+										//console.log('set translate.state = 0');
+									}
+									
 									break;
 								}
 							}
+							
 						}, 50, ipnode);
 
 						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
@@ -1221,10 +1235,65 @@ var translate = {
 			}
 		}
 	},
+
+	/*
+		等待翻译队列  v3.12.6 增加
+		当前是否有需要等待翻译的任务，这个目的是为了保证同一时间 translate.execute() 只有一次在执行，免得被新手前端给造成死循环，导致edge翻译给你屏蔽，用户网页还卡死
+		当执行 translate.execute() 时，会先判断状态 translate.state 是否是0空闲的状态，如果空闲，才会执行，如果不是空闲，则不会执行，而是进入到这里进行等待，等待执行完毕后 translate.state 变成0空闲之后，再来执行这里的
+		
+	*/
+	waitingExecute:{
+		/*
+			一维数组形态，存放执行的翻译任务
+			二维对象形态，存放执行传入的 docs
+		*/
+		queue:[],
+		/*
+			增加一个翻译任务到翻译队列中
+			docs 同 translate.execute(docs) 的传入参数
+		 */ 
+		add:function(docs){
+			//向数组末尾追加
+			translate.waitingExecute.queue.push(docs);
+			//开启一个定时器进行触发
+			let intervalId = setInterval(function() {
+				if(translate.state == 0){
+					//清除定时器，结束循环
+					clearInterval(intervalId);
+					var docs = translate.waitingExecute.get();
+					translate.execute(docs);
+					//console.log('stop waitingExecute setInterval');
+				}
+			}, 500);
+		},
+		/*
+			从 quque 中取第一个元素，同时将其从queue中删除掉它。
+			如果取的时候 quque已经没有任何元素了，会返回 null， 但是理论上不会出现null
+		 */
+		get:function(){
+			//使用 shift 方法删除数组的第一个元素，并将第一个元素的值返回
+			if(translate.waitingExecute.queue.length > 0){
+				return translate.waitingExecute.queue.shift();
+			}else{
+				console.log('警告， translate.waitingExecute.get 出现异常，quque已空，但还往外取。');
+				return null;
+			}
+		}
+	},
 	
-	//执行翻译操作。翻译的是 nodeQueue 中的
-	//docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
+	/*
+		执行翻译操作。翻译的是 nodeQueue 中的
+		docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
+			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
+	 */ 
 	execute:function(docs){
+		if(translate.state != 0){
+			console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
+			translate.waitingExecute.add(docs);
+			return;
+		}
+		translate.state = 1;
+		//console.log('translate.state = 1');
 		if(typeof(docs) != 'undefined'){
 			//execute传入参数，只有v2版本才支持
 			translate.useVersion = 'v2';
@@ -1285,6 +1354,7 @@ var translate = {
 			}
 			
 			//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
+			translate.state = 0;
 			return;
 		}
 		
@@ -1294,6 +1364,7 @@ var translate = {
 				//这是自定义设置的允许翻译本地语种中，跟本地语种不一致的语言进行翻译
 
 			}else{
+				translate.state = 0;
 				return;
 			}
 		}
@@ -1312,14 +1383,17 @@ var translate = {
 			其实2、3都是通过 getDocuments() 取，在getDocuments() 就对2、3进行了判断
 		*/
 		var all;
-		if(typeof(docs) != 'undefined'){
+		if(typeof(docs) != 'undefined' && docs != null){
 			//1. 这个方法已经指定的翻译 nodes
 			
+			/* v3.12.6 注释，转到判断非null
 			if(docs == null){
 				//要翻译的目标区域不存在
 				console.log('translate.execute(...) 中传入的要翻译的目标区域不存在。');
+				translate.state = 0;
 				return;
 			}
+			*/
 			
 			if(typeof(docs.length) == 'undefined'){
 				//不是数组，是单个元素
@@ -1722,6 +1796,7 @@ var translate = {
 		//console.log(translate.nodeQueue[uuid]['list'])
 		if(fanyiLangs.length == 0){
 			//没有需要翻译的，直接退出
+			translate.state = 0;
 			return;
 		}
 		
@@ -1767,8 +1842,9 @@ var translate = {
 			}
 		}
 		//加入 translate.inProgressNodes -- end
-
-
+	
+		//状态
+		translate.state = 20;
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
@@ -1776,6 +1852,8 @@ var translate = {
 			//console.log(typeof(translateTextArray[lang]))
 			
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
+				console.log('异常,理论上不应该存在： typeof(translateTextArray[lang]) == \'undefined\' || translateTextArray[lang].length < 1');
+				translate.state = 0;
 				return;
 			}
 

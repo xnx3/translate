@@ -1,0 +1,65 @@
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <!-- Import style -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css" />
+</head>
+<body>
+<script src="https://cdn.staticfile.net/translate.js/3.12.0/translate.js"></script>
+<!-- Import Vue 3 -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+<!-- Import component library -->
+<script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+
+<div>这是一个自定义语种切换按钮的示例，并且设置了切换语种这里面的所有语种是不会被翻译的</div>
+<a href="https://translate.zvo.cn/4041.html">更详细的说明可点此查看</a>
+<div id="app">
+  <div>
+		  <el-select popper-class="ignore" v-model="language" value-key="id" placeholder="Select" style="width: 200px" @change="languageChange" >
+				<el-option v-for="item in languageList" :key="item.id" :label="item.name" :value="item.id" />
+		  </el-select>
+	</div>
+</div>
+
+<script>
+const App = {
+	data() {
+	  return {
+			language:'english',
+			languageList: []
+	  };
+	},
+	mounted() {
+			//设置本地语种（当前网页的语种） 具体参考 http://translate.zvo.cn/41551.html
+			translate.language.setLocal('chinese_simplified'); 
+			//翻译通道 ，具体参考： https://translate.zvo.cn/4081.html
+			translate.service.use('client.edge');
+			//设置 select 切换语言的按钮
+			var this_ = this;
+			translate.selectLanguageTag.customUI = function(languageList){
+					this_.languageList = languageList;
+					if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
+						this_.language = translate.to;
+					}
+			}
+			//执行翻译
+			translate.execute(); 
+	},
+	methods: {
+		//触发切换语言
+		languageChange(event){
+			translate.changeLanguage(event);
+		}
+	}
+};
+const app = Vue.createApp(App);
+app.use(ElementPlus);
+app.mount("#app");
+
+
+</script>
+
+
+</body>
+</html>

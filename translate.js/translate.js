@@ -5619,6 +5619,22 @@ var nodeuuid = {
 		}
 		return uuid;
 	},
+	/*
+		开启远程调试能力，当你使用中遇到问题，需要向开源作者求助时，可以在你项目中主动调用这个方法，也就是 translate.enableRemoteDebug(); 即可启动远程调试能力
+		开源项目作者就可以对你当前出错的页面进行远程调试排查问题所在。当然前提是你的页面要保持别关闭。
+
+		这个能力是通过开源项目 https://github.com/HuolalaTech/page-spy-web 来实现的
+		
+	*/
+	enableRemoteDebug:function(){
+
+		/*
+
+			待同事实现
+		*/
+
+	}
+
 
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');

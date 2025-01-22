@@ -12,7 +12,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.12.10.20250117',
+	version: '3.12.11.20250122',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -179,7 +179,7 @@ var translate = {
 					document.getElementById('translateSelectLanguage').style.width = '94px';
 				}catch(e){ console.log(e);} 
 				*/
-			});
+			}, null);
 			
 			
 		}
@@ -1121,14 +1121,6 @@ var translate = {
 										//console.log("inProgressNodes -- 减去node length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
 									}
 
-									//当前已经全部翻译并渲染完毕，则将其恢复到闲置状态，闲置状态则可以进行下一轮翻译。
-									if(translate.inProgressNodes.length == 0){
-										setTimeout(function(){
-											translate.state = 0;
-										}, 50);
-										//console.log('set translate.state = 0');
-									}
-									
 									break;
 								}
 							}
@@ -1233,8 +1225,8 @@ var translate = {
 	/*
 		当前状态，执行状态
 		0 空闲(或者执行翻译完毕)
-		10 扫描要翻译的node
-		20 ajax通过文本翻译接口开始请求，在发起ajax请求前，状态变为20，然后再发起ajax请求
+		10 扫描要翻译的node，并读取浏览器缓存的翻译内容进行渲染显示
+		20 浏览器缓存渲染完毕，ajax通过文本翻译接口开始请求，在发起ajax请求前，状态变为20，然后再发起ajax请求
 		至于翻译完毕后进行渲染，这个就不单独记录了，因为如果页面存在不同的语种，不同的语种是按照不同的请求来的，是多个异步同时进行的过程
 	*/
 	state:0,
@@ -1282,9 +1274,33 @@ var translate = {
 				console.log('警告， translate.waitingExecute.get 出现异常，quque已空，但还往外取。');
 				return null;
 			}
+		},
+		//当前 translate.translateRequest[uuid] 的是否已经全部执行完毕，这里单纯只是对 translate.translateRequest[uuid] 的进行判断，这里要在 translate.json 接口触发完并渲染完毕后触发，当然接口失败时也要触发
+		isAllExecuteFinish:function(uuid){
+			
+			for(var lang in translate.translateRequest[uuid]){
+				for(var i = 0; i<translate.translateRequest[uuid][lang].length; i++){
+					if(translate.translateRequest[uuid][lang][i].executeFinish == 0){
+						//这个还没执行完，那么直接退出，不在向后执行了
+						//console.log('uuid:'+uuid+'  lang:'+lang+'  executeFinish:0  time:'+translate.translateRequest[uuid][lang][i][addtime]);
+						
+						//这里要考虑进行时间判断
+
+						return;
+					}
+				}
+			}
+
+			//都执行完了，那么设置完毕
+			translate.state = 0;
+			translate.executeNumber++;
 		}
+
 	},
 	
+	//execute() 方法已经被执行过多少次了， 只有execute() 完全执行完，也就是界面渲染完毕后，它才会+1
+	executeNumber:0,
+
 	/*
 		执行翻译操作。翻译的是 nodeQueue 中的
 		docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
@@ -1801,6 +1817,7 @@ var translate = {
 		if(fanyiLangs.length == 0){
 			//没有需要翻译的，直接退出
 			translate.state = 0;
+			translate.executeNumber++;
 			return;
 		}
 		
@@ -1850,6 +1867,8 @@ var translate = {
 		//状态
 		translate.state = 20;
 
+
+
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			var lang = fanyiLangs[lang_index];
@@ -1858,6 +1877,7 @@ var translate = {
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
 				console.log('异常,理论上不应该存在： typeof(translateTextArray[lang]) == \'undefined\' || translateTextArray[lang].length < 1');
 				translate.state = 0;
+				translate.executeNumber++;
 				return;
 			}
 
@@ -1866,6 +1886,15 @@ var translate = {
 			for(var ttr_index = 0; ttr_index<translateTextArray[lang].length; ttr_index++){
 				console.log(translateTextArray[lang][ttr_index])
 			}*/
+
+			//将需要请求翻译接口的加入到 translate.translateRequest 中
+			if(typeof(translate.translateRequest[uuid]) == 'undefined' || translate.translateRequest[uuid] == null){
+				translate.translateRequest[uuid] = {};
+			}
+			translate.translateRequest[uuid][lang] = {};
+			translate.translateRequest[uuid][lang].executeFinish = 0; //是否执行完毕，0是执行中， 1是执行完毕（不管是失败还是成功） 而且执行完毕是指ajax请求获得响应，并且dom渲染完成之后才算完毕。当然如果ajax接口失败那也是直接算完毕
+			translate.translateRequest[uuid][lang].addtime = Math.floor(Date.now() / 1000);
+
 
 			/*** 翻译开始 ***/
 			var url = translate.request.api.translate;
@@ -1881,6 +1910,10 @@ var translate = {
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
 				if(data.result == 0){
+					translate.translateRequest[uuid][lang].result = 2;
+					translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
+					translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
+					translate.waitingExecute.isAllExecuteFinish();
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
@@ -1888,6 +1921,7 @@ var translate = {
 					console.log('response : '+data.info);
 					console.log('=======ERROR END  =======');
 					//translate.temp_executeFinishNumber++; //记录执行完的次数
+
 					return;
 				}
 				
@@ -1951,12 +1985,49 @@ var translate = {
 				task.execute(); //执行渲染任务
 				//translate.temp_executeFinishNumber++; //记录执行完的次数
 
+				translate.translateRequest[uuid][lang].result = 1;
+				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
+				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
+				translate.waitingExecute.isAllExecuteFinish();
+			}, function(xhr){
+				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
+				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
+				translate.translateRequest[uuid][lang].result = 3;
+				translate.waitingExecute.isAllExecuteFinish();
 			});
 			/*** 翻译end ***/
-
-			
 		}
 	},
+
+	/**
+	 * 翻译请求记录
+	 * 一维：key:uuid，也就是execute每次执行都会创建一个翻译队列，这个是翻译队列的唯一标识。  这个uuid跟 nodeQueue 的uuid是一样的
+	 * 		value:对象
+	 * 二维: 对象，包含：
+	 * 		from 存放的是要翻译的源语种，比如要讲简体中文翻译为英文，这里存放的就是 chinese_simplified
+	 * 		state 是否执行完毕，0是执行中， 1是执行完毕（不管是失败还是成功） 而且执行完毕是指ajax请求获得响应，并且dom渲染完成之后才算完毕。当然如果ajax接口失败那也是直接算完毕
+	 * 		addtime 这条数据加入到本数组的时间，也就是进行ajax请求开始那一刻的时间，10位时间戳
+	 * 		stoptime 执行完毕的时间，也就是state转为2那一刻的时间
+	 * 		result 执行结果， 0 是还没执行完，等待执行完， > 0 是执行完了有结果了，  
+	 * 												  1 是执行成功
+	 * 												  2 是接口有响应，也是200响应，但是接口响应的结果返回了错误，也就是返回了 {result:0, info:'...'}
+	 * 												  3 是接口不是200响应码
+	 * 
+	 */
+	translateRequest:{
+		/* 
+		uuid:[
+			'chinese_simplified':{
+				executeFinish:0,
+				addtime:150001111,
+				stoptime:150001111,
+				result:0
+			},
+			...
+		] 
+		*/
+	},
+
 	/*
 		将已成功翻译并渲染的node节点进行缓存记录
 		key: node节点的唯一标识符，通过 nodeuuid.uuid() 生成
@@ -3956,7 +4027,7 @@ var translate = {
 				translate.selectLanguageTag
 				translate.execute(); //执行翻译
 			}
-		});
+		}, null);
 	},
 	
 	util:{
@@ -4470,7 +4541,7 @@ var translate = {
 			 * @param data 请求的参数数据
 			 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
 			 */
-			translate:function(path, data, func){
+			translate:function(path, data, func, abnormalFunc){
 				var textArray = JSON.parse(decodeURIComponent(data.text));
 				let translateTextArray = translate.util.split(textArray, 48000);
 				//console.log(translateTextArray);
@@ -4545,10 +4616,7 @@ var translate = {
 							}
 							
 							func(d);
-						}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, function(xhr){
-							console.log('---------error--------');
-							console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
-						}, true);
+						}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, abnormalFunc, true);
 						
 
 					}
@@ -4845,8 +4913,9 @@ var translate = {
 		 * 		}
 		 * 		
 		 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
+		 * @param abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}  另外这里的 xhr 会额外有个参数  xhr.requestURL 返回当前请求失败的url
 		 */
-		post:function(path, data, func){
+		post:function(path, data, func, abnormalFunc){
 			var headers = {
 				'content-type':'application/x-www-form-urlencoded',
 			};
@@ -4862,7 +4931,7 @@ var translate = {
 			//if(url.indexOf('edge') > -1 && path == translate.request.api.translate){
 			if(translate.service.name == 'client.edge'){	
 				if(path == translate.request.api.translate){
-					translate.service.edge.translate(path, data, func);
+					translate.service.edge.translate(path, data, func, abnormalFunc);
 					return;
 				}
 				if(path == translate.request.api.language){
@@ -4878,7 +4947,7 @@ var translate = {
 			}
 			// ------- edge end --------
 
-			this.send(path, data, func, 'post', true, headers, null, true);
+			this.send(path, data, func, 'post', true, headers, abnormalFunc, true);
 		},
 		/**
 		 * 发送请求
@@ -5097,7 +5166,7 @@ var translate = {
 				}
 
 				func(data);
-			});
+			}, null);
 		},
 		listener:{
 			minIntervalTime:800, // 两次触发的最小间隔时间，单位是毫秒，这里默认是800毫秒。最小填写时间为 200毫秒
@@ -5448,7 +5517,7 @@ var translate = {
 				curTooltipEle.style.top =selectionY+20+"px";
 				curTooltipEle.style.left = selectionX+50+"px" ;
 				curTooltipEle.style.display = "";
-			});
+			}, null);
 		},
 		start:function () {
 			//新建一个tooltip元素节点用于显示翻译

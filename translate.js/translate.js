@@ -1925,6 +1925,11 @@ var translate = {
 					return;
 				}
 				
+				if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
+					console.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
+					return;
+				}
+
 				//console.log('-----待翻译3：----');
 				//console.log(translate.nodeQueue);
 				

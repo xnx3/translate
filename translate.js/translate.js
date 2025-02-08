@@ -4253,6 +4253,7 @@ var translate = {
 		 * @author 刘晓腾
 		 */
 		 split:function(array, size, maxSize) {
+		 	let orgsize = size;
 		    let list = [];
 		    // 数组长度小于size，直接进行返回
 		    if(JSON.stringify(array).length <= size) {
@@ -4310,10 +4311,10 @@ var translate = {
 		                        // 看看是否以引号开头，如果不是，需要拼两个引号
 		                        if (s.startsWith("\"")) {
 		                            // 拼一个引号，-1
-		                            endIndex = s.length() - 1;
+		                            endIndex = s.length - 1;
 		                        } else {
 		                            // 拼两个引号，-2
-		                            endIndex = s.length() - 2;
+		                            endIndex = s.length - 2;
 		                        }
 		                        if (!s.endsWith("\"")) {
 		                            // 开始不是逗号了，不能-1
@@ -4350,7 +4351,93 @@ var translate = {
 		            }
 		        }
 		    }
+			// 设置了maxSize，进行处理
+			if (maxSize && maxSize > 0) {
+				list = translate.util._splitMaxSize(list, orgsize, maxSize);
+			}
 		    return list;
+		},
+		/**
+		 * 针对split函数中maxSize的处理
+		 * 	private
+		 * @param array 已拆分的二维数组
+		 * @param size 拆分的长度
+		 * @param maxSize 元素数量
+		 * @author 刘晓腾
+		 */
+		_splitMaxSize:function(array, size, maxSize) {
+			// console.log("------ splitMaxSize run ------")
+
+			// 返回的数据
+			let list = [];
+			// 暂存的数组，用来存储每次遍历时超出的数据
+			let tmp = [];
+
+		 	// 遍历二维数组
+			array.forEach(function(arr, index) {
+				// 累加数组
+				arr = tmp.concat(arr);
+				// 计算元素数量
+				let length = arr.length;
+				// 数组中元素数量大于maxSize，对多余的元素进行移除
+				if (length > maxSize) {
+					// 第一个数组，包含前N个元素
+					let firstArray = arr.slice(0, maxSize);
+					// 第二个数组，包含剩下的元素
+					let secondArray = arr.slice(maxSize);
+
+					// 处理长度
+					let len = 1;
+					while (JSON.stringify(firstArray).length > size) {
+						// 长度超过限制，进行处理
+						firstArray = arr.slice(0, maxSize - len);
+						secondArray = arr.slice(maxSize - len);
+						len++;
+						if (len >= arr.length+1) {
+							break;
+						}
+					}
+
+					// 第一个数组记录
+					list.push(firstArray);
+					// 第二个数组暂存
+					tmp.length = 0;
+					tmp = secondArray;
+				} else {
+					// 没超，只处理长度
+					// 处理长度
+					let firstArray = arr;
+					let secondArray = [];
+					let len = 1;
+					while (JSON.stringify(firstArray).length > size) {
+						// 长度超过限制，进行处理
+						firstArray = arr.slice(0, maxSize - len);
+						secondArray = arr.slice(maxSize - len);
+						len++;
+						if (len >= arr.length+1) {
+							break;
+						}
+					}
+
+					// 第一个数组记录
+					list.push(firstArray);
+					// 第二个数组暂存
+					tmp.length = 0;
+					tmp = secondArray;
+				}
+
+			});
+
+			// 临时数组中还有元素，也要进行处理
+			if (tmp.length > 0) {
+				let tmpl = [];
+				tmpl.push(tmp);
+				// 递归处理
+				let l = translate.util._splitMaxSize(tmpl, size, maxSize);
+				list = list.concat(l);
+			}
+
+			return list;
 		},
 		/* 
 			浏览器的语种标识跟translate.js的语种标识的对应
@@ -4555,7 +4642,7 @@ var translate = {
 			 */
 			translate:function(path, data, func, abnormalFunc){
 				var textArray = JSON.parse(decodeURIComponent(data.text));
-				let translateTextArray = translate.util.split(textArray, 38000, 0);
+				let translateTextArray = translate.util.split(textArray, 40000, 900);
 				
 				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
 					var from = translate.service.edge.language.getMap()[data.from];

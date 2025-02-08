@@ -3,8 +3,10 @@
 	国际化，网页自动翻译。
 	作者：管雷鸣
 	开原仓库：https://github.com/xnx3/translate
-
  */ 
+if(typeof(translate) == 'object' && typeof(translate.version) == 'string'){
+	throw new Error('translate.js 已经加载过一次了，当前是重复加载，避免你的翻译出现异常，已帮你拦截此次加载。本信息只是给你一个提示，你可以检查一下你的项目中是否出现了重复引入 translate.js ，当然，这个异常并不会影响到你的具体使用，它已经自动帮你处理拦截了这个异常，只不过提示出来是让你知道，你的代码里出现了重复引入的情况。');
+}
 var translate = {
 	/**
 	 * 当前的版本
@@ -12,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.1.20250207',
+	version: '3.13.2.20250208',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.3.20250210',
+	version: '3.13.4.20250211',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -608,7 +608,7 @@ var translate = {
 							//console.log('beforeChar:'+beforeChar+', str:'+str)
 							var lang = translate.language.getCharLanguage(beforeChar);
 							//console.log(lang);
-							if(lang == 'english'){
+							if(lang == 'english' || lang == 'romance'){
 								//调出，不能强拆
 								continue;
 							}
@@ -623,7 +623,7 @@ var translate = {
 							//后面有别的字符,判断是什么字符，如果是英文，那么这个是不能被拆分的，要忽略
 							afterChar = str.substr(index+originalText.length,1);
 							var lang = translate.language.getCharLanguage(afterChar);
-							if(lang == 'english'){
+							if(lang == 'english' || lang == 'romance'){
 								//跳出，不能强拆
 								continue;
 							}
@@ -3318,8 +3318,8 @@ var translate = {
 					]
 		 		]
 		 	}
-		 	languageName 是当前字符串是什么语种。它的识别有以下特点：
-		 		1. 如果出现英语跟中文、法语、德语等混合的情况，也就是不纯粹英语的情况，那么会以其他语种为准，而不是识别为英语。不论英语字符出现的比例占多少。
+		 	languageName 是当前字符串最终判定结果是什么语种。它的识别有以下特点：
+		 		1. 如果出现英语跟中文、罗曼语族、德语等混合的情况，也就是不纯粹英语的情况，那么会以其他语种为准，而不是识别为英语。不论英语字符出现的比例占多少。
 		 		2. 如果出现简体中文跟繁体中文混合的情况，那么识别为繁体中文。不论简体中文字符出现的比例占多少。
 				3. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。（注意是字符数，而不是语种的数组数）
 			languageArray 对传入字符串进行分析，识别出都有哪些语种，每个语种的字符是什么
@@ -3348,16 +3348,28 @@ var translate = {
 			//过滤 语种的字符数小于总字符数 百分之五的，低于这个数，将忽略
 			var langkeys = [];
 			for(var lang in langsNumber){
-				if(langsNumber[lang]/allNumber > 0.05){
+				if(langsNumber[lang]/allNumber > 0.01){
 					langkeys[langkeys.length] = lang+'';
 				}
 			}
 
-
 			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
-				//console.log('出现了english, 并且english跟其他语种一起出现，那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
-				//langkeys.splice(langkeys.indexOf('english'), 1); 
-				langsNumber['english'] = 0;
+				//console.log('出现了english, 并且english跟其他语种一起出现那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
+				//这里先判断一下是否有发现了 罗曼语族
+				if(langkeys.indexOf('romance') > -1){
+					//发现了，那么判断一下到底是 法语、西班牙语、葡萄牙语、意大利语 中的哪一种呢
+					var romanceSentenceLanguage = translate.language.romanceSentenceAnaly(str);
+					if(romanceSentenceLanguage.length == 0){
+						console.log('语种识别异常，应该是 法语、西班牙语、葡萄牙语、意大利语 中的一种才是，除非是除了这四种语种之外的别的 罗曼语族 中的语种，当前已将 '+ str +'识别为英语。 你可以联系我们求助 https://translate.zvo.cn/4030.html');
+					}else{
+						//console.log(langsNumber);
+						langsNumber[romanceSentenceLanguage] = langsNumber['romance']+langsNumber['english'];
+						//console.log('set romance to '+romanceSentenceLanguage+' : \t'+str);
+						langsNumber['english'] = 0;
+					}
+				}else{
+					langsNumber['english'] = 0;
+				}
 			}
 
 			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
@@ -3403,7 +3415,18 @@ var translate = {
 
 			return result;
 		},
-		// 传入一个char，返回这个char属于什么语种，返回如 chinese_simplified、english  如果返回空字符串，那么表示未获取到是什么语种
+		/*
+			传入一个char，返回这个char属于什么语种，返回如   如果返回空字符串，那么表示未获取到是什么语种
+			chinese_simplified 简体中文
+			chinese_traditional 繁体中文
+			russian 俄罗斯语
+			english 英语
+			romance 罗曼语族，它是 法语、西班牙语、意大利语、葡萄牙語 的集合，并不是单个语言
+			specialCharacter 特殊字符，符号
+			number 阿拉伯数字
+			japanese 日语
+			korean 韩语
+		*/
 		getCharLanguage:function(charstr){
 			if(charstr == null || typeof(charstr) == 'undefined'){
 				return '';
@@ -3414,6 +3437,9 @@ var translate = {
 			}
 			if(this.english(charstr)){
 				return 'english';
+			}
+			if(this.romance(charstr)){
+				return 'romance';
 			}
 			if(this.specialCharacter(charstr)){
 				return 'specialCharacter';
@@ -3742,16 +3768,6 @@ var translate = {
 				return '';
 			}
 		},
-		//是否包含英文，true:包含
-		english:function(str){
-			if(/.*[\u0041-\u005a]+.*$/.test(str)){ 
-				return true;
-			} else if(/.*[\u0061-\u007a]+.*$/.test(str)){
-				return true;
-			} else {
-				return false;
-			}
-		},
 		//是否包含日语，true:包含
 		japanese:function(str){
 			if(/.*[\u3040-\u309F\u30A0-\u30FF]+.*$/.test(str)){ 
@@ -3784,7 +3800,72 @@ var translate = {
 			}
 			return false;
 		},
-		
+		//是否包含英文，true:包含
+		english:function(str){
+			if(/.*[\u0041-\u005a]+.*$/.test(str)){ 
+				return true;
+			} else if(/.*[\u0061-\u007a]+.*$/.test(str)){
+				return true;
+			} else {
+				return false;
+			}
+		},
+		//是否包含 罗曼语族 的特殊字符，因为 法语、西班牙语、意大利语、葡萄牙語  都属于这个语族，单纯判断特殊字符已经不能判断出到底属于哪个语种了
+		romance_dict:['é','è','ê','à','ç','œ','ñ','á','ó','ò','ì','ã','õ'],
+		romance:function(str){
+			if(this.romance_dict.indexOf(str) > -1){ 
+				return true;
+			} else {
+				return false;
+			}
+		},
+		//对 罗曼语族 的句子进行分析，看它是属于 法语、西班牙语、意大利语、葡萄牙語 的哪个。注意这个是传入的整体的句子，不是传入的单个字符
+		//返回识别的语种：  french、spanish、italian、portuguese  如果都没有识别出来，则返回空字符串
+		romanceSentenceAnaly:function(text) {
+		    // 定义各语言的典型字母/符号权重 (可调整)
+		    const langFeatures = {
+		        'french': { score:0 , chars: ['é','è','ê','à','ç','œ'] },
+		        'spanish': { score:0 , chars: ['ñ','á','ó'], pairs: ['ll'] },
+		        'italian': { score:0 , chars: ['ò','ì'], pairs: ['cc', 'ss'] },
+		        'portuguese': { score:0 , chars: ['ã', 'õ'] }
+		    };
+
+		    // 逐字扫描 + 相邻配对检测
+		    for (let i=0; i<text.length; i++) {
+		        const char = text[i].toLowerCase(); 
+		        
+		        // 单字匹配
+		        Object.keys(langFeatures).forEach(lang => {
+		            if (langFeatures[lang].chars.includes(char)) {
+		                langFeatures[lang].score +=1;
+		            }
+		        });
+
+		        // 双字配对检测 (如 ll)
+		        if(i < text.length -1) {
+		            const pair = text.slice(i,i+2).toLowerCase();
+		            Object.keys(langFeatures).forEach(lang => {
+		                if (langFeatures[lang].pairs?.includes(pair)) {
+		                    langFeatures[lang].score +=2; // pair权重大于单字
+		                }
+		            });
+		         }
+		    }
+
+		    // 结果判定 （取最高分）
+		    let maxLang = '';
+		    let maxScore = -1;
+		    
+		    Object.keys(langFeatures).forEach(lang =>{
+		       if(langFeatures[lang].score > maxScore){
+		           maxScore = langFeatures[lang].score;
+		           maxLang = lang;
+		       } 
+		    });
+
+		    return maxLang || ''; 
+		},
+
 		//是否包含特殊字符，包含，则是true
 		specialCharacter:function(str){
 			//如：① ⑴ ⒈ 

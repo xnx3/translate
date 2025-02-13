@@ -3845,9 +3845,10 @@ var translate = {
 		        if(i < text.length -1) {
 		            const pair = text.slice(i,i+2).toLowerCase();
 		            Object.keys(langFeatures).forEach(lang => {
-		                if (langFeatures[lang].pairs?.includes(pair)) {
-		                    langFeatures[lang].score +=2; // pair权重大于单字
-		                }
+		            	const pairs = langFeatures[lang].pairs;
+				        if (pairs && pairs.includes(pair)) {
+				            langFeatures[lang].score += 2; // pair权重大于单字
+				        }
 		            });
 		         }
 		    }

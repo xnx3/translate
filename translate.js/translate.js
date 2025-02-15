@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.4.20250211',
+	version: '3.13.5.20250215',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -867,6 +867,18 @@ var translate = {
 				if(document.readyState == 'complete'){
 					//dom加载完成，进行启动
 					clearInterval(translate.temp_linstenerStartInterval);//停止
+
+					//如果不需要翻译的情况，是不需要进行监听的
+					if(translate.language.getCurrent() == translate.language.getLocal()){
+						if(translate.language.translateLocal){
+							//本地语种也要强制翻译跟本地语种不一致的语种
+						}else{
+							//console.log('本地语种跟目标语种一致，不进行翻译操作，无需监听。');
+							return;
+						}
+					}
+
+					//console.log('进行监听。。');
 					translate.listener.addListener();
 				}
 				

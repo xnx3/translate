@@ -1,6 +1,8 @@
 #!/bin/bash 
 # 
 # 常规方式安装translate.js的后端翻译接口服务，比如可以在阿里云、腾讯云、等别的云服务上进行安装本系统。在 CentOS 7.4 (没7.4的话7.6等应该也行) 
+# 执行本shell文件的一键安装脚本
+# wget https://gitee.com/mail_osc/translate/raw/master/deploy/install_translate.service.sh -O install.sh && chmod -R 777 install.sh && sh ./install.sh
 #
 
 # properties.jar 操作properties使用。说明：https://gitee.com/mail_osc/properties 
@@ -52,17 +54,17 @@ echo "启动tomcat"
 
 # 加入每天凌晨3点自动重启服务器的定时任务
 # 建立服务器启动后自动执行的shell文件
-mkdir /mnt/crontab/
+#mkdir /mnt/crontab/
 #每天凌晨三点重启
-echo "0 3 * * * sudo reboot" > /mnt/crontab/run.txt
+#echo "0 3 * * * sudo reboot" > /mnt/crontab/run.txt
 # 设置定时命令
-crontab /mnt/crontab/run.txt
+#crontab /mnt/crontab/run.txt
 
 # 安装CPU限制，避免1核1G规格卡死
-yum -y install epel-release
-yum -y install cpulimit
+#yum -y install epel-release
+#yum -y install cpulimit
 # 开机启动时清空缓存文件
-echo 'cpulimit -l 10 rm -rf /mnt/tomcat8/fileupload/* &'>>/etc/rc.d/rc.local
+#echo 'cpulimit -l 10 rm -rf /mnt/tomcat8/fileupload/* &'>>/etc/rc.d/rc.local
 
 # 同步时区，设为 UTC/GMT  格林威治时间
 sudo timedatectl set-timezone UTC

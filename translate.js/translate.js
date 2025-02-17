@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.5.20250215',
+	version: '3.13.6.20250217',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1771,7 +1771,7 @@ var translate = {
 			//console.log(translate.nodeQueue[uuid]['list'][lang]);
 			//console.log(firstScan);
 			for(var ti=0; ti<twoScan.length; ti++){
-				twoHash = twoScan[ti];
+				var twoHash = twoScan[ti];
 				//console.log(twoHash + '-- '+firstScan.indexOf(twoHash));
 				if(firstScan.indexOf(twoHash) == -1){
 					//需要追加了

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.6.20250217',
+	version: '3.13.7.20250217',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1915,7 +1915,7 @@ var translate = {
 			var data = {
 				from:lang,
 				to:translate.to,
-				lowercase:translate.whole.isEnableAll? '0':'1', //首字母大写
+				//lowercase:translate.whole.isEnableAll? '0':'1', //首字母大写
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};

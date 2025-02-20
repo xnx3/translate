@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.7.20250217',
+	version: '3.13.8.20250220',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1004,7 +1004,45 @@ var translate = {
 		*/
 		renderTaskFinish:function(renderTask){
 			//console.log(renderTask);
-		}
+		},
+
+		/*
+            翻译执行过程中，相关的监控
+        */
+        execute:{
+
+            /*
+                每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
+            */
+            renderStartByApi : [],
+            renderStartByApiRun:function(uuid){
+                //console.log(translate.nodeQueue[uuid]);
+                for(var i = 0; i < translate.listener.execute.renderStartByApi.length; i++){
+                    try{
+                        translate.listener.execute.renderStartByApi[i](uuid);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
+
+            /*
+                每当 translate.execute() 执行完毕（前提是采用API翻译的，API将翻译结果返回，并且界面上的翻译结果也已经渲染完毕）后，触发此方法。
+                uuid：translate.nodeQueue[uuid] 这里的
+            */
+            renderFinishByApi : [],
+            renderFinishByApiRun:function(uuid){
+                //console.log(translate.nodeQueue[uuid]);
+                for(var i = 0; i < translate.listener.execute.renderFinishByApi.length; i++){
+                    try{
+                        translate.listener.execute.renderFinishByApi[i](uuid);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            }
+        }
+
 	},
 	//对翻译结果进行替换渲染的任务，将待翻译内容替换为翻译内容的过程
 	renderTask:class{
@@ -1308,6 +1346,8 @@ var translate = {
 			//都执行完了，那么设置完毕
 			translate.state = 0;
 			translate.executeNumber++;
+
+			translate.listener.execute.renderFinishByApiRun(uuid);
 		}
 
 	},
@@ -1881,7 +1921,8 @@ var translate = {
 		//状态
 		translate.state = 20;
 
-
+		//listener
+        translate.listener.execute.renderStartByApiRun(uuid);
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言

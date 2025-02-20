@@ -801,13 +801,13 @@ var translate = {
 				k/v 
 		二维：对象形态，具体有：
 			 key:expireTime 当前一维数组key的过期时间，到达过期时间会自动删除掉这个一维数组。如果<0则代表永不删除，常驻内存
-			 value:list 待翻译的页面的node队列
+			 value:list 从DOM中自动识别出的语言文本及节点数据，按照语种进行了划分，每个语种便是其中的一项。
 		三维：针对二维的value，  key:english、chinese_simplified等语种，这里的key便是对value的判断，取value中的要翻译的词是什么语种，对其进行了语种分类    value: k/v
 		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
 		五维：针对四维的value，  这是个对象， 其中
-				original: 是三维的key的hash的原始文字，也就是 node 中的原始文字。
+				original: 是三维的key的hash的原始文字， node 元素中的原始文字（可能是node元素整个内容，也可能是被分割出的某一块内容，比如中英文混合时单独提取中文）
 				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，而是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
-				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语操作后的，待翻译的文字。
+				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语、以及其他处理操作后的，待进行文本翻译的文字。
 				nodes: 有哪些node元素中包含了这个词，都会在这里记录
 		六维：针对五维的 nodes，将各个具体的 node 以及 其操作的 attribute 以数组形式列出
 		七维：针对六维列出的nodes数组，其中包含：

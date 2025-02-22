@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.8.20250220',
+	version: '3.13.9.20250222',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -91,6 +91,7 @@ var translate = {
 			var selectLanguage = document.createElement("select"); 
 			selectLanguage.id = translate.selectLanguageTag.documentId+'SelectLanguage';
 			selectLanguage.className = translate.selectLanguageTag.documentId+'SelectLanguage';
+			var to = translate.language.getCurrent();
 			for(var i = 0; i<languageList.length; i++){
 				var option = document.createElement("option"); 
 			    option.setAttribute("value",languageList[i].id);
@@ -110,10 +111,10 @@ var translate = {
 				}
 
 				/*判断默认要选中哪个语言*/
-			    if(translate.to != null && typeof(translate.to) != 'undefined' && translate.to.length > 0){
+
+			    if(to != null && typeof(to) != 'undefined' && to.length > 0){
 					//设置了目标语言，那就进行判断显示目标语言
-					
-					if(translate.to == languageList[i].id){
+					if(to == languageList[i].id){
 						option.setAttribute("selected",'selected');
 					}
 			    }else{
@@ -341,6 +342,18 @@ var translate = {
 		}else{
 			//不用刷新，直接翻译
 			translate.execute(); //翻译
+
+			//检测是否有iframe中的子页面，如果有，也对子页面下发翻译命令。这个是针对 LayuiAdmin 框架的场景适配，它的主体区域是在 iframe 中的，不能点击切换语言后，只翻译外面的大框，而iframe中的不翻译
+			const iframes = document.querySelectorAll('iframe');
+			for (let i = 0; i < iframes.length; i++) {
+				const iframe = iframes[i];
+				// 获取 iframe 的 window 对象
+				const iframeWindow = iframe.contentWindow;        
+				if(typeof(iframeWindow.translate) == 'object' && typeof(iframeWindow.translate.version) == 'string'){
+					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
+					iframeWindow.translate.execute();
+				}
+			}
 		}
 	},
 	
@@ -894,6 +907,53 @@ var translate = {
 			
 			
 		},
+		/* 
+			key: nodeid node的唯一标识，格式如 HTML1_BODY1_DIV2_#text1  ，它是使用 nodeuuid.uuid(node) 获得的
+					注意，document.getElementById 获得的并不是，需要这样获得 document.getElementById('xx').childNodes[0]  因为它是要给监听dom改动那里用的，监听到的改动的是里面具体的node
+			value:13位时间戳
+		*/
+		ignoreNode:[],
+		/*
+			通过 translate.execute() 触发的翻译，来使node发生的改动，这种改动加入到 ignoreNode 的过期时间是多少。 
+			单位是毫秒
+		*/
+		translateExecuteNodeIgnoreExpireTime:1000,
+		/*
+		  	增加一个被listener忽略的节点
+		  	这里通常是用于被 translate.js 本身翻译更改的节点、以及像是 Layui 被翻译后触发了渲染改动了dom ， 这几种场景都是翻译本身自己触发的，是不需要再被listener触发，不然就形成死循环了
+		  	node 是哪个节点被listener扫描到改动后忽略。
+		  		可传入 node、也可以传入node的uuid字符串
+		  	expireTime 过期时间，也就是执行当前方法将 node 加入后，过多长时间失效，这里是毫秒，比如传入 500 则这个node在当前时间往后的500毫秒内，如果被listener监听到改动，是直接被忽略的，不会触发任何翻译操作
+		 */
+		addIgnore:function(node, expireTime){
+			let nodeid = '';
+			if(typeof(node) == 'string'){
+				nodeid = node;
+			}else{
+				nodeid = nodeuuid.uuid(node);
+			}
+
+			translate.listener.ignoreNode[nodeid] = Date.now()+expireTime;
+
+			//translate.listener.renderTaskFinish();
+		},
+		/*
+			刷新 ignoreNode 中的元素，也就是查找其中 expireTime 过期的，删掉
+		*/
+		refreshIgnoreNode:function(){
+			//console.log('refresh ignore ,current: '+Object.keys(translate.listener.ignoreNode).length);
+			var currentTime = Date.now();
+			for (const node in translate.listener.ignoreNode) {
+				if(translate.listener.ignoreNode[node] < currentTime){
+					//console.log('delete : ');
+					//console.log(node);
+					delete translate.listener.ignoreNode[node];
+				}
+			}
+			//console.log('refresh ignore finish: '+Object.keys(translate.listener.ignoreNode).length);
+		},
+
+
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
 			translate.listener.isStart = true; //记录已执行过启动方法了
@@ -953,12 +1013,12 @@ var translate = {
 					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
 					var translateNodes = [];
 					//console.log(translate.inProgressNodes.length);
-					for(let ipnode of documents){
-						//console.log('---type:'+ipnode.nodeType);
+					for(let node of documents){
+						//console.log('---type:'+node.nodeType);
 
 						var find = false;
 						for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-							if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+							if(translate.inProgressNodes[ini].node.isSameNode(node)){
 								//有记录了，那么忽略这个node，这个node是因为翻译才导致的变动
 								//console.log('发现相同');
 								find = true;
@@ -969,10 +1029,19 @@ var translate = {
 							continue;
 						}
 
+						//console.log(node);
+						let nodeid = nodeuuid.uuid(node);
+						if(typeof(translate.listener.ignoreNode[nodeid]) == 'number'){
+							if(translate.listener.ignoreNode[nodeid] > Date.now()){
+								//console.log('node 未过忽略期，listener扫描后忽略：'+nodeid);
+								continue;
+							}
+						}
+
 						//不相同，才追加到新的 translateNodes
-						translateNodes.push(ipnode);
-						//console.log('listener ++ '+ipnode.nodeValue);
-						//console.log(ipnode);
+						translateNodes.push(node);
+						//console.log('listener ++ '+node.nodeValue);
+						//console.log(node);
 					}
 					if(translateNodes.length < 1){
 						return;
@@ -1142,6 +1211,9 @@ var translate = {
 			//console.log(this.nodes);
 			//console.log('===========task======end===');
 
+			//进行翻译前，先刷新一下 dom监听的忽略node，将过期的node剔除，降低listener的压力
+			translate.listener.refreshIgnoreNode();
+
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
@@ -1179,6 +1251,8 @@ var translate = {
 							
 						}, 50, ipnode);
 
+						//加入 translate.listener.ignoreNode
+						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime);
 						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 
 

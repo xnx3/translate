@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.9.20250222',
+	version: '3.13.10.20250224',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1403,7 +1403,6 @@ var translate = {
 		},
 		//当前 translate.translateRequest[uuid] 的是否已经全部执行完毕，这里单纯只是对 translate.translateRequest[uuid] 的进行判断，这里要在 translate.json 接口触发完并渲染完毕后触发，当然接口失败时也要触发
 		isAllExecuteFinish:function(uuid){
-			
 			for(var lang in translate.translateRequest[uuid]){
 				for(var i = 0; i<translate.translateRequest[uuid][lang].length; i++){
 					if(translate.translateRequest[uuid][lang][i].executeFinish == 0){
@@ -2042,7 +2041,7 @@ var translate = {
 					translate.translateRequest[uuid][lang].result = 2;
 					translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 					translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
-					translate.waitingExecute.isAllExecuteFinish();
+					translate.waitingExecute.isAllExecuteFinish(uuid);
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
@@ -2122,12 +2121,14 @@ var translate = {
 				translate.translateRequest[uuid][lang].result = 1;
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
-				translate.waitingExecute.isAllExecuteFinish();
+				setTimeout(function(){
+					translate.waitingExecute.isAllExecuteFinish(uuid);
+				},10);
 			}, function(xhr){
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				translate.translateRequest[uuid][lang].result = 3;
-				translate.waitingExecute.isAllExecuteFinish();
+				translate.waitingExecute.isAllExecuteFinish(uuid);
 			});
 			/*** 翻译end ***/
 		}
@@ -5937,6 +5938,104 @@ var translate = {
 			);
 		}catch(e){
 		}
+	},
+
+	/*
+		翻译执行的进展相关
+	*/
+	progress:{
+		/*
+			通过文本翻译API进行的
+		 */
+		api:{
+			isTip:true,//是否显示ui的提示，true显示，false不显示
+			setUITip:function(tip){
+				translate.progress.api.isTip = tip;
+			},
+			startUITip:function(){
+				// 创建一个 style 元素
+		        const style = document.createElement('style');
+		        // 设置 style 元素的文本内容为要添加的 CSS 规则
+		        style.textContent = '.translate_api_in_progress{ opacity: 0.01; }';
+		        // 将 style 元素插入到 head 元素中
+		        document.head.appendChild(style);
+
+
+				if(translate.progress.api.isTip){
+					translate.listener.execute.renderStartByApi.push(function(uuid){
+					    
+					    for(var lang in translate.nodeQueue[uuid].list){
+						    if(translate.language.getCurrent() == lang){
+						        //忽略这个语种
+						        continue;
+						    }
+						    for(var hash in translate.nodeQueue[uuid].list[lang]){
+						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
+						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
+						    		var nodeParent = node.parentNode;
+							        if(nodeParent == null){
+							        	continue;
+							        }
+									if(nodeParent.childNodes.length != 1){
+										continue;
+									}
+
+									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
+										nodeParent.className = 'translate_api_in_progress';
+									}else{
+										//这个元素本身有class了，那就追加
+
+										if(nodeParent.className.indexOf('translate_api_in_progress') > -1){	
+											continue;
+										}
+
+										nodeParent.className = nodeParent.className+' translate_api_in_progress';
+									}
+
+						    	}
+						    }
+						}
+					});
+					translate.listener.execute.renderFinishByApi.push(function(uuid){
+					    for(var lang in translate.nodeQueue[uuid].list){
+						    if(translate.language.getCurrent() == lang){
+						        //忽略这个语种
+						        continue;
+						    }
+						    for(var hash in translate.nodeQueue[uuid].list[lang]){
+						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
+						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
+						    		var nodeParent = node.parentNode;
+							        if(nodeParent == null){
+							        	continue;
+							        }
+
+							        /*
+							        注释这个，因为可能是给这个元素动态追加删除导致其子元素不是11
+									if(nodeParent.childNodes.length != 1){
+										continue;
+									}
+									*/
+
+									var parentClassName = nodeParent.className;
+									if(typeof(parentClassName) == 'undefined' || parentClassName == null || parentClassName == ''){
+										continue;
+									}
+									if(parentClassName.indexOf('translate_api_in_progress') < -1){
+										continue;
+									}
+									
+									nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
+						    	}
+						    }
+						}
+					});
+
+				}
+			}
+
+		}
+
 	}
 
 
@@ -6008,8 +6107,7 @@ var nodeuuid = {
 			待同事实现
 		*/
 
-	}
-
+	},
 
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');

@@ -6066,10 +6066,10 @@ var translate = {
 
 	                    if(typeof(obj[key]) == 'string'){
 	                    	//console.log(`${currentKey}: ${obj[key]}`);
-	                    	console.log(obj[key]);
-	                    	console.log(typeof(kvs[obj[key]]));
+	                    	//console.log(obj[key]);
+	                    	//console.log(typeof(kvs[obj[key]]));
 	                    	if(typeof(kvs[obj[key]]) == 'undefined'){
-	                    		kvs[obj[key] = new Array();
+	                    		kvs[obj[key]] = new Array();
 	                    	}
 	                    	//kvs[obj[key].push(currentKey);
 	                    }

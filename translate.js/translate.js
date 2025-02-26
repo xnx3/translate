@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.10.20250224',
+	version: '3.13.11.20250226',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6033,9 +6033,67 @@ var translate = {
 
 				}
 			}
-
 		}
+	},
+	/*
+		对js对象进行翻译
+		obj: 可以是JS定义的 对象、数组、甚至是单个具体的值
+	*/
+	jsObject:function (obj, parentKey = '') {
+		/*
+			存放扫描的结果
+			key 存放要被翻译的文本，也就是对象里面某个具体属性的值
+			value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
+		*/
+		var kvs = {};	
 
+	    if (typeof obj === 'object' && obj!== null) {
+	        if (Array.isArray(obj)) {
+	            // 处理数组
+	            obj.forEach((item, index) => {
+	                const currentKey = parentKey? `${parentKey}[${index}]` : `[${index}]`;
+	                translate.jsObject(item, currentKey);
+	            });
+	        } else {
+	            // 处理普通对象
+	            for (const key in obj) {
+	                const currentKey = parentKey? `${parentKey}.${key}` : key;
+	                if (typeof obj[key] === 'object' && obj[key]!== null) {
+	                    // 如果值是对象，递归调用函数
+	                    translate.jsObject(obj[key], currentKey);
+	                } else {
+	                    // 打印键值对
+
+	                    if(typeof(obj[key]) == 'string'){
+	                    	//console.log(`${currentKey}: ${obj[key]}`);
+	                    	console.log(obj[key]);
+	                    	console.log(typeof(kvs[obj[key]]));
+	                    	if(typeof(kvs[obj[key]]) == 'undefined'){
+	                    		kvs[obj[key] = new Array();
+	                    	}
+	                    	//kvs[obj[key].push(currentKey);
+	                    }
+	                    
+	                }
+	            }
+	        }
+	    } else {
+	        // 如果不是对象，直接打印
+	        if(typeof(obj) == 'string'){
+
+	        	if(typeof(obj) == 'string'){
+                	//console.log(`${parentKey}: ${obj}`);
+                	if(typeof(kvs[obj]) == 'undefined'){
+                		kvs[obj] = new Array();
+                	}
+                	kvs[obj].push('not key');
+                }
+
+	        	
+	        }
+	    }
+
+	    return kvs;
 	}
 
 

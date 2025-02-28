@@ -5959,13 +5959,13 @@ var translate = {
 		       				style.textContent = `
 /* CSS部分 */
 /* 灰色水平加载动画 */
-.parent {
+..translate_api_in_progress {
   position: relative;
   overflow: hidden; /* 隐藏超出部分的动画 */
 }
 
 /* 蒙版层 */
-.parent.loading::after {
+..translate_api_in_progress.loading::after {
   content: '';
   position: absolute;
   top: 0;
@@ -5977,7 +5977,7 @@ var translate = {
 }
 
 /* 水平加载条动画 */
-.parent.loading::before {
+..translate_api_in_progress.loading::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -6006,7 +6006,7 @@ var translate = {
     background-position: -200% 0;
   }
 }
-.translate_api_in_progress{ }
+
 `;
 		        // 将 style 元素插入到 head 元素中
 		        document.head.appendChild(style);
@@ -6032,7 +6032,7 @@ var translate = {
 									}
 
 									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
-										nodeParent.className = ' translate_api_in_progress parent loading';
+										nodeParent.className = ' translate_api_in_progress loading';
 									}else{
 										//这个元素本身有class了，那就追加
 
@@ -6040,7 +6040,7 @@ var translate = {
 											continue;
 										}
 
-										nodeParent.className = nodeParent.className+' translate_api_in_progress parent loading';
+										nodeParent.className = nodeParent.className+' translate_api_in_progress loading';
 									}
 
 						    	}

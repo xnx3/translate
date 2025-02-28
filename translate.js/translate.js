@@ -5956,7 +5956,58 @@ var translate = {
 				// 创建一个 style 元素
 		        const style = document.createElement('style');
 		        // 设置 style 元素的文本内容为要添加的 CSS 规则
-		        style.textContent = '.translate_api_in_progress{ opacity: 0.01; }';
+		       				style.textContent = `
+/* CSS部分 */
+/* 灰色水平加载动画 */
+.parent {
+  position: relative;
+  overflow: hidden; /* 隐藏超出部分的动画 */
+}
+
+/* 蒙版层 */
+.parent.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9); /* 半透明白色遮罩 */
+  z-index: 2;
+}
+
+/* 水平加载条动画 */
+.parent.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height:100%; /* 细线高度 */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #e8e8e8 25%,  /* 浅灰色 */
+    #d0d0d0 50%,  /* 中灰色 */
+    #e8e8e8 75%,  /* 浅灰色 */
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: horizontal-loader 1.5s linear infinite;
+  z-index: 3;
+  transform: translateY(-50%);
+}
+
+@keyframes horizontal-loader {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.translate_api_in_progress{ }
+`;
 		        // 将 style 元素插入到 head 元素中
 		        document.head.appendChild(style);
 
@@ -5981,7 +6032,7 @@ var translate = {
 									}
 
 									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
-										nodeParent.className = 'translate_api_in_progress';
+										nodeParent.className = ' translate_api_in_progress parent loading';
 									}else{
 										//这个元素本身有class了，那就追加
 
@@ -5989,7 +6040,7 @@ var translate = {
 											continue;
 										}
 
-										nodeParent.className = nodeParent.className+' translate_api_in_progress';
+										nodeParent.className = nodeParent.className+' translate_api_in_progress parent loading';
 									}
 
 						    	}
@@ -6026,6 +6077,8 @@ var translate = {
 									}
 									
 									nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
+nodeParent.className = parentClassName.replace(/loading/g, '');
+
 						    	}
 						    }
 						}

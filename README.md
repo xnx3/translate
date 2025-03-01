@@ -33,7 +33,7 @@
 
 
 
-# 内置方法
+# 微调指令
 * **[设置默认翻译为的语种](http://translate.zvo.cn/4071.html)**，用户第一次打开时，默认以什么语种显示。
 * **[自定义翻译术语](http://translate.zvo.cn/41555.html)**，如果你感觉某些翻译不太符合你的预期，可进行针对性的定义某些词或句子的翻译结果，进行自定义术语库
 * **[翻译完后自动触发执行](http://translate.zvo.cn/4069.html)**，当翻译完成后会自动触发执行您的某个方法，以便您来做自定义扩展。
@@ -142,7 +142,7 @@ translate.execute();//进行翻译
 # 谁在使用
 
 开源项目：  
-* [DzzOffice](http://www.dzzoffice.com/index.php?mod=dzzmarket&op=view&mid=58) 开源办公套件，适用于企业、团队搭建自己的 类似“Google企业应用套件”、“微软Office365”的企业协同办公平台
+* [DzzOffice](http://www.dzzoffice.com/index.php?mod=dzzmarket&op=view&mid=58) 开源办公套件，搭建自己的类似“Google企业应用套件”、“微软Office365”的企业协同办公平台
 * [ModStart](https://modstart.com/m/WebTranslate) 基于 Laravel 的模块化全栈开发框架
 * [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP) 国产开源ERP系统关注度第一，专注进销存、生产、总账
 * [FixIt](https://github.com/hugo-fixit/cmpt-translate) 一款简洁、优雅且先进的Hugo 博客主题

@@ -142,6 +142,8 @@ translate.execute();//进行翻译
 # 谁在使用
 
 开源项目：  
+* [DzzOffice](http://www.dzzoffice.com/index.php?mod=dzzmarket&op=view&mid=58) 开源办公套件，适用于企业、团队搭建自己的 类似“Google企业应用套件”、“微软Office365”的企业协同办公平台
+* [ModStart](https://modstart.com/m/WebTranslate) 基于 Laravel 的模块化全栈开发框架
 * [管伊佳ERP](https://gitee.com/jishenghua/JSH_ERP) 国产开源ERP系统关注度第一，专注进销存、生产、总账
 * [FixIt](https://github.com/hugo-fixit/cmpt-translate) 一款简洁、优雅且先进的Hugo 博客主题
 * [Z-Blog](https://app.zblogcn.com/?id=49226) 易用的博客程序，功能丰富，模板多样，助轻松搭建个性博客。

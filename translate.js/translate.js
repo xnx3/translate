@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.11.20250226',
+	version: '3.13.12.20250303',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5031,14 +5031,13 @@ var translate = {
 					if(storage_hostQueue == null || typeof(storage_hostQueue) == 'undefined'){
 						//本地存储中没有，也就是之前没设置过，是第一次用，那么直接讲 translate.request.api.host 赋予之
 						//translate.request.api.host
-						//console.log(typeof(translate.request.api.host))
+				
 						if(typeof(translate.request.api.host) == 'string'){
 							//单个，那么赋予数组形式
 							//translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
 							translate.request.api.host = [''+translate.request.api.host];
 						}
 
-						//console.log(translate.request.api.host)
 						//数组形态，多个，v2.8.2 增加多个，根据优先级返回
 						translate.request.speedDetectionControl.hostQueue = [];
 						for(var i = 0; i<translate.request.api.host.length; i++){
@@ -5906,7 +5905,6 @@ var translate = {
 			return;
 		}
 		translate.init_execute = '已进行';
-
 		try{
 			translate.request.send(
 				translate.request.api.init,
@@ -5956,65 +5954,63 @@ var translate = {
 				// 创建一个 style 元素
 		        const style = document.createElement('style');
 		        // 设置 style 元素的文本内容为要添加的 CSS 规则
-		       				style.textContent = `
-/* CSS部分 */
-/* 灰色水平加载动画 */
-..translate_api_in_progress {
-  position: relative;
-  overflow: hidden; /* 隐藏超出部分的动画 */
-}
+		       	style.textContent = `
+					/* CSS部分 */
+					/* 灰色水平加载动画 */
+					.translate_api_in_progress {
+					  position: relative;
+					  overflow: hidden; /* 隐藏超出部分的动画 */
+					}
 
-/* 蒙版层 */
-..translate_api_in_progress.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.9); /* 半透明白色遮罩 */
-  z-index: 2;
-}
+					/* 蒙版层 */
+					.translate_api_in_progress.loading::after {
+					  content: '';
+					  position: absolute;
+					  top: 0;
+					  left: 0;
+					  width: 100%;
+					  height: 100%;
+					  background: rgba(255, 255, 255, 0.9); /* 半透明白色遮罩 */
+					  z-index: 2;
+					}
 
-/* 水平加载条动画 */
-..translate_api_in_progress.loading::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height:100%; /* 细线高度 */
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    #e8e8e8 25%,  /* 浅灰色 */
-    #d0d0d0 50%,  /* 中灰色 */
-    #e8e8e8 75%,  /* 浅灰色 */
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: horizontal-loader 1.5s linear infinite;
-  z-index: 3;
-  transform: translateY(-50%);
-}
+					/* 水平加载条动画 */
+					.translate_api_in_progress.loading::before {
+					  content: '';
+					  position: absolute;
+					  top: 50%;
+					  left: 0;
+					  width: 100%;
+					  height:100%; /* 细线高度 */
+					  background: linear-gradient(
+					    90deg,
+					    transparent 0%,
+					    #e8e8e8 25%,  /* 浅灰色 */
+					    #d0d0d0 50%,  /* 中灰色 */
+					    #e8e8e8 75%,  /* 浅灰色 */
+					    transparent 100%
+					  );
+					  background-size: 200% 100%;
+					  animation: translate_api_in_progress_horizontal-loader 3.5s linear infinite;
+					  z-index: 3;
+					  transform: translateY(-50%);
+					}
 
-@keyframes horizontal-loader {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-`;
+					@keyframes translate_api_in_progress_horizontal-loader {
+					  0% {
+					    background-position: 200% 0;
+					  }
+					  100% {
+					    background-position: -200% 0;
+					  }
+					}
+				`;
 		        // 将 style 元素插入到 head 元素中
 		        document.head.appendChild(style);
 
 
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid){
-					    
 					    for(var lang in translate.nodeQueue[uuid].list){
 						    if(translate.language.getCurrent() == lang){
 						        //忽略这个语种
@@ -6076,9 +6072,8 @@ var translate = {
 										continue;
 									}
 									
-									nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
-nodeParent.className = parentClassName.replace(/loading/g, '');
-
+									nodeParent.className = parentClassName.replace(/translate_api_in_progress loading/g, '');
+									//nodeParent.className = parentClassName.replace(/loading/g, '');
 						    	}
 						    }
 						}

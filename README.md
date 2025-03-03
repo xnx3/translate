@@ -261,7 +261,7 @@ tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以
 Telegram : [untran](https://t.me/untran)  
 交流QQ群:181781514  (已满)  
 交流QQ群:641047127  (已满)  
-交流QQ群:240567964  (快满) 
+交流QQ群:240567964  (快满)  
 交流QQ群:1034085260  
 微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  

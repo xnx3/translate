@@ -259,9 +259,10 @@ tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
 作者微信：xnx3com（使用交流可加QQ群进行，我看微信很不及时）    
 Telegram : [untran](https://t.me/untran)  
-交流QQ群:240567964  
 交流QQ群:181781514  (已满)  
 交流QQ群:641047127  (已满)  
+交流QQ群:240567964  (快满) 
+交流QQ群:1034085260  
 微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
@@ -275,13 +276,6 @@ gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/transl
 
 联系：17076012262(微信同号) 我们是纯技术团队，欢迎联系，希望能跟你探讨合作盈利商机，我们专心技术，您来拓展商务销售
 
-
-# 感谢赞助
-* [指点云](https://www.zhidianyun.cn/?i125cc1) 赞助服务器，用于开放公共、免费API给大家使用。指点云服务器便宜，性能很不错。   
-* AO3读者们，赞助美国服务器，部署全球网络加速节点
-* 微软  提供 client.edge 方式的翻译通道
-*  [小牛翻译](https://niutrans.com/register?userSource=translate-js)  赞助在线翻译接口，小牛翻译提供三百八十多种语种翻译能力，需要的语种，它基本都包含了！  
-* [如果您想参与赞助，可点此查看更多](https://gitee.com/mail_osc/translate/issues/I7OXEQ),如果有没列出来的，您感觉可以对本项目有帮助的，也欢迎联系我的，感谢大家的支持
 
 # 商业化声明
 

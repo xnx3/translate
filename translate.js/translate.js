@@ -5963,7 +5963,7 @@ var translate = {
 					}
 
 					/* 蒙版层 */
-					.translate_api_in_progress.loading::after {
+					.translate_api_in_progress::after {
 					  content: '';
 					  position: absolute;
 					  top: 0;
@@ -5975,7 +5975,7 @@ var translate = {
 					}
 
 					/* 水平加载条动画 */
-					.translate_api_in_progress.loading::before {
+					.translate_api_in_progress::before {
 					  content: '';
 					  position: absolute;
 					  top: 50%;
@@ -6028,7 +6028,7 @@ var translate = {
 									}
 
 									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
-										nodeParent.className = ' translate_api_in_progress loading';
+										nodeParent.className = ' translate_api_in_progress';
 									}else{
 										//这个元素本身有class了，那就追加
 
@@ -6036,7 +6036,7 @@ var translate = {
 											continue;
 										}
 
-										nodeParent.className = nodeParent.className+' translate_api_in_progress loading';
+										nodeParent.className = nodeParent.className+' translate_api_in_progress';
 									}
 
 						    	}
@@ -6072,7 +6072,7 @@ var translate = {
 										continue;
 									}
 									
-									nodeParent.className = parentClassName.replace(/translate_api_in_progress loading/g, '');
+									nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
 									//nodeParent.className = parentClassName.replace(/loading/g, '');
 						    	}
 						    }

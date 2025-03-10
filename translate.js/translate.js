@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.12.20250307',
+	version: '3.13.13.20250310',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4219,7 +4219,65 @@ var translate = {
 			
 			
 			return false;
-		}
+		},
+		/*
+            文本翻译的替换。
+            
+            text: 原始文本，翻译的某句或者某个词就在这个文本之中
+            translateOriginal: 翻译的某个词或句，在翻译之前的文本
+            translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
+            language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。
+        
+			
+			使用此方法：
+			var text = '你好word世界';
+			var translateOriginal = '世';
+			var translateResult = 'shi'; //翻译结果
+			translate.language.textTranslateReplace(text, translateOriginal, translateResult, 'english');
+
+        */
+        textTranslateReplace:function(text, translateOriginal, translateResult, language){
+            let replaceResultText = ''+translateResult; //要替换的结果文本（这个文本可能前面有加空格或者后面有加空格的）
+
+            if(translate.language.wordBlankConnector(translate.to)){
+                let originalIndex = text.indexOf(translateOriginal); //翻译之前，翻译的单词在字符串中的其实坐标（0开始）
+                //console.log("originalIndex: "+originalIndex);
+
+                //要先判断后面，不然先判断前面，加了后它的长度就又变了
+
+                //判断它后面是否还有文本
+                if(originalIndex+1 < text.length){
+                    let char = text.charAt(originalIndex+translateOriginal.length);
+                    //console.log(char);
+                    if(!(/\s/.test(char))){
+                        //不是空白字符，补充上一个空格，用于将两个单词隔开
+                        //text = text.replace(translateOriginal, translateResult+' ');
+                        replaceResultText = replaceResultText + ' ';
+                    }
+                }
+
+                //判断它前面是否还有文本
+                if(originalIndex > 0){
+                    let char = text.charAt(originalIndex-1);
+                    //console.log(char);
+                    if(!(/\s/.test(char))){
+                        //不是空白字符，补充上一个空格，用于将两个单词隔开
+                        //text = text.replace(translateOriginal, ' '+translateResult);
+                        replaceResultText = ' '+replaceResultText;
+                    }
+                }
+            }
+            let resultText = text.replace(translateOriginal, replaceResultText);
+            
+            if(resultText.indexOf(translateOriginal) > -1){
+            	//还有第二个、第三个单词一样，也要替换
+            	//console.log(this);
+				resultText = this.textTranslateReplace(resultText, translateOriginal, translateResult, language);
+            }
+
+            //console.log(resultText);
+            return resultText;
+        }
 	},
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
 	//如果使用后，第二次在用，那就优先以用户所选择的为主

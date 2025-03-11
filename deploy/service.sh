@@ -53,6 +53,8 @@ mkdir /mnt/service/cache/
 wget http://down.zvo.cn/translate/translate.service/config.properties -O /mnt/service/config.properties
 wget http://down.zvo.cn/translate/translate.service/domain.json -O /mnt/service/domain.json
 
+# translate.js
+wget http://down.zvo.cn/translate/translate.service/translate.js -O /mnt/service/bin/translate.js
 
 # 下载启动文件
 cd /mnt/service/

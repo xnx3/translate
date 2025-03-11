@@ -895,7 +895,8 @@ var translate = {
 					translate.listener.addListener();
 				}
 				
-				//if(translate.listener.isExecuteFinish){ //执行完过一次，那才能使用
+				//执行完过一次，那才能使用
+				//if(translate.listener.isExecuteFinish){ 
 					/*if(translate.listener.isStart){
 						//已开启了
 						return;
@@ -1427,7 +1428,8 @@ var translate = {
 	
 	//execute() 方法已经被执行过多少次了， 只有execute() 完全执行完，也就是界面渲染完毕后，它才会+1
 	executeNumber:0,
-
+	
+	/*translate.execute() start */
 	/*
 		执行翻译操作。翻译的是 nodeQueue 中的
 		docs 如果传入，那么翻译的只是传入的这个docs的。传入如 [document.getElementById('xxx'),document.getElementById('xxx'),...]
@@ -2133,6 +2135,7 @@ var translate = {
 			/*** 翻译end ***/
 		}
 	},
+	/*translate.execute() end */
 
 	/**
 	 * 翻译请求记录
@@ -4226,11 +4229,11 @@ var translate = {
             text: 原始文本，翻译的某句或者某个词就在这个文本之中
             translateOriginal: 翻译的某个词或句，在翻译之前的文本
             translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
-            language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。
+            language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。 另外这里传入的语种也是 translate.js 的语种标识
         
 			
 			使用此方法：
-			var text = '你好word世界';
+			var text = '你世好word世界';
 			var translateOriginal = '世';
 			var translateResult = 'shi'; //翻译结果
 			translate.language.textTranslateReplace(text, translateOriginal, translateResult, 'english');
@@ -6201,7 +6204,7 @@ var translate = {
 
 	    return kvs;
 	}
-
+	/*jsObject end*/
 
 	
 }
@@ -6276,6 +6279,7 @@ var nodeuuid = {
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
 
+/*兼容 AMD、CMD、CommonJS 规范 - start*/
 /**
  * 兼容 AMD、CMD、CommonJS 规范
  * node 环境使用：`npm i i18n-jsautotranslate` 安装包
@@ -6291,3 +6295,4 @@ console.log('------ translate.js ------\nTwo lines of js html automatic translat
 })(this, function () {
   return translate;
 });
+/*兼容 AMD、CMD、CommonJS 规范 - end*/

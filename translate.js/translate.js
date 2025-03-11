@@ -2040,18 +2040,21 @@ var translate = {
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
 				if(data.result == 0){
-					translate.translateRequest[uuid][lang].result = 2;
-					translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
-					translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
+					if(typeof(translate.translateRequest[uuid]) == 'object' && typeof(translate.translateRequest[uuid][data.from]) == 'object'){
+						translate.translateRequest[uuid][data.from]['result'] = 2;
+						translate.translateRequest[uuid][data.from].executeFinish = 1; //1是执行完毕
+						translate.translateRequest[uuid][data.from].stoptime = Math.floor(Date.now() / 1000);
+					}else{
+						console.log('WARINNG!!! translate.translateRequest[uuid][data.from] is not object');
+					}
+					
 					translate.waitingExecute.isAllExecuteFinish(uuid);
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
-					
 					console.log('response : '+data.info);
 					console.log('=======ERROR END  =======');
 					//translate.temp_executeFinishNumber++; //记录执行完的次数
-
 					return;
 				}
 				

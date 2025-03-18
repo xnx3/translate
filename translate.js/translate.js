@@ -4485,6 +4485,7 @@ var translate = {
 		objSort:function(obj){
 			// 获取对象数组的所有 key，并转换为普通数组
 			var keys = Array.from(Object.keys(obj));
+			//var keys = [].slice.call(Object.keys(obj)); //适配es5
 
 			// 对 key 数组进行排序
 			keys.sort(function(a, b){
@@ -4867,7 +4868,6 @@ var translate = {
 				" 我呢":"0"
 			}
 			其中的key 为截取的文本，value 的值是1或0， 1代表当前key的文本是网址，0则不是网址  
-			它会按照key的长度进行排列，长度越长越靠前
 		*/
 		urlSplitByText:function(text){
 			// 匹配 http/https 的 URL 正则表达式（包含常见 URL 符号，排除中文等非 ASCII 字符）
@@ -4884,15 +4884,15 @@ var translate = {
 				if (i % 2 === 0) {
 					// 非URL部分
 					if (parts[i] !== "") {
-						result[parts[i]] = 0;
+						result[parts[i]] = "0";
 					}
 				} else {
 					// URL部分
-					result[parts[i]] = 1;
+					result[parts[i]] = "1";
 				}
 			}
 
-			return translate.util.objSort(result);
+			return result;
 		}
 	},
 	//机器翻译采用哪种翻译服务

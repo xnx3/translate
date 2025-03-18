@@ -4868,7 +4868,11 @@ var translate = {
 					]
 		*/
 		urlSplitByText:function(text){
-
+			// 匹配 http/https 的 URL 正则表达式（包含常见 URL 符号，排除中文等非 ASCII 字符）
+			const urlRegex = /(https?:\/\/[\w\-._~:\/?#[\]@!$&'()*+;=%]+(?=[\s\u4e00-\u9fa5，。；,!?]|$))/gi;
+			// 使用 split 分割文本，并过滤空字符串
+			const parts = text.split(urlRegex).filter(part => part !== undefined && part !== '');
+			return parts;
 		}
 	},
 	//机器翻译采用哪种翻译服务

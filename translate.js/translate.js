@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.13.20250310',
+	version: '3.13.14.20250318',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4854,6 +4854,21 @@ var translate = {
 			
 			//将其转化为  translate.js 的语言id，比如简体中文是 chinese_simplified 、 英语是 english
 			return '';
+		},
+		/*
+			对输入的文本 text 进行判断，判断它里面是否有url存在。如果有url存在，对其进行截取，将url跟非url进行截取处理。
+			比如传入 “示例：https://www.ungm.org/Public/Notice/261001，其他http://api.translate.zvo.cn 我也是”
+			那么返回的截取结果为：
+					[
+						"示例：",
+						"https://www.ungm.org/Public/Notice/261001",
+						"，其他",
+						"http://api.translate.zvo.cn",
+						"我也是"
+					]
+		*/
+		urlSplitByText:function(text){
+
 		}
 	},
 	//机器翻译采用哪种翻译服务

@@ -4000,6 +4000,7 @@ var translate = {
 
 		    return maxLang || ''; 
 		},
+		/**romanceSentenceAnaly end**/
 
 		//是否包含特殊字符，包含，则是true
 		specialCharacter:function(str){

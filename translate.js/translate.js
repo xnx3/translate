@@ -4859,16 +4859,27 @@ var translate = {
 			对输入的文本 text 进行判断，判断它里面是否有url存在。如果有url存在，对其进行截取，将url跟非url进行截取处理。
 			比如传入 “示例：https://www.ungm.org/Public/Notice/261001，其他http://api.translate.zvo.cn 我也是”
 			那么返回的截取结果为：
-					[
-						"示例：",
-						"https://www.ungm.org/Public/Notice/261001",
-						"，其他",
-						"http://api.translate.zvo.cn",
-						"我也是"
-					]
+		{
+				"示例：":"0",
+				"https://www.ungm.org/Public/Notice/261001":"1",
+				"，其他":"0"
+				"http://api.translate.zvo.cn":"1",
+				"我也是":"0"
+			}
+			其中的key 为截取的文本，value 的值是1或0， 1代表当前key的文本是网址，0则不是网址
 		*/
 		urlSplitByText:function(text){
-
+			// 匹配 http/https 的 URL 正则表达式（包含常见 URL 符号，排除中文等非 ASCII 字符）
+			const urlRegex = /(https?:\/\/[\w\-._~:\/?#[\]@!$&'()*+;=%]+(?=[\s\u4e00-\u9fa5，。；,!?]|$))/gi;
+			// 使用 split 分割文本，并过滤空字符串
+			var parts = text.split(urlRegex);
+			var result = [];
+			for (var i = 0; i < parts.length; i++) {
+				if (parts[i]!== undefined && parts[i]!== '') {
+					result.push(parts[i]);
+				}
+			}
+			return result;
 		}
 	},
 	//机器翻译采用哪种翻译服务

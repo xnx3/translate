@@ -104,7 +104,8 @@ translate.service.leimingyun.domain=http://api.translate.zvo.cn
 ````
 
 这个，将它注释掉，然后增加以下配置（注意，以下几种配置是根据你对翻译的质量要求给出的参考。你只需使用其中一个即可。又或者你都不太明白，那你就直接使用第一种完全免费的那个）：  
-注意，要将其中的 ````translate.service.glm.key```` 换成你上一步获取到的。其他参数完全不用改动。  
+注意，要将其中的 ````translate.service.glm.key```` 换成你上一步获取到的。其他参数完全不用改动。    
+（为了保证翻译的准确性及花最少的钱，建议选用配置二的方式，性价比最高。  如果你对翻译结果允许其可能出点差错，比如几千次可能有一次翻译结果是异常的，那配置一最适合你！）
 
 ##### 配置一：普通使用，完全不用花钱
 ````
@@ -132,7 +133,7 @@ translate.service.set.requestMaxSize=1
 # 取值为1~100 ，数值越大说明对翻译精准度要求越高。  
 # 注意，设置的数值越高，对精确度要求越高， translate.service.set.repair.service 介入的也就越多，同样 translate.service.set.repair.service 的tokens消耗也就越大。
 # 如果不设置，默认是普通的翻译质量 50
-translate.service.glm.accuracy=55
+translate.service.set.repair.accuracy=55
 
 # 用于修复精准度的翻译服务通道，采用 glm （智谱AI）的通道
 translate.service.set.repair.service=glm
@@ -162,7 +163,7 @@ translate.service.glm.checkModel=glm-4-plus
 # 取值为1~100 ，数值越大说明对翻译精准度要求越高。  
 # 注意，设置的数值越高，对精确度要求越高， translate.service.set.repair.service 介入的也就越多，同样 translate.service.set.repair.service 的tokens消耗也就越大。
 # 如果不设置，默认是普通的翻译质量 50
-translate.service.glm.accuracy=70
+translate.service.set.repair.accuracy=70
 
 # 用于修复精准度的翻译服务通道，采用 glm （智谱AI）的通道
 translate.service.set.repair.service=glm
@@ -206,7 +207,7 @@ translate.service.set.repair.service=glm
 translate.service.set.repair.config={"model":"glm-4-plus"}
 ````
   
-其中 translate.service.glm.accuracy 参数控制翻译的质量。 如果 80 你还不满意，可以往上提。但绝大多数时候，80应该是足够的
+其中 translate.service.set.repair.accuracy 参数控制翻译的质量。 如果 80 你还不满意，可以往上提。但绝大多数时候，80应该是足够的
 
 ### 5. 重启项目
 操作完毕后，重启 translate.service 服务，执行重启命令 :

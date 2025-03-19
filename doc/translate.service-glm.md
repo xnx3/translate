@@ -103,14 +103,14 @@ translate.service.leimingyun.domain=http://api.translate.zvo.cn
 ````
 
 这个，将它注释掉，然后增加以下配置（注意，以下几种配置是根据你对翻译的质量要求给出的参考。你只需使用其中一个即可。又或者你都不太明白，那你就直接使用第一种完全免费的那个）：  
-注意，要将其中的 ````translate.service.giteeAI.key```` 换成你上一步获取到的。其他参数完全不用改动。  
+注意，要将其中的 ````translate.service.glm.key```` 换成你上一步获取到的。其他参数完全不用改动。  
 
 ##### 配置一：普通使用，完全不用花钱
 ````
 # 使用哪个大模型。这里的 GLM-4-Flash 是可以免费使用的大模型。默认即可无需改动
 translate.service.glm.model=GLM-4-Flash
 # 智谱AI 的 API Key
-translate.service.giteeAI.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
+translate.service.glm.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
 # 并发线程数。智谱AI的这里，普通用户可以免费使用的并发上限是200，所以填写180就可以了，无需改动。 此参数的具体说明可参考 http://translate.zvo.cn/396728.html
 translate.service.thread.number=180
 # 大模型翻译的单次翻译字符上限设置。这里可以默认1就行，不要改动。具体说明可参考 http://translate.zvo.cn/396736.html
@@ -122,7 +122,7 @@ translate.service.set.requestMaxSize=1
 # 使用哪个大模型。这里的 GLM-4-Flash 是可以免费使用的大模型。默认即可无需改动
 translate.service.glm.model=GLM-4-Flash
 # 智谱AI 的 API Key
-translate.service.giteeAI.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
+translate.service.glm.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
 # 并发线程数。智谱AI的这里，普通用户可以免费使用的并发上限是200，所以填写180就可以了，无需改动。 此参数的具体说明可参考 http://translate.zvo.cn/396728.html
 translate.service.thread.number=180
 # 大模型翻译的单次翻译字符上限设置。这里可以默认1就行，不要改动。具体说明可参考 http://translate.zvo.cn/396736.html
@@ -149,7 +149,7 @@ translate.service.set.repair.config={"model":"glm-4-plus"}
 # 使用哪个大模型。这里的 GLM-4-Flash 是可以免费使用的大模型。默认即可无需改动
 translate.service.glm.model=GLM-4-Flash
 # 智谱AI 的 API Key
-translate.service.giteeAI.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
+translate.service.glm.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
 # 并发线程数。智谱AI的这里，普通用户可以免费使用的并发上限是200，所以填写180就可以了，无需改动。 此参数的具体说明可参考 http://translate.zvo.cn/396728.html
 translate.service.thread.number=180
 # 大模型翻译的单次翻译字符上限设置。这里可以默认1就行，不要改动。具体说明可参考 http://translate.zvo.cn/396736.html
@@ -181,7 +181,7 @@ translate.service.set.repair.config={"model":"glm-4-plus"}
 # 使用哪个大模型。这里的 GLM-4-Flash 是可以免费使用的大模型。默认即可无需改动
 translate.service.glm.model=GLM-4-Flash
 # 智谱AI 的 API Key
-translate.service.giteeAI.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
+translate.service.glm.key=b907763dab2946d28eb00ede7acd9b31.WaxfiIadf4P81tjW
 # 并发线程数。智谱AI的这里，普通用户可以免费使用的并发上限是200，所以填写180就可以了，无需改动。 此参数的具体说明可参考 http://translate.zvo.cn/396728.html
 translate.service.thread.number=180
 # 大模型翻译的单次翻译字符上限设置。这里可以默认1就行，不要改动。具体说明可参考 http://translate.zvo.cn/396736.html

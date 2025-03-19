@@ -285,9 +285,7 @@ yyyy-MM-dd 是当前的年月日，它按照日期每天都会创建一个日志
 ````
 {"time":"10:00:12","generalText":"Hello","originalText":"你好","general":100}
 {"time":"15:13:36","generalText":"关于电子报价提交的进一步指导可在此找到：","originalText":"Further guidance on electronic offers submission can be found on this:","general":70,"weakRepairText":"电子报价提交的进一步指导可在此找到：","weakRepair":85}
-{"time":"2025-03-15 08:54:35","originalText":"in Jordan and it is the ILO employer’s constituent. It is an APEX organization without direct","general":30,"generalText":"在约旦，它是国际劳工组织雇主成员。它是一
-个没有直接","weakRepair":60,"weakRepairText":"在约旦，它是国际劳工组织雇主成员。它是一个没有直接隶属关系的APEC组
-织。","repairText":"在约旦，它是国际劳工组织雇主的组成部分。它是一个没有直接下属的顶尖组织。"}
+{"time":"2025-03-15 08:54:35","originalText":"in Jordan and it is the ILO employer’s constituent. It is an APEX organization without direct","general":30,"generalText":"在约旦，它是国际劳工组织雇主成员。它是一个没有直接","weakRepair":60,"weakRepairText":"在约旦，它是国际劳工组织雇主成员。它是一个没有直接隶属关系的APEC组织。","repairText":"在约旦，它是国际劳工组织雇主的组成部分。它是一个没有直接下属的顶尖组织。"}
 ````
 * **time** 发生时间
 * **originalText** 翻译的原文

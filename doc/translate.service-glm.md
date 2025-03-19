@@ -229,6 +229,7 @@ translate.service.set.repair.config={"model":"glm-4-plus"}
 ##### API接口说明
 **请求URL**：http://你的服务器ip/translate.json  
 **请求方式**：POST  
+**请求方式**：POST  
 **请求参数**：  
 	* **to** 将文本翻译为什么语种。可传入如 english 更多语种可访问 http://你服务器的ip/language.json  就能看到  
 	* **text** 需要翻译的语言。格式如 ````["你好","世界"]```` 它是json数组格式，支持一次翻译多个不同的文本，每个文本可以分别是不同的语言。  
@@ -236,6 +237,8 @@ translate.service.set.repair.config={"model":"glm-4-plus"}
 	````
 	{"result":1,"info":"success","to":"english","text":["Hello","World"]}
 	````
+  
+ 注意，header头的Content-Type要么不设置，如果设置的话值是 application/x-www-form-urlencoded
 	
 ##### curl 翻译示例
 为了方便理解上面的API接口使用，这里给出了一个curl请求的示例，另外这个示例你也可以直接复制就能运行使用，看到效果 

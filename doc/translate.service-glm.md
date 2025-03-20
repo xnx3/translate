@@ -143,6 +143,12 @@ translate.service.set.repair.service=glm
 # 	如果要求翻译结果质量很高，这里必须设置 glm-4-plus
 # 其实它还可以设置 key、url 等参数，但是 translate.service.set.repair.service 它跟当前使用的 translate.service.glm 通道是同一个，所以其他相同的url、key 直接复用 translate.service.glm.url 、translate.service.glm.key 的，就不用单独设置了
 translate.service.set.repair.config={"model":"glm-4-plus"}
+
+# 备用的翻译服务
+# 智谱AI为主翻译服务， 主服务异常时，会自动切换到备用通道来获取翻译结果，以保证翻译的可用性。
+# 我们经过大量各种不规则文本测试，会走这个的几率极小极小。但是大模型毕竟具有不确定性，所以备用通道的作用更多是提供一层异常情况的保障。
+# 这里就这样固定配置即可。 有关此的更多说明，可以参考： https://translate.zvo.cn/404947.html
+translate.service.standby.service=leimingyun
 ````
 
 
@@ -173,6 +179,12 @@ translate.service.set.repair.service=glm
 # 	如果要求翻译结果质量很高，这里必须设置 glm-4-plus
 # 其实它还可以设置 key、url 等参数，但是 translate.service.set.repair.service 它跟当前使用的 translate.service.glm 通道是同一个，所以其他相同的url、key 直接复用 translate.service.glm.url 、translate.service.glm.key 的，就不用单独设置了
 translate.service.set.repair.config={"model":"glm-4-plus"}
+
+# 备用的翻译服务
+# 智谱AI为主翻译服务， 主服务异常时，会自动切换到备用通道来获取翻译结果，以保证翻译的可用性。
+# 我们经过大量各种不规则文本测试，会走这个的几率极小极小。但是大模型毕竟具有不确定性，所以备用通道的作用更多是提供一层异常情况的保障。
+# 这里就这样固定配置即可。 有关此的更多说明，可以参考： https://translate.zvo.cn/404947.html
+translate.service.standby.service=leimingyun
 ````
 
 
@@ -205,6 +217,12 @@ translate.service.set.repair.service=glm
 # 	如果要求翻译结果质量很高，这里必须设置 glm-4-plus
 # 其实它还可以设置 key、url 等参数，但是 translate.service.set.repair.service 它跟当前使用的 translate.service.glm 通道是同一个，所以其他相同的url、key 直接复用 translate.service.glm.url 、translate.service.glm.key 的，就不用单独设置了
 translate.service.set.repair.config={"model":"glm-4-plus"}
+
+# 备用的翻译服务
+# 智谱AI为主翻译服务， 主服务异常时，会自动切换到备用通道来获取翻译结果，以保证翻译的可用性。
+# 我们经过大量各种不规则文本测试，会走这个的几率极小极小。但是大模型毕竟具有不确定性，所以备用通道的作用更多是提供一层异常情况的保障。
+# 这里就这样固定配置即可。 有关此的更多说明，可以参考： https://translate.zvo.cn/404947.html
+translate.service.standby.service=leimingyun
 ````
   
 其中 translate.service.set.repair.accuracy 参数控制翻译的质量。 如果 80 你还不满意，可以往上提。但绝大多数时候，80应该是足够的

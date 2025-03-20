@@ -8,12 +8,12 @@
 </h4> 
 <h4 align="center">
     简体中文 | 
-    <a href="http://translate.zvo.cn/4019.html?language=chinese_traditional">繁體中文</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=english">English</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=japanese">しろうと</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=russian">Русский язык</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=german">deutsch</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=french">Français</a> 
+    <a href="http://translate.zvo.cn/index.html?language=chinese_traditional">繁體中文</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=english">English</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=japanese">しろうと</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=russian">Русский язык</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=german">deutsch</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=french">Français</a> 
 </h4> 
 
 # 特性说明

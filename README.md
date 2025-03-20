@@ -139,9 +139,6 @@ translate.execute();//进行翻译
 
 [详细使用说明](https://translate.zvo.cn/4041.html) |  [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js)
 
-## 项目开源  
-
-[![鬼画符/translate](https://gitee.com/mail_osc/translate/widgets/widget_card.svg?colors=4183c4,ffffff,ffffff,e3e9ed,666666,9b9b9b)](https://gitee.com/mail_osc/translate)
 
 
 # 谁在使用

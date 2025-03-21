@@ -5,6 +5,18 @@
 # 结束当前tcdn进程
 ps -ef | grep tcdn | grep root | grep -v grep |awk '{print $2}' | xargs --no-run-if-empty kill -9
 
+# 免得结束不掉在结束一次
+pkill tcdn
+
+# 删除备份
+echo "删除上次的备份"
+rm -rf /mnt/tcdn/bin/tcdn.bak
+# 进行备份
+cp /mnt/tcdn/bin/tcdn /mnt/tcdn/bin/tcdn.bak
+# 删除应用
+rm -rf /mnt/tcdn/bin/tcdn
+
+
 # 下载新版本
 yum -y install wget
 ARCH=$(uname -m)

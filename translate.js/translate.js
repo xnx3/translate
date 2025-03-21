@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.13.14.20250318',
+	version: '3.13.15.20250321',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3560,6 +3560,7 @@ var translate = {
 			number 阿拉伯数字
 			japanese 日语
 			korean 韩语
+			greek 希腊语
 		*/
 		getCharLanguage:function(charstr){
 			if(charstr == null || typeof(charstr) == 'undefined'){
@@ -3595,6 +3596,9 @@ var translate = {
 			}
 			if(this.korean(charstr)){
 				return 'korean';
+			}
+			if(this.greek(charstr)){
+				return 'greek';
 			}
 
 			//未识别是什么语种
@@ -3922,6 +3926,16 @@ var translate = {
 		russian:function(str){
 			//判断字符有  БВДЖЗИЙЛМНОПСТУФХЦЧШЩЪЫЬЮЯЇІ
 			if(/.*[\u0411\u0412\u0414\u0416\u0417\u0418\u0419\u041B\u041C\u041D\u041E\u041F\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042E\u042F\u0407\u0406]+.*$/.test(str)){ 
+				return true
+			} else {
+				return false;
+			}
+		},
+		//是否包含希腊语
+		greek:function(str){
+			const greekRegex = /^[\u0391-\u03A9\u03B1-\u03C9]$/;
+			//判断字符有  БВДЖЗИЙЛМНОПСТУФХЦЧШЩЪЫЬЮЯЇІ
+			if(/^[\u0391-\u03A9\u03B1-\u03C9]$/.test(str)){ 
 				return true
 			} else {
 				return false;

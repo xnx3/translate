@@ -250,10 +250,10 @@ Telegram : [untran](https://t.me/untran)
 交流QQ群:181781514  
 交流QQ群:641047127  
 交流QQ群:240567964  
-作者邮箱：921153866@qq.com
+作者邮箱：921153866@qq.com  
 微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
-gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
+gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)  
 
 
 # 商业化声明

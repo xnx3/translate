@@ -6210,66 +6210,120 @@ var translate = {
 		}
 	},
 	/*
-		对js对象进行翻译
-		obj: 可以是JS定义的 对象、数组、甚至是单个具体的值
+		对js对象内的值进行翻译,可以是JS定义的 对象、数组、甚至是单个具体的值
 	*/
-	jsObject:function (obj, parentKey = '') {
+	js:{
 		/*
-			存放扫描的结果
-			key 存放要被翻译的文本，也就是对象里面某个具体属性的值
-			value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
+			jsObject 传入的js对象，支持对象、数组等
+			targetLanguage 翻译为的目标语言
 		*/
-		var kvs = {};	
+		trans:function(jsObject, targetLanguage){
+			let kvs = translate.js.find(jsObject);
+			console.log(kvs);	
 
-	    if (typeof obj === 'object' && obj!== null) {
-	        if (Array.isArray(obj)) {
-	            // 处理数组
-	            obj.forEach((item, index) => {
-	                const currentKey = parentKey? `${parentKey}[${index}]` : `[${index}]`;
-	                translate.jsObject(item, currentKey);
-	            });
-	        } else {
-	            // 处理普通对象
-	            for (const key in obj) {
-	                const currentKey = parentKey? `${parentKey}.${key}` : key;
-	                if (typeof obj[key] === 'object' && obj[key]!== null) {
-	                    // 如果值是对象，递归调用函数
-	                    translate.jsObject(obj[key], currentKey);
-	                } else {
-	                    // 打印键值对
+			/**** 第二步，将文本值进行翻译 ***/
+			//先将其 kvs 的key 取出来
+			var texts = new Array();
+		    for(const key in kvs){
+		    	texts.push(key);
+		    }
 
-	                    if(typeof(obj[key]) == 'string'){
-	                    	//console.log(`${currentKey}: ${obj[key]}`);
-	                    	//console.log(obj[key]);
-	                    	//console.log(typeof(kvs[obj[key]]));
-	                    	if(typeof(kvs[obj[key]]) == 'undefined'){
-	                    		kvs[obj[key]] = new Array();
-	                    	}
-	                    	//kvs[obj[key].push(currentKey);
-	                    }
-	                    
+			var obj = {
+			    from:'chinese_simplified',
+			    to:'english',
+			    texts: texts
+			}
+			translate.request.translateText(obj, function(data){
+			    //打印翻译结果
+			    console.log(data);
+
+			    /**** 第三步，将翻译结果赋予 jsObject ***/
+			    
+
+			});
+
+		},
+		/*
+			对js对象进行翻译
+			obj: 可以是JS定义的 对象、数组、甚至是单个具体的值
+
+			var obj = {
+				"hello":"你好",
+				"word":"单词",
+				"世界":["世界","大海"]
+			};
+			translate.js.find(obj);
+
+		*/
+		find:function (obj, parentKey = '') {
+			/*
+				存放扫描的结果
+				key 存放要被翻译的文本，也就是对象里面某个具体属性的值
+				value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
+			*/
+			let kvs = {};	
+
+			
+			/**** 第一步，先将js对象中的文本值提取出来 ***/
+
+		    if (typeof obj === 'object' && obj!== null) {
+		        if (Array.isArray(obj)) {
+		            // 处理数组
+		            obj.forEach((item, index) => {
+		                const currentKey = parentKey? `${parentKey}[${index}]` : `[${index}]`;
+		                translate.js.find(item, currentKey);
+		            });
+		        } else {
+		            // 处理普通对象
+		            for (const key in obj) {
+		                const currentKey = parentKey? `${parentKey}.${key}` : key;
+		                if (typeof obj[key] === 'object' && obj[key]!== null) {
+		                    // 如果值是对象，递归调用函数
+		                    translate.js.find(obj[key], currentKey);
+		                } else {
+		                    // 打印键值对
+
+		                    if(typeof(obj[key]) == 'string'){
+		                    	//console.log(`${currentKey}: ${obj[key]}`);
+		                    	//console.log(obj[key]);
+		                    	//console.log(typeof(kvs[obj[key]]));
+		                    	if(typeof(kvs[obj[key]]) == 'undefined'){
+		                    		kvs[obj[key]] = new Array();
+		                    	}
+		                    	kvs[obj[key]].push(currentKey);
+		                    }
+		                    
+		                }
+		            }
+		        }
+		    } else {
+		        // 如果不是对象，直接打印
+		        if(typeof(obj) == 'string'){
+		        	console.log(obj);
+		        	if(typeof(obj) == 'string'){
+	                	console.log(`${parentKey}: ${obj}`);
+	                	if(typeof(kvs[obj]) == 'undefined'){
+	                		console.log('create'+obj);
+	                		kvs['a'] = new Array();
+	                	}
+	                	//console.log('push:'+obj+', '+parentKey);
+	                	kvs['a'].push('11');
 	                }
-	            }
-	        }
-	    } else {
-	        // 如果不是对象，直接打印
-	        if(typeof(obj) == 'string'){
 
-	        	if(typeof(obj) == 'string'){
-                	//console.log(`${parentKey}: ${obj}`);
-                	if(typeof(kvs[obj]) == 'undefined'){
-                		kvs[obj] = new Array();
-                	}
-                	kvs[obj].push('not key');
-                }
+		        }
+		    }
 
-	        	
-	        }
-	    }
 
-	    return kvs;
-	}
+
+			
+
+
+
+		    return kvs;
+		},
+	},
 	/*jsObject end*/
+
 
 	
 }

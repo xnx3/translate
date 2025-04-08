@@ -1,0 +1,81 @@
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+</head>
+<body>
+<script src="../../translate.js/translate.js"></script>
+<style>
+textarea{
+	  width: 100%;
+    height: 180px;
+}
+button{
+	margin: 20px;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
+
+<textarea id="original">
+{
+  "hello":"你好",
+  "word":"单词",
+  "你是谁": [
+      "世界",
+      "大海"
+    ]
+}
+</textarea>	
+<label>翻译源：</label>
+<input type="text" id="host" name="host" value="https://glm-api-translate.zvo.cn/" style="width:300px" />
+<br/>
+
+<button onclick="trans();">将js对象（或数组等）中的值翻译为英文</button>
+
+<textarea id="result">
+
+</textarea>	
+
+<script>
+
+function trans(){
+
+	/**清除原本翻译接口，设置自定义的 翻译源 **/
+	translate.storage.set('speedDetectionControl_hostQueue','');  
+	translate.request.api.host=document.getElementById('host').value;
+
+
+	/**进行翻译操作 **/
+	document.getElementById('result').value = '翻译中...';
+	translate.js.transString(document.getElementById('original').value,'english', function(obj){
+		document.getElementById('result').value = JSON.stringify(obj, null, 4);
+	}, function(failureInfo){
+		document.getElementById('result').value = '失败，失败原因：'+failureInfo;
+	});
+}
+
+</script>
+
+
+<div>
+	<h2>说明</h2>
+	它支持对js对象中的值进行翻译。<br/>
+	它非常适合对传统的i18n的语言配置文件进行翻译。<br/>
+	<b>翻译源</b> 这一项的意思是有什么来提供翻译。demo里默认是有智谱AI的大模型来提供的翻译能力。你也可以<a href="https://translate.zvo.cn/391129.html" target="_black">指定有别的来进行翻译</a>，比如DeepSeek、小牛翻译、谷歌翻译等等  <br/>
+
+</div>
+
+<div style="text-align:center; width: 100%;font-size: 18px; padding-top:2rem;">
+	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate" class="ignore">https://gitee.com/mail_osc/translate</a>
+</div>
+<style>
+.title{
+	font-size:24px;
+	padding-top:15px;
+	padding-bottom:10px;
+}
+</style>
+</body>
+</html>

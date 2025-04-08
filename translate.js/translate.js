@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.0.20250326',
+	version: '3.14.1.20250408',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5153,7 +5153,7 @@ var translate = {
 					//还没有，先从本地存储中取，看之前是否已经设置过了
 					// 只有经过真正的网络测速后，才会加入 storage 的 hostQueue
 					var storage_hostQueue = translate.storage.get('speedDetectionControl_hostQueue');
-					if(storage_hostQueue == null || typeof(storage_hostQueue) == 'undefined'){
+					if(storage_hostQueue == null || typeof(storage_hostQueue) == 'undefined' || storage_hostQueue == ''){
 						//本地存储中没有，也就是之前没设置过，是第一次用，那么直接讲 translate.request.api.host 赋予之
 						//translate.request.api.host
 				
@@ -6213,35 +6213,109 @@ var translate = {
 		对js对象内的值进行翻译,可以是JS定义的 对象、数组、甚至是单个具体的值
 	*/
 	js:{
+
+		/*
+			jsString 传入的js对象的字符串格式
+			targetLanguage 翻译为的目标语言
+			successFunction 执行成功后触发,传入格式  function(obj){ console.log(obj); }  其中 obj 是翻译之后的结果
+			failureFunction 执行失败后触发,传入格式 function(failureInfo){ console.log(failureInfo); } 其中 failureInfo 是失败原因
+
+			示例：
+
+			var str = `
+				{
+				  "hello":"你好",
+				  "word":"单词",
+				  "你是谁": [
+				      "世界",
+				      "大海"
+				    ]
+				}
+			`
+			translate.js.transString(str,'english',function(obj){ console.log(obj); }, function(failureInfo){ console.log(failureInfo); });
+
+		*/
+		transString: function (jsString, targetLanguage, successFunction, failureFunction) {
+			let jsObject;
+			try{
+				jsObject = JSON.parse(jsString);
+			}catch(e){
+				failureFunction(e);
+				return;
+			}
+			translate.js.transObject(jsObject, targetLanguage, successFunction, failureFunction);
+		},
+
 		/*
 			jsObject 传入的js对象，支持对象、数组等
 			targetLanguage 翻译为的目标语言
-		*/
-		trans:function(jsObject, targetLanguage){
-			let kvs = translate.js.find(jsObject);
-			console.log(kvs);	
+			successFunction 执行成功后触发,传入格式  function(obj){ console.log(obj); }  其中 obj 是翻译之后的结果
+			failureFunction 执行失败后触发,传入格式 function(failureInfo){ console.log(failureInfo); } 其中 failureInfo 是失败原因
 
-			/**** 第二步，将文本值进行翻译 ***/
-			//先将其 kvs 的key 取出来
-			var texts = new Array();
-		    for(const key in kvs){
-		    	texts.push(key);
-		    }
+			示例：
 
 			var obj = {
-			    from:'chinese_simplified',
-			    to:'english',
-			    texts: texts
+				"hello":"你好",
+				"word":"单词",
+				"世界":["世界","大海"]
+			};
+			translate.js.transObject(obj,'english',function(obj){ console.log(obj); }, function(failureInfo){ console.log(failureInfo); });
+
+		*/
+		transObject: function (jsObject, targetLanguage, successFunction, failureFunction) {
+			let kvs = translate.js.find(jsObject);
+			//console.log(JSON.stringify(kvs, null, 2));
+
+			/**** 第二步，将文本值进行翻译 ***/
+				//先将其 kvs 的key 取出来
+			var texts = new Array();
+			for (const key in kvs) {
+				texts.push(key);
 			}
-			translate.request.translateText(obj, function(data){
-			    //打印翻译结果
-			    console.log(data);
 
-			    /**** 第三步，将翻译结果赋予 jsObject ***/
-			    
+			var obj = {
+				from:'auto',
+				to: targetLanguage,
+				texts: texts
+			}
+			translate.request.translateText(obj, function (data) {
+				//打印翻译结果
+				//console.log(data);
+				if(typeof(data.result) == 'undefined' || data.result == 0){
+					failureFunction('network connect failure');
+					return;
+				}
+				if(data.result == 0){
+					failureFunction(data.info);
+					return;
+				}
 
+				/**** 第三步，将翻译结果赋予 jsObject ***/
+				const translatedTexts = data.text; // 获取翻译结果数组
+				if (translatedTexts && translatedTexts.length === texts.length) {
+					texts.forEach((originalText, index) => {
+						const translatedText = translatedTexts[index]; // 根据索引获取翻译结果
+						const paths = kvs[originalText]; // 获取该文本的路径数组
+						if (paths && paths.length > 0) {
+							paths.forEach(path => {
+								translate.js.setValueByPath(jsObject, path, translatedText); // 更新 jsObject
+							});
+						}
+					});
+				} else {
+					console.error("翻译结果长度不匹配或为空");
+				}
+				successFunction(jsObject);
+				//console.log("翻译后的 jsObject:", jsObject);
 			});
-
+		},
+		setValueByPath: function(obj, path, value){
+			const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+			let current = obj;
+			for (let i = 0; i < parts.length - 1; i++) {
+				current = current[parts[i]];
+			}
+			current[parts[parts.length - 1]] = value;
 		},
 		/*
 			对js对象进行翻译
@@ -6255,71 +6329,48 @@ var translate = {
 			translate.js.find(obj);
 
 		*/
-		find:function (obj, parentKey = '') {
+		find: function (obj, parentKey = '') {
 			/*
-				存放扫描的结果
-				key 存放要被翻译的文本，也就是对象里面某个具体属性的值
-				value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
-			*/
-			let kvs = {};	
+                存放扫描的结果
+                key 存放要被翻译的文本，也就是对象里面某个具体属性的值
+                value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
+            */
+			let kvs = {};
 
-			
-			/**** 第一步，先将js对象中的文本值提取出来 ***/
+			if (typeof obj === 'object' && obj !== null) {
+				if (Array.isArray(obj)) {
+					// 处理数组
+					obj.forEach((item, index) => {
+						const currentKey = parentKey ? `${parentKey}[${index}]` : `[${index}]`;
+						const subKvs = translate.js.find(item, currentKey);
+						Object.assign(kvs, subKvs);
+					});
+				} else {
+					// 处理普通对象
+					for (const key in obj) {
+						const currentKey = parentKey ? `${parentKey}.${key}` : key;
+						if (typeof obj[key] === 'object' && obj[key] !== null) {
+							// 如果值是对象，递归调用函数
+							const subKvs = translate.js.find(obj[key], currentKey);
+							Object.assign(kvs, subKvs);
+						} else if (typeof obj[key] === 'string') {
+							// 处理字符串值
+							if (typeof kvs[obj[key]] === 'undefined') {
+								kvs[obj[key]] = new Array();
+							}
+							kvs[obj[key]].push(currentKey);
+						}
+					}
+				}
+			} else if (typeof obj === 'string') {
+				// 处理单个字符串输入
+				if (typeof kvs[obj] === 'undefined') {
+					kvs[obj] = new Array();
+				}
+				kvs[obj].push(parentKey);
+			}
 
-		    if (typeof obj === 'object' && obj!== null) {
-		        if (Array.isArray(obj)) {
-		            // 处理数组
-		            obj.forEach((item, index) => {
-		                const currentKey = parentKey? `${parentKey}[${index}]` : `[${index}]`;
-		                translate.js.find(item, currentKey);
-		            });
-		        } else {
-		            // 处理普通对象
-		            for (const key in obj) {
-		                const currentKey = parentKey? `${parentKey}.${key}` : key;
-		                if (typeof obj[key] === 'object' && obj[key]!== null) {
-		                    // 如果值是对象，递归调用函数
-		                    translate.js.find(obj[key], currentKey);
-		                } else {
-		                    // 打印键值对
-
-		                    if(typeof(obj[key]) == 'string'){
-		                    	//console.log(`${currentKey}: ${obj[key]}`);
-		                    	//console.log(obj[key]);
-		                    	//console.log(typeof(kvs[obj[key]]));
-		                    	if(typeof(kvs[obj[key]]) == 'undefined'){
-		                    		kvs[obj[key]] = new Array();
-		                    	}
-		                    	kvs[obj[key]].push(currentKey);
-		                    }
-		                    
-		                }
-		            }
-		        }
-		    } else {
-		        // 如果不是对象，直接打印
-		        if(typeof(obj) == 'string'){
-		        	console.log(obj);
-		        	if(typeof(obj) == 'string'){
-	                	console.log(`${parentKey}: ${obj}`);
-	                	if(typeof(kvs[obj]) == 'undefined'){
-	                		console.log('create'+obj);
-	                		kvs['a'] = new Array();
-	                	}
-	                	//console.log('push:'+obj+', '+parentKey);
-	                	kvs['a'].push('11');
-	                }
-
-		        }
-		    }
-
-
-
-			
-
-
-
-		    return kvs;
+			return kvs;
 		},
 	},
 	/*jsObject end*/

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.1.20250408',
+	version: '3.14.2.20250409',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6341,48 +6341,46 @@ var translate = {
 
 		*/
 		find: function (obj, parentKey = '') {
-			/*
-                存放扫描的结果
-                key 存放要被翻译的文本，也就是对象里面某个具体属性的值
-                value 存放 obj 中的 key （的调取路径），比如 series[0].data[0].name   这个是个数组形态，因为同一个翻译的文本内容有可能会在obj中出现多次
-            */
 			let kvs = {};
-
 			if (typeof obj === 'object' && obj !== null) {
 				if (Array.isArray(obj)) {
-					// 处理数组
 					obj.forEach((item, index) => {
 						const currentKey = parentKey ? `${parentKey}[${index}]` : `[${index}]`;
 						const subKvs = translate.js.find(item, currentKey);
-						Object.assign(kvs, subKvs);
+						for (const [text, paths] of Object.entries(subKvs)) {
+							if (!kvs[text]) {
+								kvs[text] = [];
+							}
+							kvs[text] = kvs[text].concat(paths);
+						}
 					});
 				} else {
-					// 处理普通对象
 					for (const key in obj) {
 						const currentKey = parentKey ? `${parentKey}.${key}` : key;
 						if (typeof obj[key] === 'object' && obj[key] !== null) {
-							// 如果值是对象，递归调用函数
 							const subKvs = translate.js.find(obj[key], currentKey);
-							Object.assign(kvs, subKvs);
+							for (const [text, paths] of Object.entries(subKvs)) {
+								if (!kvs[text]) {
+									kvs[text] = [];
+								}
+								kvs[text] = kvs[text].concat(paths);
+							}
 						} else if (typeof obj[key] === 'string') {
-							// 处理字符串值
 							if (typeof kvs[obj[key]] === 'undefined') {
-								kvs[obj[key]] = new Array();
+								kvs[obj[key]] = [];
 							}
 							kvs[obj[key]].push(currentKey);
 						}
 					}
 				}
 			} else if (typeof obj === 'string') {
-				// 处理单个字符串输入
 				if (typeof kvs[obj] === 'undefined') {
-					kvs[obj] = new Array();
+					kvs[obj] = [];
 				}
 				kvs[obj].push(parentKey);
 			}
-
 			return kvs;
-		},
+		}
 	},
 	/*jsObject end*/
 

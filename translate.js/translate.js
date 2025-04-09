@@ -5100,6 +5100,7 @@ var translate = {
 			//console.log('response------');
 			//console.log(xhr);
 		},
+
 		/*
 			速度检测控制中心， 检测主备翻译接口的响应速度进行排列，真正请求时，按照排列的顺序进行请求
 			v2.8.2增加	
@@ -5146,6 +5147,16 @@ var translate = {
 			hostQueueIndex:-1,	//当前使用的 hostQueue的数组下标，  -1表示还未初始化赋予值，不可直接使用，通过 getHostQueueIndex() 使用
 			disableTime:1000000,	//不可用的时间，storage中存储的 speedDetectionControl_hostQueue 其中 time 这里，如果值是 这个，便是代表这个host处于不可用状态
 
+			/*
+				设置当前使用的翻译通道 host
+				适用于 进行中时，中途切临时换翻译通道。
+			*/
+			setCurrentHost:function(host){
+				translate.storage.set('speedDetectionControl_hostQueue','');  
+				translate.request.api.host=host;
+				translate.request.speedDetectionControl.checkHostQueue = new Array();
+				translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, 0);
+			},
 
 			//获取 host queue 队列
 			getHostQueue:function(){

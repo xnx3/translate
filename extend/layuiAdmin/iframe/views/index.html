@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layuiAdmin 纯静态 UI 模板（iframe 版）</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../res/layui/css/layui.css" rel="stylesheet">
+  <link href="../res/adminui/dist/css/admin.css" rel="stylesheet">
+  <script>
+  /^http(s*):\/\//.test(location.href) || alert('请通过 localhost 访问');;
+  </script>
+</head>
+<body class="layui-layout-body" id="LAY_home_iframe">
+  <div id="LAY_app" style="visibility: hidden">
+    <div class="layui-layout layui-layout-admin">
+      <div class="layui-header">
+        <!-- 头部区域 -->
+        <ul class="layui-nav layui-layout-left">
+          <li class="layui-nav-item layadmin-flexible" lay-unselect>
+            <a href="javascript:;" layadmin-event="flexible" title="侧边伸缩">
+              <i class="layui-icon layui-icon-shrink-right" id="LAY_app_flexible"></i>
+            </a>
+          </li>
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <a href="http://www.baidu.com/" target="_blank" title="前台">
+              <i class="layui-icon layui-icon-website"></i>
+            </a>
+          </li>
+          <li class="layui-nav-item" lay-unselect>
+            <a href="javascript:;" layadmin-event="refresh" title="刷新">
+              <i class="layui-icon layui-icon-refresh-3"></i>
+            </a>
+          </li>
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <input type="text" placeholder="搜索..." autocomplete="off" class="layui-input layui-input-search" layadmin-event="serach" lay-action="template/search.html?keywords=">
+          </li>
+        </ul>
+        <ul class="layui-nav layui-layout-right" lay-filter="layadmin-layout-right">
+
+          <li class="layui-nav-item" lay-unselect>
+            <a lay-href="app/message/index.html" layadmin-event="message" lay-text="消息中心">
+              <i class="layui-icon layui-icon-notice"></i>
+
+              <!-- 如果有新消息，则显示小圆点 -->
+              <span class="layui-badge-dot"></span>
+            </a>
+          </li>
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <a href="javascript:;" layadmin-event="note">
+              <i class="layui-icon layui-icon-note"></i>
+            </a>
+          </li>
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <a href="javascript:;" layadmin-event="theme">
+              <i class="layui-icon layui-icon-theme"></i>
+            </a>
+          </li>
+          <!-- AI i18n start -->
+          <li class="layui-nav-item ignore" lay-unselect>
+            <span href="javascript:;" id="translate" class="layui-form layui-row"><!-- 语言切换 --></span>
+            <style>
+                #translate>.layui-form-select{
+                    font-size: 12px;
+                    height: 49px;
+                }
+                #translate>.layui-form-select>.layui-select-title{
+                    height: 100%;
+                }
+                #translate>.layui-form-select>.layui-select-title>input{
+                    font-size: 12px;
+                    width: 90px;
+                    border-style: hidden;
+                    text-align: right;
+                    padding-right: 27px;
+                    height: 100%;
+                }
+            </style>  
+          </li>
+          <!-- AI i18n end -->
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <a href="javascript:;" layadmin-event="fullscreen">
+              <i class="layui-icon layui-icon-screen-full"></i>
+            </a>
+          </li>
+          <li class="layui-nav-item" lay-unselect>
+            <a href="javascript:;">
+              <cite>tester</cite>
+            </a>
+            <dl class="layui-nav-child">
+              <dd><a lay-href="set/user/info.html">基本资料</a></dd>
+              <dd><a lay-href="set/user/password.html">修改密码</a></dd>
+              <hr>
+              <dd layadmin-event="logout" style="text-align: center;"><a>退出</a></dd>
+            </dl>
+          </li>
+
+          <li class="layui-nav-item layui-hide-xs" lay-unselect>
+            <a href="javascript:;" layadmin-event="about"><i class="layui-icon layui-icon-more-vertical"></i></a>
+          </li>
+          <li class="layui-nav-item layui-show-xs-inline-block layui-hide-sm" lay-unselect>
+            <a href="javascript:;" layadmin-event="more"><i class="layui-icon layui-icon-more-vertical"></i></a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 侧边菜单 -->
+      <div class="layui-side layui-side-menu">
+        <div class="layui-side-scroll">
+          <div class="layui-logo" lay-href="home/console.html">
+            <span>layuiAdmin</span>
+          </div>
+
+          <ul class="layui-nav layui-nav-tree" lay-accordion id="LAY-system-side-menu" lay-filter="layadmin-system-side-menu">
+            <li data-name="home" class="layui-nav-item layui-nav-itemed">
+              <a href="javascript:;" lay-tips="主页" lay-direction="2">
+                <i class="layui-icon layui-icon-home"></i>
+                <cite>主页</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd data-name="console" class="layui-this">
+                  <a lay-href="home/console.html">控制台</a>
+                </dd>
+                <dd data-name="console">
+                  <a lay-href="home/homepage1.html">主页一</a>
+                </dd>
+                <dd data-name="console">
+                  <a lay-href="home/homepage2.html">主页二</a>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="component" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="组件" lay-direction="2">
+                <i class="layui-icon layui-icon-component"></i>
+                <cite>组件</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd data-name="grid">
+                  <a href="javascript:;">栅格</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="list"><a lay-href="component/grid/list.html">等比例列表排列</a></dd>
+                    <dd data-name="mobile"><a lay-href="component/grid/mobile.html">按移动端排列</a></dd>
+                    <dd data-name="mobile-pc"><a lay-href="component/grid/mobile-pc.html">移动桌面端组合</a></dd>
+                    <dd data-name="all"><a lay-href="component/grid/all.html">全端复杂组合</a></dd>
+                    <dd data-name="stack"><a lay-href="component/grid/stack.html">低于桌面堆叠排列</a></dd>
+                    <dd data-name="speed-dial"><a lay-href="component/grid/speed-dial.html">九宫格</a></dd>
+                  </dl>
+                </dd>
+                <dd data-name="button">
+                  <a lay-href="component/button/index.html">按钮</a>
+                </dd>
+                <dd data-name="form">
+                  <a href="javascript:;">表单</a>
+                  <dl class="layui-nav-child">
+                    <dd><a lay-href="component/form/element.html">表单元素</a></dd>
+                    <dd><a lay-href="component/form/group.html">表单组合</a></dd>
+                  </dl>
+                </dd>
+                <dd data-name="nav">
+                  <a lay-href="component/nav/index.html">导航</a>
+                </dd>
+                <dd data-name="tabs">
+                  <a lay-href="component/tabs/index.html">选项卡</a>
+                </dd>
+                <dd data-name="progress">
+                  <a lay-href="component/progress/index.html">进度条</a>
+                </dd>
+                <dd data-name="panel">
+                  <a lay-href="component/panel/index.html">面板</a>
+                </dd>
+                <dd data-name="badge">
+                  <a lay-href="component/badge/index.html">徽章</a>
+                </dd>
+                <dd data-name="timeline">
+                  <a lay-href="component/timeline/index.html">时间线</a>
+                </dd>
+                <dd data-name="anim">
+                  <a lay-href="component/anim/index.html">动画</a>
+                </dd>
+                <dd data-name="auxiliar">
+                  <a lay-href="component/auxiliar/index.html">辅助</a>
+                </dd>
+                <dd data-name="layer">
+                  <a href="javascript:;">通用弹层</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="list">
+                      <a lay-href="component/layer/list.html" lay-text="layer 功能演示">功能演示</a>
+                    </dd>
+                    <dd data-name="special-demo">
+                      <a lay-href="component/layer/special-demo.html" lay-text="layer 特殊示例">特殊示例</a>
+                    </dd>
+                    <dd data-name="theme">
+                      <a lay-href="component/layer/theme.html" lay-text="layer 风格定制">风格定制</a>
+                    </dd>
+                  </dl>
+                </dd>
+                <dd data-name="laydate">
+                  <a href="javascript:;">日期时间</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="demo1">
+                      <a lay-href="component/laydate/demo1.html" lay-text="layDate 功能演示一">功能演示一</a>
+                    </dd>
+                    <dd data-name="demo2">
+                      <a lay-href="component/laydate/demo2.html" lay-text="layDate 功能演示二">功能演示二</a>
+                    </dd>
+                    <dd data-name="theme">
+                      <a lay-href="component/laydate/theme.html" lay-text="layDate 设定主题">设定主题</a>
+                    </dd>
+                    <dd data-name="special-demo">
+                      <a lay-href="component/laydate/special-demo.html" lay-text="layDate 特殊示例">特殊示例</a>
+                    </dd>
+                  </dl>
+                </dd>
+                <dd data-name="table-static">
+                  <a lay-href="component/table/static.html">静态表格</a>
+                </dd>
+                <dd data-name="table">
+                  <a href="javascript:;">数据表格</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="simple">
+                      <a lay-href="component/table/index.html" lay-text="">表格综合演示</a>
+                    </dd>
+                    <dd data-name="auto">
+                      <a lay-href="component/table/auto.html" lay-text="">列宽自动分配</a>
+                    </dd>
+                    <dd data-name="data">
+                      <a lay-href="component/table/data.html" lay-text="">赋值已知数据</a>
+                    </dd>
+                    <dd data-name="tostatic">
+                      <a lay-href="component/table/tostatic.html" lay-text="">转化静态表格</a>
+                    </dd>
+                    <dd data-name="resetPage">
+                      <a lay-href="component/table/resetPage.html" lay-text="">自定义分页</a>
+                    </dd>
+                    <dd data-name="radio">
+                      <a lay-href="component/table/radio.html" lay-text="">开启单选框</a>
+                    </dd>
+                    <dd data-name="cellEdit">
+                      <a lay-href="component/table/cellEdit.html" lay-text="">双击单元格编辑</a>
+                    </dd>
+                    <dd data-name="form">
+                      <a lay-href="component/table/form.html" lay-text="">加入表单元素</a>
+                    </dd>
+                    <dd data-name="style">
+                      <a lay-href="component/table/style.html" lay-text="">设置单元格样式</a>
+                    </dd>
+                    <dd data-name="fixed">
+                      <a lay-href="component/table/fixed.html" lay-text="">固定列</a>
+                    </dd>
+                    <dd data-name="parseData">
+                      <a lay-href="component/table/parseData.html" lay-text="">解析任意数据格式</a>
+                    </dd>
+                    <dd data-name="onrow">
+                      <a lay-href="component/table/onrow.html" lay-text="">行事件</a>
+                    </dd>
+                    <dd data-name="search">
+                      <a lay-href="component/table/search.html" lay-text="">外部搜索</a>
+                    </dd>
+                    <dd data-name="initSort">
+                      <a lay-href="component/table/initSort.html" lay-text="">设置初始排序</a>
+                    </dd>
+                    <dd data-name="cellEvent">
+                      <a lay-href="component/table/cellEvent.html" lay-text="">单元格事件</a>
+                    </dd>
+                    <dd data-name="thead">
+                      <a lay-href="component/table/thead.html" lay-text="">复杂表头</a>
+                    </dd>
+                  </dl>
+                </dd>
+                <dd data-name="laypage">
+                  <a href="javascript:;">分页</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="demo1">
+                      <a lay-href="component/laypage/demo1.html" lay-text="layPage 功能演示一">功能演示一</a>
+                    </dd>
+                    <dd data-name="demo2">
+                      <a lay-href="component/laypage/demo2.html" lay-text="layPage 功能演示二">功能演示二</a>
+                    </dd>
+                  </dl>
+                </dd>
+                <dd data-name="treeTable">
+                  <a lay-href="component/treeTable/index.html">树形表格</a>
+                </dd>
+                <dd data-name="dropdown">
+                  <a lay-href="component/dropdown/index.html">下拉菜单</a>
+                </dd>
+                <dd data-name="upload">
+                  <a href="javascript:;">上传</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="demo1">
+                      <a lay-href="component/upload/demo1.html" lay-text="上传功能演示一">功能演示一</a>
+                    </dd>
+                    <dd data-name="demo2">
+                      <a lay-href="component/upload/demo2.html" lay-text="上传功能演示二">功能演示二</a>
+                    </dd>
+                  </dl>
+                </dd>
+                <dd data-name="transfer">
+                  <a lay-href="component/transfer/index.html">穿梭框</a>
+                </dd>
+                <dd data-name="tree">
+                  <a lay-href="component/tree/index.html">树形组件</a>
+                </dd>
+                <dd data-name="colorpicker">
+                  <a lay-href="component/colorpicker/index.html">颜色选择器</a>
+                </dd>
+                <dd data-name="slider">
+                  <a lay-href="component/slider/index.html">滑块组件</a>
+                </dd>
+                <dd data-name="rate">
+                  <a lay-href="component/rate/index.html">评分</a>
+                </dd>
+                <dd data-name="carousel">
+                  <a lay-href="component/carousel/index.html">轮播</a>
+                </dd>
+                <dd data-name="flow">
+                  <a lay-href="component/flow/index.html">流加载</a>
+                </dd>
+                <dd data-name="util">
+                  <a lay-href="component/util/index.html">工具</a>
+                </dd>
+                <dd data-name="code">
+                  <a lay-href="component/code/index.html">代码修饰</a>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="template" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="页面" lay-direction="2">
+                <i class="layui-icon layui-icon-template"></i>
+                <cite>页面</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd><a lay-href="template/personalpage.html">个人主页</a></dd>
+                <dd><a lay-href="template/addresslist.html">通讯录</a></dd>
+                <dd><a lay-href="template/caller.html">客户列表</a></dd>
+                <dd><a lay-href="template/goodslist.html">商品列表</a></dd>
+                <dd><a lay-href="template/msgboard.html">留言板</a></dd>
+                <dd><a lay-href="template/search.html">搜索结果</a></dd>
+                <dd><a href="user/reg.html" target="_blank">注册</a></dd>
+                <dd><a href="user/login.html" target="_blank">登入</a></dd>
+                <dd><a href="user/forget.html" target="_blank">忘记密码</a></dd>
+                <dd><a lay-href="template/tips/404.html">404 页</a></dd>
+                <dd><a lay-href="template/tips/error.html">出错页</a></dd>
+                <dd><a lay-href="//cn.bing.com/">iframe - Bing</a></dd>
+              </dl>
+            </li>
+            <li data-name="app" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="应用" lay-direction="2">
+                <i class="layui-icon layui-icon-app"></i>
+                <cite>应用</cite>
+              </a>
+              <dl class="layui-nav-child">
+
+                <dd data-name="content">
+                  <a href="javascript:;">内容系统</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="list"><a lay-href="app/content/list.html">文章列表</a></dd>
+                    <dd data-name="tags"><a lay-href="app/content/tags.html">分类管理</a></dd>
+                    <dd data-name="comment"><a lay-href="app/content/comment.html">评论管理</a></dd>
+                  </dl>
+                </dd>
+                <dd data-name="forum">
+                  <a href="javascript:;">社区系统</a>
+                  <dl class="layui-nav-child">
+                    <dd data-name="list"><a lay-href="app/forum/list.html">帖子列表</a></dd>
+                    <dd data-name="replys"><a lay-href="app/forum/replys.html">回帖列表</a></dd>
+                  </dl>
+                </dd>
+                <dd>
+                  <a lay-href="app/message/index.html">消息中心</a>
+                </dd>
+                <dd data-name="workorder">
+                  <a lay-href="app/workorder/list.html">工单系统</a>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="senior" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="高级" lay-direction="2">
+                <i class="layui-icon layui-icon-senior"></i>
+                <cite>高级</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd>
+                  <a lay-href="senior/im/">WebIM UI</a>
+                </dd>
+                <dd data-name="echarts">
+                  <a href="javascript:;">Echarts</a>
+                  <dl class="layui-nav-child">
+                    <dd><a lay-href="senior/echarts/line.html">折线图</a></dd>
+                    <dd><a lay-href="senior/echarts/bar.html">柱状图</a></dd>
+                    <dd><a lay-href="senior/echarts/map.html">地图</a></dd>
+                  </dl>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="user" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="用户" lay-direction="2">
+                <i class="layui-icon layui-icon-user"></i>
+                <cite>用户</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd>
+                  <a lay-href="user/user/list.html">网站用户</a>
+                </dd>
+                <dd>
+                  <a lay-href="user/administrators/list.html">后台管理员</a>
+                </dd>
+                <dd>
+                  <a lay-href="user/administrators/role.html">角色管理</a>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="set" class="layui-nav-item">
+              <a href="javascript:;" lay-tips="设置" lay-direction="2">
+                <i class="layui-icon layui-icon-set"></i>
+                <cite>设置</cite>
+              </a>
+              <dl class="layui-nav-child">
+                <dd class="layui-nav-itemed">
+                  <a href="javascript:;">系统设置</a>
+                  <dl class="layui-nav-child">
+                    <dd><a lay-href="set/system/website.html">网站设置</a></dd>
+                    <dd><a lay-href="set/system/email.html">邮件服务</a></dd>
+                  </dl>
+                </dd>
+                <dd class="layui-nav-itemed">
+                  <a href="javascript:;">我的设置</a>
+                  <dl class="layui-nav-child">
+                    <dd><a lay-href="set/user/info.html">基本资料</a></dd>
+                    <dd><a lay-href="set/user/password.html">修改密码</a></dd>
+                  </dl>
+                </dd>
+              </dl>
+            </li>
+            <li data-name="get" class="layui-nav-item">
+              <a href="javascript:;" layadmin-event="about" lay-tips="授权" lay-direction="2">
+                <i class="layui-icon layui-icon-auz"></i>
+                <cite>关于</cite>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 页面标签 -->
+      <div class="layadmin-pagetabs" id="LAY_app_tabs">
+        <div class="layui-icon layadmin-tabs-control layui-icon-prev" layadmin-event="leftPage"></div>
+        <div class="layui-icon layadmin-tabs-control layui-icon-next" layadmin-event="rightPage"></div>
+        <div class="layui-icon layadmin-tabs-control layui-icon-down">
+          <ul class="layui-nav layadmin-tabs-select" lay-filter="layadmin-pagetabs-nav">
+            <li class="layui-nav-item" lay-unselect>
+              <a href="javascript:;"></a>
+              <dl class="layui-nav-child layui-anim-fadein">
+                <dd layadmin-event="closeThisTabs"><a href="javascript:;">关闭当前标签页</a></dd>
+                <dd layadmin-event="closeOtherTabs"><a href="javascript:;">关闭其它标签页</a></dd>
+                <dd layadmin-event="closeRightTabs"><a href="javascript:;">关闭右侧标签页</a></dd>
+                <dd layadmin-event="closeAllTabs"><a href="javascript:;">关闭全部标签页</a></dd>
+              </dl>
+            </li>
+          </ul>
+        </div>
+        <div class="layui-tab" lay-unauto lay-allowClose="true" lay-filter="layadmin-layout-tabs">
+          <ul class="layui-tab-title" id="LAY_app_tabsheader">
+            <li lay-id="home/console.html" lay-attr="home/console.html" class="layui-this"><i class="layui-icon layui-icon-home"></i></li>
+          </ul>
+        </div>
+      </div>
+
+
+      <!-- 主体内容 -->
+      <div class="layui-body" id="LAY_app_body">
+        <div class="layadmin-tabsbody-item layui-show">
+          <iframe src="home/console.html" frameborder="0" class="layadmin-iframe"></iframe>
+        </div>
+      </div>
+
+      <!-- 辅助元素，一般用于移动设备下遮罩 -->
+      <div class="layadmin-body-shade" layadmin-event="shade"></div>
+    </div>
+  </div>
+
+  <script src="../res/layui/layui.js"></script>
+  <script>
+  layui.config({
+    base: '../res/' // 静态资源所在路径
+  }).use(['index']);
+  </script>
+</body>
+</html>

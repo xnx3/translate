@@ -6457,27 +6457,6 @@ var nodeuuid = {
 
 }
 
-/*兼容 AMD、CMD、CommonJS 规范 - start*/
-/**
- * 兼容 AMD、CMD、CommonJS 规范
- * node 环境使用：`npm i i18n-jsautotranslate` 安装包
- */
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define([], () => factory());
-  } else if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    root['translate'] = factory();
-  }
-})(this, function () {
-  return translate;
-});
-/*兼容 AMD、CMD、CommonJS 规范 - end*/
-
-
-
-
 /*
  * 多语言翻译，作者：管雷鸣
  * 开源仓库： https://github.com/xnx3/translate/tree/master/extend/layui/layui_exts
@@ -6528,10 +6507,7 @@ layui.define([], function (exports) {
         */
     }
     
-     //设置语言切换的select 不被翻译
-    translate.ignore.id.push('translate');    //翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译。
-
-
+   
     /** 自定义切换语言的select start **/
     //languageList 便是当前支持的能切换的语种，你可以 console.log(languageList); 打印出来看看
     translate.selectLanguageTag.customUI = function(languageList){

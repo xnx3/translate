@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.2.20250409',
+	version: '3.14.3.20250415',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1083,13 +1083,17 @@ var translate = {
 
             /*
                 每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
+
+                @param uuid：translate.nodeQueue[uuid] 这里的
+                @param from 来源语种，翻译前的语种
+				@param to 翻译为的语种
             */
             renderStartByApi : [],
-            renderStartByApiRun:function(uuid){
+            renderStartByApiRun:function(uuid, from, to){
                 //console.log(translate.nodeQueue[uuid]);
                 for(var i = 0; i < translate.listener.execute.renderStartByApi.length; i++){
                     try{
-                        translate.listener.execute.renderStartByApi[i](uuid);
+                        translate.listener.execute.renderStartByApi[i](uuid, from, to);
                     }catch(e){
                         console.log(e);
                     }
@@ -1098,14 +1102,17 @@ var translate = {
 
             /*
                 每当 translate.execute() 执行完毕（前提是采用API翻译的，API将翻译结果返回，并且界面上的翻译结果也已经渲染完毕）后，触发此方法。
-                uuid：translate.nodeQueue[uuid] 这里的
+
+                @param uuid：translate.nodeQueue[uuid] 这里的
+                @param from 来源语种，翻译前的语种
+				@param to 翻译为的语种
             */
             renderFinishByApi : [],
-            renderFinishByApiRun:function(uuid){
+            renderFinishByApiRun:function(uuid, from, to){
                 //console.log(translate.nodeQueue[uuid]);
                 for(var i = 0; i < translate.listener.execute.renderFinishByApi.length; i++){
                     try{
-                        translate.listener.execute.renderFinishByApi[i](uuid);
+                        translate.listener.execute.renderFinishByApi[i](uuid, from, to);
                     }catch(e){
                         console.log(e);
                     }
@@ -1402,9 +1409,25 @@ var translate = {
 				return null;
 			}
 		},
-		//当前 translate.translateRequest[uuid] 的是否已经全部执行完毕，这里单纯只是对 translate.translateRequest[uuid] 的进行判断，这里要在 translate.json 接口触发完并渲染完毕后触发，当然接口失败时也要触发
-		isAllExecuteFinish:function(uuid){
+		/*
+			当前 translate.translateRequest[uuid] 的是否已经全部执行完毕
+			这里单纯只是对 translate.translateRequest[uuid] 的进行判断
+			这里要在 translate.json 接口触发完并渲染完毕后触发，当然接口失败时也要触发。
+
+			正常情况下，是根据本地语言不同，进行分别请求翻译的，比如本地中包含中文、英文、俄语三种语种，要翻译为韩语，那么
+				* 中文->韩语会请求一次api
+				* 英文->韩语会请求一次APi
+				* 俄语->韩语会请求一次APi
+			也就会触发三次
+
+			@param uuid translate.translateRequest[uuid]中的uuid，也是 translate.nodeQueue 中的uuid
+			@param from 来源语种，翻译前的语种
+			@param to 翻译为的语种
+		*/
+		isAllExecuteFinish:function(uuid, from, to){
+			//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 			for(var lang in translate.translateRequest[uuid]){
+				//console.log(translate.translateRequest[uuid])
 				for(var i = 0; i<translate.translateRequest[uuid][lang].length; i++){
 					if(translate.translateRequest[uuid][lang][i].executeFinish == 0){
 						//这个还没执行完，那么直接退出，不在向后执行了
@@ -1421,7 +1444,7 @@ var translate = {
 			translate.state = 0;
 			translate.executeNumber++;
 
-			translate.listener.execute.renderFinishByApiRun(uuid);
+			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
 		}
 
 	},
@@ -1996,9 +2019,7 @@ var translate = {
 		//状态
 		translate.state = 20;
 
-		//listener
-        translate.listener.execute.renderStartByApiRun(uuid);
-
+		
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			var lang = fanyiLangs[lang_index];
@@ -2026,6 +2047,9 @@ var translate = {
 			translate.translateRequest[uuid][lang].addtime = Math.floor(Date.now() / 1000);
 
 
+			//listener
+			translate.listener.execute.renderStartByApiRun(uuid, lang, translate.to); 
+
 			/*** 翻译开始 ***/
 			var url = translate.request.api.translate;
 			var data = {
@@ -2035,7 +2059,6 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
-			//console.log(data);
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
@@ -2047,8 +2070,20 @@ var translate = {
 					}else{
 						console.log('WARINNG!!! translate.translateRequest[uuid][data.from] is not object');
 					}
-					
-					translate.waitingExecute.isAllExecuteFinish(uuid);
+
+					//为了兼容 v3.14以前的translate.service 版本，做了判断
+					var from = '';
+					if(typeof(data.from) != 'undefined' && data.from != null){
+						from = data.from;
+					}
+					var to = '';
+					if(typeof(data.to) != 'undefined' && data.to != null){
+						to = data.to;
+					}else{
+						to = translate.to;
+					}
+					translate.waitingExecute.isAllExecuteFinish(uuid, from, to);
+
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
@@ -2127,13 +2162,13 @@ var translate = {
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				setTimeout(function(){
-					translate.waitingExecute.isAllExecuteFinish(uuid);
+					translate.waitingExecute.isAllExecuteFinish(uuid, data.from, data.to);
 				},10);
 			}, function(xhr){
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				translate.translateRequest[uuid][lang].result = 3;
-				translate.waitingExecute.isAllExecuteFinish(uuid);
+				translate.waitingExecute.isAllExecuteFinish(uuid, lang, translate.to);
 			});
 			/*** 翻译end ***/
 		}
@@ -6147,28 +6182,34 @@ var translate = {
 
 
 				if(translate.progress.api.isTip){
-					translate.listener.execute.renderStartByApi.push(function(uuid){
+					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					    for(var lang in translate.nodeQueue[uuid].list){
-						    if(translate.language.getCurrent() == lang){
-						        //忽略这个语种
-						        continue;
-						    }
+						    //console.log('lang:'+lang);
+                            //console.log(translate.nodeQueue[uuid].list[lang]);
+                            if(translate.language.getCurrent() == lang){
+                                //忽略这个语种
+                                //console.log('ignore-------');
+                                continue;
+                            }
+
 						    for(var hash in translate.nodeQueue[uuid].list[lang]){
 						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
 						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
+						    		//console.log(node);
 						    		var nodeParent = node.parentNode;
 							        if(nodeParent == null){
 							        	continue;
 							        }
+							        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
 									if(nodeParent.childNodes.length != 1){
+										//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
 										continue;
 									}
-
+									*/
 									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
 										nodeParent.className = ' translate_api_in_progress';
 									}else{
 										//这个元素本身有class了，那就追加
-
 										if(nodeParent.className.indexOf('translate_api_in_progress') > -1){	
 											continue;
 										}
@@ -6180,40 +6221,37 @@ var translate = {
 						    }
 						}
 					});
-					translate.listener.execute.renderFinishByApi.push(function(uuid){
-					    for(var lang in translate.nodeQueue[uuid].list){
-						    if(translate.language.getCurrent() == lang){
-						        //忽略这个语种
-						        continue;
-						    }
-						    for(var hash in translate.nodeQueue[uuid].list[lang]){
-						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
-						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
-						    		var nodeParent = node.parentNode;
-							        if(nodeParent == null){
-							        	continue;
-							        }
+					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
+						//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
+					    
+					    for(var hash in translate.nodeQueue[uuid].list[from]){
+					    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
+					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
+					    		var nodeParent = node.parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
 
-							        /*
-							        注释这个，因为可能是给这个元素动态追加删除导致其子元素不是11
-									if(nodeParent.childNodes.length != 1){
-										continue;
-									}
-									*/
+						        /*
+						        注释这个，因为可能是给这个元素动态追加删除导致其子元素不是11
+								if(nodeParent.childNodes.length != 1){
+									continue;
+								}
+								*/
 
-									var parentClassName = nodeParent.className;
-									if(typeof(parentClassName) == 'undefined' || parentClassName == null || parentClassName == ''){
-										continue;
-									}
-									if(parentClassName.indexOf('translate_api_in_progress') < -1){
-										continue;
-									}
-									
-									nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
-									//nodeParent.className = parentClassName.replace(/loading/g, '');
-						    	}
-						    }
-						}
+								var parentClassName = nodeParent.className;
+								if(typeof(parentClassName) == 'undefined' || parentClassName == null || parentClassName == ''){
+									continue;
+								}
+								if(parentClassName.indexOf('translate_api_in_progress') < -1){
+									continue;
+								}
+								
+								nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
+								//nodeParent.className = parentClassName.replace(/loading/g, '');
+					    	}
+					    }
+						
 					});
 
 				}

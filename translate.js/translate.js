@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.3.20250415',
+	version: '3.14.4.20250418',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3596,6 +3596,7 @@ var translate = {
 			japanese 日语
 			korean 韩语
 			greek 希腊语
+			thai 泰语
 		*/
 		getCharLanguage:function(charstr){
 			if(charstr == null || typeof(charstr) == 'undefined'){
@@ -3635,7 +3636,9 @@ var translate = {
 			if(this.greek(charstr)){
 				return 'greek';
 			}
-
+			if(this.thai(charstr)){
+				return 'thai';
+			}
 			//未识别是什么语种
 			//console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
 			return '';
@@ -3959,8 +3962,17 @@ var translate = {
 		},
 		//是否包含俄语
 		russian:function(str){
-			//判断字符有  БВДЖЗИЙЛМНОПСТУФХЦЧШЩЪЫЬЮЯЇІ
-			if(/.*[\u0411\u0412\u0414\u0416\u0417\u0418\u0419\u041B\u041C\u041D\u041E\u041F\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042E\u042F\u0407\u0406]+.*$/.test(str)){ 
+			// 正则表达式匹配俄语大小写字母（包含 Ё/ё，排除其他语言特有的西里尔字符）
+			//АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЮюЯя
+			if(/^[А-Яа-яЁё]$/.test(str)){ 
+				return true
+			} else {
+				return false;
+			}
+		},
+		//是否包含泰语
+		thai:function(str){
+			if(/^[\u0E01-\u0E59]$/.test(str)){ 
 				return true
 			} else {
 				return false;

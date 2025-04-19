@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.4.20250418',
+	version: '3.14.5.20250419',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3490,7 +3490,8 @@ var translate = {
 		 	languageName 是当前字符串最终判定结果是什么语种。它的识别有以下特点：
 		 		1. 如果出现英语跟中文、罗曼语族、德语等混合的情况，也就是不纯粹英语的情况，那么会以其他语种为准，而不是识别为英语。不论英语字符出现的比例占多少。
 		 		2. 如果出现简体中文跟繁体中文混合的情况，那么识别为繁体中文。不论简体中文字符出现的比例占多少。
-				3. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。（注意是字符数，而不是语种的数组数）
+		 		3. 如果出现简体中文、繁体中文、日语混合的情况，那么识别为日语。不论简体中文、繁体中文出现的比例占多少。 2025.4.19 增加
+				4. 除了以上两种规则外，如果出现了多个语种，那么会识别为出现字符数量最多的语种当做当前句子的语种。（注意是字符数，而不是语种的数组数）
 			languageArray 对传入字符串进行分析，识别出都有哪些语种，每个语种的字符是什么
 		 * 		
 		 */
@@ -3541,12 +3542,20 @@ var translate = {
 				}
 			}
 
+			//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文，将简体中文字符数置0
 			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
-				//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文。
 				//langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
 				langsNumber['chinese_simplified'] = 0;
 			}
 
+
+			//如果发现日语字符，那么将发现的简体中文、繁体中文字符数量置零
+			if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
+				langsNumber['chinese_simplified'] = 0;
+				langsNumber['chinese_traditional'] = 0;
+			}
+
+			
 
 			//从 langsNumber 中找出字数最多的来
 			var maxLang = ''; //字数最多的语种

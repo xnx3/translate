@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.5.20250419',
+	version: '3.14.6.20250423',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2843,7 +2843,8 @@ var translate = {
 						//它后面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
 						var after = text.charAt(wordKeyIndex + nomenclatureKey.length);
 						//console.log(after);
-						if(!(/\s/.test(before))){
+						// 2025.4.23  woodsway提出bug修复 https://gitee.com/mail_osc/translate/issues/IC34VN
+						if(!(/\s/.test(after))){
 							//不是空白字符，补充上一个空格，用于将两个单词隔开
 							nomenclatureValue = nomenclatureValue+' ';
 						}

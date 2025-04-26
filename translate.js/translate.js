@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.7.20250426',
+	version: '3.14.8.20250426',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2281,14 +2281,16 @@ var translate = {
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						if(typeof(node[attribute]) != 'undefined'){
 							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
-							node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
+							node[attribute] = translate.util.textReplace(node[attribute], originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+							//node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
 						}
 
 						//这种 Html Attribute 方式 是 v3.12 版本之前一直使用的方式，速度上要慢于 上面的，为了向前兼容不至于升级出问题，后面可能会优化掉
 						var htmlAttributeValue = node.getAttribute(attribute);
 						if(htmlAttributeValue != null && typeof(htmlAttributeValue) != 'undefined'){
 							//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
-							node.setAttribute(attribute, htmlAttributeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
+							node.setAttribute(attribute, translate.util.textReplace(htmlAttributeValue, originalText, resultText, translate.to)); //2025.4.26 变更为此方式
+							//node.setAttribute(attribute, htmlAttributeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
 						}
 					}
 					return result;
@@ -2336,7 +2338,8 @@ var translate = {
 								//替换渲染
 								if(typeof(originalText) != 'undefined' && originalText.length > 0){
 									//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-									input_value_node.nodeValue = input_value_node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+									input_value_node.nodeValue = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+									//input_value_node.nodeValue = input_value_node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 								}
 
 								result['text'] = input_value_node.nodeValue;
@@ -2353,7 +2356,8 @@ var translate = {
 						//替换渲染
 						if(typeof(originalText) != 'undefined' && originalText.length > 0){
 							//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-							node.attributes['placeholder'].nodeValue = node.attributes['placeholder'].nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+							node.attributes['placeholder'].nodeValue = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+							//node.attributes['placeholder'].nodeValue = node.attributes['placeholder'].nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 						}
 
 						result['text'] = node.attributes['placeholder'].nodeValue;
@@ -2378,7 +2382,8 @@ var translate = {
 							//替换渲染
 							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 								//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-								node.content = node.content.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+								node.content = translate.util.textReplace(node.content, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+								//node.content = node.content.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 							}
 
 							result['text'] = node.content;
@@ -2398,7 +2403,8 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-						node.alt = node.alt.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+						node.alt = translate.util.textReplace(node.alt, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+						//node.alt = node.alt.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 					}
 					result['text'] = node.alt;
 					return result;
@@ -2415,7 +2421,8 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 						//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-						node.nodeValue = node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+						node.nodeValue = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
+						//node.nodeValue = node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
 					}
 					result['text'] = node.nodeValue;
 				}
@@ -2827,29 +2834,29 @@ var translate = {
 					}
 				}
 
-
-				//判断当前是否是英语及变种，也就是单词之间需要有空格的，如果前后没有空格，要补充上空格
-				if(translate.language.wordBlankConnector(translate.to)){
-					if(wordKeyIndex > 0){
-						//它前面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
-						var before = text.charAt(wordKeyIndex-1);
-						//console.log(before);
-						if(!(/\s/.test(before))){
-							//不是空白字符，补充上一个空格，用于将两个单词隔开
-							nomenclatureValue = ' '+nomenclatureValue
-						}
-					}
-					if(wordKeyIndex + nomenclatureKey.length < text.length){
-						//它后面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
-						var after = text.charAt(wordKeyIndex + nomenclatureKey.length);
-						//console.log(after);
-						// 2025.4.23  woodsway提出bug修复 https://gitee.com/mail_osc/translate/issues/IC34VN
-						if(!(/\s/.test(after))){
-							//不是空白字符，补充上一个空格，用于将两个单词隔开
-							nomenclatureValue = nomenclatureValue+' ';
-						}
-					}
-				}
+				// 2025.4.26 优化，将不再在此处进行处理，交有 translate.util.textReplace 在页面最终渲染前处理
+				// //判断当前是否是英语及变种，也就是单词之间需要有空格的，如果前后没有空格，要补充上空格
+				// if(translate.language.wordBlankConnector(translate.to)){
+				// 	if(wordKeyIndex > 0){
+				// 		//它前面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
+				// 		var before = text.charAt(wordKeyIndex-1);
+				// 		//console.log(before);
+				// 		if(!(/\s/.test(before))){
+				// 			//不是空白字符，补充上一个空格，用于将两个单词隔开
+				// 			nomenclatureValue = ' '+nomenclatureValue
+				// 		}
+				// 	}
+				// 	if(wordKeyIndex + nomenclatureKey.length < text.length){
+				// 		//它后面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
+				// 		var after = text.charAt(wordKeyIndex + nomenclatureKey.length);
+				// 		//console.log(after);
+				// 		// 2025.4.23  woodsway提出bug修复 https://gitee.com/mail_osc/translate/issues/IC34VN
+				// 		if(!(/\s/.test(after))){
+				// 			//不是空白字符，补充上一个空格，用于将两个单词隔开
+				// 			nomenclatureValue = nomenclatureValue+' ';
+				// 		}
+				// 	}
+				// }
 				
 				//如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下
 				//console.log(nomenclatureKey+':'+nomenclatureValue);
@@ -2895,6 +2902,7 @@ var translate = {
 			}
 		}
 
+		console.log(textArray);
 		return textArray;
 	},
 
@@ -4349,7 +4357,7 @@ var translate = {
 	
 	util:{
 		/*
-            文本替换。
+            文本替换，将替换完毕的结果返回
             自定义术语等都是通过这个来进行替换
             2025.4.26 从 language 中 拿到这里
             
@@ -4368,6 +4376,11 @@ var translate = {
 
         */
         textReplace:function(text, translateOriginal, translateResult, language){
+
+        	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
+        	if(text == translateOriginal){
+        		return translateResult;
+        	}
         	
         	//当前替换后，替换结果结束位置的下标。 
         	//一开始还没进行替换，那么这个下标就是 0

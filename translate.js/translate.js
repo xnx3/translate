@@ -4414,7 +4414,7 @@ var translate = {
 	                    if(/。/.test(char)){
 	                    	replaceResultText = replaceResultText + '. ';
 	                    	replaceOriginalText = translateOriginal + '。';
-	                    }else if(/,/.test(char)){
+	                    }else if(/，/.test(char)){
 	                    	replaceResultText = replaceResultText + ', ';
 	                    	replaceOriginalText = translateOriginal + '，';
 	                    }else if(!(/\s/.test(char))){
@@ -4436,7 +4436,7 @@ var translate = {
 	                }
 	            }else{
 	            	//如果是其他语种比如英语法语翻译为中文、日文，那么标点符号也要判断的，这个因为目前这个场景还没咋遇到，就不判断了，遇到了在加。
-	            	
+
 	            }
 
 	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, replaceOriginalText, replaceResultText);
@@ -6378,6 +6378,8 @@ var translate = {
 			}
 		}
 	},
+
+	/*js dispose start*/
 	/*
 		对js对象内的值进行翻译,可以是JS定义的 对象、数组、甚至是单个具体的值
 	*/
@@ -6540,7 +6542,7 @@ var translate = {
 			return kvs;
 		}
 	},
-	/*jsObject end*/
+	/*js dispose end*/
 
 
 	

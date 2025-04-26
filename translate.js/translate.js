@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.14.6.20250423',
+	version: '3.14.7.20250426',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4301,7 +4301,8 @@ var translate = {
 		/*
             文本翻译的替换。
 
-            
+            @Deprecated 2025.4.26 最新的在  translate.util.textReplace 
+
             text: 原始文本，翻译的某句或者某个词就在这个文本之中
             translateOriginal: 翻译的某个词或句，在翻译之前的文本
             translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
@@ -4312,56 +4313,12 @@ var translate = {
 			使用此方法：
 			var text = '你世好word世界';
 			var translateOriginal = '世';
-			var translateResult = 'shi'; //翻译结果
+			var translateResult = '世杰'; //翻译结果
 			translate.language.textTranslateReplace(text, translateOriginal, translateResult, 'english');
-
+			
         */
         textTranslateReplace:function(text, translateOriginal, translateResult, language){
-        	if(translateResult.indexOf(translateOriginal) > -1){
-        		return text;
-        	}
-
-
-            let replaceResultText = ''+translateResult; //要替换的结果文本（这个文本可能前面有加空格或者后面有加空格的）
-
-            if(translate.language.wordBlankConnector(translate.to)){
-                let originalIndex = text.indexOf(translateOriginal); //翻译之前，翻译的单词在字符串中的其实坐标（0开始）
-                //console.log("originalIndex: "+originalIndex);
-
-                //要先判断后面，不然先判断前面，加了后它的长度就又变了
-
-                //判断它后面是否还有文本
-                if(originalIndex+1 < text.length){
-                    let char = text.charAt(originalIndex+translateOriginal.length);
-                    //console.log(char);
-                    if(!(/\s/.test(char))){
-                        //不是空白字符，补充上一个空格，用于将两个单词隔开
-                        //text = text.replace(translateOriginal, translateResult+' ');
-                        replaceResultText = replaceResultText + ' ';
-                    }
-                }
-
-                //判断它前面是否还有文本
-                if(originalIndex > 0){
-                    let char = text.charAt(originalIndex-1);
-                    //console.log(char);
-                    if(!(/\s/.test(char))){
-                        //不是空白字符，补充上一个空格，用于将两个单词隔开
-                        //text = text.replace(translateOriginal, ' '+translateResult);
-                        replaceResultText = ' '+replaceResultText;
-                    }
-                }
-            }
-            let resultText = text.replace(translateOriginal, replaceResultText);
-            
-            if(resultText.indexOf(translateOriginal) > -1){
-            	//还有第二个、第三个单词一样，也要替换
-            	//console.log(this);
-				resultText = this.textTranslateReplace(resultText, translateOriginal, translateResult, language);
-            }
-
-            //console.log(resultText);
-            return resultText;
+        	return translate.util.textReplace(text, translateOriginal, translateResult, language);
         }
 	},
 	//用户第一次打开网页时，自动判断当前用户所在国家使用的是哪种语言，来自动进行切换为用户所在国家的语种。
@@ -4391,6 +4348,122 @@ var translate = {
 	},
 	
 	util:{
+		/*
+            文本替换。
+            自定义术语等都是通过这个来进行替换
+            2025.4.26 从 language 中 拿到这里
+            
+            text: 原始文本，翻译的某句或者某个词就在这个文本之中
+            translateOriginal: 翻译的某个词或句，在翻译之前的文本
+            translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
+            language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。 另外这里传入的语种也是 translate.js 的语种标识
+        	
+        	(注意，如果 translateResult 中发现 translateOriginal 的存在，将不进行任何处理，因为没必要了，还会造成死循环。直接将 text 返回)
+			
+			使用此方法：
+			var text = '你世好word世界';
+			var translateOriginal = '世';
+			var translateResult = '世杰'; //翻译结果
+			translate.language.textTranslateReplace(text, translateOriginal, translateResult, 'english');
+
+        */
+        textReplace:function(text, translateOriginal, translateResult, language){
+        	
+        	//当前替换后，替换结果结束位置的下标。 
+        	//一开始还没进行替换，那么这个下标就是 0
+        	//比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
+        	let currentReplaceEndIndex = 0;
+
+        	//while最大循环次数30次，免得出现未知异常导致死循环
+        	let maxWhileNumber = 30;
+
+        	//因为text中可能有多个位置要被替换，所以使用循环
+        	while(text.indexOf(translateOriginal, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
+        		//console.log('text:'+text+'\tcurrentReplaceEndIndex:'+currentReplaceEndIndex);
+
+        		//要替换的结果文本（这个文本可能前面有加空格或者后面有加空格的）
+           		let replaceResultText = ''+translateResult; 
+
+           		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
+           		if(translate.language.wordBlankConnector(translate.to)){
+	                let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的其实坐标（0开始）
+	                //console.log("originalIndex: "+originalIndex);
+
+	                //要先判断后面，不然先判断前面，加了后它的长度就又变了
+
+	                //判断它后面是否还有文本
+	                if(originalIndex+1 < text.length){
+	                    let char = text.charAt(originalIndex+translateOriginal.length);
+	                    //console.log(char);
+	                    if(!(/\s/.test(char))){
+	                        //不是空白字符，补充上一个空格，用于将两个单词隔开
+	                        //text = text.replace(translateOriginal, translateResult+' ');
+	                        replaceResultText = replaceResultText + ' ';
+	                    }
+	                }
+
+	                //判断它前面是否还有文本
+	                if(originalIndex > 0){
+	                    let char = text.charAt(originalIndex-1);
+	                    //console.log(char);
+	                    if(!(/\s/.test(char))){
+	                        //不是空白字符，补充上一个空格，用于将两个单词隔开
+	                        //text = text.replace(translateOriginal, ' '+translateResult);
+	                        replaceResultText = ' '+replaceResultText;
+	                    }
+	                }
+	            }
+
+	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, translateOriginal, replaceResultText);
+	            if(replaceResult.replaceEndIndex < 1){
+	            	console.log('while中已经 indexOf发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , translateOriginal:'+translateOriginal);
+	            }else{
+	            	currentReplaceEndIndex = replaceResult.replaceEndIndex;
+	            	text = replaceResult.text;
+	            }
+	            
+        	}
+
+            //console.log(resultText);
+            return text;
+        },
+        /*
+			js 的 replace 能力，这个是可以指定从第几个字符开始进行replace
+			1. 这里可以 replaceText 本身包含着 originalText
+			2. originalText 可以出现多次
+
+			@param
+				text 要进行替换的原始文本
+				index 要从 text 的哪个下标开始。 （第一个字符下标是0）
+				originalText 要替换的文本，被替换的文本
+				replaceText 替换为的文本，将 originalText 替换为什么
+				replaceFromIndex('你好吗？你也好？', 0, '你', '你是谁');
+
+			@return 对象
+				text 替换的结果
+				replaceEndIndex 当前替换后，替换结果结束位置的下标。 
+        				如果没进行替换，那么这个下标就是 0
+        				比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
+		*/
+        replaceFromIndex:function(text, index, originalText, replaceText){
+		    const before = text.slice(0, index);
+		    const after = text.slice(index);
+		    const originalTextIndex = after.indexOf(originalText);
+		    if(originalTextIndex > -1){
+		    	const replacedAfter = after.replace(originalText, replaceText);
+		    	return {
+		    		text: before + replacedAfter, 
+		    		replaceEndIndex: index + originalTextIndex + replaceText.length
+		    	}
+		    }else{
+		    	//没有发现可替换的字符，那么就原样返回
+		    	return {
+		    		text: before + replacedAfter, 
+		    		replaceEndIndex: 0
+		    	};
+		    }
+        },
+
 		/* 生成一个随机UUID，复制于 https://gitee.com/mail_osc/kefu.js */
 		uuid:function() {
 		    var d = new Date().getTime();

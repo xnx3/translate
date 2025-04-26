@@ -3923,6 +3923,7 @@ var translate = {
 			return false;
 		},
 		//语种的单词连接符是否需要空格，比如中文简体、繁体、韩文、日语都不需要空格，则返回false, 但是像是英文的单词间需要空格进行隔开，则返回true
+		//另外这也是区分是否使用标点符号 ，。还是 ,. 的
 		//如果未匹配到，默认返回true
 		//language：语种，传入如  english
 		wordBlankConnector:function(language){
@@ -4396,10 +4397,12 @@ var translate = {
 
         		//要替换的结果文本（这个文本可能前面有加空格或者后面有加空格的）
            		let replaceResultText = ''+translateResult; 
+           		//替换的文本 ，这里有可能会追加上某些标点符号，所以单独也列出来，而不是使用方法中传入的 translateOriginal
+           		let replaceOriginalText = '' + translateOriginal; 
 
            		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
            		if(translate.language.wordBlankConnector(translate.to)){
-	                let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的其实坐标（0开始）
+	                let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的起始坐标（0开始）
 	                //console.log("originalIndex: "+originalIndex);
 
 	                //要先判断后面，不然先判断前面，加了后它的长度就又变了
@@ -4408,7 +4411,13 @@ var translate = {
 	                if(originalIndex+1 < text.length){
 	                    let char = text.charAt(originalIndex+translateOriginal.length);
 	                    //console.log(char);
-	                    if(!(/\s/.test(char))){
+	                    if(/。/.test(char)){
+	                    	replaceResultText = replaceResultText + '. ';
+	                    	replaceOriginalText = translateOriginal + '。';
+	                    }else if(/,/.test(char)){
+	                    	replaceResultText = replaceResultText + ', ';
+	                    	replaceOriginalText = translateOriginal + '，';
+	                    }else if(!(/\s/.test(char))){
 	                        //不是空白字符，补充上一个空格，用于将两个单词隔开
 	                        //text = text.replace(translateOriginal, translateResult+' ');
 	                        replaceResultText = replaceResultText + ' ';
@@ -4425,9 +4434,12 @@ var translate = {
 	                        replaceResultText = ' '+replaceResultText;
 	                    }
 	                }
+	            }else{
+	            	//如果是其他语种比如英语法语翻译为中文、日文，那么标点符号也要判断的，这个因为目前这个场景还没咋遇到，就不判断了，遇到了在加。
+	            	
 	            }
 
-	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, translateOriginal, replaceResultText);
+	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, replaceOriginalText, replaceResultText);
 	            if(replaceResult.replaceEndIndex < 1){
 	            	console.log('while中已经 indexOf发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , translateOriginal:'+translateOriginal);
 	            }else{

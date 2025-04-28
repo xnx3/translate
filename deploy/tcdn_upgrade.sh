@@ -37,6 +37,6 @@ chmod -x /mnt/tcdn/bin/tcdn
 chmod -R 777 /mnt/tcdn/bin/tcdn
 
 # 启动 tcdn
-echo "正在启动 tcdn..."
+echo "正在重启..."
 #nohup /mnt/tcdn/bin/tcdn > /mnt/tcdn/logs/tcdn.log 2>&1 &
-sh /mnt/tcdn/start.sh
+reboot

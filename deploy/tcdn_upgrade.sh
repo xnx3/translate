@@ -38,4 +38,5 @@ chmod -R 777 /mnt/tcdn/bin/tcdn
 
 # 启动 tcdn
 echo "正在启动 tcdn..."
-nohup /mnt/tcdn/bin/tcdn > /mnt/tcdn/logs/tcdn.log 2>&1 &
+#nohup /mnt/tcdn/bin/tcdn > /mnt/tcdn/logs/tcdn.log 2>&1 &
+sh /mnt/tcdn/start.sh

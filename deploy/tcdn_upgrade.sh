@@ -3,7 +3,8 @@
 #
 
 # 结束当前tcdn进程
-ps -ef | grep -w tcdn | grep root | grep -v grep |awk '{print $2}' | xargs --no-run-if-empty kill -9
+#ps -ef | grep -w tcdn | grep root | grep -v grep |awk '{print $2}' | xargs --no-run-if-empty kill -9
+ps -u root --format pid,comm | awk '$2 == "tcdn" {print $1}' | xargs --no-run-if-empty kill -9
 
 # 免得结束不掉在结束一次
 pkill tcdn

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.1.20250506',
+	version: '3.15.2.20250509',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -336,6 +336,22 @@ var translate = {
 		
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
+
+		/*
+			1. 先触发父级，免得当前刷新了，导致父级不执行翻译了
+		*/
+		//检测当前是否处于iframe中，如果当前是在iframe中，有父级页面，也要触发父级进行翻译
+		try{
+			if(window.self !== window.top){
+				if(typeof(window.parent.translate) == 'object' && typeof(window.parent.translate.version) == 'string'){
+					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
+					window.parent.translate.changeLanguage(languageName);
+				}
+			}
+		}catch(e){
+			//增加try，避免异常导致无法用
+			console.log(e);
+		}
 		
 		if(isReload){
 			location.reload(); //刷新页面
@@ -351,7 +367,11 @@ var translate = {
 				const iframeWindow = iframe.contentWindow;        
 				if(typeof(iframeWindow.translate) == 'object' && typeof(iframeWindow.translate.version) == 'string'){
 					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-					iframeWindow.translate.execute();
+					if(iframeWindow.translate.to != languageName){
+						iframeWindow.translate.to = languageName;
+						iframeWindow.translate.storage.set('to',languageName);	//设置目标翻译语言
+						iframeWindow.translate.execute();
+					}
 				}
 			}
 		}
@@ -5034,7 +5054,10 @@ var translate = {
 				let translateTextArray = translate.util.split(textArray, 40000, 900);
 				
 				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
-					var from = translate.service.edge.language.getMap()[data.from];
+					var from = data.from;
+					if(from != 'auto'){
+						from = translate.service.edge.language.getMap()[data.from];
+					}
 					var to = translate.service.edge.language.getMap()[data.to];
 					var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
 
@@ -6337,7 +6360,7 @@ var translate = {
 			//console.log(JSON.stringify(kvs, null, 2));
 
 			/**** 第二步，将文本值进行翻译 ***/
-				//先将其 kvs 的key 取出来
+			//先将其 kvs 的key 取出来
 			var texts = new Array();
 			for (const key in kvs) {
 				texts.push(key);

@@ -56,6 +56,9 @@ wget http://down.zvo.cn/translate/translate.service/domain.json -O /mnt/service/
 # translate.js
 wget http://down.zvo.cn/translate/translate.service/translate.js -O /mnt/service/bin/translate.js
 
+# ip2region.xdb
+wget http://down.zvo.cn/translate/translate.service/ip2region.xdb -O /mnt/service/bin/ip2region.xdb
+
 # 下载启动文件
 cd /mnt/service/
 wget http://down.zvo.cn/translate/translate.service/start.sh -O /mnt/service/start.sh

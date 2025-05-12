@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.2.20250509',
+	version: '3.15.3.20250512',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3637,6 +3637,8 @@ var translate = {
 			thai 泰语
 			arabic 阿拉伯语
 			romanian 罗马尼亚语
+			hebrew 希伯来语
+
 		*/
 		getCharLanguage:function(charstr){
 			if(charstr == null || typeof(charstr) == 'undefined'){
@@ -3684,6 +3686,9 @@ var translate = {
 			}
 			if(this.romanian(charstr)){
 				return 'romanian';
+			}
+			if(this.hebrew(charstr)){
+				return 'hebrew';
 			}
 			//未识别是什么语种
 			//console.log('not find is language , char : '+charstr+', unicode: '+charstr.charCodeAt(0).toString(16));
@@ -4051,6 +4056,10 @@ var translate = {
 			} else {
 				return false;
 			}
+		},
+		//希伯来语
+		hebrew:function(str){
+			return /[\u0590-\u05FF]/u.test(str);
 		},
 		//0-9 阿拉伯数字
 		number:function(str){

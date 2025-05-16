@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.3.20250512',
+	version: '3.15.4.20250516',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5003,15 +5003,17 @@ var translate = {
 	//机器翻译采用哪种翻译服务
 	service:{  
 		/*
-			name填写的值有
-			translate.service 有 http://translate.zvo.cn/41160.html 提供机器翻译服务
-			client.edge 有edge浏览器接口提供翻译服务 ，也就是执行翻译时直接是
-
+			name填写的值,参考 translate.service.use 的注释
 		*/
 		name:'translate.service',  
 
 		/*
 			其实就是设置 translate.service.name
+			可以设置为：
+
+			translate.service 自行部署的translate.service 翻译API服务，部署参考： https://translate.zvo.cn/391129.html
+			client.edge 使用无服务器的翻译,有edge浏览器接口提供翻译服务
+			siliconflow 使用指点云提供的服务器、硅基流动提供的AI算力进行大模型翻译
 	
 		*/
 		use: function(serviceName){
@@ -5019,11 +5021,17 @@ var translate = {
 				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
 				return;
 			}
-			if(typeof(serviceName) == 'string' && serviceName == 'client.edge'){
+			if(typeof(serviceName) == 'string'){
 				translate.service.name = serviceName;
+				if(serviceName != 'translate.service'){
+					if(serviceName == 'siliconflow'){
+						//设定翻译接口为硅基流动的
+						translate.request.api.host=['https://siliconflow.zvo.cn/','https://america.api.translate.zvo.cn:1414/'];
+					}
 
-				//增加元素整体翻译能力
-				translate.whole.enableAll();
+					//增加元素整体翻译能力
+					translate.whole.enableAll();
+				}
 			}
 		},
 		//客户端方式的edge提供机器翻译服务

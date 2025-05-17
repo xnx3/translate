@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.4.20250516',
+	version: '3.15.5.20250517',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5026,7 +5026,7 @@ var translate = {
 				if(serviceName != 'translate.service'){
 					if(serviceName == 'siliconflow'){
 						//设定翻译接口为硅基流动的
-						translate.request.api.host=['https://siliconflow.zvo.cn/','https://america.api.translate.zvo.cn:1414/'];
+						translate.request.api.host=['https://siliconflow.zvo.cn/','https://america.api.translate.zvo.cn:1414/','https://deutsch.enterprise.api.translate.zvo.cn:1414/'];
 					}
 
 					//增加元素整体翻译能力

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.6.20250517',
+	version: '3.15.7.20250520',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2526,9 +2526,12 @@ var translate = {
 					//	//这个tag标签没有这个 attribute，忽略
 					//	continue
 					//}
-					
-					//加入翻译
-					translate.addNodeToQueue(uuid, node, attributeValue, attributeName);
+
+					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加					
+					if(!translate.ignore.isIgnore(node)){
+						//加入翻译
+						translate.addNodeToQueue(uuid, node, attributeValue, attributeName);
+					}
 				}
 
 			}

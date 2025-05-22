@@ -20,26 +20,34 @@ var translate = {
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
 		来设置使用v2 ，已废弃，主要是区分是否是v1版本来着，v2跟v3版本是同样的使用方式
 	*/
-	useVersion:'v2',	
+	useVersion:'v2',
+	/*js translate.setUseVersion2 start*/
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
 		console.log('提示：自 v2.10 之后的版本默认就是使用V2版本（当前版本为:'+translate.version+'）， translate.setUseVersion2() 可以不用再加这一行了。当然加了也无所谓，只是加了跟不加是完全一样的。');
 	},
+	/*js translate.setUseVersion2 end*/
 	/*
 	 * 翻译的对象，也就是 new google.translate.TranslateElement(...)
 	 * 已废弃，v1使用的
 	 */
 	translate:null,
+	
+	/*js translate.includedLanguages end*/
 	/*
 	 * 支持哪些语言切换，包括：de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr
 	 * 已废弃，请使用 translate.selectLanguageTag.languages 
 	 */
 	includedLanguages:'zh-CN,zh-TW,en',
+	/*js translate.includedLanguages end*/
+
+	/*js translate.resourcesUrl start*/
 	/*
 	 * 资源文件url的路径
 	 * 已废弃，v1使用的
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
+	/*js translate.resourcesUrl end*/
 
 	/**
 	 * 默认出现的选择语言的 select 选择框，可以通过这个选择切换语言。
@@ -193,8 +201,11 @@ var translate = {
 	 * 已废弃，v1使用的
 	 */
 	//localLanguage:'zh-CN',
+	/*js translate.localLanguage start*/
 	localLanguage:'zh-CN',
+	/*js translate.localLanguage end*/
 	
+	/*js translate.googleTranslateElementInit start*/
 	/**
 	 * google翻译执行的
 	 * 已废弃，v1使用的
@@ -223,6 +234,7 @@ var translate = {
 			selectId //触发按钮的id
 		);
 	},
+	/*js translate.googleTranslateElementInit end*/
 	
 	/**
 	 * 初始化，如加载js、css资源
@@ -244,6 +256,9 @@ var translate = {
 		
 	},
 	*/
+
+
+	/*js translate.execute_v1 start*/
 	/**
 	 * 执行翻译操作
 	 * 已废弃，v1使用的
@@ -252,7 +267,9 @@ var translate = {
 		console.log('=====ERROR======');
 		console.log('The v1 version has been discontinued since 2022. Please use the latest V3 version and refer to: http://translate.zvo.cn/41162.html');
 	},
-	
+	/*js translate.execute_v1 end*/
+
+	/*js translate.setCookie start*/
 	/**
 	 * 设置Cookie，失效时间一年。
 	 * @param name
@@ -263,7 +280,9 @@ var translate = {
 		var cookieString=name+"="+escape(value); 
 		document.cookie=cookieString; 
 	},
+	/*js translate.setCookie end*/
 
+	/*js translate.getCookie start*/
 	//获取Cookie。若是不存再，返回空字符串
 	//* 已废弃，v1使用的
 	getCookie:function (name){ 
@@ -277,11 +296,14 @@ var translate = {
 		}
 		return "";
 	},
+	/*js translate.getCookie end*/
 	
-	/**
-	 * 获取当前页面采用的是什么语言
-	 * 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
-	 * * 已废弃，v1使用的
+
+	/*js translate.currentLanguage start*/
+	/*
+	 获取当前页面采用的是什么语言
+	 返回值如 en、zh-CN、zh-TW （如果是第一次用，没有设置过，那么返回的是 translate.localLanguage 设置的值）		
+	 已废弃，v1使用的
 	 */
 	currentLanguage:function(){
 		//translate.check();
@@ -292,6 +314,7 @@ var translate = {
 			return translate.localLanguage;
 		}
 	},
+	/*js translate.currentLanguage end*/
 	
 	/**
 	 * 切换语言，比如切换为英语、法语
@@ -382,11 +405,13 @@ var translate = {
 	 * english
 	 * 已废弃，v1使用的
 	 */
+	/*js translate.check start*/
 	check:function(){
 		if(window.location.protocol == 'file:'){
 			console.log('\r\n---WARNING----\r\ntranslate.js 主动翻译组件自检异常，当前协议是file协议，翻译组件要在正常的线上http、https协议下才能正常使用翻译功能\r\n------------');
 		}
 	},
+	/*js translate.check end*/
 	
 	
 	/**************************** v2.0 */
@@ -4580,6 +4605,8 @@ var translate = {
 				return false;  
 			}  
 		},
+
+		/*js translate.util.loadMsgJs start*/
 		//加载 msg.js
 		loadMsgJs:function(){
 			if(typeof(msg) != 'undefined'){
@@ -4587,6 +4614,7 @@ var translate = {
 			}
 			translate.util.synchronizesLoadJs('https://res.zvo.cn/msg/msg.js');
 		},
+		/*js translate.util.loadMsgJs end*/
 		/*
 			对一个对象，按照对象的key的长度进行排序，越长越在前面
 		*/
@@ -5010,6 +5038,7 @@ var translate = {
 		*/
 		name:'translate.service',  
 
+		/*js translate.service.use start*/
 		/*
 			其实就是设置 translate.service.name
 			可以设置为：
@@ -5020,7 +5049,7 @@ var translate = {
 	
 		*/
 		use: function(serviceName){
-			if(translate.enterprise.isUse == true){
+			if(typeof(translate.enterprise) != 'undefined' && translate.enterprise.isUse == true){
 				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
 				return;
 			}
@@ -5037,6 +5066,9 @@ var translate = {
 				}
 			}
 		},
+		/*js translate.service.use end*/
+
+		/*js translate.service.edge start*/
 		//客户端方式的edge提供机器翻译服务
 		edge:{
 			api:{ //edge浏览器的翻译功能
@@ -5164,6 +5196,7 @@ var translate = {
 				
 			}
 		}
+		/*js translate.service.edge end*/
 	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{
@@ -5197,6 +5230,7 @@ var translate = {
 			//console.log('response------');
 			//console.log(xhr);
 		},
+
 
 		/*
 			速度检测控制中心， 检测主备翻译接口的响应速度进行排列，真正请求时，按照排列的顺序进行请求
@@ -5463,8 +5497,10 @@ var translate = {
 			}
 
 			//企业级翻译自动检测
-			translate.enterprise.automaticAdaptationService();
-
+			if(typeof(translate.enterprise) != 'undefined'){
+				translate.enterprise.automaticAdaptationService();
+			}
+			
 			// ------- edge start --------
 			var url = translate.request.getUrl(path);
 			//if(url.indexOf('edge') > -1 && path == translate.request.api.translate){
@@ -5515,9 +5551,11 @@ var translate = {
 				//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
 				data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
 				
-				//加入key
-				if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
-					data.key = translate.enterprise.key;
+				if(typeof(translate.enterprise) != 'undefined'){
+					//加入key
+					if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
+						data.key = translate.enterprise.key;
+					}
 				}
 				
 				//组合参数
@@ -5813,8 +5851,8 @@ var translate = {
 				        			break;
 				        		}
 				        	}
-				        	//client.edge 判断
-				        	if(url.indexOf(translate.service.edge.api.auth) > -1){
+				        	//client.edge 判断   translate.service.edge可能会被精简translate.js定制时给直接干掉，所以提前加个判断
+				        	if(typeof(translate.service.edge) != 'undefined' && url.indexOf(translate.service.edge.api.auth) > -1){
 				        		ignoreUrl = true;
 				        	}
 				        	if(url.indexOf('.microsofttranslator.com/translate') > -1){
@@ -5974,6 +6012,7 @@ var translate = {
 			return str;
 		}
 	},
+	/*js translate.reset start*/
 	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
 	reset:function(){
 		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
@@ -6027,7 +6066,9 @@ var translate = {
 		//重新渲染select
 		translate.selectLanguageTag.render();
 	},
+	/*js translate.reset end*/
 	
+	/*js translate.selectionTranslate start*/
 	/*
 		划词翻译，鼠标在网页中选中一段文字，会自动出现对应翻译后的文本
 		有网友 https://gitee.com/huangguishen 提供。
@@ -6074,7 +6115,9 @@ var translate = {
 			document.addEventListener('click', (event)=>{  document.querySelector('#translateTooltip').style.display = "none"}, false);
 		}
 	},
+	/*js translate.selectionTranslate end*/
 
+	/*js translate.enterprise start*/	
 	/*
 		企业级翻译服务
 		注意，这个企业级翻译中的不在开源免费之中，企业级翻译服务追求的是高稳定，这个是收费的！详情可参考：http://translate.zvo.cn/43262.html
@@ -6116,6 +6159,7 @@ var translate = {
 		/* 企业级翻译通道的key， v3.12.3.20250107 增加，针对打包成APP的场景 */
 		key:'', 
 	},
+	/*js translate.enterprise end*/
 
 	/*
 		如果使用的是 translate.service 翻译通道，那么翻译后的语种会自动以小写的方式进行显示。
@@ -6129,6 +6173,7 @@ var translate = {
 	},
 	*/
 
+	/*js translate.init start*/
 	/*
 		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加
 		会自动在 translate.js 加载后的 200毫秒后 执行，进行初始化。同时也是节点测速
@@ -6170,6 +6215,7 @@ var translate = {
 		}catch(e){
 		}
 	},
+	/*js translate.init end*/
 
 	/*
 		翻译执行的进展相关

@@ -4,7 +4,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 </head>
 <body>
-<script src="../../translate.js/translate.js"></script>
+<!-- <script src="../../translate.js/translate.js"></script> -->
+<script src="https://cdn.staticfile.net/translate.js/3.15.1/translate.min.js"></script>
 <style>
 textarea{
 	  width: 100%;
@@ -50,7 +51,7 @@ button{
 if(typeof(translate.storage.get('to')) == 'undefined' || translate.storage.get('to') == null || translate.storage.get('to') == ''){
 	translate.storage.set('to','english');
 }
-translate.request.speedDetectionControl.setCurrentHost('http://api.translate.zvo.cn/');
+translate.request.speedDetectionControl.setCurrentHost('https://glm-api-translate.zvo.cn/');
 //重写select切换语言点切换后触发动作 - 参考文档 https://translate.zvo.cn/4056.html
 translate.selectLanguageTag.selectOnChange = function(event){
     var language = event.target.value;

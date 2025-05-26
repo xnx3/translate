@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.7.20250520',
+	version: '3.15.8.20250526',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1356,7 +1356,7 @@ var translate = {
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							//var nodename = translate.element.getNodeName(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
 							//console.log("nodename:"+nodename);
-							var analyse = translate.element.nodeAnalyse.get(renderTask.nodes[hash][0]);
+							var analyse = translate.element.nodeAnalyse.get(renderTask.nodes[hash][nodeindex]);
 							//analyse.text  analyse.node
 							var nodeid = nodeuuid.uuid(analyse.node);
 							
@@ -1382,7 +1382,15 @@ var translate = {
 							//console.log(analyse.node);
 							translate.nodeHistory[nodeid] = {};
 							translate.nodeHistory[nodeid].node = analyse.node;
-							translate.nodeHistory[nodeid].translateText = analyse.text;
+							if(translate.whole.isWhole(analyse.node)){
+								//这个元素使用的是整体翻译的方式，那就直接将API接口返回的翻译内容作为node最终显示的结果。
+								//这样即使在翻译过程中其他js对这个元素的内容有改动了，那下次再触发翻译，还能对改动后的文本正常翻译，不至于使这个元素已被标记翻译过了，造成漏翻译。
+								translate.nodeHistory[nodeid].translateText = renderTask.taskQueue[hash][nodeindex].resultText;
+							}else{
+								//时间差会造成漏翻译情况，见if中的注释
+								translate.nodeHistory[nodeid].translateText = analyse.text;	
+							}
+							
 						}
 						
 					}
@@ -3202,6 +3210,10 @@ var translate = {
 		*/
 		isWhole:function(ele){
 
+			if(translate.whole.isEnableAll){
+				return true;
+			}
+
 			//如果设置了 class|tag|id 其中某个，或者 all=true ，那么就是启用，反之未启用
 			if((translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0) && translate.whole.isEnableAll == false){
 				//未设置，那么直接返回false
@@ -3210,9 +3222,7 @@ var translate = {
 			if(ele == null || typeof(ele) == 'undefined'){
 				return false;
 			}
-			if(translate.whole.isEnableAll){
-				return true;
-			}
+			
 
 			var parentNode = ele;
 			var maxnumber = 100;	//最大循环次数，避免死循环
@@ -6599,6 +6609,7 @@ var nodeuuid = {
 }
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
 
+/*js amd-cmd-commonjs start*/
 /*兼容 AMD、CMD、CommonJS 规范 - start*/
 /**
  * 兼容 AMD、CMD、CommonJS 规范
@@ -6616,3 +6627,4 @@ console.log('------ translate.js ------\nTwo lines of js html automatic translat
   return translate;
 });
 /*兼容 AMD、CMD、CommonJS 规范 - end*/
+/*js amd-cmd-commonjs end*/

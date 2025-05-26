@@ -984,7 +984,10 @@ var translate = {
 				nodeid = nodeuuid.uuid(node);
 			}
 
-			translate.listener.ignoreNode[nodeid] = Date.now()+expireTime;
+			translate.listener.ignoreNode[nodeid] = {
+				addtime:Date.now()+expireTime,
+				text:showResultText
+			};
 
 			//translate.listener.renderTaskFinish();
 		},
@@ -995,7 +998,7 @@ var translate = {
 			//console.log('refresh ignore ,current: '+Object.keys(translate.listener.ignoreNode).length);
 			var currentTime = Date.now();
 			for (const node in translate.listener.ignoreNode) {
-				if(translate.listener.ignoreNode[node] < currentTime){
+				if(translate.listener.ignoreNode[node].addtime < currentTime){
 					//console.log('delete : ');
 					//console.log(node);
 					delete translate.listener.ignoreNode[node];
@@ -1082,8 +1085,8 @@ var translate = {
 
 						//console.log(node);
 						let nodeid = nodeuuid.uuid(node);
-						if(typeof(translate.listener.ignoreNode[nodeid]) == 'number'){
-							if(translate.listener.ignoreNode[nodeid] > Date.now()){
+						if(typeof(translate.listener.ignoreNode[nodeid]) != 'undefined'){
+							if(translate.listener.ignoreNode[nodeid].addtime > Date.now() && typeof(node.nodeValue) == 'string' && node.nodeValue == translate.listener.ignoreNode[nodeid].text){
 								//console.log('node 未过忽略期，listener扫描后忽略：'+nodeid);
 								continue;
 							}
@@ -1309,12 +1312,10 @@ var translate = {
 							
 						}, 50, ipnode);
 
+						//渲染页面进行翻译显示
+						var analyseSet = translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 						//加入 translate.listener.ignoreNode
-						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime);
-						translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
-
-
-
+						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime, analyseSet.resultText);
 
 
 						/*

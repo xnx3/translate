@@ -975,8 +975,9 @@ var translate = {
 		  	node 是哪个节点被listener扫描到改动后忽略。
 		  		可传入 node、也可以传入node的uuid字符串
 		  	expireTime 过期时间，也就是执行当前方法将 node 加入后，过多长时间失效，这里是毫秒，比如传入 500 则这个node在当前时间往后的500毫秒内，如果被listener监听到改动，是直接被忽略的，不会触发任何翻译操作
+			showResultText 实际显示出来的文本，翻译之后显示出来的文本。如果翻译过程中其他js改动了这个文本内容，导致未能翻译，则 analyse.set 的 resultText 会返回 空字符串设置到这里
 		 */
-		addIgnore:function(node, expireTime){
+		addIgnore:function(node, expireTime, showResultText){
 			let nodeid = '';
 			if(typeof(node) == 'string'){
 				nodeid = node;
@@ -2312,7 +2313,7 @@ var translate = {
 					node: 进行翻译的目标node	
 			*/
 			set:function(node, originalText, resultText, attribute){
-				translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
+				return translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
 			},
 			/*	
 				

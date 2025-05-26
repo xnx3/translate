@@ -387,14 +387,19 @@ var translate = {
 			for (let i = 0; i < iframes.length; i++) {
 				const iframe = iframes[i];
 				// 获取 iframe 的 window 对象
-				const iframeWindow = iframe.contentWindow;        
-				if(typeof(iframeWindow.translate) == 'object' && typeof(iframeWindow.translate.version) == 'string'){
-					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-					if(iframeWindow.translate.to != languageName){
-						iframeWindow.translate.to = languageName;
-						iframeWindow.translate.storage.set('to',languageName);	//设置目标翻译语言
-						iframeWindow.translate.execute();
+				const iframeWindow = iframe.contentWindow; 
+				try{       
+					if(typeof(iframeWindow.translate) == 'object' && typeof(iframeWindow.translate.version) == 'string'){
+						//iframe页面中存在 translate,那么也控制iframe中的进行翻译
+						if(iframeWindow.translate.to != languageName){
+							iframeWindow.translate.to = languageName;
+							iframeWindow.translate.storage.set('to',languageName);	//设置目标翻译语言
+							iframeWindow.translate.execute();
+						}
 					}
+				}catch(e){
+					//增加try，避免异常,比如跨域，中断导致无法用
+					console.log(e);
 				}
 			}
 		}
@@ -2301,6 +2306,9 @@ var translate = {
 					originalText 翻译之前的内容文本
 					resultText 翻译之后的内容文本
 					attribute 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
+				返回结果是一个数组，其中：
+					resultText: 翻译完成之后的text内容文本，注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
+					node: 进行翻译的目标node	
 			*/
 			set:function(node, originalText, resultText, attribute){
 				translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
@@ -2318,6 +2326,11 @@ var translate = {
 					则是进行翻译之后的渲染显示
 
 				attribute : 进行替换渲染时使用，存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
+
+				返回结果是一个数组，其中：
+					resultText: 翻译完成之后的text内容文本。 当使用 translate.element.nodeAnalyse.set 时才会有这个参数返回。 注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
+					text : 要进行翻译的text内容文本，当使用 translate.element.nodeAnalyse.get 时才会有这个参数的返回
+					node: 进行翻译的目标node
 			*/
 			analyse:function(node, originalText, resultText, attribute){
 				var result = new Array(); //返回的结果
@@ -2334,16 +2347,26 @@ var translate = {
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						if(typeof(node[attribute]) != 'undefined'){
 							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
-							node[attribute] = translate.util.textReplace(node[attribute], originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-							//node[attribute] = node[attribute].replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));	
+							var resultShowText = translate.util.textReplace(node[attribute], originalText, resultText, translate.to);
+							node[attribute] = resultShowText;  //2025.4.26 变更为此方式
+							if(resultShowText.indexOf(resultText) > -1){
+								result['resultText'] = resultShowText;
+							}else{
+								result['resultText'] = '';
+							}
 						}
 
 						//这种 Html Attribute 方式 是 v3.12 版本之前一直使用的方式，速度上要慢于 上面的，为了向前兼容不至于升级出问题，后面可能会优化掉
 						var htmlAttributeValue = node.getAttribute(attribute);
 						if(htmlAttributeValue != null && typeof(htmlAttributeValue) != 'undefined'){
+							var resultShowText = translate.util.textReplace(htmlAttributeValue, originalText, resultText, translate.to);
 							//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
-							node.setAttribute(attribute, translate.util.textReplace(htmlAttributeValue, originalText, resultText, translate.to)); //2025.4.26 变更为此方式
-							//node.setAttribute(attribute, htmlAttributeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText)));
+							node.setAttribute(attribute, resultShowText); 
+							if(resultShowText.indexOf(resultText) > -1){
+								result['resultText'] = resultShowText;
+							}else{
+								result['resultText'] = '';
+							}
 						}
 					}
 					return result;
@@ -2390,9 +2413,13 @@ var translate = {
 							if(input_value_node != null && typeof(input_value_node) != 'undefined' && typeof(input_value_node.nodeValue) != 'undefined' && input_value_node.nodeValue.length > 0){
 								//替换渲染
 								if(typeof(originalText) != 'undefined' && originalText.length > 0){
-									//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-									input_value_node.nodeValue = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-									//input_value_node.nodeValue = input_value_node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+									var resultShowText = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to);
+									input_value_node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
+									if(resultShowText.indexOf(resultText) > -1){
+										result['resultText'] = resultShowText;
+									}else{
+										result['resultText'] = '';
+									}
 								}
 
 								result['text'] = input_value_node.nodeValue;
@@ -2408,9 +2435,13 @@ var translate = {
 						//console.log(node);
 						//替换渲染
 						if(typeof(originalText) != 'undefined' && originalText.length > 0){
-							//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-							node.attributes['placeholder'].nodeValue = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-							//node.attributes['placeholder'].nodeValue = node.attributes['placeholder'].nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+							var resultShowText = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to);
+							node.attributes['placeholder'].nodeValue = resultShowText;  //2025.4.26 变更为此方式
+							if(resultShowText.indexOf(resultText) > -1){
+								result['resultText'] = resultShowText;
+							}else{
+								result['resultText'] = '';
+							}
 						}
 
 						result['text'] = node.attributes['placeholder'].nodeValue;
@@ -2434,9 +2465,13 @@ var translate = {
 						if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description' || nodeAttributeName == 'sharetitle' || nodeAttributeProperty == 'og:title' || nodeAttributeProperty == 'og:description' || nodeAttributeProperty == 'og:site_name' || nodeAttributeProperty == 'og:novel:latest_chapter_name'){
 							//替换渲染
 							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
-								//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-								node.content = translate.util.textReplace(node.content, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-								//node.content = node.content.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+								var resultShowText = translate.util.textReplace(node.content, originalText, resultText, translate.to);
+								node.content = resultShowText;  //2025.4.26 变更为此方式
+								if(resultShowText.indexOf(resultText) > -1){
+									result['resultText'] = resultShowText;
+								}else{
+									result['resultText'] = '';
+								}
 							}
 
 							result['text'] = node.content;
@@ -2455,9 +2490,13 @@ var translate = {
 
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
-						//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-						node.alt = translate.util.textReplace(node.alt, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-						//node.alt = node.alt.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+						var resultShowText = translate.util.textReplace(node.alt, originalText, resultText, translate.to);
+						node.alt = resultShowText;  //2025.4.26 变更为此方式
+						if(resultShowText.indexOf(resultText) > -1){
+							result['resultText'] = resultShowText;
+						}else{
+							result['resultText'] = '';
+						}
 					}
 					result['text'] = node.alt;
 					return result;
@@ -2473,9 +2512,13 @@ var translate = {
 				}else{
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
-						//this.nodes[hash][task_index].nodeValue = this.nodes[hash][task_index].nodeValue.replace(new RegExp(translate.util.regExp.pattern(task.originalText),'g'), translate.util.regExp.resultText(task.resultText));
-						node.nodeValue = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);  //2025.4.26 变更为此方式
-						//node.nodeValue = node.nodeValue.replace(new RegExp(translate.util.regExp.pattern(originalText),'g'), translate.util.regExp.resultText(resultText));
+						var resultShowText = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);
+						node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
+						if(resultShowText.indexOf(resultText) > -1){
+							result['resultText'] = resultShowText;
+						}else{
+							result['resultText'] = '';
+						}
 					}
 					result['text'] = node.nodeValue;
 				}
@@ -6607,7 +6650,10 @@ var nodeuuid = {
 		return uuid;
 	}
 }
+
+/*js copyright-notice start*/
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
+/*js copyright-notice end*/
 
 /*js amd-cmd-commonjs start*/
 /*兼容 AMD、CMD、CommonJS 规范 - start*/

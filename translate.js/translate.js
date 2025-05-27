@@ -403,6 +403,11 @@ var translate = {
 				}
 			}
 		}
+
+		//当用户代码设置里启用了 translate.listener.start() 然后用户加载页面后并没有翻译（这时listener是不启动的只是把listener.use标记为true），然后手动点击翻译按钮翻译为其他语种（这是不会刷新页面），翻译后也要跟着启动监听
+		if(translate.listener.use == true && translate.listener.isStart == false){
+			translate.listener.start();
+		}
 	},
 	
 	/**
@@ -923,6 +928,9 @@ var translate = {
 		//isExecuteFinish:false,
 		//是否已经使用了 translate.listener.start() 了，如果使用了，那这里为true，多次调用 translate.listener.start() 只有第一次有效
 		isStart:false,
+		//用户的代码里是否启用了 translate.listener.start() ，true：启用
+		//当用户加载页面后，但是未启用翻译时，为了降低性能，监听是不会启动的，但是用户手动点击翻译后，也要把监听启动起来，所以就加了这个参数，来表示当前是否在代码里启用了监听，以便当触发翻译时，监听也跟着触发
+		use:false, 
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
 			
@@ -1011,6 +1019,10 @@ var translate = {
 
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
+			if(translate.listener.isStart == true){
+				console.log('translate.listener.start() 已经启动了，无需再重复启动监听，增加浏览器负担');
+				return;
+			}
 			translate.listener.isStart = true; //记录已执行过启动方法了
 			
 			// 观察器的配置（需要观察什么变动）

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.8.20250526',
+	version: '3.15.9.20250527',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5296,6 +5296,20 @@ var translate = {
 
 		},
 		/*
+			追加参数，  v3.15.9.20250527 增加
+			所有通过 translate.request.send 进行网络请求的，都会追加上这个参数
+			默认是空，没有任何追加参数。
+
+			设置方式： https://translate.zvo.cn/471711.html
+			translate.request.appendParams = {
+				key1:'key1',
+				key2:'key2'
+			}
+		*/
+		appendParams:{
+
+		},
+		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
 			另外当 xhr.readyState==4 的状态时才会触发。
 			此处会在接口请求响应后、且在translate.js处理前就会触发
@@ -5627,6 +5641,11 @@ var translate = {
 				//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
 				data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
 				
+				//追加附加参数
+				for(var apindex in translate.request.appendParams){
+					data[apindex] = translate.request.appendParams[apindex];
+				}
+
 				if(typeof(translate.enterprise) != 'undefined'){
 					//加入key
 					if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){

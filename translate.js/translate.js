@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.9.20250527',
+	version: '3.15.10.20250528',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4405,7 +4405,7 @@ var translate = {
 			var text = '你世好word世界';
 			var translateOriginal = '世';
 			var translateResult = '世杰'; //翻译结果
-			translate.language.textTranslateReplace(text, translateOriginal, translateResult, 'english');
+			translate.util.textReplace(text, translateOriginal, translateResult, 'english');
 
         */
         textReplace:function(text, translateOriginal, translateResult, language){
@@ -4433,7 +4433,7 @@ var translate = {
            		let replaceOriginalText = '' + translateOriginal; 
 
            		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
-           		if(translate.language.wordBlankConnector(translate.to)){
+           		if(translate.language.wordBlankConnector(language)){
 	                let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的起始坐标（0开始）
 	                //console.log("originalIndex: "+originalIndex);
 
@@ -4449,21 +4449,38 @@ var translate = {
 	                    }else if(/，/.test(char)){
 	                    	replaceResultText = replaceResultText + ', ';
 	                    	replaceOriginalText = translateOriginal + '，';
-	                    }else if(!(/\s/.test(char))){
-	                        //不是空白字符，补充上一个空格，用于将两个单词隔开
-	                        //text = text.replace(translateOriginal, translateResult+' ');
+	                    }else if(/：/.test(char)){
+	                    	replaceResultText = replaceResultText + ': ';
+	                    	replaceOriginalText = translateOriginal + '：';	
+	                    }else if([' ', '\n','\t',']', '', '|', '_'].includes(char)){
+							// 如果前面的字符是 这些字符，那么不用添加空格隔开
+						}else{
+							//补充上一个空格，用于将两个单词隔开
 	                        replaceResultText = replaceResultText + ' ';
 	                    }
+	                    
 	                }
 
 	                //判断它前面是否还有文本
 	                if(originalIndex > 0){
 	                    let char = text.charAt(originalIndex-1);
 	                    //console.log(char);
-	                    if(!(/\s/.test(char))){
-	                        //不是空白字符，补充上一个空格，用于将两个单词隔开
+	                    
+  						if(/。/.test(char)){
+	                    	replaceResultText = '. '+replaceResultText;
+	                    	replaceOriginalText = '。'+replaceOriginalText;
+	                    }else if(/，/.test(char)){
+	                    	replaceResultText = ', '+replaceResultText;
+	                    	replaceOriginalText = '，'+replaceOriginalText;
+	                    }else if(/：/.test(char)){
+	                    	replaceResultText = ': '+replaceResultText;
+	                    	replaceOriginalText = '：'+replaceOriginalText;	
+	                    }else if([' ', '\n','\t','[', '', '|', '_'].includes(char)){
+							// 如果前面的字符是 这些字符，那么不用添加空格隔开
+						}else{
+							//补充上一个空格，用于将两个单词隔开
 	                        //text = text.replace(translateOriginal, ' '+translateResult);
-	                        replaceResultText = ' '+replaceResultText;
+							replaceResultText = ' '+replaceResultText;
 	                    }
 	                }
 	            }else{

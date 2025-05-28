@@ -4163,7 +4163,7 @@ var translate = {
 		},
 		//希伯来语
 		hebrew:function(str){
-			return /[\u0590-\u05FF]/u.test(str);
+			return /^[\u0590-\u05FF]$/.test(str);
 		},
 		//0-9 阿拉伯数字
 		number:function(str){

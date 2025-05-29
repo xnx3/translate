@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.10.20250528',
+	version: '3.15.11.20250529',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -858,6 +858,74 @@ var translate = {
 				translate.storage.set('hash_'+to+'_'+translate.util.hash(key), value);
 			}
 		},
+
+		
+		//全部提取能力（整站的离线翻译数据提取）
+		fullExtract:{
+			/*js translate.office.fullExtract.set start*/
+			/*
+				将翻译的结果加入
+				hash: 翻译前的文本的hash
+				originalText: 翻以前的文本，原始文本
+				toLanguage: 翻译为什么语言
+				translateText: 翻译结果的文本
+			*/
+			set: async function(hash, originalText, toLanguage, translateText){
+				if(typeof(translate.storage.IndexedDB) == 'undefined'){
+					console.log('ERROR: translate.storage.IndexedDB not find');
+					return;
+				}
+				var obj = await translate.storage.IndexedDB.get('hash_'+hash);
+				if(typeof(obj) == 'undefined' && obj == null){
+					obj = {
+						originalText:originalText
+					};
+				}
+				obj[toLanguage] = translateText;
+				await translate.storage.IndexedDB.set('hash_'+hash, obj);
+			},
+			/*js translate.office.fullExtract.set end*/
+
+			/*js translate.office.fullExtract.export start*/
+			/*
+				将存储的数据导出为 txt 文件下载下来
+			*/
+			export: async function(to){
+				if(typeof(translate.storage.IndexedDB) == 'undefined'){
+					console.log('ERROR: translate.storage.IndexedDB not find');
+					return;
+				}
+				if(typeof(to) != 'string'){
+					console.log('error : to param not find, example: "english"');
+					return;
+				}
+				var text = 'translate.office.append(\'';
+				
+				var data = await translate.storage.IndexedDB.list('hash_*');
+				for(var i in data){
+					var originalText = data[i].value.originalText.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+					text = text + '\n' + originalText + '='+data[i].value.english.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+				}
+				text = text + '\n`);'
+
+				const blob = new Blob([text], { type: "text/plain" });
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = url;
+				link.download = to+".txt";
+				link.click();
+				URL.revokeObjectURL(url);
+			},
+			/*js translate.office.fullExtract.export end*/
+
+			/*
+				是否启用全部提取的能力
+				true: 启用，  默认是false不启用。
+				如果设置为true，则每次通过调用翻译接口进行翻译后，都会将翻译的原文、译文、翻译为什么语种，都会单独记录一次，存入浏览器的 IndexedDB 的 translate.js 数据库
+					然后可以浏览所有页面后，把所有翻译一对一的对应翻译结果直接全部导出，用于做离线翻译配置使用。
+			*/
+			isUse:false,
+		}
 	},
 	setAutoDiscriminateLocalLanguage:function(){
 		translate.autoDiscriminateLocalLanguage = true;
@@ -2226,6 +2294,10 @@ var translate = {
 					
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
 					translate.storage.set('hash_'+data.to+'_'+cacheHash,text);
+					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
+					if(translate.office.fullExtract.isUse){
+						translate.office.fullExtract.set(hash, originalWord, data.to, text);
+					}
 				}
 				task.execute(); //执行渲染任务
 				//translate.temp_executeFinishNumber++; //记录执行完的次数
@@ -5998,12 +6070,120 @@ var translate = {
 	},
 	//存储，本地缓存
 	storage:{
+		/*js translate.storage.IndexedDB start*/
+		//对浏览器的 IndexedDB 操作
+		IndexedDB:{
+			db: null,
+			// 初始化数据库
+			initDB: function () {
+				const self = this;
+				return new Promise((resolve, reject) => {
+					const DB_NAME = 'translate.js';
+					const STORE_NAME = 'kvStore';
+					const DB_VERSION = 1;
+
+					const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+					request.onupgradeneeded = function(event) {
+						const upgradedDb = event.target.result;
+						if (!upgradedDb.objectStoreNames.contains(STORE_NAME)) {
+							upgradedDb.createObjectStore(STORE_NAME, { keyPath: 'key' });
+						}
+					};
+
+					request.onsuccess = function(event) {
+						self.db = event.target.result;
+						resolve();
+					};
+
+					request.onerror = function(event) {
+						reject('IndexedDB 打开失败');
+					};
+				});
+			},
+			/*
+				存储键值对
+				使用方式：
+					await translate.storage.indexedDB.set("user_001", { name: "Alice" });
+			*/
+			set: async function (key, value) {
+				if (!this.db) await this.initDB();
+
+				return new Promise((resolve, reject) => {
+					const tx = this.db.transaction('kvStore', 'readwrite');
+					const store = tx.objectStore('kvStore');
+					const item = { key, value };
+					const request = store.put(item);
+
+					request.onsuccess = () => resolve();
+					request.onerror = () => reject('写入失败');
+				});
+			},
+			/*
+				获取键对应的值
+				使用方式：
+					var user = await translate.storage.indexedDB.get("user_001");
+			*/
+			get: async function (key) {
+				if (!this.db) await this.initDB();
+
+				return new Promise((resolve, reject) => {
+					const tx = this.db.transaction('kvStore', 'readonly');
+					const store = tx.objectStore('kvStore');
+					const request = store.get(key);
+
+					request.onsuccess = () => {
+						const result = request.result;
+						resolve(result ? result.value : undefined);
+					};
+
+					request.onerror = () => reject('读取失败');
+				});
+			},
+			/*
+				列出针对key进行模糊匹配的所有键值对
+				使用方式：
+					const users = await translate.storage.indexedDB.list("*us*r*");
+					其中传入的key可以模糊搜索，其中的 * 标识另个或多个
+			*/
+			list: async function (key = '') {
+				if (!this.db) await this.initDB();
+
+				return new Promise((resolve, reject) => {
+					const tx = this.db.transaction('kvStore', 'readonly');
+					const store = tx.objectStore('kvStore');
+					const request = store.openCursor();
+					const results = [];
+
+					// 将通配符 pattern 转换为正则表达式
+					const regexStr = '^' + key.replace(/\*/g, '.*') + '$';
+					const regex = new RegExp(regexStr);
+
+					request.onsuccess = (event) => {
+						const cursor = event.target.result;
+						if (cursor) {
+							if (regex.test(cursor.key)) {
+								results.push({ key: cursor.key, value: cursor.value.value });
+							}
+							cursor.continue();
+						} else {
+							resolve(results);
+						}
+					};
+
+					request.onerror = () => reject('游标读取失败');
+				});
+			}
+		},
+		/*js translate.storage.IndexedDB end*/
+
 		set:function(key,value){
 			localStorage.setItem(key,value);
 		},
 		get:function(key){
 			return localStorage.getItem(key);
 		}
+
 	},
 	//针对图片进行相关的语种图片替换
 	images:{
@@ -6700,6 +6880,7 @@ var nodeuuid = {
 		return uuid;
 	}
 }
+
 
 /*js copyright-notice start*/
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');

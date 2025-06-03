@@ -4524,8 +4524,8 @@ var translate = {
 	                    }else if(/：/.test(char)){
 	                    	replaceResultText = replaceResultText + ': ';
 	                    	replaceOriginalText = translateOriginal + '：';	
-	                    }else if([' ', '\n','\t',']','|', '_'].indexOf(char) !== -1){
-							// 如果前面的字符是 这些字符，那么不用添加空格隔开
+	                    }else if([' ', '\n','\t',']','|', '_','-','/'].indexOf(char) !== -1){
+							// 如果后面的字符是 这些字符，那么不用添加空格隔开
 						}else{
 							//补充上一个空格，用于将两个单词隔开
 	                        replaceResultText = replaceResultText + ' ';
@@ -4547,7 +4547,7 @@ var translate = {
 	                    }else if(/：/.test(char)){
 	                    	replaceResultText = ': '+replaceResultText;
 	                    	replaceOriginalText = '：'+replaceOriginalText;	
-	                    }else if([' ', '\n','\t','[', '|', '_'].indexOf(char) !== -1){
+	                    }else if([' ', '\n','\t','[', '|', '_','-','/'].indexOf(char) !== -1){
 							// 如果前面的字符是 这些字符，那么不用添加空格隔开
 						}else{
 							//补充上一个空格，用于将两个单词隔开

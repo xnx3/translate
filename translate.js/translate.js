@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.11.20250529',
+	version: '3.15.12.20250603',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1001,7 +1001,7 @@ var translate = {
 		use:false, 
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
-			
+			translate.listener.use = true;
 			translate.temp_linstenerStartInterval = setInterval(function(){
 				if(document.readyState == 'complete'){
 					//dom加载完成，进行启动
@@ -1512,6 +1512,7 @@ var translate = {
 		
 	*/
 	waitingExecute:{
+		use:true, //默认是使用，自有部署场景不担心并发的场景，可以禁用，以提高用户使用体验。
 
 		/*
 			一维数组形态，存放执行的翻译任务
@@ -1599,11 +1600,14 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
-		if(translate.state != 0){
-			console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
-			translate.waitingExecute.add(docs);
-			return;
+		if(translate.waitingExecute.use){
+			if(translate.state != 0){
+				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
+				translate.waitingExecute.add(docs);
+				return;
+			}
 		}
+		
 		translate.state = 1;
 		//console.log('translate.state = 1');
 		if(typeof(docs) != 'undefined'){
@@ -6824,7 +6828,415 @@ var translate = {
 	},
 	/*js dispose end*/
 
+	/*js translate.network start*/
+	/*
+		网络请求数据拦截并翻译
+		当用户触发ajax请求时，它可以针对ajax请求中的某个参数，进行获取，并进行翻译，将翻译后的文本赋予这个参数，然后再放开请求。
+		
+		使用场景如：
+			搜索场景，原本是中文的页面，翻译为英文后，给美国人使用，美国人使用时，进行搜索，输入的是英文，然后点击搜索按钮，发起搜索。
+			然后此会拦截网络请求，将请求中用户输入的搜索文本的内容提取出来，识别它输入的是中文还是英文，如果不是本地的语种中文，那就将其翻译为中文，然后再赋予此请求的这个参数中，然后再放开这次请求。
+			这样请求真正到达服务端接口时，服务端接受到的搜索的文本内容实际就是翻译后的中文文本，而不是用户输入的英文文本。
+		
+		何时自动进行翻译：
+			1. 当前用户没有进行切换语言
+			2. 切换语言了,但是输入的文本的语言是不需要进行翻译的, 输入的文本本身就是本地的语言
+			这两种情况那就不需要拦截翻译
+				
 
+	*/	
+	network: {
+	    // 原始方法保存
+	    originalOpen: XMLHttpRequest.prototype.open,
+	    originalSend: XMLHttpRequest.prototype.send,
+	    setRequestHeaderOriginal: XMLHttpRequest.prototype.setRequestHeader,
+
+	    // 规则配置
+	    rules: [
+	        {
+	            url: /https:\/\/www\.guanleiming\.com\/a\/b\/.html/,
+	            methods: ['GET', 'POST'],
+	            params: ['a','b1']
+	        }
+	    ],
+	    //根据 当前请求的url 跟 method 来判断当前请求是否符合规则， 
+	    //如果符合，则返回符合的 rule 规则，也就是 translate.network.rules 中配置的某个。
+	    //如果没有找到符合的，则返回 null
+	    getRuleMatch:function(url, method){
+			for (let i = 0; i < translate.network.rules.length; i++) {
+			    const rule = translate.network.rules[i];
+			    
+			    // 检查 URL 是否匹配
+			    if(typeof(rule.url) == 'undefined' && rule.url == ''){
+			    	console.log('WARINNG : translate.network.rule find url is null:');
+			    	console.log(rule);
+			    	continue;
+			    }
+			    //console.log(rule);
+			    const isUrlMatch = rule.url.test(url);
+			    if(!isUrlMatch){
+			    	continue;
+			    }
+			    
+			    // 检查方法是否匹配（忽略大小写）
+			    const isMethodMatch = rule.methods.includes(method.toUpperCase());
+			    if(!isMethodMatch){
+			    	continue;
+			    }
+
+			    return rule;
+			}
+
+			return null;
+	    },
+	    use:function(){
+	    	// 应用Hook
+			XMLHttpRequest.prototype.open = function(...args) {
+			    return translate.network.hookOpen.apply(this, args);
+			};
+
+			XMLHttpRequest.prototype.send = function(...args) {
+			    return translate.network.hookSend.apply(this, args);
+			};
+
+			// 劫持 setRequestHeader 方法
+		    XMLHttpRequest.prototype.setRequestHeader = function(...args) {
+		        return translate.network.setRequestHeader.apply(this, args);
+		    };
+
+		    translate.network.fetch.use();
+	    },
+	    // 私有工具方法
+	    _translateText(text) {
+	    	if(translate.language.getLocal() == translate.language.getCurrent() || (typeof(text) == 'string' && text.length > 0 && translate.language.recognition(text).languageName == translate.language.getLocal())){
+	    		/*
+					1. 没有进行切换语言
+					2. 切换语言了,但是输入的文本的语言是不需要进行翻译的, 输入的文本本身就是本地的语言
+
+					这两种情况那就不需要拦截翻译
+				*/
+	    		
+	    		return new Promise((resolve, reject) => {
+		            const obj = {
+		                from: 'auto',
+		                to: translate.language.getLocal(),
+		                text: [text]
+		            };
+		            
+		            resolve(obj);
+		        });
+	    	}else{
+	    		//有进行切换了，那进行翻译，将其他语种翻译为当前的本地语种
+	    		return new Promise((resolve, reject) => {
+		            const obj = {
+		                from: 'auto',
+		                to: translate.language.getLocal(),
+		                texts: [text]
+		            };
+		            
+		            //console.log('翻译请求:', obj);
+		            translate.request.translateText(obj, function(data) {
+		                if (data.result === 1) {
+		                    resolve(data);
+		                } else {
+		                    reject(data);
+		                }
+		            });
+		        });
+	    	}
+	        
+	    },
+		//劫持 setRequestHeader
+		setRequestHeader: function(header, value) {
+		    if (this._requestContext) {
+		        this._requestContext.headers = this._requestContext.headers || {};
+		        this._requestContext.headers[header] = value;
+		    }
+
+		    return translate.network.setRequestHeaderOriginal.call(this, header, value);
+		},
+	    // 请求处理工具
+	    RequestHandler: {
+	        async handleGet(url, rule) {
+	        	//console.log(url);
+	        	//console.log(rule);
+	        	if(typeof(rule.params) == 'undefined' && typeof(rule.params.length) == 'undefined' && rule.params.length < 1){
+	        		console.log('WARINNG: rule not find params , rule : ');
+	        		console.log(rule);
+	        		rule.params = [];
+	        	}
+	        	
+
+	            try {
+	                const urlObj = new URL(url, window.location.origin);
+	                const params = urlObj.searchParams;
+	                //console.log(rule.params);
+
+	                //for (const paramName in rule.params) {
+	                for(var p = 0; p < rule.params.length; p++){
+	                	var paramName = rule.params[p];
+	                		//console.log(paramName);
+	                    if (params.has(paramName)) {
+	                        const original = params.get(paramName);
+	                        const translateResultData = await translate.network._translateText(original);
+	                        
+	                        if(typeof(translateResultData) == 'undefined'){
+	                    				console.log('WARINNG: translateResultData is undefined');
+	                    		}else if(typeof(translateResultData.result) == 'undefined'){
+	                    				console.log('WARINNG: translateResultData.result is undefined');
+	                    		}else if(translateResultData.result != 1){
+	                    				console.log('WARINNG: translateResultData.result failure : '+translateResultData.info);
+	                    		}else{
+	                    				params.set(paramName, decodeURIComponent(translateResultData.text[0]));
+	                    		}
+
+	                    }
+	                }
+	                
+	                return urlObj.toString();
+	            } catch (e) {
+	                console.warn('GET处理失败:', e);
+	                return url;
+	            }
+	        },
+
+	        async handleForm(body, rule) {
+	            try {
+	                const params = new URLSearchParams(body);
+	                const modified = {...params};
+	                
+	                for (const paramName of rule.params) {
+	                    if (params.has(paramName)) {
+	                        const original = params.get(paramName);
+	                        const translated = await translate.network._translateText(original);
+	                        modified[paramName] = translated;
+	                    }
+	                }
+	                
+	                return new URLSearchParams(modified).toString();
+	            } catch (e) {
+	                console.warn('表单处理失败:', e);
+	                return body;
+	            }
+	        },
+
+	        async handleJson(body, rule) {
+	            try {
+	                const json = JSON.parse(body);
+	                const modified = {...json};
+	                
+	                for (const paramName of rule.params) {
+	                    if (modified.hasOwnProperty(paramName)) {
+	                        const original = modified[paramName];
+	                        modified[paramName] = await translate.network._translateText(original);
+	                    }
+	                }
+	                
+	                return JSON.stringify(modified);
+	            } catch (e) {
+	                console.warn('JSON处理失败:', e);
+	                return body;
+	            }
+	        }
+	    },
+
+	    // 请求上下文管理
+	    _requestContext: null,
+
+	    
+
+	    // Hook open 方法
+	    hookOpen(method, url, async, user, password) {
+	    	let matchedRule = null;
+	        this._requestContext = {
+	            method: method.toUpperCase(),
+	            originalUrl: url,
+	            async: async,
+	            user: user,
+	            password: password,
+	            matchedRule: translate.network.getRuleMatch(url, method)
+	        };
+
+	        return translate.network.originalOpen.call(this, method, url, async, user, password);
+	    },
+
+	    // Hook send 方法
+	    hookSend(body) {
+	        const ctx = this._requestContext;
+	        if (!ctx || !ctx.matchedRule) {
+	            return translate.network.originalSend.call(this, body);
+	        }
+
+	        const processRequest = async () => {
+	            let modifiedBody = body;
+	            const method = ctx.method;
+
+	            try {
+	                // 处理GET请求
+	                //if (method === 'GET') {
+	                    const newUrl = await translate.network.RequestHandler.handleGet(ctx.originalUrl, ctx.matchedRule);
+	                    translate.network.originalOpen.call(this, method, newUrl, ctx.async, ctx.user, ctx.password);
+	                //}
+
+	                // 恢复请求头
+	                if (ctx.headers) {
+	                    for (const header in ctx.headers) {
+	                        translate.network.setRequestHeaderOriginal.call(this, header, ctx.headers[header]);
+	                    }
+	                }    
+	                
+	                // 处理POST请求
+	                if (method === 'POST') {
+                    	if(typeof(body) != 'undefined' && body != null && body.length < 2000){
+                			var isJsonBody = false; //是否是json格式的数据，是否json已经处理了， true 是
+                			if(body.trim().indexOf('[') == 0 || body.trim().indexOf('{') == 0){
+                				//可能是json
+                				try{
+            						modifiedBody = await translate.network.RequestHandler.handleJson(body, ctx.matchedRule);
+            						isJsonBody = true;
+                				}catch(je){ 
+            						isJsonBody = false;
+                				}
+                			}
+                			if(!isJsonBody){
+                				try{
+                					modifiedBody = await translate.network.RequestHandler.handleForm(body, ctx.matchedRule);
+                				}catch(je){ 
+                				}
+                			}
+                		}
+	                }
+	            } catch (e) {
+	                console.warn('请求处理异常:', e);
+	            }
+
+	            translate.network.originalSend.call(this, modifiedBody);
+	        };
+
+	        // 异步处理
+	        if (ctx.async !== false) {
+	            processRequest.call(this);
+	        } else {
+	            console.warn('同步请求不支持翻译拦截');
+	            translate.network.originalSend.call(this, body);
+	        }
+	    },
+	    //fetch请求
+	    fetch:{
+			originalFetch: window.fetch,
+
+			// 保存原始 fetch 方法
+			use: function () {
+				const self = this;
+				window.fetch = function (...args) {
+					return self.hookFetch.apply(self, args);
+				};
+			},
+
+			// 拦截 fetch 请求
+			hookFetch: async function (input, init) {
+				const request = new Request(input, init);
+				const url = request.url;
+				const method = request.method;
+
+				// 获取匹配规则
+				const rule = translate.network.getRuleMatch(url, method);
+				if (!rule) {
+					return this.originalFetch.call(window, request);
+				}
+
+				// 初始化请求上下文
+				const ctx = {
+					method,
+					url,
+					headers: {},
+					rule,
+					isModified: false
+				};
+
+				// 保存请求头
+				request.headers.forEach((value, key) => {
+					ctx.headers[key] = value;
+				});
+
+				this._requestContext = ctx;
+
+				try {
+					const newUrl = await translate.network.RequestHandler.handleGet(url, rule);
+					// 处理 GET 请求
+					if (method === 'GET') {
+						
+						const newRequest = new Request(newUrl, {
+							method,
+							headers: new Headers(ctx.headers),
+							mode: request.mode,
+							credentials: request.credentials,
+							cache: request.cache,
+							redirect: request.redirect,
+							referrer: request.referrer,
+							referrerPolicy: request.referrerPolicy
+						});
+						return this.originalFetch.call(window, newRequest);
+					}
+
+					// 处理 POST 请求
+					if (method === 'POST') {
+						let body = null;
+						if (request.body) {
+							body = await request.clone().text();
+						}
+
+						const contentType = request.headers.get('Content-Type');
+						let modifiedBody = body;
+
+						if(typeof(body) != 'undefined' && body != null && body.length < 2000){
+                			var isJsonBody = false; //是否是json格式的数据，是否json已经处理了， true 是
+                			if(body.trim().indexOf('[') == 0 || body.trim().indexOf('{') == 0){
+                				//可能是json
+                				try{
+                					modifiedBody = await translate.network.RequestHandler.handleJson(body, rule);
+                					isJsonBody = true;
+                				}catch(je){ 
+                					isJsonBody = false;
+                				}
+                			}
+                			if(!isJsonBody){
+                				try{
+                					modifiedBody = await translate.network.RequestHandler.handleForm(body, rule);
+                				}catch(je){ 
+                				}
+                			}
+                		}
+
+						const newRequest = new Request(newUrl, {
+							method,
+							headers: new Headers(ctx.headers),
+							body: modifiedBody,
+							mode: request.mode,
+							credentials: request.credentials,
+							cache: request.cache,
+							redirect: request.redirect,
+							referrer: request.referrer,
+							referrerPolicy: request.referrerPolicy
+						});
+
+						return this.originalFetch.call(window, newRequest);
+					}
+
+					// 其他方法直接返回原始请求
+					return this.originalFetch.call(window, request);
+				} catch (e) {
+					console.warn('fetch 请求处理异常:', e);
+					return this.originalFetch.call(window, request);
+				}
+			},
+			// 请求上下文管理
+			_requestContext: null
+
+	    }
+	}
+
+	/*js translate.network end*/
 	
 }
 /*

@@ -6513,11 +6513,64 @@ var translate = {
 	},
 	/*js translate.init end*/
 
+	/*js translate.progress start*/
 	/*
 		翻译执行的进展相关
 		比如，浏览器本地缓存没有，需要走API接口的文本所在的元素区域，出现 记载中的动画蒙版，给用户以友好的使用提示
 	*/
 	progress:{
+		style: `
+			/* CSS部分 */
+			/* 灰色水平加载动画 */
+			.translate_api_in_progress {
+			  position: relative;
+			  overflow: hidden; /* 隐藏超出部分的动画 */
+			}
+
+			/* 蒙版层 */
+			.translate_api_in_progress::after {
+			  content: '';
+			  position: absolute;
+			  top: 0;
+			  left: 0;
+			  width: 100%;
+			  height: 100%;
+			  background: rgba(255, 255, 255, 1); /* 半透明白色遮罩 */
+			  z-index: 2;
+			}
+
+			/* 水平加载条动画 */
+			.translate_api_in_progress::before {
+			  content: '';
+			  position: absolute;
+			  top: 50%;
+			  left: 0;
+			  width: 100%;
+			  height:100%; /* 细线高度 */
+			  background: linear-gradient(
+			    90deg,
+			    transparent 0%,
+			    #e8e8e8 25%,  /* 浅灰色 */
+			    #d0d0d0 50%,  /* 中灰色 */
+			    #e8e8e8 75%,  /* 浅灰色 */
+			    transparent 100%
+			  );
+			  background-size: 200% 100%;
+			  animation: translate_api_in_progress_horizontal-loader 3.5s linear infinite;
+			  z-index: 3;
+			  transform: translateY(-50%);
+			}
+
+			@keyframes translate_api_in_progress_horizontal-loader {
+			  0% {
+			    background-position: 200% 0;
+			  }
+			  100% {
+			    background-position: -200% 0;
+			  }
+			}
+		`,
+
 		/*
 			通过文本翻译API进行的
 		 */
@@ -6530,57 +6583,7 @@ var translate = {
 				// 创建一个 style 元素
 		        const style = document.createElement('style');
 		        // 设置 style 元素的文本内容为要添加的 CSS 规则
-		       	style.textContent = `
-					/* CSS部分 */
-					/* 灰色水平加载动画 */
-					.translate_api_in_progress {
-					  position: relative;
-					  overflow: hidden; /* 隐藏超出部分的动画 */
-					}
-
-					/* 蒙版层 */
-					.translate_api_in_progress::after {
-					  content: '';
-					  position: absolute;
-					  top: 0;
-					  left: 0;
-					  width: 100%;
-					  height: 100%;
-					  background: rgba(255, 255, 255, 1); /* 半透明白色遮罩 */
-					  z-index: 2;
-					}
-
-					/* 水平加载条动画 */
-					.translate_api_in_progress::before {
-					  content: '';
-					  position: absolute;
-					  top: 50%;
-					  left: 0;
-					  width: 100%;
-					  height:100%; /* 细线高度 */
-					  background: linear-gradient(
-					    90deg,
-					    transparent 0%,
-					    #e8e8e8 25%,  /* 浅灰色 */
-					    #d0d0d0 50%,  /* 中灰色 */
-					    #e8e8e8 75%,  /* 浅灰色 */
-					    transparent 100%
-					  );
-					  background-size: 200% 100%;
-					  animation: translate_api_in_progress_horizontal-loader 3.5s linear infinite;
-					  z-index: 3;
-					  transform: translateY(-50%);
-					}
-
-					@keyframes translate_api_in_progress_horizontal-loader {
-					  0% {
-					    background-position: 200% 0;
-					  }
-					  100% {
-					    background-position: -200% 0;
-					  }
-					}
-				`;
+		       	style.textContent = translate.progress.style;
 		        // 将 style 元素插入到 head 元素中
 		        document.head.appendChild(style);
 
@@ -6662,6 +6665,7 @@ var translate = {
 			}
 		}
 	},
+	/*js translate.progress end*/
 
 	/*js dispose start*/
 	/*

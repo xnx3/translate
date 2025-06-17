@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.12.20250603',
+	version: '3.15.13.20250617',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5403,6 +5403,20 @@ var translate = {
 
 		},
 		/*
+			追加header头的参数，  v3.15.13 增加
+			所有通过 translate.request.send 进行网络请求的，都会追加上这个参数
+			默认是空，没有任何追加参数。
+
+			设置方式： https://translate.zvo.cn/471711.html
+			translate.request.appendHeaders = {
+				key1:'key1',
+				Aauthorization:'Bearer xxxxxxxxxx'
+			}
+		*/
+		appendHeaders:{
+
+		},
+		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
 			另外当 xhr.readyState==4 的状态时才会触发。
 			此处会在接口请求响应后、且在translate.js处理前就会触发
@@ -5776,6 +5790,12 @@ var translate = {
 					xhr.setRequestHeader(index,headers[index]);
 				}
 			}
+
+			//追加附加参数
+			for(var ahindex in translate.request.appendHeaders){
+				xhr.setRequestHeader(ahindex,translate.request.appendHeaders[ahindex]);
+			}
+
 			if(translate.service.name == 'translate.service'){
 				xhr.setRequestHeader('currentpage', window.location.href+'');
 			}
@@ -5910,6 +5930,19 @@ var translate = {
 				}
 			}
 			
+			/*
+			for(var i = texts.length - 1; i >= 0; i--){
+				console.log(texts[i]);
+
+				//判断是否在浏览器缓存中出现了
+				var cacheHash = translate.util.hash(texts[i]);
+				var cache = translate.storage.get('hash_'+translate.to+'_'+cacheHash);
+				if(cache != null && cache.length > 0){
+					//缓存中发现了这个得结果，那这个就不需要再进行翻译了
+				}
+			}
+			*/
+			
 
 			var url = translate.request.api.translate;
 			var data = {
@@ -6016,6 +6049,10 @@ var translate = {
 						}
 					}
 				}, 100);
+				if(typeof(PerformanceObserver) == 'undefined'){
+					console.log('因浏览器版本较低， translate.request.listener.start() 中 PerformanceObserver 对象不存在，浏览器不支持，所以 translate.request.listener.start() 未生效。');
+					return;
+				}
 
 				const observer = new PerformanceObserver((list) => {
 					var translateExecute = false;	//是否需要执行翻译 true 要执行

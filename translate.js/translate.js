@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.13.20250617',
+	version: '3.15.14.20250617',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6104,8 +6104,26 @@ var translate = {
 				    	translate.request.listener.addExecute();
 				    }
 				});
-				// 配置observer观察的类型为"resource"
-				observer.observe({ type: "resource", buffered: true });
+
+				//v3.15.14.20250617 增加
+				// 优先使用 entryTypes
+				if (PerformanceObserver.supportedEntryTypes?.includes("resource")) {
+					try {
+						observer.observe({ entryTypes: ["resource"] });
+						return;
+					} catch (e) {
+						console.log("PerformanceObserver entryTypes 失败，尝试 type 参数");
+					}
+				}
+
+				// 回退到 type 参数
+				try {
+					observer.observe({ type: "resource", buffered: true });
+					console.log("使用 PerformanceObserver type");
+				} catch (e) {
+					console.log("当前浏览器不支持 PerformanceObserver 的任何参数, translate.request.listener.start() 未启动");
+				}
+
 			}
 		}
 	},

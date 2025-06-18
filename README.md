@@ -119,7 +119,7 @@ translate.execute();//完成翻译初始化，进行翻译
 	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
 	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
 </ul>
-
+ 
 <!-- 引入多语言切换的js -->
 <script src="https://cdn.staticfile.net/translate.js/3.16.0/translate.js"></script>
 <script>

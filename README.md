@@ -109,7 +109,7 @@ translate.execute();//完成翻译初始化，进行翻译
 
 **普通网站中点击某个语言进行切换**
 如下图所示，网站中的某个位置要有几种语言切换  
-![](doc/resources/uws-demo.png)  
+![](doc/resources/uws-demo.png?raw=true)  
 直接在其html代码末尾的位置加入以下代码：  
 
 ````

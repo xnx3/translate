@@ -109,7 +109,7 @@ translate.execute();//完成翻译初始化，进行翻译
 
 **普通网站中点击某个语言进行切换**
 如下图所示，网站中的某个位置要有几种语言切换  
-![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
+![](doc/resources/uws-demo.png)  
 直接在其html代码末尾的位置加入以下代码：  
 
 ````
@@ -124,7 +124,7 @@ translate.execute();//完成翻译初始化，进行翻译
 <script src="https://cdn.staticfile.net/translate.js/3.16.0/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
-    translate.service.use('client.edge'); //设置机器翻译服务通道
+    translate.service.use('client.edge'); //设置翻译服务通道
 	translate.execute();
 </script>
 ````

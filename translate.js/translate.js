@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.15.14.20250617',
+	version: '3.16.0.20250618',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5215,6 +5215,7 @@ var translate = {
 			translate.service 自行部署的translate.service 翻译API服务，部署参考： https://translate.zvo.cn/391129.html
 			client.edge 使用无服务器的翻译,有edge浏览器接口提供翻译服务
 			siliconflow 使用指点云提供的服务器、硅基流动提供的AI算力进行大模型翻译
+			giteeAI 使用 giteeAI ， 亚洲、美洲、欧洲 网络节点覆盖
 	
 		*/
 		use: function(serviceName){
@@ -5222,12 +5223,19 @@ var translate = {
 				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
 				return;
 			}
+			//console.log('--'+serviceName);
 			if(typeof(serviceName) == 'string'){
 				translate.service.name = serviceName;
 				if(serviceName != 'translate.service'){
-					if(serviceName == 'siliconflow'){
+					if(serviceName.toLowerCase() == 'giteeai'){
+						//设定翻译接口为GiteeAI的
+						translate.request.api.host=['https://giteeai.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn:1000/','https://api.translate.zvo.cn:1000/'];
+						return;
+					}
+					if(serviceName.toLowerCase() == 'siliconflow'){
 						//设定翻译接口为硅基流动的
 						translate.request.api.host=['https://siliconflow.zvo.cn/','https://america.api.translate.zvo.cn:1414/','https://deutsch.enterprise.api.translate.zvo.cn:1414/'];
+						return;
 					}
 
 					//增加元素整体翻译能力
@@ -6106,15 +6114,27 @@ var translate = {
 				});
 
 				//v3.15.14.20250617 增加
-				// 优先使用 entryTypes
-				if (PerformanceObserver.supportedEntryTypes?.includes("resource")) {
-					try {
-						observer.observe({ entryTypes: ["resource"] });
-						return;
-					} catch (e) {
-						console.log("PerformanceObserver entryTypes 失败，尝试 type 参数");
-					}
+				// 优先使用 entryTypes  兼容 ES5 的写法
+
+				var supportedTypes = PerformanceObserver.supportedEntryTypes;
+				if (supportedTypes) {
+				    var hasResource = false;
+				    for (var i = 0; i < supportedTypes.length; i++) {
+				        if (supportedTypes[i] === "resource") {
+				            hasResource = true;
+				            break;
+				        }
+				    }
+				    if (hasResource) {
+				        try {
+				            observer.observe({ entryTypes: ["resource"] });
+				            return;
+				        } catch (e) {
+				            console.log("PerformanceObserver entryTypes 失败，尝试 type 参数");
+				        }
+				    }
 				}
+
 
 				// 回退到 type 参数
 				try {

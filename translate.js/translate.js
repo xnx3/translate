@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.0.20250618',
+	version: '3.16.1.20250620',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5623,7 +5623,7 @@ var translate = {
 							headers,
 							function(data){
 								//translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, time);
-								var hostUrl = data.requestURL.replace('connectTest.json','');
+								var hostUrl = data.requestURL.replace(translate.request.api.connectTest,'');
 								translate.request.speedDetectionControl.checkResponseSpeed_Storage(hostUrl, translate.request.speedDetectionControl.disableTime);
 							},
 							false

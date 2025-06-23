@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.4.20250623',
+	version: '3.16.5.20250623',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2137,7 +2137,7 @@ var translate = {
 				//console.log(lang);
 				//console.log(translate.nodeQueue[uuid]['list'][lang][thhash].nodes);
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length) == 'undefined'){
-					console.log('translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
+					console.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\''+lang+'\'][\''+thhash+'\'].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
 					continue;
 				}
 		
@@ -6448,7 +6448,11 @@ var translate = {
 							console.log(currentShow);
 						}
 */						
-						translate.element.nodeAnalyse.analyse(item.nodes[index].node, currentShow, item.original, item.nodes[index].node.attribute);
+						// v3.16.5 针对gitee 的 readme 接入优化
+						if(typeof(item.nodes[index].node) == 'undefined'){
+							continue;
+						}
+						translate.element.nodeAnalyse.analyse(item.nodes[index].node, currentShow, item.original, typeof(item.nodes[index].node.attribute) == 'undefined' ? null:item.nodes[index].node.attribute);
 					}
 				}
 			}

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.1.20250620',
+	version: '3.16.2.20250623',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1766,6 +1766,10 @@ var translate = {
 					//v2.10增加，避免hash冒出个 Contains 出来导致for中的.length 出错
 					continue;
 				}
+				if(typeof(translate.nodeQueue[uuid].list[lang][hash].nodes) == 'undefined' && typeof(translate.nodeQueue[uuid].list[lang][hash].nodes.length) == 'undefined'){
+					//v3.16.2 增加，针对深圳北理莫斯科学校龙老师提出的这里 .length 遇到了 undefined 的情况
+					continue;
+				}
 				for(var nodeindex = translate.nodeQueue[uuid].list[lang][hash].nodes.length-1; nodeindex > -1; nodeindex--){
 					//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes);
 					var analyse = translate.element.nodeAnalyse.get(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node);
@@ -2170,7 +2174,10 @@ var translate = {
 			//console.log(typeof(translateTextArray[lang]))
 			
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
-				console.log('异常,理论上不应该存在： typeof(translateTextArray[lang]) == \'undefined\' || translateTextArray[lang].length < 1');
+				console.log('异常,理论上不应该存在, lang:'+lang+', translateTextArray:');
+				console.log(translateTextArray);
+				console.log('你无需担心，这个只是个提示，它并不影响你翻译的正常进行，只是个异常提示而已，它会自动容错处理的，不会影响翻译的使用。');
+
 				translate.state = 0;
 				translate.executeNumber++;
 				return;
@@ -3515,18 +3522,29 @@ var translate = {
 				return;
 			}
 
-			var bodyText = document.body.outerText;
-			if(bodyText == null || typeof(bodyText) == 'undefined' || bodyText.length < 1){
+			//v3.16.1 优化，获取本地语种，针对开源中国只对 readme 部分进行翻译的场景，将针对设置的 translate.setDocument() 区域的元素的显示文本进行判定语种
+			var translateAreaText = ''; //翻译区域内当前的文本
+			var docs = translate.getDocuments();
+			for(var docs_index = 0; docs_index < docs.length; docs_index++){
+				var doc = docs[docs_index];
+				if(typeof(doc) != 'undefined' && doc != null && typeof(doc.innerText) != 'undefined' && doc.innerText != null && doc.innerText.length > 0){
+					translateAreaText = translateAreaText + doc.innerText;
+				}
+			}
+
+			
+			//var bodyText = document.body.outerText;
+			if(translateAreaText == null || typeof(translateAreaText) == 'undefined' || translateAreaText.length < 1){
 				//未取到，默认赋予简体中文
 				translate.language.local = 'chinese_simplified';
 				return;
 			}
 
-			bodyText = bodyText.replace(/\n|\t|\r/g,''); //将回车换行等去掉
+			translateAreaText = translateAreaText.replace(/\n|\t|\r/g,''); //将回车换行等去掉
 
 			//默认赋予简体中文
 			translate.language.local = 'chinese_simplified';
-			var recognition = translate.language.recognition(bodyText);
+			var recognition = translate.language.recognition(translateAreaText);
 			translate.language.local = recognition.languageName;
 			return translate.language.local;
 			/* v3.1优化

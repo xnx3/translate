@@ -2172,11 +2172,14 @@ var translate = {
 		//状态
 		translate.state = 20;
 
-		
+		console.log(translateTextArray);
+		console.log(fanyiLangs);
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			var lang = fanyiLangs[lang_index];
-			//console.log(typeof(translateTextArray[lang]))
+			if(typeof(lang) != 'string'){
+				continue;
+			}
 			
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
 				console.log('异常,理论上不应该存在, lang:'+lang+', translateTextArray:');
@@ -3524,7 +3527,7 @@ var translate = {
 		autoRecognitionLocalLanguage:function(){
 			if(translate.language.local != null && translate.language.local.length > 2){
 				//已设置过了，不需要再设置
-				return;
+				return translate.language.local;
 			}
 
 			//v3.16.1 优化，获取本地语种，针对开源中国只对 readme 部分进行翻译的场景，将针对设置的 translate.setDocument() 区域的元素的显示文本进行判定语种

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.3.20250623',
+	version: '3.16.4.20250623',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2136,6 +2136,11 @@ var translate = {
 				//console.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\'chinese_simplified\'][\''+thhash+'\']');
 				//console.log(lang);
 				//console.log(translate.nodeQueue[uuid]['list'][lang][thhash].nodes);
+				if(typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length) == 'undefined'){
+					console.log('translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
+					continue;
+				}
+		
 				for(var ipni = 0; ipni < translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length; ipni++){
 					//取得这个翻译的node
 					var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;

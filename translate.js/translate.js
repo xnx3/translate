@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.2.20250623',
+	version: '3.16.3.20250623',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1766,7 +1766,7 @@ var translate = {
 					//v2.10增加，避免hash冒出个 Contains 出来导致for中的.length 出错
 					continue;
 				}
-				if(typeof(translate.nodeQueue[uuid].list[lang][hash].nodes) == 'undefined' && typeof(translate.nodeQueue[uuid].list[lang][hash].nodes.length) == 'undefined'){
+				if(typeof(translate.nodeQueue[uuid].list[lang][hash].nodes) == 'undefined' || typeof(translate.nodeQueue[uuid].list[lang][hash].nodes.length) == 'undefined'){
 					//v3.16.2 增加，针对深圳北理莫斯科学校龙老师提出的这里 .length 遇到了 undefined 的情况
 					continue;
 				}

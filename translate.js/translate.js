@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.5.20250623',
+	version: '3.16.6.20250624',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -177,20 +177,17 @@ var translate = {
 			}
 
 			//从服务器加载支持的语言库
-			translate.request.post(translate.request.api.language, {}, function(data){
-				if(data.result == 0){
-					console.log('load language list error : '+data.info);
-					return;
-				}
-				
-				translate.selectLanguageTag.customUI(data.list);
-
-				/*
-				try{
-					document.getElementById('translateSelectLanguage').style.width = '94px';
-				}catch(e){ console.log(e);} 
-				*/
-			}, null);
+			if(typeof(translate.request.api.language) == 'string' && translate.request.api.language.length > 0){
+				translate.request.post(translate.request.api.language, {}, function(data){
+					if(data.result == 0){
+						console.log('load language list error : '+data.info);
+						return;
+					}
+					
+					translate.selectLanguageTag.customUI(data.list);
+				}, null);
+			}
+			
 			
 			
 		}
@@ -4474,6 +4471,10 @@ var translate = {
 			return;
 		}
 
+		if(typeof(translate.request.api.ip) != 'string' || translate.request.api.ip == null || translate.request.api.ip.length < 1){
+			return;
+		}
+
 		//如果用户浏览器没读到默认语言，或者默认语言没有对应到translate.js支持的语种，那么在采用ip识别的方式
 		translate.request.post(translate.request.api.ip, {}, function(data){
 			//console.log(data); 
@@ -5596,6 +5597,10 @@ var translate = {
 					'content-type':'application/x-www-form-urlencoded',
 				};
 
+				if(typeof(translate.request.api.connectTest) != 'string' || translate.request.api.connectTest == null || translate.request.api.connectTest.length < 1){
+					return;
+				}
+				
 
 				translate.request.speedDetectionControl.checkHostQueue = []; //用于实际存储
 				translate.request.speedDetectionControl.checkHostQueueMap = []; //只是map，通过key取值，无其他作用
@@ -6584,6 +6589,10 @@ var translate = {
 			return;
 		}
 		translate.init_execute = '已进行';
+
+		if(typeof(translate.request.api.init) != 'string' || translate.request.api.init == null || translate.request.api.init.length < 1){
+			return;
+		}
 		try{
 			translate.request.send(
 				translate.request.api.init,

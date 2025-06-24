@@ -6818,8 +6818,8 @@ var translate = {
 
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
-					    for(var lang in translate.nodeQueue[uuid].list){
-					    	if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+					    //for(var lang in translate.nodeQueue[uuid].list){
+					    /*	if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
 					    		continue;
 					    	}
 						    //console.log('lang:'+lang);
@@ -6829,16 +6829,19 @@ var translate = {
                                 //console.log('ignore-------');
                                 continue;
                             }
+                         */   
+                            //console.log('lang:'+from+' , size:'+Object.keys(translate.nodeQueue[uuid].list[from]).length);
 
-						    for(var hash in translate.nodeQueue[uuid].list[lang]){
-						    	if (!translate.nodeQueue[uuid].list[lang].hasOwnProperty(hash)) {
+
+						    for(var hash in translate.nodeQueue[uuid].list[from]){
+						    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 						    		continue;
 						    	}
-						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
-						    		if (!translate.nodeQueue[uuid].list[lang][hash].nodes.hasOwnProperty(nodeindex)) {
+						    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
+						    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
 							    		continue;
 							    	}
-						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
+						    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
 						    		
 						    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
 						    			continue;
@@ -6866,7 +6869,7 @@ var translate = {
 
 						    	}
 						    }
-						}
+						//}
 					});
 					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
 						//console.log('uuid:'+uuid+', from:'+from+', to:'+to);

@@ -651,6 +651,10 @@ var translate = {
 			}
 			//console.log(str)
 			for(var originalText in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
+				if (!translate.nomenclature.data[translate.language.getLocal()][translate.to].hasOwnProperty(originalText)) {
+		    		continue;
+		    	}
+
 				var translateText = translate.nomenclature.data[translate.language.getLocal()][translate.to][originalText];
 				if(typeof(translateText) == 'function'){
 					//进行异常的预处理调出
@@ -750,8 +754,15 @@ var translate = {
 
 			var text = '';
 			for(var uuid in translate.nodeQueue){
+				if (!translate.nodeQueue.hasOwnProperty(uuid)) {
+		    		continue;
+		    	}
+
 				var queueValue = translate.nodeQueue[uuid];
 				for(var lang in translate.nodeQueue[uuid].list){
+					if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+			    		continue;
+			    	}
 					//console.log('------'+lang)
 					if(typeof(lang) != 'string' || lang.length < 1){
 						continue;
@@ -759,6 +770,9 @@ var translate = {
 					//if(translate.language.getLocal() == lang){
 						//console.log(translate.nodeQueue[uuid].list[lang]);
 						for(var hash in translate.nodeQueue[uuid].list[lang]){
+							if (!translate.nodeQueue[uuid].list[lang].hasOwnProperty(hash)) {
+					    		continue;
+					    	}
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							text = text + '\n' + translate.nodeQueue[uuid].list[lang][hash].original + '='+translate.storage.get('hash_'+translate.language.getCurrent()+'_'+hash);
@@ -900,6 +914,9 @@ var translate = {
 				
 				var data = await translate.storage.IndexedDB.list('hash_*');
 				for(var i in data){
+					if (!data.hasOwnProperty(i)) {
+			    		continue;
+			    	}
 					var originalText = data[i].value.originalText.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
 					text = text + '\n' + originalText + '='+data[i].value.english.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
 				}
@@ -1333,6 +1350,10 @@ var translate = {
 		execute(){
 			//先对tasks任务队列的替换词进行排序，将同一个node的替换词有大到小排列，避免先替换了小的，大的替换时找不到
 			for(var hash in this.taskQueue){
+				if (!this.taskQueue.hasOwnProperty(hash)) {
+		    		continue;
+		    	}
+
 				var tasks = this.taskQueue[hash];
 				if(typeof(tasks) == 'function'){
 					//进行异常的预处理调出
@@ -1355,6 +1376,10 @@ var translate = {
 
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
+				if (!this.nodes.hasOwnProperty(hash)) {
+		    		continue;
+		    	}
+		    	
 				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
 				//var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
 				//console.log(tasks);
@@ -1435,8 +1460,16 @@ var translate = {
 					/** 执行完成后，保存翻译的历史node **/
 					//将当前翻译完成的node进行缓存记录，以node唯一标识为key，  node、以及node当前翻译之后的内容为值进行缓存。方便下一次执行 translate.execute() 时，若值未变化则不进行翻译
 					for(var hash in renderTask.nodes){
+						if (!renderTask.nodes.hasOwnProperty(hash)) {
+				    		continue;
+				    	}
+
 						//console.log(translate.nodeQueue[uuid].list[lang][hash])
 						for(var nodeindex in renderTask.nodes[hash]){
+							if (!renderTask.nodes[hash].hasOwnProperty(nodeindex)) {
+					    		continue;
+					    	}
+
 							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
 							//var nodename = translate.element.getNodeName(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
 							//console.log("nodename:"+nodename);
@@ -1565,6 +1598,9 @@ var translate = {
 		isAllExecuteFinish:function(uuid, from, to){
 			//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 			for(var lang in translate.translateRequest[uuid]){
+				if (!translate.translateRequest[uuid].hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				//console.log(translate.translateRequest[uuid])
 				for(var i = 0; i<translate.translateRequest[uuid][lang].length; i++){
 					if(translate.translateRequest[uuid][lang][i].executeFinish == 0){
@@ -1739,6 +1775,9 @@ var translate = {
 		if(translate.language.translateLanguagesRange.length > 0){
 			//如果大于0，则是有设置，那么只翻译有设置的语种，不在设置中的语种不会参与翻译
 			for(var lang in translate.nodeQueue[uuid].list){
+				if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				if(translate.language.translateLanguagesRange.indexOf(lang) < 0){
 					//删除这个语种
 					delete translate.nodeQueue[uuid].list[lang];
@@ -1756,8 +1795,14 @@ var translate = {
 			console.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
 		}
 		for(var lang in translate.nodeQueue[uuid].list){
+			if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+	    		continue;
+	    	}
 			//console.log('lang:'+lang)
 			for(var hash in translate.nodeQueue[uuid].list[lang]){
+				if (!translate.nodeQueue[uuid].list[lang].hasOwnProperty(hash)) {
+		    		continue;
+		    	}
 				//console.log(hash)
 				if(typeof(translate.nodeQueue[uuid].list[lang][hash]) == 'function'){
 					//v2.10增加，避免hash冒出个 Contains 出来导致for中的.length 出错
@@ -1833,6 +1878,9 @@ var translate = {
 		var twoScanNodes = {};
 		var cacheScanNodes = []; //同上面的 twoScanNodes，只不过 twoScanNodes 是按照lang存的，而这个不再有lang区分
 		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中，取语言
+			if (!translate.nodeQueue[uuid]['list'].hasOwnProperty(lang)) {
+	    		continue;
+	    	}
 			//console.log('lang:'+lang); //lang为english这种语言标识
 			if(lang == null || typeof(lang) == 'undefined' || lang.length == 0 || lang == 'undefined'){
 				//console.log('lang is null : '+lang);
@@ -1848,6 +1896,9 @@ var translate = {
 			twoScanNodes[lang] = [];
 			//二维数组，取hash、value
 			for(var hash in translate.nodeQueue[uuid]['list'][lang]){
+				if (!translate.nodeQueue[uuid]['list'][lang].hasOwnProperty(hash)) {
+		    		continue;
+		    	}
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'function'){
 					//跳出，增加容错。  正常情况下应该不会这样
 					continue;
@@ -1997,6 +2048,10 @@ var translate = {
 
 		/******* 进行第二次扫描、追加入翻译队列。目的是防止缓存打散扫描的待翻译文本 ********/
 		for(var lang in twoScanNodes){
+			if (!twoScanNodes.hasOwnProperty(lang)) {
+	    		continue;
+	    	}
+
 			//记录第一次扫描的数据，以便跟第二次扫描后的进行对比
 			var firstScan = Object.keys(translate.nodeQueue[uuid]['list'][lang]);
 			var firstScan_lang_langth = firstScan.length; //第一次扫描后的数组长度
@@ -2078,6 +2133,10 @@ var translate = {
 		var fanyiLangs = []; 
 		//console.log(translateTextArray)
 		for(var lang in translate.nodeQueue[uuid]['list']){ //二维数组中取语言
+			if (!translate.nodeQueue[uuid]['list'].hasOwnProperty(lang)) {
+	    		continue;
+	    	}
+	    	
 			if(typeof(translateTextArray[lang]) == 'undefined'){
 				continue;
 			}
@@ -2120,6 +2179,9 @@ var translate = {
 		
 		//加入 translate.inProgressNodes -- start
 		for(var lang in translateHashArray){
+			if (!translateHashArray.hasOwnProperty(lang)) {
+	    		continue;
+	    	}
 			if(typeof(translateHashArray[lang]) == 'undefined'){
 				continue;
 			}
@@ -2169,10 +2231,11 @@ var translate = {
 		//状态
 		translate.state = 20;
 
-		console.log(translateTextArray);
-		console.log(fanyiLangs);
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
+			if (!fanyiLangs.hasOwnProperty(lang_index)) {
+	    		continue;
+	    	}
 			var lang = fanyiLangs[lang_index];
 			if(typeof(lang) != 'string'){
 				continue;
@@ -2687,6 +2750,9 @@ var translate = {
 				//console.log(translate.element.tagAttribute[nodeNameLowerCase]);
 
 				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase]){
+					if (!translate.element.tagAttribute[nodeNameLowerCase].hasOwnProperty(attributeName_index)) {
+			    		continue;
+			    	}
 					
 					var attributeName = translate.element.tagAttribute[nodeNameLowerCase][attributeName_index];
 					//console.log(attributeName);
@@ -2948,6 +3014,9 @@ var translate = {
 		if(typeof(translate.nomenclature.data[translate.language.getLocal()]) != 'undefined' && typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) != 'undefined'){
 			var nomenclatureKeyArray;
 			for(var nomenclatureKey in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
+				if (!translate.nomenclature.data[translate.language.getLocal()][translate.to].hasOwnProperty(nomenclatureKey)) {
+		    		continue;
+		    	}
 				//nomenclatureKey 便是自定义术语的原始文本，值是要替换为的文本
 				//console.log(nomenclatureKey);
 				//自定义属于的指定的结果字符串
@@ -3159,6 +3228,9 @@ var translate = {
 			//console.log(langs);
 			
 			for(var lang in langs) {
+				if (!langs.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				//创建二维数组， key为语种，如 english
 				/*
 				放到了 translate.addNodeQueueItem 进行判断
@@ -3735,6 +3807,9 @@ var translate = {
 			var langsNumberOriginal = []; //同上，只不过这个不会进行清空字符数
 			var allNumber = 0;//总字数
 			for(var key in langs){
+				if (!langs.hasOwnProperty(key)) {
+		    		continue;
+		    	}
 				if(typeof(langs[key]) != 'object'){
 					continue;
 				}
@@ -3750,6 +3825,9 @@ var translate = {
 			//过滤 语种的字符数小于总字符数 百分之五的，低于这个数，将忽略
 			var langkeys = [];
 			for(var lang in langsNumber){
+				if (!langsNumber.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				if(langsNumber[lang]/allNumber > 0.01){
 					langkeys[langkeys.length] = lang+'';
 				}
@@ -3793,6 +3871,9 @@ var translate = {
 			var maxLang = ''; //字数最多的语种
 			var maxNumber = 0;
 			for(var lang in langsNumber){
+				if (!langsNumber.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				if(langsNumber[lang] > maxNumber){
 					maxLang = lang;
 					maxNumber = langsNumber[lang];
@@ -3802,6 +3883,9 @@ var translate = {
 			//重新组合返回值的 languageArray
 			var languageArray = {};
 			for(var lang in langs){
+				if (!langs.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				languageArray[lang] = {};
 				languageArray[lang].number = langsNumberOriginal[lang];
 				languageArray[lang].list = langs[lang];
@@ -4685,6 +4769,9 @@ var translate = {
 			}
 
 			for(var item in numbers){
+				if (!numbers.hasOwnProperty(item)) {
+		    		continue;
+		    	}
 			    if(numbers[item]===maxNum){
 			        maxStr.push(item)
 			    }
@@ -5789,6 +5876,9 @@ var translate = {
 				
 				//追加附加参数
 				for(var apindex in translate.request.appendParams){
+					if (!translate.request.appendParams.hasOwnProperty(apindex)) {
+			    		continue;
+			    	}
 					data[apindex] = translate.request.appendParams[apindex];
 				}
 
@@ -5801,6 +5891,9 @@ var translate = {
 				
 				//组合参数
 				for(var index in data){
+					if (!data.hasOwnProperty(index)) {
+			    		continue;
+			    	}
 					if(params.length > 0){
 						params = params + '&';
 					}
@@ -5826,12 +5919,18 @@ var translate = {
 			//设置headers
 			if(headers != null){
 				for(var index in headers){
+					if (!headers.hasOwnProperty(index)) {
+			    		continue;
+			    	}
 					xhr.setRequestHeader(index,headers[index]);
 				}
 			}
 
 			//追加附加参数
 			for(var ahindex in translate.request.appendHeaders){
+				if (!translate.request.appendHeaders.hasOwnProperty(ahindex)) {
+		    		continue;
+		    	}
 				xhr.setRequestHeader(ahindex,translate.request.appendHeaders[ahindex]);
 			}
 
@@ -6324,6 +6423,9 @@ var translate = {
 			}
 			*/
 			for(var key in queueArray){
+				if (!queueArray.hasOwnProperty(key)) {
+		    		continue;
+		    	}
 				translate.images.queues[key] = queueArray[key];
 			}
 		},
@@ -6419,14 +6521,26 @@ var translate = {
 	reset:function(){
 		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
 		for(var queue in translate.nodeQueue){
+			if (!translate.nodeQueue.hasOwnProperty(queue)) {
+	    		continue;
+	    	}
 			//console.log(queue);
 			for(var lang in translate.nodeQueue[queue].list){
+				if (!translate.nodeQueue[queue].list.hasOwnProperty(lang)) {
+		    		continue;
+		    	}
 				//console.log(lang);
 				
 				for(var hash in translate.nodeQueue[queue].list[lang]){
+					if (!translate.nodeQueue[queue].list[lang].hasOwnProperty(hash)) {
+			    		continue;
+			    	}
 					var item = translate.nodeQueue[queue].list[lang][hash];
 					//console.log(item);
 					for(var index in item.nodes){
+						if (!item.nodes.hasOwnProperty(index)) {
+				    		continue;
+				    	}
 						//console.log(item.nodes[index]);
 						//item.nodes[index].node.nodeValue = item.original;
 						var currentShow = translate.storage.get('hash_'+currentLanguage+'_'+hash); //当前显示出来的文字，也就是已经翻译后的文字
@@ -6705,6 +6819,9 @@ var translate = {
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					    for(var lang in translate.nodeQueue[uuid].list){
+					    	if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+					    		continue;
+					    	}
 						    //console.log('lang:'+lang);
                             //console.log(translate.nodeQueue[uuid].list[lang]);
                             if(translate.language.getCurrent() == lang){
@@ -6714,9 +6831,18 @@ var translate = {
                             }
 
 						    for(var hash in translate.nodeQueue[uuid].list[lang]){
+						    	if (!translate.nodeQueue[uuid].list[lang].hasOwnProperty(hash)) {
+						    		continue;
+						    	}
 						    	for(var nodeindex in translate.nodeQueue[uuid].list[lang][hash].nodes){
+						    		if (!translate.nodeQueue[uuid].list[lang][hash].nodes.hasOwnProperty(nodeindex)) {
+							    		continue;
+							    	}
 						    		var node = translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node;
-						    		//console.log(node);
+						    		
+						    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
+						    			continue;
+						    		}
 						    		var nodeParent = node.parentNode;
 							        if(nodeParent == null){
 							        	continue;
@@ -6746,7 +6872,15 @@ var translate = {
 						//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 					    
 					    for(var hash in translate.nodeQueue[uuid].list[from]){
+					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
+					    		continue;
+					    	}
+
 					    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
+					    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
+						    		continue;
+						    	}
+
 					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
 					    		var nodeParent = node.parentNode;
 						        if(nodeParent == null){

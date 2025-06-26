@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.7.20250626',
+	version: '3.16.8.20250626',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1260,7 +1260,7 @@ var translate = {
                 //console.log(translate.nodeQueue[uuid]);
                 for(var i = 0; i < translate.listener.execute.renderFinishByApi.length; i++){
                     try{
-                        translate.listener.execute.renderFinishByApi[i](uuid, from, to);
+                    	translate.listener.execute.renderFinishByApi[i](uuid, from, to);
                     }catch(e){
                         console.log(e);
                     }
@@ -2391,7 +2391,7 @@ var translate = {
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				translate.translateRequest[uuid][lang].result = 3;
-				translate.waitingExecute.isAllExecuteFinish(uuid, lang, translate.to);
+				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to);
 			});
 			/*** 翻译end ***/
 		}
@@ -5316,7 +5316,43 @@ var translate = {
 			}
 
 			return result;
+		},
+
+		/*js translate.util.getElementPosition start*/
+		/*
+			计算一个元素在浏览器中的坐标系，其绝对定位、以及实际显示出来所占用的区域，宽、高
+		*/
+		getElementPosition:function (node) {
+			// 获取元素的边界矩形信息（相对于视口）
+			const rect = node.getBoundingClientRect();
+
+			// 获取当前页面的滚动位置（兼容不同浏览器）
+			const scrollX = window.scrollX || document.documentElement.scrollLeft;
+			const scrollY = window.scrollY || document.documentElement.scrollTop;
+
+			// 计算元素在文档中的起始坐标
+			const startX = rect.left + scrollX;
+			const startY = rect.top + scrollY;
+
+			// 计算元素的宽度和高度
+			const width = rect.right - rect.left;
+			const height = rect.bottom - rect.top;
+
+			// 计算元素在文档中的结束坐标
+			const endX = startX + width;
+			const endY = startY + height;
+
+			// 返回包含所有信息的对象
+			return {
+				startX,
+				startY,
+				endX,
+				endY,
+				width,
+				height
+			};
 		}
+		/*js translate.util.getElementPosition end*/
 	},
 	//机器翻译采用哪种翻译服务
 	service:{  
@@ -5918,6 +5954,7 @@ var translate = {
 			}catch(e){
 				xhr=new ActiveXObject("Microsoft.XMLHTTP");
 			}
+			xhr.data=data;
 			//2.调用open方法（true----异步）
 			xhr.open(method,url,isAsynchronize);
 			//设置headers
@@ -6538,7 +6575,6 @@ var translate = {
 			return;
 		}
 
-		console.log(lastUuid);
 		for(var lang in translate.nodeQueue[lastUuid].list){
 			if (!translate.nodeQueue[lastUuid].list.hasOwnProperty(lang)) {
 	    		continue;
@@ -6826,6 +6862,38 @@ var translate = {
 			setUITip:function(tip){
 				translate.progress.api.isTip = tip;
 			},
+			//移除子元素（无限级别）中的所有 class name 的loading 遮罩
+			//level 层级，数字，比如第一次调用，传入1， 第一次里面产生的第二次调用，这里就是2
+			removeChildClass:function(node, level){
+
+				//判断是否有子元素，判断其两级子元素，是否有加了loading遮罩了
+		        var childNodes = node.childNodes;
+				if(childNodes == null || typeof(childNodes) == 'undefined'){
+					
+				}else if(childNodes.length > 0){
+					for(var i = 0; i<childNodes.length; i++){
+						translate.progress.api.removeChildClass(childNodes[i], level+1);
+					}
+				}
+
+				if(level == 1){
+					//第一次调用，是不删除本身的class name
+					return;
+				}
+				if(typeof(node) == 'undefined'){
+					return;
+				}
+				if(typeof(node.className) != 'string'){
+					return;
+				}
+				if(node.className.indexOf('translate_api_in_progress') < -1){
+					return;
+				}
+				node.className = node.className.replace(/translate_api_in_progress/g, '');
+				console.log(node);
+				console.log(node.nodeValue+'\t --  '+node.className+'\t '+level);
+				console.log(translate.util.getElementPosition(node));
+			},
 			startUITip:function(){
 				// 创建一个 style 元素
 		        const style = document.createElement('style');
@@ -6837,63 +6905,58 @@ var translate = {
 
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
-					    //for(var lang in translate.nodeQueue[uuid].list){
-					    /*	if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
+						
+					    for(var hash in translate.nodeQueue[uuid].list[from]){
+					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 					    		continue;
 					    	}
-						    //console.log('lang:'+lang);
-                            //console.log(translate.nodeQueue[uuid].list[lang]);
-                            if(translate.language.getCurrent() == lang){
-                                //忽略这个语种
-                                //console.log('ignore-------');
-                                continue;
-                            }
-                         */   
-                            //console.log('lang:'+from+' , size:'+Object.keys(translate.nodeQueue[uuid].list[from]).length);
-
-
-						    for(var hash in translate.nodeQueue[uuid].list[from]){
-						    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
+					    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
+					    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
 						    		continue;
 						    	}
-						    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
-						    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
-							    		continue;
-							    	}
-						    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
-						    		
-						    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
-						    			continue;
-						    		}
-						    		var nodeParent = node.parentNode;
-							        if(nodeParent == null){
-							        	continue;
-							        }
-							        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
-									if(nodeParent.childNodes.length != 1){
-										//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
+					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
+					    		
+					    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
+					    			continue;
+					    		}
+					    		var nodeParent = node.parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
+						        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
+								if(nodeParent.childNodes.length != 1){
+									//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
+									continue;
+								}
+								*/
+
+
+						        //判断其在上一层的父级是否已经加了，如果父级加了，那作为子集就不需要在加了，免得出现两个重合的 loading 遮罩
+						        var nodeParentParent = node.parentNode;
+						        if(nodeParentParent != null && typeof(nodeParentParent.className) != 'undefined' && nodeParentParent.className != null && nodeParent.className.indexOf('translate_api_in_progress') > -1){
+						        	//父有了，那么子就不需要再加了
+						        	continue;
+						        }
+						        //判断是否有子元素，判断其两级子元素，是否有加了loading遮罩了
+								translate.progress.api.removeChildClass(nodeParent, 1);
+
+
+								if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
+									nodeParent.className = ' translate_api_in_progress';
+								}else{
+									//这个元素本身有class了，那就追加
+									if(nodeParent.className.indexOf('translate_api_in_progress') > -1){	
 										continue;
 									}
-									*/
-									if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
-										nodeParent.className = ' translate_api_in_progress';
-									}else{
-										//这个元素本身有class了，那就追加
-										if(nodeParent.className.indexOf('translate_api_in_progress') > -1){	
-											continue;
-										}
+									nodeParent.className = nodeParent.className+' translate_api_in_progress';
+								}
 
-										nodeParent.className = nodeParent.className+' translate_api_in_progress';
-									}
-
-						    	}
-						    }
-						//}
+					    	}
+					    }
+						
 					});
 					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
-						//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
-					    
-					    for(var hash in translate.nodeQueue[uuid].list[from]){
+						for(var hash in translate.nodeQueue[uuid].list[from]){
 					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 					    		continue;
 					    	}
@@ -6924,6 +6987,7 @@ var translate = {
 									continue;
 								}
 								
+
 								nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
 								//nodeParent.className = parentClassName.replace(/loading/g, '');
 					    	}

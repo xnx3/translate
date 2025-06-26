@@ -6890,9 +6890,6 @@ var translate = {
 					return;
 				}
 				node.className = node.className.replace(/translate_api_in_progress/g, '');
-				console.log(node);
-				console.log(node.nodeValue+'\t --  '+node.className+'\t '+level);
-				console.log(translate.util.getElementPosition(node));
 			},
 			startUITip:function(){
 				// 创建一个 style 元素

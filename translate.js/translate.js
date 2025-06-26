@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.6.20250624',
+	version: '3.16.7.20250626',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2677,7 +2677,9 @@ var translate = {
 				}else{
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
+						//console.log(originalText+'|');
 						var resultShowText = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);
+						//console.log(resultShowText+'|');
 						node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
 						if(resultShowText.indexOf(resultText) > -1){
 							result['resultText'] = resultShowText;
@@ -4644,6 +4646,7 @@ var translate = {
 						}else{
 							//补充上一个空格，用于将两个单词隔开
 	                        replaceResultText = replaceResultText + ' ';
+	                        //console.log('after add space : '+replaceResultText);
 	                    }
 	                    
 	                }
@@ -4668,6 +4671,7 @@ var translate = {
 							//补充上一个空格，用于将两个单词隔开
 	                        //text = text.replace(translateOriginal, ' '+translateResult);
 							replaceResultText = ' '+replaceResultText;
+							//console.log('before add space : '+replaceResultText);
 	                    }
 	                }
 	            }else{
@@ -6520,65 +6524,80 @@ var translate = {
 	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
 	reset:function(){
 		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
+
+		var lastUuid = ''; //最后一次的uuid
 		for(var queue in translate.nodeQueue){
 			if (!translate.nodeQueue.hasOwnProperty(queue)) {
 	    		continue;
 	    	}
-			//console.log(queue);
-			for(var lang in translate.nodeQueue[queue].list){
-				if (!translate.nodeQueue[queue].list.hasOwnProperty(lang)) {
+	    	lastUuid = queue;
+		}
+
+		if(lastUuid == ''){
+			console.log('提示，你当前还未执行过翻译，所以你无需执行 translate.reset(); 进行还原。');
+			return;
+		}
+
+		console.log(lastUuid);
+		for(var lang in translate.nodeQueue[lastUuid].list){
+			if (!translate.nodeQueue[lastUuid].list.hasOwnProperty(lang)) {
+	    		continue;
+	    	}
+			//console.log(lang);
+			
+			for(var hash in translate.nodeQueue[lastUuid].list[lang]){
+				if (!translate.nodeQueue[lastUuid].list[lang].hasOwnProperty(hash)) {
 		    		continue;
 		    	}
-				//console.log(lang);
-				
-				for(var hash in translate.nodeQueue[queue].list[lang]){
-					if (!translate.nodeQueue[queue].list[lang].hasOwnProperty(hash)) {
+				var item = translate.nodeQueue[lastUuid].list[lang][hash];
+				//console.log(item);
+				for(var index in item.nodes){
+					if (!item.nodes.hasOwnProperty(index)) {
 			    		continue;
 			    	}
-					var item = translate.nodeQueue[queue].list[lang][hash];
-					//console.log(item);
-					for(var index in item.nodes){
-						if (!item.nodes.hasOwnProperty(index)) {
-				    		continue;
-				    	}
-						//console.log(item.nodes[index]);
-						//item.nodes[index].node.nodeValue = item.original;
-						var currentShow = translate.storage.get('hash_'+currentLanguage+'_'+hash); //当前显示出来的文字，也就是已经翻译后的文字
-						//console.log('hash_'+lang+'_'+hash+'  --  '+currentShow);
-						if(typeof(currentShow) == 'undefined'){
-							continue;
-						}
-						if(currentShow == null){
-							continue;
-						}
-						if(currentShow.length == 0){
-							continue;
-						}
-/*
-						if(item.beforeText.length > 0 || item.afterText.length > 0){
-							console.log('----'+currentShow);
-							console.log(item);
-						}
-						
-						if(item.beforeText.length > 0){
-							currentShow = currentShow.substring(currentShow.lastIndexOf(item.beforeText)+1, currentShow.length);
-						}
-						if(item.afterText.length > 0){
-							currentShow = currentShow.substring(0, currentShow.lastIndexOf(item.afterText));
-						}
-						if(item.beforeText.length > 0 || item.afterText.length > 0){
-							console.log(currentShow);
-						}
-*/						
-						// v3.16.5 针对gitee 的 readme 接入优化
-						if(typeof(item.nodes[index].node) == 'undefined'){
-							continue;
-						}
-						translate.element.nodeAnalyse.analyse(item.nodes[index].node, currentShow, item.original, typeof(item.nodes[index].node.attribute) == 'undefined' ? null:item.nodes[index].node.attribute);
+					//console.log(item.nodes[index]);
+					//item.nodes[index].node.nodeValue = item.original;
+					var currentShow = translate.storage.get('hash_'+currentLanguage+'_'+hash); //当前显示出来的文字，也就是已经翻译后的文字
+					//console.log('hash_'+lang+'_'+hash+'  --  '+currentShow);
+					if(typeof(currentShow) == 'undefined'){
+						continue;
 					}
+					if(currentShow == null){
+						continue;
+					}
+					if(currentShow.length == 0){
+						continue;
+					}
+/*
+					if(item.beforeText.length > 0 || item.afterText.length > 0){
+						console.log('----'+currentShow);
+						console.log(item);
+					}
+					
+					if(item.beforeText.length > 0){
+						currentShow = currentShow.substring(currentShow.lastIndexOf(item.beforeText)+1, currentShow.length);
+					}
+					if(item.afterText.length > 0){
+						currentShow = currentShow.substring(0, currentShow.lastIndexOf(item.afterText));
+					}
+					if(item.beforeText.length > 0 || item.afterText.length > 0){
+						console.log(currentShow);
+					}
+*/						
+					// v3.16.5 针对gitee 的 readme 接入优化
+					if(typeof(item.nodes[index].node) == 'undefined'){
+						continue;
+					}
+					
+					var attribute = typeof(item.nodes[index].node.attribute) == 'undefined' ? null:item.nodes[index].node.attribute;
+					var analyse = translate.element.nodeAnalyse.analyse(item.nodes[index].node, '', '', attribute);
+					translate.element.nodeAnalyse.analyse(item.nodes[index].node, analyse.text, item.original, attribute);
 				}
 			}
 		}
+
+
+
 
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');

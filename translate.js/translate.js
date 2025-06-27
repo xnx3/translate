@@ -7706,7 +7706,7 @@ var translate = {
 		  return verticalOverlap > 0 && Math.abs(horizontalGap) < 1; // 允许1px误差
 		},
 		/**
-		 * 确定需要添加空格的节点
+		 * 找到需要在节点文本末尾添加空格的节点
 		 * @param {Array<{before: Object, after: Object}>} adjacentPairs - 左右紧邻的矩形对数组
 		 * @returns {Node[]} - 需要添加空格的节点数组
 		 */
@@ -7735,9 +7735,19 @@ var translate = {
 		    const hasLeftSpacing = parseFloat(afterStyle.marginLeft) > 0 || 
 		                          parseFloat(afterStyle.paddingLeft) > 0;
 		    
-		    // 如果没有明确的间距，则需要添加空格
+		    // 如果没有明确的间距，且后一个节点的开始非空白符，则需要添加空格
 		    if (!hasRightSpacing && !hasLeftSpacing) {
-		      nodesToAddSpace.push(beforeNode);
+		    	//判断 before 节点的最后一个字符是否是空白符
+		    	if(typeof(beforeNode.textContent) == 'string' && typeof(afterNode.textContent) == 'string'){
+		    		if(/\s$/.test(beforeNode.textContent)){
+		    			//before 最后一个字符是空格，则不需要追加空格符了
+		    		}else if(/^\s/.test(afterNode.textContent)){
+		    			//after 节点的开始第一个字符是空白符，那么也不需要追加空格符了
+		    		}else{
+		    			//这里就需要对 beforeNode 追加空格了
+		    			nodesToAddSpace.push(beforeNode);
+		    		}
+		    	}
 		    }
 		  });
 		  
@@ -7748,35 +7758,77 @@ var translate = {
 		 * @param {Node[]} nodes - 节点数组
 		 */
 		adjustTranslationSpaces:function(nodes){
-			var startTime = Date.now();
+		  //var startTime = Date.now();
 		  // 1. 获取节点视觉矩形
 		  const rects = translate.visual.getRects(nodes);
-		  console.log('rects:');
-		  console.log(rects);
+		  //console.log('rects:');
+		  //console.log(rects);
 		  
 		  // 2. 查找左右紧邻的矩形对
 		  const adjacentPairs = translate.visual.afterAdjacent(rects);
-		  console.log('adjacentPairs:');
-		  console.log(adjacentPairs);
+		  //console.log('adjacentPairs:');
+		  //console.log(adjacentPairs);
 		  
 		  // 3. 确定需要添加空格的节点
 		  const nodesToAddSpace = translate.visual.afterAddSpace(adjacentPairs);
+		  //console.log('nodesToAddSpace:');
+		  //console.log(nodesToAddSpace);
 		  
 		  // 4. 添加非断行空格
 		  nodesToAddSpace.forEach(node => {
 		    // 确保只修改文本内容，不影响HTML结构
 		    if (node.nodeType === Node.TEXT_NODE) {
-		      node.textContent = node.textContent.trimEnd() + '\u00A0';
+		      node.textContent = node.textContent + '\u00A0';
 		    } else if (node.nodeType === Node.ELEMENT_NODE) {
 		      // 如果是元素节点，修改其最后一个子节点（假设是文本节点）
 		      const lastChild = node.lastChild;
 		      if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-		        lastChild.textContent = lastChild.textContent.trimEnd() + '\u00A0';
+		        lastChild.textContent = lastChild.textContent + '\u00A0';
 		      }
 		    }
 		  });
-		  var endTime = Date.now();
-		  console.log('visual execute time: '+(endTime-startTime)+'ms');
+		  //var endTime = Date.now();
+		  //console.log('visual recognition time: '+(endTime-startTime)+'ms');
+		},
+		/*
+			通过 translate.nodeQueue[uuid] 中的uuid，来传入这个 translate.nodeQueue[uuid] 中所包含涉及到的所有node (除特殊字符外 ，也就是 translate.nodeQueue[uuid].list 下 特殊字符那一类是不会使用的)
+		*/
+		adjustTranslationSpacesByNodequeueUuid:function(uuid){
+			var nodes = [];
+			for(var from in translate.nodeQueue[uuid].list){
+				if (!translate.nodeQueue[uuid].list.hasOwnProperty(from)) {
+					continue;
+				}
+				if(from.length < 1){
+					continue;
+				}
+				for(var hash in translate.nodeQueue[uuid].list[from]){
+			    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
+			    		continue;
+			    	}
+			    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
+			    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
+				    		continue;
+				    	}
+			    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
+			    		nodes.push(node);
+			    	}
+			    }	
+			}
+			translate.visual.adjustTranslationSpaces(nodes);
+		},
+		/*
+			通过 translate.nodeQueue 中最后一次执行的 uuid，来获取这个 translate.nodeQueue[uuid] 中所包含涉及到的所有node (除特殊字符外 ，也就是 translate.nodeQueue[uuid].list 下 特殊字符那一类是不会使用的)
+		*/
+		adjustTranslationSpacesByNodequeueUuid:function(uuid){
+			var uuid = '';
+			for(var uuid_index in translate.nodeQueue){
+				uuid = uuid_index;
+				break;
+			}
+			if(typeof(uuid) == 'string' && uuid.length > 1){
+				translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
+			}
 		}
 
 

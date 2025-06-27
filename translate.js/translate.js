@@ -6645,6 +6645,7 @@ var translate = {
 	    	}
 	    	lastUuid = queue;
 		}
+		//console.log(queue);
 
 		if(lastUuid == ''){
 			console.log('提示，你当前还未执行过翻译，所以你无需执行 translate.reset(); 进行还原。');

@@ -1616,6 +1616,9 @@ var translate = {
 				}
 			}
 
+			//生命周期触发事件
+			translate.lifecycle.execute.renderFinish_Trigger(uuid, to);
+
 			//都执行完了，那么设置完毕
 			translate.state = 0;
 			translate.executeNumber++;
@@ -1662,8 +1665,8 @@ var translate = {
 				@param uuid translate.nodeQueue 的uuid
 				@param to 当前是执行的翻译为什么语种
             */
-            translateNetworkAfter:[],
-            translateNetworkAfter_Run:function(uuid, to){
+            translateNetworkFinish:[],
+            translateNetworkAfter_Trigger:function(uuid, to){
                 for(var i = 0; i < translate.lifecycle.execute.translateNetworkAfter.length; i++){
                     try{
                         translate.lifecycle.execute.translateNetworkAfter[i](uuid, to);
@@ -1673,6 +1676,25 @@ var translate = {
                 }
             },
 
+            /*
+				translate.execute() 的翻译渲染完毕触发
+				这个完毕是指它当触发 translate.execute() 进行翻译后，无论是全部命中了本地缓存，还是有部分要通过翻译接口发起多个网络请求，当拿到结果（缓存中的翻译结果或多个不同的有xx语种翻译的网络请求全部完成，这个完成是包含所有成功跟失败的响应），并完成将翻译结果渲染到页面中进行显示后，触发此
+				它跟 translateNetworkFinish 的区别是， translateNetworkFinish 仅仅针对有网络请求的才会触发，而 renderFinish 是如果全部命中了浏览器本地缓存，无需发起任何网络翻译请求这种情况时，也会触发。
+            	@param uuid translate.nodeQueue 的uuid
+				@param to 当前是执行的翻译为什么语种
+            */
+            renderFinish:[function(uuid, to){ //这里默认带着一个触发翻译为英文后，自动对英文进行元素视觉处理，追加空格的
+            	translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
+            }],
+            renderFinish_Trigger:function(uuid, to){
+            	for(var i = 0; i < translate.lifecycle.execute.renderFinish.length; i++){
+                    try{
+                        translate.lifecycle.execute.renderFinish[i](uuid, to);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            }
 		}
 	},
 
@@ -2222,6 +2244,10 @@ var translate = {
 		//console.log(translate.nodeQueue[uuid]['list'])
 		if(fanyiLangs.length == 0){
 			//没有需要翻译的，直接退出
+
+			//生命周期触发事件
+			translate.lifecycle.execute.renderFinish_Trigger(uuid, translate.to);
+
 			translate.state = 0;
 			translate.executeNumber++;
 			return;

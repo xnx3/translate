@@ -1674,7 +1674,7 @@ var translate = {
             },
 
 		}
-	}
+	},
 
 	/*translate.execute() start */
 	/*

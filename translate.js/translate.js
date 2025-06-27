@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.9.20250626',
+	version: '3.16.10.20250627',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1596,6 +1596,8 @@ var translate = {
 			@param to 翻译为的语种
 		*/
 		isAllExecuteFinish:function(uuid, from, to){
+			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
+
 			//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 			for(var lang in translate.translateRequest[uuid]){
 				if (!translate.translateRequest[uuid].hasOwnProperty(lang)) {
@@ -1617,8 +1619,6 @@ var translate = {
 			//都执行完了，那么设置完毕
 			translate.state = 0;
 			translate.executeNumber++;
-
-			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
 		}
 
 	},
@@ -1626,6 +1626,56 @@ var translate = {
 	//execute() 方法已经被执行过多少次了， 只有execute() 完全执行完，也就是界面渲染完毕后，它才会+1
 	executeNumber:0,
 	
+	lifecycle:{
+		execute:{
+			/*
+                每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
+
+                @param uuid：translate.nodeQueue[uuid] 这里的
+                @param from 来源语种，翻译前的语种
+				@param to 翻译为的语种
+            */
+            start : [],
+            startRun:function(uuid, from, to){
+                //console.log(translate.nodeQueue[uuid]);
+                for(var i = 0; i < translate.listener.execute.renderStartByApi.length; i++){
+                    try{
+                        translate.listener.execute.renderStartByApi[i](uuid, from, to);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
+
+            /*
+                当扫描整个节点完成，进行翻译（1. 命中本地缓存、 2.进行网络翻译请求）之前，触发
+			 */
+            scanNodesFinsh: [],
+
+            /*
+                当进行触发网络翻译请求之前，触发此
+			 */
+            translateNetworkBefore:[],
+
+            /*
+				当 translate.execute() 触发网络翻译请求完毕（不管成功还是失败），并将翻译结果渲染到页面完毕后，触发此。
+				@param uuid translate.nodeQueue 的uuid
+				@param to 当前是执行的翻译为什么语种
+            */
+            translateNetworkAfter:[],
+            translateNetworkAfter_Run:function(uuid, to){
+                for(var i = 0; i < translate.lifecycle.execute.translateNetworkAfter.length; i++){
+                    try{
+                        translate.lifecycle.execute.translateNetworkAfter[i](uuid, to);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
+
+		}
+	}
+
 	/*translate.execute() start */
 	/*
 		执行翻译操作。翻译的是 nodeQueue 中的
@@ -2388,9 +2438,9 @@ var translate = {
 					translate.waitingExecute.isAllExecuteFinish(uuid, data.from, data.to);
 				},10);
 			}, function(xhr){
-				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
-				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
-				translate.translateRequest[uuid][lang].result = 3;
+				translate.translateRequest[uuid][xhr.data.from].executeFinish = 1; //1是执行完毕
+				translate.translateRequest[uuid][xhr.data.from].stoptime = Math.floor(Date.now() / 1000);
+				translate.translateRequest[uuid][xhr.data.from].result = 3;
 				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to);
 			});
 			/*** 翻译end ***/
@@ -7758,37 +7808,43 @@ var translate = {
 		 * @param {Node[]} nodes - 节点数组
 		 */
 		adjustTranslationSpaces:function(nodes){
-		  //var startTime = Date.now();
-		  // 1. 获取节点视觉矩形
-		  const rects = translate.visual.getRects(nodes);
-		  //console.log('rects:');
-		  //console.log(rects);
-		  
-		  // 2. 查找左右紧邻的矩形对
-		  const adjacentPairs = translate.visual.afterAdjacent(rects);
-		  //console.log('adjacentPairs:');
-		  //console.log(adjacentPairs);
-		  
-		  // 3. 确定需要添加空格的节点
-		  const nodesToAddSpace = translate.visual.afterAddSpace(adjacentPairs);
-		  //console.log('nodesToAddSpace:');
-		  //console.log(nodesToAddSpace);
-		  
-		  // 4. 添加非断行空格
-		  nodesToAddSpace.forEach(node => {
-		    // 确保只修改文本内容，不影响HTML结构
-		    if (node.nodeType === Node.TEXT_NODE) {
-		      node.textContent = node.textContent + '\u00A0';
-		    } else if (node.nodeType === Node.ELEMENT_NODE) {
-		      // 如果是元素节点，修改其最后一个子节点（假设是文本节点）
-		      const lastChild = node.lastChild;
-		      if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-		        lastChild.textContent = lastChild.textContent + '\u00A0';
-		      }
-		    }
-		  });
-		  //var endTime = Date.now();
-		  //console.log('visual recognition time: '+(endTime-startTime)+'ms');
+
+			//先判断当前要显示的语种，是否需要用空格进行间隔单词，如果本身不需要空格间隔，像是中文，那就根本不需要去计算视觉距离
+			if(!translate.language.wordBlankConnector(translate.to)){
+				return;
+			}
+
+			//var startTime = Date.now();
+			// 1. 获取节点视觉矩形
+			const rects = translate.visual.getRects(nodes);
+			//console.log('rects:');
+			//console.log(rects);
+
+			// 2. 查找左右紧邻的矩形对
+			const adjacentPairs = translate.visual.afterAdjacent(rects);
+			//console.log('adjacentPairs:');
+			//console.log(adjacentPairs);
+
+			// 3. 确定需要添加空格的节点
+			const nodesToAddSpace = translate.visual.afterAddSpace(adjacentPairs);
+			//console.log('nodesToAddSpace:');
+			//console.log(nodesToAddSpace);
+
+			// 4. 添加非断行空格
+			nodesToAddSpace.forEach(node => {
+			// 确保只修改文本内容，不影响HTML结构
+			if (node.nodeType === Node.TEXT_NODE) {
+				node.textContent = node.textContent + '\u00A0';
+			} else if (node.nodeType === Node.ELEMENT_NODE) {
+				// 如果是元素节点，修改其最后一个子节点（假设是文本节点）
+				const lastChild = node.lastChild;
+				if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+					lastChild.textContent = lastChild.textContent + '\u00A0';
+				}
+			}
+			});
+			//var endTime = Date.now();
+			//console.log('visual recognition time: '+(endTime-startTime)+'ms');
 		},
 		/*
 			通过 translate.nodeQueue[uuid] 中的uuid，来传入这个 translate.nodeQueue[uuid] 中所包含涉及到的所有node (除特殊字符外 ，也就是 translate.nodeQueue[uuid].list 下 特殊字符那一类是不会使用的)
@@ -7820,7 +7876,7 @@ var translate = {
 		/*
 			通过 translate.nodeQueue 中最后一次执行的 uuid，来获取这个 translate.nodeQueue[uuid] 中所包含涉及到的所有node (除特殊字符外 ，也就是 translate.nodeQueue[uuid].list 下 特殊字符那一类是不会使用的)
 		*/
-		adjustTranslationSpacesByNodequeueUuid:function(uuid){
+		adjustTranslationSpacesByLastNodequeueUuid:function(uuid){
 			var uuid = '';
 			for(var uuid_index in translate.nodeQueue){
 				uuid = uuid_index;

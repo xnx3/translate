@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.16.8.20250626',
+	version: '3.16.9.20250626',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7569,9 +7569,220 @@ var translate = {
 			_requestContext: null
 
 	    }
-	}
+	},
 
 	/*js translate.network end*/
+
+
+	/*js translate.visual start*/
+	/*
+		人眼所看到的纯视觉层的处理
+	*/
+	visual: {
+		/**
+		 * 获取一组节点的视觉矩形信息
+		 * @param {Node[]} nodes - 节点数组，格式如 
+		 * 			[node1,node2,node3]
+		 * @returns {Object[]} - 矩形信息数组，与输入节点一一对应
+		 */
+		getRects:function(nodes){
+		  return nodes.map(node => {
+		    if (!node) return null;
+		    
+		    let rect;
+		    if (node.nodeType === Node.TEXT_NODE) {
+		      const range = document.createRange();
+		      range.selectNodeContents(node);
+		      const rects = range.getClientRects();
+		      //console.log(rect);
+		      rect = rects.length > 0 ? rects[0] : null;
+		    } else if (node.nodeType === Node.ELEMENT_NODE) {
+		      rect = node.getBoundingClientRect();
+		    }
+		    
+		    return rect ? {
+		      node,
+		      left: rect.left,
+		      top: rect.top,
+		      right: rect.right,
+		      bottom: rect.bottom,
+		      width: rect.width,
+		      height: rect.height
+		    } : null;
+		  });
+		},
+		/*
+			对一组坐标进行排序
+			按开始坐标从左到右、从上到下排序
+			@param rects translate.visual.getRects获取到的坐标数据
+		*/
+		coordinateSort:function(rects){
+			// 按从左到右、从上到下排序
+		  const sortedRects = rects
+		    .filter(rect => rect !== null)
+		    .sort((a, b) => {
+		      if (Math.abs(a.top - b.top) < 5) { // 同一行
+		        return a.left - b.left;
+		      }
+		      return a.top - b.top;
+		    });
+		  return sortedRects;
+		},
+		/**
+		 * 查找左右紧邻的矩形对
+		 * @param rects translate.visual.getRects获取到的坐标数据
+		 * @returns {Array<{before: Object, after: Object}>} - 左右紧邻的矩形对数组
+		 */
+		afterAdjacent:function(rects){
+		  var sortedRects = translate.visual.coordinateSort(rects);
+		  
+		  const adjacentPairs = [];
+		  const lineGroups = translate.visual.groupRectsByLine(sortedRects);
+		  
+		  // 检查每行中的所有紧邻元素对
+		  lineGroups.forEach(line => {
+		    for (let i = 0; i < line.length; i++) {
+		      for (let j = i + 1; j < line.length; j++) {
+		        const prev = line[i];
+		        const next = line[j];
+		        
+		        // 如果后续元素与当前元素不紧邻，则后续其他元素也不可能紧邻
+		        if (!translate.visual.areHorizontallyAdjacent(prev, next)) {
+		          break;
+		        }
+		        
+		        adjacentPairs.push({ before: prev, after: next });
+		      }
+		    }
+		  });
+		  
+		  return adjacentPairs;
+		},
+		/**
+		 * 按行分组矩形
+		 * @param rects - 排序后的矩形数组 @param rects translate.visual.coordinateSort 获取到的坐标数据
+		 * @returns {Object[][]} - 按行分组的矩形
+		 */
+		groupRectsByLine:function(rects){
+			const lineGroups = [];
+		  let currentLine = [];
+		  
+		  rects.forEach(rect => {
+		    if (currentLine.length === 0) {
+		      currentLine.push(rect);
+		    } else {
+		      const lastRect = currentLine[currentLine.length - 1];
+		      // 如果在同一行，则添加到当前行
+		      if (Math.abs(rect.top - lastRect.top) < 5) {
+		        currentLine.push(rect);
+		      } else {
+		        // 否则开始新的一行
+		        lineGroups.push(currentLine);
+		        currentLine = [rect];
+		      }
+		    }
+		  });
+		  
+		  // 添加最后一行
+		  if (currentLine.length > 0) {
+		    lineGroups.push(currentLine);
+		  }
+		  
+		  return lineGroups;
+		},
+		/**
+		 * 判断两个矩形是否水平紧邻
+		 * @param {Object} rect1 - 第一个矩形
+		 * @param {Object} rect2 - 第二个矩形
+		 * @returns {boolean} - 是否水平紧邻
+		 */
+		areHorizontallyAdjacent:function(rect1, rect2){
+			// 检查垂直方向是否有重叠（在同一行）
+		  const verticalOverlap = Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top);
+		  
+		  // 检查水平间距是否在阈值范围内
+		  const horizontalGap = rect2.left - rect1.right;
+		  
+		  return verticalOverlap > 0 && Math.abs(horizontalGap) < 1; // 允许1px误差
+		},
+		/**
+		 * 确定需要添加空格的节点
+		 * @param {Array<{before: Object, after: Object}>} adjacentPairs - 左右紧邻的矩形对数组
+		 * @returns {Node[]} - 需要添加空格的节点数组
+		 */
+		afterAddSpace:function(adjacentPairs){
+
+		  const nodesToAddSpace = [];
+		  
+		  adjacentPairs.forEach(pair => {
+		    const { before, after } = pair;
+		    const beforeNode = before.node;
+		    const afterNode = after.node;
+		    
+		    // 获取计算样式
+		    const beforeStyle = window.getComputedStyle(
+		      beforeNode.nodeType === Node.TEXT_NODE ? beforeNode.parentElement : beforeNode
+		    );
+		    
+		    const afterStyle = window.getComputedStyle(
+		      afterNode.nodeType === Node.TEXT_NODE ? afterNode.parentElement : afterNode
+		    );
+		    
+		    // 检查间距是否由CSS属性引起
+		    const hasRightSpacing = parseFloat(beforeStyle.marginRight) > 0 || 
+		                           parseFloat(beforeStyle.paddingRight) > 0;
+		    
+		    const hasLeftSpacing = parseFloat(afterStyle.marginLeft) > 0 || 
+		                          parseFloat(afterStyle.paddingLeft) > 0;
+		    
+		    // 如果没有明确的间距，则需要添加空格
+		    if (!hasRightSpacing && !hasLeftSpacing) {
+		      nodesToAddSpace.push(beforeNode);
+		    }
+		  });
+		  
+		  return nodesToAddSpace;
+		},
+		/**
+		 * 主函数：处理翻译后的空格调整
+		 * @param {Node[]} nodes - 节点数组
+		 */
+		adjustTranslationSpaces:function(nodes){
+			var startTime = Date.now();
+		  // 1. 获取节点视觉矩形
+		  const rects = translate.visual.getRects(nodes);
+		  console.log('rects:');
+		  console.log(rects);
+		  
+		  // 2. 查找左右紧邻的矩形对
+		  const adjacentPairs = translate.visual.afterAdjacent(rects);
+		  console.log('adjacentPairs:');
+		  console.log(adjacentPairs);
+		  
+		  // 3. 确定需要添加空格的节点
+		  const nodesToAddSpace = translate.visual.afterAddSpace(adjacentPairs);
+		  
+		  // 4. 添加非断行空格
+		  nodesToAddSpace.forEach(node => {
+		    // 确保只修改文本内容，不影响HTML结构
+		    if (node.nodeType === Node.TEXT_NODE) {
+		      node.textContent = node.textContent.trimEnd() + '\u00A0';
+		    } else if (node.nodeType === Node.ELEMENT_NODE) {
+		      // 如果是元素节点，修改其最后一个子节点（假设是文本节点）
+		      const lastChild = node.lastChild;
+		      if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+		        lastChild.textContent = lastChild.textContent.trimEnd() + '\u00A0';
+		      }
+		    }
+		  });
+		  var endTime = Date.now();
+		  console.log('visual execute time: '+(endTime-startTime)+'ms');
+		}
+
+
+
+	}
+	/*js translate.visual end*/
 	
 }
 /*

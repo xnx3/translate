@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# wget https://raw.githubusercontent.com/xnx3/translate/refs/heads/master/deploy/service_upgrade.sh -O ~/upgrade.sh && chmod -R 777 ~/upgrade.sh && sh ~/upgrade.sh
+# wget https://gitee.com/mail_osc/translate/raw/master/deploy/service_upgrade.sh -O ~/upgrade.sh && chmod -R 777 ~/upgrade.sh && sh ~/upgrade.sh
 #
 
 # 删除所有 down.zvo.cn 的条目

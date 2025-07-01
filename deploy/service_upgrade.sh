@@ -6,7 +6,7 @@
 # 删除所有 down.zvo.cn 的条目
 sed -i '/[[:space:]]down\.zvo\.cn$/d' /etc/hosts
 # 添加新的记录
-echo "125.208.20.39 down.zvo.cn" >> /etc/hosts
+echo "125.208.20.35 down.zvo.cn" >> /etc/hosts
 service nscd restart
 
 # 设置 tcdn 可执行文件的路径

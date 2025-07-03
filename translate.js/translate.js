@@ -533,7 +533,17 @@ var translate = {
 		 * 这个其实是借用了 自定义术语 的能力，设置了自定义术语的原字符等于翻译后的字符， 于是这个字符就不会被翻译了
 		 * 这里可以是多个，数组，如 ['你好','世界']
 		 */
-		text:[]
+		text:[],
+		regex:[],
+		setRegexs: function(arr) {
+			if (!Array.isArray(arr)) throw new Error('参数必须为数组');
+			for (let i = 0; i < arr.length; i++) {
+				if (!(arr[i] instanceof RegExp)) {
+					throw new Error('第' + i + '项不是RegExp对象');
+				}
+			}
+			this.regex = [...this.regex, ...arr];
+		},
 
 	},
 	//刷新页面，你可以自定义刷新页面的方式，比如在 uniapp 打包生成 apk 时，apk中的刷新页面就不是h5的这个刷新，而是app的刷新方式，就需要自己进行重写这个刷新页面的方法了
@@ -3068,6 +3078,16 @@ var translate = {
 		textArray.push(text); //先将主 text 赋予 ，后面如果对主text进行加工分割，分割后会将主text给删除掉
 		//console.log(textArray);
 
+		// 处理 ignore.regex
+		for (var ri = 0; ri < translate.ignore.regex.length; ri++) {
+			var regex = translate.ignore.regex[ri];
+			for (var tai = 0; tai < textArray.length; tai++) {
+				var text = textArray[tai];
+				var ignoreTexts = text.match(regex) || []
+				translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
+			}
+		}
+
 		/**** v3.10.2.20241206 - 增加自定义忽略翻译的文本，忽略翻译的文本不会被翻译 - 当然这样会打乱翻译之后阅读的连贯性 ****/
 		for(var ti = 0; ti<translate.ignore.text.length; ti++){
 			if(translate.ignore.text[ti].trim().length == 0){
@@ -3078,7 +3098,6 @@ var translate = {
 			
 			//console.log(textArray);
 		}
-
 
 
 		/**** v3.10.2.20241206 - 自定义术语能力全面优化 - 当然这样会打乱翻译之后阅读的连贯性 ****/

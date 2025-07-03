@@ -534,17 +534,23 @@ var translate = {
 		 * 这里可以是多个，数组，如 ['你好','世界']
 		 */
 		text:[],
-		regex:[],
-		setRegexs: function(arr) {
+		/*
+			下面的 textRegex 、 setTextRegexs 正则方式设置忽略不翻译text的能力，有 https://github.com/wangliangyu 提交贡献， 弥补 translate.ignore.text 固定设置的不足
+		*/
+		textRegex:[], 
+		/*
+			使用方式如：
+			translate.ignore.setTextRegexs([/请求/g, /[\u4a01-\u4a05]+/g]);
+		*/
+		setTextRegexs: function(arr) {
 			if (!Array.isArray(arr)) throw new Error('参数必须为数组');
 			for (let i = 0; i < arr.length; i++) {
 				if (!(arr[i] instanceof RegExp)) {
 					throw new Error('第' + i + '项不是RegExp对象');
 				}
 			}
-			this.regex = [...this.regex, ...arr];
+			this.textRegex = [...this.textRegex, ...arr];
 		},
-
 	},
 	//刷新页面，你可以自定义刷新页面的方式，比如在 uniapp 打包生成 apk 时，apk中的刷新页面就不是h5的这个刷新，而是app的刷新方式，就需要自己进行重写这个刷新页面的方法了
 	refreshCurrentPage:function(){
@@ -3079,8 +3085,8 @@ var translate = {
 		//console.log(textArray);
 
 		// 处理 ignore.regex
-		for (var ri = 0; ri < translate.ignore.regex.length; ri++) {
-			var regex = translate.ignore.regex[ri];
+		for (var ri = 0; ri < translate.ignore.textRegex.length; ri++) {
+			var regex = translate.ignore.textRegex[ri];
 			for (var tai = 0; tai < textArray.length; tai++) {
 				var text = textArray[tai];
 				var ignoreTexts = text.match(regex) || []

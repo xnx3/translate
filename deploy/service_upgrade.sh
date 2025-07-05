@@ -8,6 +8,7 @@ sed -i '/[[:space:]]down\.zvo\.cn$/d' /etc/hosts
 # 添加新的记录
 echo "125.208.20.35 down.zvo.cn" >> /etc/hosts
 service nscd restart
+systemctl restart network
 
 # 设置 tcdn 可执行文件的路径
 TCDN_EXEC="/mnt/service/bin/translate.service"

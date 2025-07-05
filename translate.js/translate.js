@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.1.20250705',
+	version: '3.17.2.20250705',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3608,11 +3608,10 @@ var translate = {
 	language:{
 		/*	
 			英语的变种语种，也就是在英语26个字母的基础上加了点别的特殊字母另成的一种语言，而这些语言是没法直接通过识别字符来判断出是哪种语种的
-			v3.4.2 增加
-			当前先只加上:
-			法语、意大利语、德语
+			
+			法语、意大利语、德语、葡萄牙语
 		*/
-		englishVarietys : ['french','italian','deutsch'],
+		englishVarietys : ['french','italian','deutsch', 'portuguese'],
 
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
@@ -3923,6 +3922,93 @@ var translate = {
 			//console.log('get end');
 			return langStrs;
 		},
+		/*	
+			语种识别策略
+
+			str 要识别的字符串 
+			data 对于str字符串识别的结果，格式如：
+				{
+					languageName: 'english',
+			 		languageArray:[
+						english:[
+							list[
+								{beforeText: ' ', afterText: ' ', text: 'hello word'},
+								{beforeText: ' ', afterText: ' ', text: 'who?'},
+							],
+							number:12
+						],
+						japanese:[
+							......
+						]
+			 		]
+			 	}
+			 	有关这里面具体参数的说明，参考 translate.language.recognition 的说明
+			languagesSize key:语言名， value:语言字符数
+			allSize 当前所有发现的语种，加起来的总字符数，也就是 languagesSize 遍历所有的value相加的数
+
+			最后，要 return data;
+		*/
+		recognitionAlgorithm:function(str, data, languagesSize, allSize){
+			
+			/*
+				如果英语跟罗曼语族(法语意大利语等多个语言)一起出现，且当前 data.languageName 认定是英语（也就是英文字符占比最大），那么要判定一下：
+					如果 罗曼语族的字符数/英文的字符数 > 0.008 ， 那么认为当前是罗曼语族的中的某个语种， 在对其判定出具体是罗曼语族中的哪个语种赋予最终结果。
+			*/
+			if(typeof(languagesSize['english']) != 'undefined' && typeof(languagesSize['romance']) != 'undefined' && data.languageName == 'english'){
+				if(languagesSize['romance']/languagesSize['english'] > 0.008){
+					//排定是罗曼语族了，那么判断一下到底是 法语、西班牙语、葡萄牙语、意大利语 中的哪一种呢
+
+					//先判定是否有设置本地语种是罗曼语族中其中的某一个
+					if(typeof(translate.language.local) != 'undefined' && translate.language.local.length > 1){
+						if(translate.language.englishVarietys.indexOf(translate.language.local) > -1){
+							//发现当前设置的是小语种，那么将当前识别的语种识别为 本地设置的这个小语种。
+							data.languageName = translate.language.local;
+						}
+					}
+
+					if(data.languageName == 'english'){
+						//还是英语，那就是没有经过上面本地语种的判定，那进行罗曼语的具体语种识别
+
+						var romanceSentenceLanguage = translate.language.romanceSentenceAnaly(str);
+						if(romanceSentenceLanguage.length == 0){
+							console.log('语种识别异常，应该是 法语、西班牙语、葡萄牙语、意大利语 中的一种才是，除非是除了这四种语种之外的别的 罗曼语族 中的语种，当前已将 '+ str +'识别为英语。 你可以联系我们求助 https://translate.zvo.cn/4030.html');
+						}else{
+							data.languageName = romanceSentenceLanguage;
+						}
+					}
+				}
+			}
+
+			/*
+				如果简体中文跟繁体中文一起出现，且当前 data.languageName 认定是简体中文（也就是简体中文字符占比最大），那么要判定一下繁体中文：
+					如果 繁体中文的字符数/简体中文的字符数 > 0.03 ， 那么认为当前是繁体中文的
+			*/
+			if(typeof(languagesSize['chinese_simplified']) != 'undefined' && typeof(languagesSize['chinese_traditional']) != 'undefined' && data.languageName == 'chinese_simplified'){
+				if(languagesSize['chinese_traditional']/languagesSize['chinese_simplified'] > 0.03){
+					data.languageName = 'chinese_traditional'
+				}
+			}
+			/* if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
+				langsNumber['chinese_simplified'] = 0;
+			} */
+
+
+			/*
+				如果发现日语、简体中文、繁体中文 一起存在，且当前 data.languageName 认定是简体或繁体中文，那么要判定一下：
+					如果 日语的字符数/(简体中文+繁体中文)的字符数 > 0.03 ， 那么认为当前是日语的
+			*/
+			if(typeof(languagesSize['chinese_simplified']) != 'undefined' && typeof(languagesSize['chinese_traditional']) != 'undefined' && typeof(languagesSize['japanese']) != 'undefined' && (data.languageName == 'chinese_simplified' || data.languageName == 'chinese_traditional' )){
+				if(languagesSize['japanese']/(languagesSize['chinese_simplified']+languagesSize['chinese_traditional']) > 0.03){
+					data.languageName = 'japanese'
+				}
+			}
+			/* if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
+				langsNumber['chinese_simplified'] = 0;
+				langsNumber['chinese_traditional'] = 0;
+			} */
+
+			return data;
+		},
 
 		/*
 		 * 识别字符串是什么语种。它是 get() 的扩展，以代替get返回更多
@@ -3933,12 +4019,14 @@ var translate = {
 			{
 				languageName: 'english',
 		 		languageArray:[
-					"english":[
-						{beforeText: '', afterText: '', text: 'emoambue hag'},
-						......
+					english:[
+						list[
+							{beforeText: ' ', afterText: ' ', text: 'hello word'},
+							{beforeText: ' ', afterText: ' ', text: 'who?'},
+						],
+						number:12
 					],
-					"japanese":[
-						{beforeText: ' ', afterText: ' ', text: 'ẽ '},
+					japanese:[
 						......
 					]
 		 		]
@@ -3958,6 +4046,8 @@ var translate = {
 			var langsNumber = []; //key  语言名，  value 语言字符数
 			var langsNumberOriginal = []; //同上，只不过这个不会进行清空字符数
 			var allNumber = 0;//总字数
+
+			/** 进行字数统计相关 - start **/
 			for(var key in langs){
 				if (!langs.hasOwnProperty(key)) {
 		    		continue;
@@ -3973,51 +4063,9 @@ var translate = {
 				langsNumber[key] = langStrLength;
 				langsNumberOriginal[key] = langStrLength;
 			}
-
-			//过滤 语种的字符数小于总字符数 百分之五的，低于这个数，将忽略
-			var langkeys = [];
-			for(var lang in langsNumber){
-				if (!langsNumber.hasOwnProperty(lang)) {
-		    		continue;
-		    	}
-				if(langsNumber[lang]/allNumber > 0.01){
-					langkeys[langkeys.length] = lang+'';
-				}
-			}
-
-			if(langkeys.length > 1 && langkeys.indexOf('english') > -1){
-				//console.log('出现了english, 并且english跟其他语种一起出现那么删除english，因为什么法语德语乱七八糟的都有英语。而且中文跟英文一起，如果认为是英文的话，有时候中文会不被翻译');
-				//这里先判断一下是否有发现了 罗曼语族
-				if(langkeys.indexOf('romance') > -1){
-					//发现了，那么判断一下到底是 法语、西班牙语、葡萄牙语、意大利语 中的哪一种呢
-					var romanceSentenceLanguage = translate.language.romanceSentenceAnaly(str);
-					if(romanceSentenceLanguage.length == 0){
-						console.log('语种识别异常，应该是 法语、西班牙语、葡萄牙语、意大利语 中的一种才是，除非是除了这四种语种之外的别的 罗曼语族 中的语种，当前已将 '+ str +'识别为英语。 你可以联系我们求助 https://translate.zvo.cn/4030.html');
-					}else{
-						//console.log(langsNumber);
-						langsNumber[romanceSentenceLanguage] = langsNumber['romance']+langsNumber['english'];
-						//console.log('set romance to '+romanceSentenceLanguage+' : \t'+str);
-						langsNumber['english'] = 0;
-					}
-				}else{
-					langsNumber['english'] = 0;
-				}
-			}
-
-			//如果简体中文跟繁体中文一起出现，那么会判断当前句子为繁体中文，将简体中文字符数置0
-			if(langkeys.indexOf('chinese_simplified') > -1 && langkeys.indexOf('chinese_traditional') > -1){
-				//langkeys.splice(langkeys.indexOf('chinese_simplified'), 1); 
-				langsNumber['chinese_simplified'] = 0;
-			}
+			/** 进行字数统计相关 - end **/
 
 
-			//如果发现日语字符，那么将发现的简体中文、繁体中文字符数量置零
-			if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
-				langsNumber['chinese_simplified'] = 0;
-				langsNumber['chinese_traditional'] = 0;
-			}
-
-			
 
 			//从 langsNumber 中找出字数最多的来
 			var maxLang = ''; //字数最多的语种
@@ -4047,19 +4095,9 @@ var translate = {
 				languageName: maxLang,
 				languageArray: languageArray
 			};
-
-			//v3.4.2 增加，增加对法语等英文变种的小语种的识别
-			if(result.languageName == 'english'){
-				//如果识别的语种是英语，那便不仅仅是英语，因为法语、德语、意大利语也是在英语里面，还要判断一下是否用户自己设置了具体语种是否是英语延伸的小语种
-
-				var localLang = translate.language.getLocal(); //本地语种
-				if(translate.language.englishVarietys.indexOf(localLang) > -1){
-					//发现当前设置的是小语种，那么将当前识别的语种识别为 本地设置的这个小语种。
-					result.languageName = localLang;
-				}
-			}
-
-			return result;
+			
+			//最后进行一层简单的算法处理
+			return translate.language.recognitionAlgorithm(str, result, langsNumber, allNumber);
 		},
 		/*
 			传入一个char，返回这个char属于什么语种，返回如   如果返回空字符串，那么表示未获取到是什么语种

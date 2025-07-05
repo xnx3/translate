@@ -3979,9 +3979,49 @@ var translate = {
 				}
 			}
 
+			
+			/*
+				如果发现日语、简体中文或繁体中文 一起存在，且当前 data.languageName 认定是简体或繁体中文，那么要判定一下：
+					如果 日语的字符数/(简体中文+繁体中文)的字符数 > 0.1 ， 那么认为当前是日语的
+			*/
+			if( (typeof(languagesSize['chinese_simplified']) != 'undefined' || typeof(languagesSize['chinese_traditional']) != 'undefined' ) && typeof(languagesSize['japanese']) != 'undefined' && (data.languageName == 'chinese_simplified' || data.languageName == 'chinese_traditional' )){
+				var size = 0;
+				if(typeof(languagesSize['chinese_simplified']) != 'undefined'){
+					size = size + languagesSize['chinese_simplified'];
+				}
+				if(typeof(languagesSize['chinese_traditional']) != 'undefined'){
+					size = size + languagesSize['chinese_traditional'];
+				}
+				if(languagesSize['japanese']/size > 0.1){
+					data.languageName = 'japanese'
+				}
+			}
+			/* if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
+				langsNumber['chinese_simplified'] = 0;
+				langsNumber['chinese_traditional'] = 0;
+			} */
+
+			/*
+				如果发现英语、简体中文或繁体中文 一起存在，且当前 data.languageName 认定是英语时，那么要判定一下：
+					如果 (简体中文+繁体中文)的字符数/英语 > 0.08 ， 那么认为当前是简体中文（不认为是繁体中文，因为下面还有 简体中文跟繁体中文的判定）
+			*/
+			if( (typeof(languagesSize['chinese_simplified']) != 'undefined' || typeof(languagesSize['chinese_traditional']) != 'undefined' ) && typeof(languagesSize['english']) != 'undefined' && data.languageName == 'english'){
+				var size = 0;
+				if(typeof(languagesSize['chinese_simplified']) != 'undefined'){
+					size = size + languagesSize['chinese_simplified'];
+				}
+				if(typeof(languagesSize['chinese_traditional']) != 'undefined'){
+					size = size + languagesSize['chinese_traditional'];
+				}
+				if(size/languagesSize['english'] > 0.08){
+					data.languageName = 'chinese_simplified'
+				}
+			}
+
+
 			/*
 				如果简体中文跟繁体中文一起出现，且当前 data.languageName 认定是简体中文（也就是简体中文字符占比最大），那么要判定一下繁体中文：
-					如果 繁体中文的字符数/简体中文的字符数 > 0.03 ， 那么认为当前是繁体中文的
+					如果 繁体中文的字符数/简体中文的字符数 > 0.08 ， 那么认为当前是繁体中文的
 			*/
 			if(typeof(languagesSize['chinese_simplified']) != 'undefined' && typeof(languagesSize['chinese_traditional']) != 'undefined' && data.languageName == 'chinese_simplified'){
 				if(languagesSize['chinese_traditional']/languagesSize['chinese_simplified'] > 0.03){
@@ -3992,20 +4032,6 @@ var translate = {
 				langsNumber['chinese_simplified'] = 0;
 			} */
 
-
-			/*
-				如果发现日语、简体中文、繁体中文 一起存在，且当前 data.languageName 认定是简体或繁体中文，那么要判定一下：
-					如果 日语的字符数/(简体中文+繁体中文)的字符数 > 0.03 ， 那么认为当前是日语的
-			*/
-			if(typeof(languagesSize['chinese_simplified']) != 'undefined' && typeof(languagesSize['chinese_traditional']) != 'undefined' && typeof(languagesSize['japanese']) != 'undefined' && (data.languageName == 'chinese_simplified' || data.languageName == 'chinese_traditional' )){
-				if(languagesSize['japanese']/(languagesSize['chinese_simplified']+languagesSize['chinese_traditional']) > 0.03){
-					data.languageName = 'japanese'
-				}
-			}
-			/* if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
-				langsNumber['chinese_simplified'] = 0;
-				langsNumber['chinese_traditional'] = 0;
-			} */
 
 			return data;
 		},

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.0.20250703',
+	version: '3.17.1.20250705',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3695,6 +3695,72 @@ var translate = {
 			translate.storage.set('to', paramValue);
 			translate.to = paramValue;
 		},
+		/* 
+			获取翻译区域的原始文本，翻译前的文本。 这里会把空白符等过滤掉，只返回纯显示的文本
+			也就是获取 translate.setDocument(...) 定义的翻译区域中，翻译前，要参与翻译的文本。 
+			其中像是 translate.ignore.tag 这种忽略翻译的标签，这里也不会获取的，这里只是获取实际要参与翻译的文本。
+		 */
+		getTranslateAreaText:function(){
+			//v3.16.1 优化，获取本地语种，针对开源中国只对 readme 部分进行翻译的场景，将针对设置的 translate.setDocument() 区域的元素的显示文本进行判定语种
+			var translateAreaText = ''; //翻译区域内当前的文本
+			
+			/** 构建虚拟容器，将要翻译的区域放入虚拟容器，以便后续处理 **/
+			var virtualContainer = document.createElement('div'); // 创建虚拟容器，处理、判断也都是针对这个虚拟容器
+			if(translate.documents != null && typeof(translate.documents) != 'undefined' && translate.documents.length > 0){
+				// setDocuments 指定的
+				for(var docs_index = 0; docs_index < translate.documents.length; docs_index++){
+					var doc = translate.documents[docs_index];
+					if(typeof(doc) != 'undefined' && doc != null && typeof(doc.innerText) != 'undefined' && doc.innerText != null && doc.innerText.length > 0){
+						virtualContainer.appendChild(doc.cloneNode(true));
+					}
+				}
+			}else{
+				//未使用 setDocuments指定，那就是整个网页了
+				//return document.all; //翻译所有的  这是 v3.5.0之前的
+				//v3.5.0 之后采用 拿 html的最上层的demo，而不是 document.all 拿到可能几千个dom
+				if(typeof(document.head) != 'undefined'){
+					virtualContainer.appendChild(document.head.cloneNode(true));
+				}
+				if(typeof(document.body) != 'undefined'){
+					virtualContainer.appendChild(document.body.cloneNode(true));
+				}
+			}
+			//console.log(virtualContainer);
+
+
+			/** 对虚拟容器中的元素进行处理，移除忽略的 tag （这里暂时就只是移除忽略的tag， 其他忽略的后续再加） **/
+			// 遍历标签列表
+			//console.log('---- remove element');
+		    for (var i = 0; i < translate.ignore.tag.length; i++) {
+		        var tagName = translate.ignore.tag[i];
+		        var elements = virtualContainer.querySelectorAll(tagName);
+		        // 将 NodeList 转换为数组
+		        var elementArray = Array.prototype.slice.call(elements);
+		        // 遍历并移除每个匹配的元素
+		        for (var j = 0; j < elementArray.length; j++) {
+		            var element = elementArray[j];
+		            if (element.parentNode) {
+		                //console.log(element);
+		                element.parentNode.removeChild(element);
+		            }
+		        }
+		    }
+			//console.log('---- remove element end');
+
+
+			/*** 取过滤完后的文本字符 ***/
+			translateAreaText = virtualContainer.innerText;
+			if(translateAreaText == null || typeof(translateAreaText) == 'undefined' || translateAreaText.length < 1){
+				//未取到，默认赋予简体中文
+				translate.language.local = 'chinese_simplified';
+				return;
+			}
+			// 移除所有空白字符（包括空格、制表符、换行符等）
+			translateAreaText = translateAreaText.replace(/\s/g, '');
+
+			//console.log('translateAreaText:\n'+translateAreaText);
+			return translateAreaText;
+		},
 		//自动识别当前页面是什么语种
 		autoRecognitionLocalLanguage:function(){
 			if(translate.language.local != null && translate.language.local.length > 2){
@@ -3702,29 +3768,12 @@ var translate = {
 				return translate.language.local;
 			}
 
-			//v3.16.1 优化，获取本地语种，针对开源中国只对 readme 部分进行翻译的场景，将针对设置的 translate.setDocument() 区域的元素的显示文本进行判定语种
-			var translateAreaText = ''; //翻译区域内当前的文本
-			var docs = translate.getDocuments();
-			for(var docs_index = 0; docs_index < docs.length; docs_index++){
-				var doc = docs[docs_index];
-				if(typeof(doc) != 'undefined' && doc != null && typeof(doc.innerText) != 'undefined' && doc.innerText != null && doc.innerText.length > 0){
-					translateAreaText = translateAreaText + doc.innerText;
-				}
-			}
-
-			
-			//var bodyText = document.body.outerText;
-			if(translateAreaText == null || typeof(translateAreaText) == 'undefined' || translateAreaText.length < 1){
-				//未取到，默认赋予简体中文
-				translate.language.local = 'chinese_simplified';
-				return;
-			}
-
-			translateAreaText = translateAreaText.replace(/\n|\t|\r/g,''); //将回车换行等去掉
+			var translateAreaText = translate.language.getTranslateAreaText();
 
 			//默认赋予简体中文
 			translate.language.local = 'chinese_simplified';
 			var recognition = translate.language.recognition(translateAreaText);
+			//console.log(recognition);
 			translate.language.local = recognition.languageName;
 			return translate.language.local;
 			/* v3.1优化

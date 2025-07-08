@@ -1,6 +1,6 @@
 {
   "name": "i18n-jsautotranslate",
-  "version": "3.13.12",
+  "version": "3.17.0",
   "description": "Two lines of js realize automatic html translation. No need to change the page, no language configuration file, no API key, SEO friendly!",
   "main": "index.js",
   "scripts": {
@@ -24,5 +24,5 @@
     "url": "git+https://github.com/xnx3/translate.git"
   },
   "author": "管雷鸣",
-  "license": "Apache-2.0"
+  "license": "MIT"
 }

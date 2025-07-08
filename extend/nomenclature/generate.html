@@ -1,0 +1,122 @@
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <title>自定义术语自动生成</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+</head>
+<body>
+<script src="../../translate.js/translate.js"></script>
+<script src="https://res.zvo.cn/msg/msg.js"></script>
+
+
+<textarea id="sourceString" style="height: 400px; width: 350px;">你好世界</textarea>
+
+<br/>
+源语种：
+<input type="text" id="sourceLanguage" value="chinese_simplified" />
+
+<br/>
+翻译为：
+<span id="translate"></span>
+
+<br/>
+<button onclick="generateJsCode();">生成自定义术语设置代码</button>
+<div id="state"><!-- 这里显示状态 --></div>
+
+<script>
+
+var finishNumber = 0; //当前翻译完成的次数
+var code = '';	//生成的代码
+var targetLanguages = ['english','korean'];	//翻译为的目标语言
+
+/*
+		生成 translate.js 自定义术语的js代码，返回 js 代码
+*/
+function generateJsCodeByLanguage(language){
+	var texts = document.getElementById('sourceString').value.split('\n');
+	var from = document.getElementById('sourceLanguage').value;
+	console.log({ from:from, to:language, texts: texts });
+	translate.request.translateText({ from:from, to:language, texts: texts }, function(data){
+			if(data.result == 0){
+				alert(data.info);
+				return;
+			}
+			console.log(data.to+' finish');
+			finishNumber++;
+			document.getElementById('state').innerHTML = 'to '+data.to+' finish! ('+finishNumber+'/'+targetLanguages.length+')';
+
+	    //打印翻译结果
+	    //console.log(data);
+	    var results = '';
+	    for(var i = 0; i<texts.length; i++){
+	    		if(texts[i].length < 1){
+	    			continue;
+	    		}
+	    		if(results.length > 0){
+	    			results = results+'\n';
+	    		}
+	    		results = results + texts[i]+'='+data.text[i];
+	    }
+
+	    if(results.length < 1){
+	    	return '';
+	    }
+
+	    results = 'translate.nomenclature.append(\''+data.from+'\',\''+data.to+'\',`\n'+results+'\n`);'
+
+	    if(code.length > 0){
+				code = code + '\n';
+			}
+	    code = code + results;
+
+	    if(targetLanguages.length == finishNumber){
+	    	//完成了
+
+	    	finishNumber = 0;
+	    	
+
+	    	document.getElementById('state').innerHTML = 'finish! code: <br/><textarea id="code" style="height: 300px;width: 100%;">loading...</textarea>';
+	    	setTimeout(function(){
+	    		document.getElementById('code').value = code;
+	    	}, 500);
+	    	
+	    }
+
+	});
+}
+
+function generateJsCode(){
+	document.getElementById('state').innerHTML = 'start ...';
+
+	finishNumber = 0;
+
+	//当前选择的语言代码
+	//var currentLanguages = document.getElementById('translateSelectLanguage').value;
+	//targetLanguages = ['english','korean']; //这个要动态赋予，用户多选的哪些，这些就赋予哪些
+	code = '';
+	window.number = 0;
+	for(var l = 0; l<targetLanguages.length; l++){
+		setTimeout(function(){
+			generateJsCodeByLanguage(targetLanguages[window.number++]);
+		}, 1500*l);
+	}
+
+
+
+}
+
+//重写select切换语言点切换后触发动作 - 参考文档 https://translate.zvo.cn/4056.html
+translate.selectLanguageTag.selectOnChange = function(event){
+    var language = event.target.value;
+    console.log('new language: '+language);
+    //trans(language);
+};
+
+
+
+translate.execute(); 
+</script>
+
+
+</body>
+</html>

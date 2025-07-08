@@ -3,7 +3,20 @@
 #
 
 # 结束当前tcdn进程
-ps -ef | grep tcdn | grep root | grep -v grep |awk '{print $2}' | xargs --no-run-if-empty kill -9
+#ps -ef | grep -w tcdn | grep root | grep -v grep |awk '{print $2}' | xargs --no-run-if-empty kill -9
+ps -u root --format pid,comm | awk '$2 == "tcdn" {print $1}' | xargs --no-run-if-empty kill -9
+
+# 免得结束不掉在结束一次
+pkill tcdn
+
+# 删除备份
+echo "删除上次的备份"
+rm -rf /mnt/tcdn/bin/tcdn.bak
+# 进行备份
+cp /mnt/tcdn/bin/tcdn /mnt/tcdn/bin/tcdn.bak
+# 删除应用
+rm -rf /mnt/tcdn/bin/tcdn
+
 
 # 下载新版本
 yum -y install wget
@@ -24,5 +37,6 @@ chmod -x /mnt/tcdn/bin/tcdn
 chmod -R 777 /mnt/tcdn/bin/tcdn
 
 # 启动 tcdn
-echo "正在启动 tcdn..."
-nohup /mnt/tcdn/bin/tcdn > /mnt/tcdn/logs/tcdn.log 2>&1 &
+echo "正在重启..."
+#nohup /mnt/tcdn/bin/tcdn > /mnt/tcdn/logs/tcdn.log 2>&1 &
+reboot

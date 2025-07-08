@@ -4859,7 +4859,7 @@ var translate = {
 			对输入的文本 text 进行判断，判断它里面是否有url存在。如果有url存在，对其进行截取，将url跟非url进行截取处理。
 			比如传入 “示例：https://www.ungm.org/Public/Notice/261001，其他http://api.translate.zvo.cn 我也是”
 			那么返回的截取结果为：
-		{
+			{
 				"示例：":"0",
 				"https://www.ungm.org/Public/Notice/261001":"1",
 				"，其他":"0"

@@ -8,12 +8,12 @@
 </h4> 
 <h4 align="center">
     简体中文 | 
-    <a href="http://translate.zvo.cn/4019.html?language=chinese_traditional">繁體中文</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=english">English</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=japanese">しろうと</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=russian">Русский язык</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=german">deutsch</a> | 
-    <a href="http://translate.zvo.cn/4019.html?language=french">Français</a> 
+    <a href="http://translate.zvo.cn/index.html?language=chinese_traditional">繁體中文</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=english">English</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=japanese">日本語</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=russian">Русский язык</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=german">deutsch</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=french">Français</a> 
 </h4> 
 
 # 特性说明
@@ -22,9 +22,9 @@
 * **极其灵活扩展。** 您可指定它[只翻译某些指定区域的元素](http://translate.zvo.cn/4063.html)、[自定义切换语言方式及美化](http://translate.zvo.cn/4056.html)、[某些id、class、tag不被翻译](https://translate.zvo.cn/4061.html)、[自定义翻译术语](https://translate.zvo.cn/4070.html) ...... 只要你想的，它都能做到。做不到的，你找我我来让它做到！
 * **自动切换语种。** [自动根据用户的语言喜好及所在的国家切换到这个语种进行浏览](http://translate.zvo.cn/4065.html)
 * **极速翻译能力。** [内置三层缓存、预加载机制，毫秒级瞬间翻译的能力。它并不是你理解的大模型蜗牛似的逐个字往外出的那样](http://translate.zvo.cn/4026.html)
-* [**永久开源免费。** 采用Apache-2.0开源协议，您可永久免费使用](https://github.com/xnx3/translate/blob/master/LICENSE)。[另外你可以用它来做某些系统的三方插件直接售卖盈利](http://translate.zvo.cn/4036.html)、或者你是建站公司用它来做为一项高级功能盈利，我们都是完全认可并支持的，并不需要给我们任何费用！
+* [**永久开源免费。** 采用MIT开源协议，您可永久免费使用](https://github.com/xnx3/translate/blob/master/LICENSE)。[另外你可以用它来做某些系统的三方插件直接售卖盈利](http://translate.zvo.cn/4036.html)、或者你是建站公司用它来做为一项高级功能盈利，我们都是完全认可并支持的，并不需要给我们任何费用！
 * **搜索引擎友好。** 完全不影响你本身网站搜索引擎的收录。爬虫所爬取的网页源代码，它不会对其进行任何改动，你可完全放心。[另外我们还有高级版本让你翻译之后的页面也能被搜索引擎收录](http://translate.zvo.cn/236896.html)
-* **支持私有部署。** [在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或者完全不通外网的场景，可以自行私有部署翻译API服务](http://translate.zvo.cn/4052.html) 
+* **支持私有部署。** [在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或者完全不通外网的场景，可以自行私有部署翻译API服务](http://translate.zvo.cn/391129.html) 
 * **全球网络节点**。美洲、亚洲、欧洲 ... 都有网络节点，它能自动适配最快节点，每间隔1分钟自动获取一次延迟最小的节点进行接入使用，使全球范围使用都可高效稳定。
 * **HTML整体翻译**。[提供开放API接口，传入html文件（html源代码）及要翻译为的语言即可拿到翻译后的html源码。完美支持识别各种复杂及不规范html代码，
 支持翻译前的微调，比如不翻译某个区域、图片翻译、js语法操作html文件中的元素进行增删改等。](https://translate.zvo.cn/4022.html)
@@ -34,7 +34,10 @@
 
 
 # 微调指令
-* **[设置默认翻译为的语种](http://translate.zvo.cn/4071.html)**，用户第一次打开时，默认以什么语种显示。
+它有极其丰富的扩展指令，让你可以对它进行各种精准控制，满足各种难缠客户的各种脑洞要求。（如果满足不了，可提出来，我们加）
+
+* **[切换语言select选择框的自定义设置](https://translate.zvo.cn/41541.html)**，设置切换语言选择框位置、CSS美化、是否出现、显示的语种、触发后的自定义、以及重写等。
+* **[设置默认翻译为什么语种进行显示](http://translate.zvo.cn/4071.html)**，用户第一次打开时，默认以什么语种显示。
 * **[自定义翻译术语](http://translate.zvo.cn/41555.html)**，如果你感觉某些翻译不太符合你的预期，可进行针对性的定义某些词或句子的翻译结果，进行自定义术语库
 * **[翻译完后自动触发执行](http://translate.zvo.cn/4069.html)**，当翻译完成后会自动触发执行您的某个方法，以便您来做自定义扩展。
 * **[指定翻译服务接口](http://translate.zvo.cn/4068.html)**，如果你不想用我们开源免费的翻译服务接口，使用您自己私有部署的、或者您自己二次开发对接的某个翻译服务，可通过此来指定自己的翻译接口。
@@ -46,7 +49,7 @@
 * **[翻译时忽略指定的id](http://translate.zvo.cn/4062.html)**，翻译时追加上自己想忽略不进行翻译的id的值，凡是在这里面的，都不进行翻译，也就是当前元素以及其子元素都不会被翻译。
 * **[翻译时忽略指定的class属性](http://translate.zvo.cn/4061.html)**，翻译时追加上自己想忽略不进行翻译的class标签，凡是在这里面的，都不进行翻译，也就是当前元素以及其子元素都不会被翻译。
 * **[翻译时忽略指定的tag标签](http://translate.zvo.cn/4060.html)**，翻译时追加上自己想忽略不进行翻译的tag标签，凡是在这里面的，都不进行翻译，也就是当前元素以及其子元素都不会被翻译。
-* **[翻译时忽略指定的文字不翻译](http://translate.zvo.cn/283381.html)**，翻译时追加上自己想忽略不进行翻译的文字，凡是在这里面的，都不进行翻译。
+* **[翻译时忽略指定的文字不翻译](http://translate.zvo.cn/283381.html)**，翻译时追加上自己想忽略不进行翻译的文字(支持配置字符串和正则表达式)，凡是在这里面的，都不进行翻译。
 * **[对网页中图片进行翻译](http://translate.zvo.cn/4055.html)**，在进行翻译时，对其中的图片也会一起进行翻译。
 * **[鼠标划词翻译](http://translate.zvo.cn/4072.html)**，鼠标在网页中选中一段文字，会自动出现对应翻译后的文本
 * **[获取当前显示的是什么语种](http://translate.zvo.cn/4074.html)**，如果用户切换为英语进行浏览，那么这个方法将返回翻译的目标语种。
@@ -65,6 +68,11 @@
 * **[增加对指定标签的属性进行翻译](http://translate.zvo.cn/231504.html)**，可以增加对指定html标签的某个或某些属性进行翻译。比如element、vue 等框架，有些自定义的标签属性，想让其也正常翻译
 * **[本地语种也进行强制翻译](http://translate.zvo.cn/289574.html)**，切换为中文时，即使本地语种设置的是中文，网页中只要不是中文的元素，都会被翻译为要显示的语种
 * **[自定义通过翻译API进行时的监听事件](http://translate.zvo.cn/379207.html)**，当通过翻译API进行文本翻译时的整个过程进行监听，做一些自定义处理，比如翻译API请求前要做些什么、请求翻译API完成并在DOM渲染完毕后触发些什么。
+* **[启用翻译中的遮罩层](http://translate.zvo.cn/407105.html)**，在进行通过翻译API进行翻译时，相关元素上面显示一层加载中的动画效果，让用户知道这段文本正在进行处理中
+* **[对JS对象及代码进行翻译](http://translate.zvo.cn/452991.html)**，可对JavaScript 对象、以及 JavaScript 代码进行翻译。
+* **[网络请求自定义附加参数](http://translate.zvo.cn/471711.html)**，追加上一些自定义的参数传递到后端翻译服务。主要用于定制扩展使用。
+* **[网络请求数据拦截并翻译](http://translate.zvo.cn/479724.html)**，当用户触发网络请求时，它可以针对ajax、fetch请求中的某个参数，进行拦截，并进行翻译，将翻译后的文本赋予这个参数，然后再放开请求。
+* **[翻译排队执行](http://translate.zvo.cn/479742.html)**，避免接入时的异常设置，导致非常频繁的去执行扫描及翻译的情况。
 
 # 在线体验
 http://res.zvo.cn/translate/demo.html
@@ -85,11 +93,11 @@ http://res.zvo.cn/translate/demo.html
 在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
 
 ````
-<script src="https://cdn.staticfile.net/translate.js/3.12.0/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.16.0/translate.js"></script>
 <script>
-translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等，具体参见文档下方关于此的说明。
-translate.service.use('client.edge'); //设置机器翻译服务通道，直接客户端本身，不依赖服务端 。相关说明参考 http://translate.zvo.cn/43086.html
-translate.execute();//进行翻译 
+translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等
+translate.service.use('client.edge'); //设置机器翻译服务通道，相关说明参考 http://translate.zvo.cn/43086.html
+translate.execute();//完成翻译初始化，进行翻译
 </script>
 ````
 
@@ -101,7 +109,7 @@ translate.execute();//进行翻译
 
 **普通网站中点击某个语言进行切换**
 如下图所示，网站中的某个位置要有几种语言切换  
-![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
+![](doc/resources/uws-demo.png?raw=true)  
 直接在其html代码末尾的位置加入以下代码：  
 
 ````
@@ -111,12 +119,12 @@ translate.execute();//进行翻译
 	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
 	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
 </ul>
-
+ 
 <!-- 引入多语言切换的js -->
-<script src="https://cdn.staticfile.net/translate.js/3.12.0/translate.js"></script>
+<script src="https://cdn.staticfile.net/translate.js/3.16.0/translate.js"></script>
 <script>
 	translate.selectLanguageTag.show = false; //不出现的select的选择语言
-    translate.service.use('client.edge'); //设置机器翻译服务通道
+    translate.service.use('client.edge'); //设置翻译服务通道
 	translate.execute();
 </script>
 ````
@@ -138,6 +146,8 @@ translate.execute();//进行翻译
     ```
 
 [详细使用说明](https://translate.zvo.cn/4041.html) |  [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js)
+
+
 
 # 谁在使用
 
@@ -185,20 +195,6 @@ tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以
 详细部署步骤可参考：  [https://translate.zvo.cn/302663.html](https://translate.zvo.cn/302663.html)
 ### 服务器部署
 需要一个干净的服务器，不依赖任何环境的情况下进行的部署，需要你懂点linux命令行， 部署方式参考：  [https://translate.zvo.cn/236899.html](https://translate.zvo.cn/236899.html)
-
-# 开源仓库目录结构
-* **deploy** - 部署相关，比如shell文件、sql数据库文件等
-* **doc** - 一些文档相关
-* **translate.admin** - [TCDN的管理后台,PC端的WEB管理后台，可以通过此添加翻译的源站、绑定别的域名及设置域名所展现的语言、针对翻译的过程中支持使用JavaScript脚本自定义调优，比如设置哪些不被翻译、设置一些自定义术语库等。并且提供了CDN的基本能力，比如根据URL清除缓存、根据域名清除缓存等。](http://translate.zvo.cn/41163.html)
-* **translate.api** - [翻译开放接口，他不同于 translate service 的点在于 translate service 开放的是文本翻译接口，而 translate api 开放的是html翻译接口，你传入一个网页的url，它返回的是这个网页被翻译之后源码（此特性非常适合对不同语言上SEO优化）](http://translate.zvo.cn/41165.html)
-* **translate.core** - [TCDN的公共模块,无具体功能]
-* **translate.js** - [提供了针对html的分析及翻译能力。在现有的html页面中引入一个js可以快速实现当前页面语种切换的能力。且适配面非常广泛！只要是html的，它都能适配（包含VUE、uniapp等），在很多情况下，它是单独进行使用的，在你的老网站中加入几行js代码即可植入，使其快速具备语种切换能力。](http://translate.zvo.cn/4019.html)
-* **translate.service** - [翻译服务，它对接了 小牛翻译、google翻译、华为云翻译 等翻译服务，如果需要别的翻译服务或者局域网无网环境下部署，也可以快速对接自有翻译接口。它的作用是开放文本翻译接口，将 translate.js中 需要翻译的文本传入，然后将翻译之后的文本输出。提供批量翻译能力（一个翻译请求可以包含数千段需要翻译的文本）。
-并且它开放翻译接口，不止适用于 translate.js，你可以用在任何需要对接翻译接口的地方进行使用。其开放接口，说明参见：http://api.translate.zvo.cn/doc/translate.json.html](http://translate.zvo.cn/41164.html)
-* **translate.user** - [TCDN 对用户开放访问的，当在 translate admin 中添加源站，并绑定域名指向某个语种后，用户访问这个域名时，便会访问进此，有此进行网页翻译的调度、缓存的处理等。当用户第一次访问某个页面时，缓存中没有，会通过 translate api 从源站获取网页源码，然后进行翻译，将翻译之后的html源码在此进行缓存，然后返回给用户浏览器进行显示。 当有用户在此访问这个页面时，便会直接从缓存中取。](http://translate.zvo.cn/41166.html)
-
-其中每一个都是可以作为一个单独的项目进行使用，比如 translate.service 便可以作为文本翻译接口进行使用、translate.api 可以作为html文件翻译接口使用、translate.js 可以作为网页端直接嵌入几行js代码就能快速翻译来使用。
-另外像是如果你网站已经配置好，不需要在使用 translate.admin 管理后台，你可以将此停掉，从而降低服务器资源的占用。
 
 
 # 项目由来
@@ -259,22 +255,15 @@ tcdn是translate.js 的高级版本，它的能力是让你原本的网站可以
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
 作者微信：xnx3com（使用交流可加QQ群进行，我看微信很不及时）    
 Telegram : [untran](https://t.me/untran)  
+交流QQ群:181781514(已满)  
+交流QQ群:641047127(已满)  
+交流QQ群:240567964(已满)  
 交流QQ群:1034085260  
-交流QQ群:181781514  (已满)  
-交流QQ群:641047127  (已满)  
-交流QQ群:240567964  (已满)  
+交流QQ群:1017938586  
+作者邮箱：921153866@qq.com  
 微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
-gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)
-
-
-# 寻找合作
-寻找合作伙伴探讨盈利方式 - 以下全自有技术研发
-
-1. html源码翻译开放API http://doc.zvo.cn/tcdn/api/doc.html
-2. TCDN全自动网站源码级翻译，适合翻译后语种分别分配域名、进行SEO优化 http://translate.zvo.cn/236896.html
-
-联系：17076012262(微信同号) 我们是纯技术团队，欢迎联系，希望能跟你探讨合作盈利商机，我们专心技术，您来拓展商务销售
+gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)  
 
 
 # 商业化声明

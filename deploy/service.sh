@@ -7,7 +7,7 @@ yum -y install unzip
 # 校验down.zvo.cn下载源的通畅
 #wget https://gitee.com/HuaweiCloudDeveloper/huaweicloud-solution-build-wangmarketcms/raw/master/shell/hosts.sh -O ~/hosts.sh && chmod -R 777 ~/hosts.sh &&  sh ~/hosts.sh
 #rm -rf ~/hosts.sh
-sudo sh -c "echo '27.25.150.35 down.zvo.cn' >> /etc/hosts"
+sudo sh -c "echo '125.208.20.35 down.zvo.cn' >> /etc/hosts"
 yum -y install nscd
 service nscd restart
 
@@ -55,6 +55,9 @@ wget http://down.zvo.cn/translate/translate.service/domain.json -O /mnt/service/
 
 # translate.js
 wget http://down.zvo.cn/translate/translate.service/translate.js -O /mnt/service/bin/translate.js
+
+# ip2region.xdb
+wget http://down.zvo.cn/translate/translate.service/ip2region.xdb -O /mnt/service/bin/ip2region.xdb
 
 # 下载启动文件
 cd /mnt/service/

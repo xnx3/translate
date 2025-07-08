@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>translate.service - admin</title>
+
+  <link rel="stylesheet" href="./src/css/layui.css">
+  <style>
+    body {padding: 32px; /*overflow-y: scroll;*/}
+  </style>
+</head>
+<body>
+
+<table class="layui-hide" id="ID-table-demo-data"></table>
+<script src="./src/layui.js"></script>
+<script src="./translate.service.js"></script>
+<script>
+
+
+var table;
+layui.use('table', function(){
+  table = layui.table;
+
+
+  request.post(domain+'admin/cache/getCacheTextList.json', {token:'GA_A-BCIOXDIBS40D1EKLV5ILKCPWE4YUT5CX8AY98X',originalText:'yes'}, function(result){
+    console.log(result);
+    
+    for(var i=0; i < result.list.length; i++){
+      for(var key in result.list[i]){
+        if(key.indexOf('to_') == 0 && result.list[i][key].length > 0){
+          console.log(key);
+          if(typeof(result.list[i]['translateResult']) == 'undefined'){
+            result.list[i]['translateResult'] = '';
+          }else{
+            result.list[i]['translateResult'] = result.list[i]['translateResult']+'<br/>';
+          }
+          result.list[i]['translateResult'] = result.list[i]['translateResult']+ key.replace('to_','')+ ': '+result.list[i][key]+'&nbsp;<button type="button" class="layui-btn layui-btn-normal" onclick="alert(\'update\');"><i class="layui-icon layui-icon-edit"></i></button>';
+        }
+        
+
+        //将 addtime的 时间戳转为 2025-12-12 23:23:23 这种的时间显示
+        result.list[i]['addtime'] = '2025-12-12 23:23:23';
+      }
+    }
+    console.log(result);
+
+
+    // table.render({
+    //   elem: '#ID-table-demo-data',
+    //   data:result.list
+    // }); 
+      
+
+    // 已知数据渲染
+    var inst = table.render({
+      elem: '#ID-table-demo-data',
+      cols: [[ //标题栏
+        {field: 'text', title: '翻译前的原文本', width: 300, sort: true},
+        {field: 'domain', title: '域名/key', width: 120},
+        {field: 'addtime', title: '初次翻译时间', minWidth: 160},
+        {field: 'translateResult', title: '翻译结果', width: 300}
+      ]],
+      data: result.list,
+      skin: 'line', // 表格风格
+      //even: true,
+      page: true, // 是否显示分页
+      limit: 200 // 每页默认显示的数量
+    });
+
+
+
+
+  });
+
+  
+});
+
+
+
+</script>
+</body>
+</html>

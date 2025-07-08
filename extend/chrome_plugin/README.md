@@ -1,5 +1,6 @@
 ## 示例
-参考 demo.mp4
+* [demo.mp4](demo.mp4?raw=true)
+* [doc/resources/oschina-chrome-plugin-demo.mov](../../doc/resources/oschina-chrome-plugin-demo.mov)
 
 
 ## 谷歌插件应用商店打包

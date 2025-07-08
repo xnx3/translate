@@ -13,6 +13,9 @@
       text-align:left;
           display: initial;
     }
+    .layui-table-cell{
+      overflow: inherit;
+    }
   </style>
 </head>
 <body>
@@ -22,7 +25,7 @@
     <ul>
     {{#  layui.each(d.translateResult, function(index, item){ }}
       <li class="translate-result-language-text-item">
-        {{ item.language }}: {{ item.text }}
+        <b>{{ item.language }}</b> &nbsp;:&nbsp;{{ item.text }}
         <button class="layui-btn layui-btn-xs" onclick="editTranslateText('{{ d.id }}', '{{ item.language }}', '{{ item.text }}')">
           <i class="layui-icon layui-icon-edit"></i>
         </button>

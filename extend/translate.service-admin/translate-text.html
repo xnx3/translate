@@ -8,10 +8,31 @@
   <link rel="stylesheet" href="./src/css/layui.css">
   <style>
     body {padding: 32px; /*overflow-y: scroll;*/}
+    .translate-result-language-text-item{
+      float:left;
+      text-align:left;
+          display: initial;
+    }
+    .layui-table-cell{
+      overflow: inherit;
+    }
   </style>
 </head>
 <body>
 
+
+<script type="text/html" id="translate-result-td">
+    <ul>
+    {{#  layui.each(d.translateResult, function(index, item){ }}
+      <li class="translate-result-language-text-item">
+        <b>{{ item.language }}</b> &nbsp;:&nbsp;{{ item.text }}
+        <button class="layui-btn layui-btn-xs" onclick="editTranslateText('{{ d.id }}', '{{ item.language }}', '{{ item.text }}')">
+          <i class="layui-icon layui-icon-edit"></i>
+        </button>
+      </li>
+    {{#  }); }}
+    </ul>
+</script>
 <table class="layui-hide" id="ID-table-demo-data"></table>
 <script src="./src/layui.js"></script>
 <script src="./translate.service.js"></script>
@@ -31,11 +52,9 @@ layui.use('table', function(){
         if(key.indexOf('to_') == 0 && result.list[i][key].length > 0){
           console.log(key);
           if(typeof(result.list[i]['translateResult']) == 'undefined'){
-            result.list[i]['translateResult'] = '';
-          }else{
-            result.list[i]['translateResult'] = result.list[i]['translateResult']+'<br/>';
+            result.list[i]['translateResult'] = [];
           }
-          result.list[i]['translateResult'] = result.list[i]['translateResult']+ key.replace('to_','')+ ': '+result.list[i][key]+'&nbsp;<button type="button" class="layui-btn layui-btn-normal" onclick="alert(\'update\');"><i class="layui-icon layui-icon-edit"></i></button>';
+          result.list[i]['translateResult'].push({'language':key.replace('to_',''), 'text':result.list[i][key]});
         }
         
 
@@ -59,7 +78,7 @@ layui.use('table', function(){
         {field: 'text', title: '翻译前的原文本', width: 300, sort: true},
         {field: 'domain', title: '域名/key', width: 120},
         {field: 'addtime', title: '初次翻译时间', minWidth: 160},
-        {field: 'translateResult', title: '翻译结果', width: 300}
+        {field: 'translateResult', title: '翻译结果', width: 300, templet: '#translate-result-td'}
       ]],
       data: result.list,
       skin: 'line', // 表格风格
@@ -76,6 +95,16 @@ layui.use('table', function(){
   
 });
 
+
+/*
+  编辑某条翻译的结果
+  id 列表中某个tr行的hash
+  language 编辑的是哪个语言的译文，传入如  english
+  text 编辑的译文内容
+*/
+function editTranslateText(id, language, text){
+  //打开编辑窗口
+}
 
 
 </script>

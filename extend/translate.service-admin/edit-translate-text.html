@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>编辑翻译</title>
+    <link rel="stylesheet" href="./src/css/layui.css">
+    <style>
+        body {
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .layui-form-label, .translated-label {
+            display: block; /* 标签独占一行，放置在文本域上方 */
+            width: 100%; /* 与文本域宽度一致 */
+            text-align: left; /* 左对齐 */
+            font-size: 14px; /* Layui 默认字体大小 */
+            font-weight: normal; /* 统一字体粗细 */
+            color: #333; /* 统一字体颜色 */
+            margin-bottom: 8px; /* 标签与文本域间距，紧凑布局 */
+            line-height: 1.5; /* 统一行高 */
+            padding: 0; /* 移除可能干扰的内边距 */
+        }
+        .layui-input-block, .translated-text-container {
+            width: 100%; /* 文本域占满容器 */
+            display: block; /* 独占一行 */
+            margin: 0; /* 移除外边距，确保对齐 */
+        }
+        .layui-textarea {
+            width: 100%; /* 占满容器 */
+            height: 150px; /* 统一高度 */
+            resize: vertical; /* 仅允许垂直调整大小 */
+            font-size: 14px; /* 统一字体大小 */
+            line-height: 1.5; /* 统一行高 */
+            border: 1px solid #d2d2d2; /* 统一边框 */
+            border-radius: 4px; /* 统一圆角 */
+            padding: 8px; /* 统一内边距 */
+            box-sizing: border-box; /* 防止边框影响宽度 */
+            margin: 0; /* 移除外边距，确保对齐 */
+        }
+        .save-button-container {
+            text-align: center; /* 保存按钮居中 */
+            margin-top: 20px;
+        }
+        .layui-form-item {
+            margin-bottom: 20px; /* 统一表单项间距，确保垂直平行 */
+            padding: 0; /* 移除可能干扰的内边距 */
+        }
+    </style>
+</head>
+<body>
+<div class="layui-form">
+    <div class="layui-form-item">
+        <label class="layui-form-label">原文:</label>
+        <div class="layui-input-block">
+            <textarea class="layui-textarea" readonly id="originalText" style="height: 300px"></textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="translated-label" id="languageLabel">翻译为 english 的译文:</label>
+        <div class="translated-text-container">
+            <textarea class="layui-textarea" id="translatedText" style="height: 300px"></textarea>
+        </div>
+    </div>
+    <div class="layui-form-item save-button-container">
+        <button class="layui-btn" onclick="saveTranslation()">保存</button>
+    </div>
+</div>
+
+<script src="./src/layui.js"></script>
+<script src="./translate.service.js"></script>
+<script>
+
+    layui.use(['form', 'layer', 'jquery'], function(){
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.jquery;
+
+        // 解析 URL 参数
+        function getQueryParam(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            return r ? decodeURIComponent(r[2]) : '';
+        }
+
+        var domainParam = getQueryParam('domain');
+        var language = getQueryParam('language');
+        var text = getQueryParam('text');
+        var originalText = getQueryParam('originalText');
+
+        // 动态设置语言标签
+        if (language) {
+            $('#languageLabel').text('翻译为 ' + language + ' 的译文:');
+        } else {
+            $('#languageLabel').text('翻译为未知语言的译文:');
+        }
+
+        // 填充数据
+        $('#originalText').val(originalText);
+        $('#translatedText').val(text);
+
+        // 保存翻译
+        window.saveTranslation = function() {
+            var updatedText = $('#translatedText').val().trim();
+            if (!updatedText) {
+                layer.msg('译文不能为空', { icon: 2 });
+                return;
+            }
+
+            var params = {
+                token: token,
+                originalText: originalText,
+                to: language,
+                resultText: updatedText,
+                domain:domainParam
+            };
+
+            request.post(domain + 'admin/cache/setCacheText.json', params, function(result) {
+                if (result.result === 1) {
+                    layer.msg('保存成功', { icon: 1 }, function() {
+
+                    });
+                } else {
+                    layer.msg(result.info || '保存失败', { icon: 2 });
+                }
+            });
+        };
+    });
+</script>
+</body>
+</html>

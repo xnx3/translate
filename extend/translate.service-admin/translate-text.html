@@ -51,8 +51,13 @@
   <ul>
     {{#  layui.each(d.translateResult, function(index, item){ }}
     <li class="translate-result-language-text-item">
-      <b>{{ item.language }}</b>  : {{ item.text }}
-      <button class="layui-btn layui-btn-xs" onclick="editTranslateText('{{ d.id }}', '{{ item.language }}', '{{ item.text }}', '{{ item.domain }}', '{{ item.originalText }}')">
+      <b>{{ item.language }}</b>  : <span id="{{ d.id }}_{{ item.language }}">{{ item.text }}</span>
+      <button class="layui-btn layui-btn-xs translate-edit-btn"
+              data-id="{{ item.id }}"
+              data-language="{{ item.language }}"
+              data-text="{{ item.text }}"
+              data-domain="{{ item.domain }}"
+              data-originaltext="{{ item.originalText }}">
         <i class="layui-icon layui-icon-edit"></i>
       </button>
     </li>
@@ -63,6 +68,11 @@
 <script src="./src/layui.js"></script>
 <script src="./translate.service.js"></script>
 <script>
+  // 清理文本，移除异常字符
+  function cleanText(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim();
+  }
 
   var table;
   layui.use(['form', 'table', 'layer', 'jquery'], function(){
@@ -91,55 +101,89 @@
       if (to) params.to = to;
 
       // 发送请求
-      request.post(domain + 'admin/cache/getCacheTextList.json', params, function (result) {
-        console.log(result);
+      try {
+        request.post(domain + 'admin/cache/getCacheTextList.json', params, function (result) {
+          //console.log('API Response:', result);
 
-        // 初始化表格数据
-        let tableData = [];
+          // 初始化表格数据
+          let tableData = [];
 
-        // 检查接口返回结果
-        if (result.result === 0 && result.info) {
-          layer.msg(result.info, { icon: 2 }); // 显示错误提示
-          // 继续渲染空表格
-        } else if (result.list && result.list.length > 0) {
-          // 正常数据处理逻辑
-          for (var i = 0; i < result.list.length; i++) {
-            for (var key in result.list[i]) {
-              if (key.indexOf('to_') === 0 && result.list[i][key].length > 0) {
-                console.log(key);
-                if (typeof (result.list[i]['translateResult']) === 'undefined') {
-                  result.list[i]['translateResult'] = [];
+          // 检查接口返回结果
+          if (result.result === 0 && result.info) {
+            layer.msg(result.info, { icon: 2 }); // 显示错误提示
+            // 继续渲染空表格
+          } else if (result.list && result.list.length > 0) {
+            // 正常数据处理逻辑
+            for (var i = 0; i < result.list.length; i++) {
+              var item = result.list[i];
+              item.translateResult = []; // 初始化 translateResult 数组
+
+              // 遍历所有 to_<language> 字段
+              for (var key in item) {
+                if (key.indexOf('to_') === 0 && item[key] && item[key].length > 0) {
+                  var language = key.replace('to_', '');
+                  var cleanedText = cleanText(item[key]); // 清理文本
+                  item.translateResult.push({
+                    'id': cleanText(item['id'] || ''),
+                    'language': language,
+                    'text': cleanedText,
+                    'domain': cleanText(item['domain'] || ''),
+                    'originalText': cleanText(item['text'] || '')
+                  });
                 }
-                result.list[i]['translateResult'].push({ 'language': key.replace('to_', ''), 'text': result.list[i][key] ,'domain': result.list[i]['domain'],'originalText': result.list[i]['text']});
               }
-            }
-            // 将 addtime 的时间戳转为 2025-12-12 23:23:23 格式
-            result.list[i]['addtime'] = timestampToTime(result.list[i]['addtime']);
-          }
-          tableData = result.list; // 使用处理后的数据
-        }
 
-        // 渲染表格
-        table.render({
-          elem: '#ID-table-demo-data',
-          cols: [[
-            { field: 'text', title: '翻译前的原文本', width: 300, sort: true },
-            { field: 'domain', title: '域名/key', width: 120 },
-            { field: 'addtime', title: '初次翻译时间', minWidth: 160 },
-            { field: 'translateResult', title: '翻译结果', width: 300, templet: '#translate-result-td' }
-          ]],
-          data: tableData,
-          skin: 'line',
-          page: true,
-          limit: 200,
-          done: function (res, curr, count) {
-            console.log('Rendered table data:', res.data);
-            if (count === 0) {
-              layer.msg('暂无数据', { icon: 7 });
+              // 将 addtime 的时间戳转为 2025-12-12 23:23:23 格式
+              item.addtime = timestampToTime(item.addtime);
+
+              // 调试：输出 translateResult
+              console.log('Item translateResult:', item.translateResult);
             }
+            tableData = result.list; // 使用处理后的数据
           }
+
+          // 调试：输出最终 tableData
+          console.log('Table Data:', tableData);
+
+          // 渲染表格
+          table.render({
+            elem: '#ID-table-demo-data',
+            cols: [[
+              { field: 'text', title: '翻译前的原文本', width: 300, sort: true },
+              { field: 'domain', title: '域名/key', width: 120 },
+              { field: 'addtime', title: '初次翻译时间', minWidth: 160 },
+              { field: 'translateResult', title: '翻译结果', width: 300, templet: '#translate-result-td' }
+            ]],
+            data: tableData,
+            skin: 'line',
+            page: true,
+            limit: 200,
+            done: function (res, curr, count) {
+              console.log('Rendered table data:', res.data);
+              if (count === 0) {
+                layer.msg('暂无数据', { icon: 7 });
+              }
+
+              // 动态绑定编辑按钮的点击事件
+              $('.translate-edit-btn').each(function() {
+                var $btn = $(this);
+                var id = $btn.data('id');
+                var language = $btn.data('language');
+                var text = $btn.data('text');
+                var domain = $btn.data('domain');
+                var originalText = $btn.data('originaltext');
+                $btn.on('click', function() {
+                  console.log('Button data:', { id, language, text, domain, originalText });
+                  editTranslateText(id, language, text, domain, originalText);
+                });
+              });
+              console.log('Event binding completed for .translate-edit-btn');
+            }
+          });
         });
-      });
+      } catch (e) {
+        console.error('searchTranslation error:', e);
+      }
     };
 
     // 初始加载表格
@@ -149,17 +193,19 @@
   /*
     编辑某条翻译的结果
     id 列表中某个tr行的hash
-    language 编辑的是哪个语言的译文，传入如  english
+    language 编辑的是哪个语言的译文，传入如 english
     text 编辑的译文内容
     domain 域名
     originalText 原文
   */
-  function editTranslateText(id, language, text, domain,originalText) {
+  function editTranslateText(id, language, text, domain, originalText) {
+    // 调试：检查接收到的参数
+    console.log('editTranslateText params:', { id, language, text, domain, originalText });
 
     // 弹出 iframe 窗口
     layer.open({
       type: 2,
-      title: '编辑翻译 【' + language +'】',
+      title: '编辑翻译 【' + language + '】',
       area: ['90%', '90%'],
       shadeClose: true,
       content: './edit-translate-text.html?originalText=' + encodeURIComponent(originalText) +

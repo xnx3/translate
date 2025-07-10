@@ -217,8 +217,24 @@
 
   // 编辑某条翻译的结果
   function editTranslateText(id, language, text, domain, originalText) {
-    // 调试：检查接收到的参数
     console.log('editTranslateText params:', { id, language, text, domain, originalText });
+
+    // 将数据存储到 sessionStorage
+    // 获取 DOM 元素的 innerHTML（如果需要）
+    var spanElement = document.getElementById(id + '_' + language);
+    var spanText = spanElement ? spanElement.innerHTML : text; // 回退到传入的 text
+
+    // 构造数据对象，明确属性名
+    var data = {
+      id: id,
+      language: language,
+      text: spanText, // 使用 DOM 的 innerHTML 或传入的 text
+      domain: domain,
+      originalText: originalText
+    };
+
+    // 存储到 sessionStorage
+    sessionStorage.setItem('translateData', JSON.stringify(data));
 
     // 弹出 iframe 窗口
     layer.open({
@@ -227,10 +243,7 @@
       area: ['90%', '90%'],
       shadeClose: true,
       content: './edit-translate-text.html?id=' + encodeURIComponent(id) +
-              '&language=' + encodeURIComponent(language) +
-              '&text=' + encodeURIComponent(text) +
-              '&domain=' + encodeURIComponent(domain) +
-              '&originalText=' + encodeURIComponent(originalText)
+              '&language=' + encodeURIComponent(language)
     });
   }
 

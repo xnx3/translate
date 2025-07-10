@@ -46,7 +46,6 @@
             margin-bottom: 20px;
             padding: 0;
         }
-        /* 增强 msg 加载提示文本样式 */
         .layui-layer-content {
             font-size: 18px !important;
             color: #009688 !important;
@@ -85,8 +84,8 @@
         // 清理文本，移除异常字符
         function cleanText(str) {
             if (!str || typeof str !== 'string') return '';
-            return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // 移除控制字符
-                .replace(/['‘’][‘’]\s*[)）]/g, '') // 移除 '‘’ ）' 等异常字符
+            return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+                .replace(/['‘’][‘’]\s*[)）]/g, '')
                 .trim();
         }
 
@@ -97,18 +96,42 @@
             return r ? decodeURIComponent(r[2]) : '';
         }
 
-        var id = cleanText(getQueryParam('id'));
-        var domainParam = cleanText(getQueryParam('domain'));
-        var language = cleanText(getQueryParam('language'));
-        var text = cleanText(getQueryParam('text'));
-        var originalText = cleanText(getQueryParam('originalText'));
+        // 获取 URL 参数
+        var urlId = cleanText(getQueryParam('id'));
+        var urlLanguage = cleanText(getQueryParam('language'));
 
-        // 调试：输出接收的参数
-        console.log('Received params:', { id, domainParam, language, text, originalText });
+        // 从 sessionStorage 获取数据
+        var data = JSON.parse(sessionStorage.getItem('translateData') || '{}');
+        var sessionId = cleanText(data.id || '');
+        var sessionLanguage = cleanText(data.language || '');
+        var text = cleanText(data.text || '');
+        var originalText = cleanText(data.originalText || '');
+        var domainParam = cleanText(data.domain || '');
+
+        // 调试：输出参数
+        console.log('URL params:', { urlId, urlLanguage });
+        console.log('Session params:', { sessionId, sessionLanguage, text, originalText, domainParam });
+
+        // 比较 URL 和 sessionStorage 的 id 和 language
+        if (urlId !== sessionId || urlLanguage !== sessionLanguage) {
+            console.log('Data mismatch:', { urlId, urlLanguage, sessionId, sessionLanguage });
+            // 显示加载提示，类似保存成功的风格
+            var loadIndex = msg.failure('数据不一致，请刷新后重试');
+            setTimeout(function() {
+                // 关闭加载提示
+                msg.close(loadIndex);
+                // 关闭 iframe 弹窗
+                var index = layer.getFrameIndex(window.name);
+                if (index) {
+                    layer.close(index);
+                }
+            }, 2000); // 延迟 2 秒，与保存成功一致
+            return; // 阻止后续逻辑执行
+        }
 
         // 动态设置语言标签
-        if (language) {
-            $('#languageLabel').text('翻译为 ' + language + ' 的译文:');
+        if (sessionLanguage) {
+            $('#languageLabel').text('翻译为 ' + sessionLanguage + ' 的译文:');
         } else {
             $('#languageLabel').text('翻译为未知语言的译文:');
         }
@@ -116,6 +139,9 @@
         // 填充数据
         $('#originalText').val(originalText);
         $('#translatedText').val(text);
+
+        // 可选择清除 sessionStorage 数据
+        sessionStorage.removeItem('translateData');
 
         // 保存翻译
         window.saveTranslation = function() {
@@ -131,7 +157,7 @@
             var params = {
                 token: token,
                 originalText: originalText,
-                to: language,
+                to: sessionLanguage,
                 resultText: updatedText,
                 domain: domainParam
             };
@@ -149,18 +175,18 @@
                         try {
                             window.parent.postMessage({
                                 type: 'updateTranslation',
-                                id: id,
-                                language: language,
+                                id: sessionId,
+                                language: sessionLanguage,
                                 text: updatedText,
                                 frameName: window.name,
                                 updateLoadIndex: updateLoadIndex
                             }, '*');
-                            console.log('Sent postMessage:', { id, language, text: updatedText, frameName: window.name, updateLoadIndex });
+                            console.log('Sent postMessage:', { id: sessionId, language: sessionLanguage, text: updatedText, frameName: window.name, updateLoadIndex });
                         } catch (e) {
                             console.error('Failed to send postMessage:', e);
                             msg.close(updateLoadIndex);
                         }
-                    }, 2000); // 延迟 2 秒
+                    }, 2000);
                 } else {
                     msg.failure(result.info || '保存失败');
                 }

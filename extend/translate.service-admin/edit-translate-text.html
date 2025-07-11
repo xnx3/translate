@@ -11,40 +11,45 @@
             box-sizing: border-box;
         }
         .layui-form-label, .translated-label {
-            display: block; /* 标签独占一行，放置在文本域上方 */
-            width: 100%; /* 与文本域宽度一致 */
-            text-align: left; /* 左对齐 */
-            font-size: 14px; /* Layui 默认字体大小 */
-            font-weight: normal; /* 统一字体粗细 */
-            color: #333; /* 统一字体颜色 */
-            margin-bottom: 8px; /* 标签与文本域间距，紧凑布局 */
-            line-height: 1.5; /* 统一行高 */
-            padding: 0; /* 移除可能干扰的内边距 */
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            font-weight: normal;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.5;
+            padding: 0;
         }
         .layui-input-block, .translated-text-container {
-            width: 100%; /* 文本域占满容器 */
-            display: block; /* 独占一行 */
-            margin: 0; /* 移除外边距，确保对齐 */
+            width: 100%;
+            display: block;
+            margin: 0;
         }
         .layui-textarea {
-            width: 100%; /* 占满容器 */
-            height: 150px; /* 统一高度 */
-            resize: vertical; /* 仅允许垂直调整大小 */
-            font-size: 14px; /* 统一字体大小 */
-            line-height: 1.5; /* 统一行高 */
-            border: 1px solid #d2d2d2; /* 统一边框 */
-            border-radius: 4px; /* 统一圆角 */
-            padding: 8px; /* 统一内边距 */
-            box-sizing: border-box; /* 防止边框影响宽度 */
-            margin: 0; /* 移除外边距，确保对齐 */
+            width: 100%;
+            height: 150px;
+            resize: vertical;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid #d2d2d2;
+            border-radius: 4px;
+            padding: 8px;
+            box-sizing: border-box;
+            margin: 0;
         }
         .save-button-container {
-            text-align: center; /* 保存按钮居中 */
+            text-align: center;
             margin-top: 20px;
         }
         .layui-form-item {
-            margin-bottom: 20px; /* 统一表单项间距，确保垂直平行 */
-            padding: 0; /* 移除可能干扰的内边距 */
+            margin-bottom: 20px;
+            padding: 0;
+        }
+        .layui-layer-content {
+            font-size: 18px !important;
+            color: #009688 !important;
+            font-weight: bold !important;
         }
     </style>
 </head>
@@ -68,13 +73,21 @@
 </div>
 
 <script src="./src/layui.js"></script>
+<script src="./src/msg.js"></script>
 <script src="./translate.service.js"></script>
 <script>
-
     layui.use(['form', 'layer', 'jquery'], function(){
         var form = layui.form;
         var layer = layui.layer;
         var $ = layui.jquery;
+
+        // 清理文本，移除异常字符
+        function cleanText(str) {
+            if (!str || typeof str !== 'string') return '';
+            return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+                .replace(/['‘’][‘’]\s*[)）]/g, '')
+                .trim();
+        }
 
         // 解析 URL 参数
         function getQueryParam(name) {
@@ -83,14 +96,42 @@
             return r ? decodeURIComponent(r[2]) : '';
         }
 
-        var domainParam = getQueryParam('domain');
-        var language = getQueryParam('language');
-        var text = getQueryParam('text');
-        var originalText = getQueryParam('originalText');
+        // 获取 URL 参数
+        var urlId = cleanText(getQueryParam('id'));
+        var urlLanguage = cleanText(getQueryParam('language'));
+
+        // 从 sessionStorage 获取数据
+        var data = JSON.parse(sessionStorage.getItem('translateData') || '{}');
+        var sessionId = cleanText(data.id || '');
+        var sessionLanguage = cleanText(data.language || '');
+        var text = cleanText(data.text || '');
+        var originalText = cleanText(data.originalText || '');
+        var domainParam = cleanText(data.domain || '');
+
+        // 调试：输出参数
+        console.log('URL params:', { urlId, urlLanguage });
+        console.log('Session params:', { sessionId, sessionLanguage, text, originalText, domainParam });
+
+        // 比较 URL 和 sessionStorage 的 id 和 language
+        if (urlId !== sessionId || urlLanguage !== sessionLanguage) {
+            console.log('Data mismatch:', { urlId, urlLanguage, sessionId, sessionLanguage });
+            // 显示加载提示，类似保存成功的风格
+            var loadIndex = msg.failure('数据不一致，请刷新后重试');
+            setTimeout(function() {
+                // 关闭加载提示
+                msg.close(loadIndex);
+                // 关闭 iframe 弹窗
+                var index = layer.getFrameIndex(window.name);
+                if (index) {
+                    layer.close(index);
+                }
+            }, 2000); // 延迟 2 秒，与保存成功一致
+            return; // 阻止后续逻辑执行
+        }
 
         // 动态设置语言标签
-        if (language) {
-            $('#languageLabel').text('翻译为 ' + language + ' 的译文:');
+        if (sessionLanguage) {
+            $('#languageLabel').text('翻译为 ' + sessionLanguage + ' 的译文:');
         } else {
             $('#languageLabel').text('翻译为未知语言的译文:');
         }
@@ -99,29 +140,55 @@
         $('#originalText').val(originalText);
         $('#translatedText').val(text);
 
+        // 可选择清除 sessionStorage 数据
+        sessionStorage.removeItem('translateData');
+
         // 保存翻译
         window.saveTranslation = function() {
             var updatedText = $('#translatedText').val().trim();
             if (!updatedText) {
-                layer.msg('译文不能为空', { icon: 2 });
+                msg.failure('译文不能为空');
                 return;
             }
+
+            // 显示保存中的加载提示
+            var loadIndex = msg.loading('正在保存...');
 
             var params = {
                 token: token,
                 originalText: originalText,
-                to: language,
+                to: sessionLanguage,
                 resultText: updatedText,
-                domain:domainParam
+                domain: domainParam
             };
 
-            request.post(domain + 'admin/cache/setCacheText.json', params, function(result) {
-                if (result.result === 1) {
-                    layer.msg('保存成功', { icon: 1 }, function() {
+            console.log('Saving params:', params);
 
-                    });
+            request.post(domain + 'admin/cache/setCacheText.json', params, function(result) {
+                // 关闭保存中的加载提示
+                msg.close(loadIndex);
+
+                if (result.result === 1) {
+                    // 显示更新中的加载提示
+                    var updateLoadIndex = msg.loading('保存成功，正在更新数据...');
+                    setTimeout(function() {
+                        try {
+                            window.parent.postMessage({
+                                type: 'updateTranslation',
+                                id: sessionId,
+                                language: sessionLanguage,
+                                text: updatedText,
+                                frameName: window.name,
+                                updateLoadIndex: updateLoadIndex
+                            }, '*');
+                            console.log('Sent postMessage:', { id: sessionId, language: sessionLanguage, text: updatedText, frameName: window.name, updateLoadIndex });
+                        } catch (e) {
+                            console.error('Failed to send postMessage:', e);
+                            msg.close(updateLoadIndex);
+                        }
+                    }, 2000);
                 } else {
-                    layer.msg(result.info || '保存失败', { icon: 2 });
+                    msg.failure(result.info || '保存失败');
                 }
             });
         };

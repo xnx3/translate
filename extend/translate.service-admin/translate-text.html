@@ -16,6 +16,9 @@
     .layui-table-cell{
       overflow: inherit;
     }
+    .translate-result-language-text-item span {
+      white-space: pre-wrap; /* 支持 \n 显示为换行 */
+    }
   </style>
 </head>
 <body>
@@ -53,7 +56,7 @@
     <li class="translate-result-language-text-item">
       <b>{{ item.language }}</b>  : <span id="{{ d.id }}_{{ item.language }}">{{ item.text }}</span>
       <button class="layui-btn layui-btn-xs translate-edit-btn"
-              data-id="{{ item.id }}"
+              data-id="{{ d.id }}"
               data-language="{{ item.language }}"
               data-text="{{ item.text }}"
               data-domain="{{ item.domain }}"
@@ -67,6 +70,7 @@
 <table class="layui-hide" id="ID-table-demo-data"></table>
 <script src="./src/layui.js"></script>
 <script src="./translate.service.js"></script>
+<script src="./src/msg.js"></script>
 <script>
   // 清理文本，移除异常字符
   function cleanText(str) {
@@ -81,6 +85,27 @@
     var layer = layui.layer;
     var $ = layui.jquery; // 使用 Layui 自带的 jQuery
 
+    // 监听 postMessage 事件，更新 <span> 并关闭弹窗
+    window.addEventListener('message', function(event) {
+      try {
+        var data = event.data;
+        if (data && data.type === 'updateTranslation') {
+          var spanId = data.id + '_' + data.language;
+          var span = document.getElementById(spanId);
+          if (span) {
+            span.innerHTML = data.text;
+          }
+          // 关闭弹窗
+          var index = layer.getFrameIndex(data.frameName);
+          if (index) {
+            layer.close(index);
+          }
+        }
+      } catch (e) {
+        //console.error('postMessage handler error:', e);
+      }
+    }, false);
+
     // 搜索功能
     window.searchTranslation = function () {
       var originalText = $('#originalText').val().trim();
@@ -89,7 +114,7 @@
 
       // 校验翻译文本是否为空
       if (!originalText) {
-        layer.msg('翻译文本不能为空', { icon: 2 });
+        msg.failure('翻译文本不能为空');
         return;
       }
 
@@ -103,14 +128,14 @@
       // 发送请求
       try {
         request.post(domain + 'admin/cache/getCacheTextList.json', params, function (result) {
-          //console.log('API Response:', result);
+          console.log('API Response:', result);
 
           // 初始化表格数据
           let tableData = [];
 
           // 检查接口返回结果
           if (result.result === 0 && result.info) {
-            layer.msg(result.info, { icon: 2 }); // 显示错误提示
+            msg.failure(result.info); // 显示错误提示
             // 继续渲染空表格
           } else if (result.list && result.list.length > 0) {
             // 正常数据处理逻辑
@@ -161,7 +186,7 @@
             done: function (res, curr, count) {
               console.log('Rendered table data:', res.data);
               if (count === 0) {
-                layer.msg('暂无数据', { icon: 7 });
+                msg.failure('暂无数据');
               }
 
               // 动态绑定编辑按钮的点击事件
@@ -190,17 +215,26 @@
     searchTranslation();
   });
 
-  /*
-    编辑某条翻译的结果
-    id 列表中某个tr行的hash
-    language 编辑的是哪个语言的译文，传入如 english
-    text 编辑的译文内容
-    domain 域名
-    originalText 原文
-  */
+  // 编辑某条翻译的结果
   function editTranslateText(id, language, text, domain, originalText) {
-    // 调试：检查接收到的参数
     console.log('editTranslateText params:', { id, language, text, domain, originalText });
+
+    // 将数据存储到 sessionStorage
+    // 获取 DOM 元素的 innerHTML（如果需要）
+    var spanElement = document.getElementById(id + '_' + language);
+    var spanText = spanElement ? spanElement.innerHTML : text; // 回退到传入的 text
+
+    // 构造数据对象，明确属性名
+    var data = {
+      id: id,
+      language: language,
+      text: spanText, // 使用 DOM 的 innerHTML 或传入的 text
+      domain: domain,
+      originalText: originalText
+    };
+
+    // 存储到 sessionStorage
+    sessionStorage.setItem('translateData', JSON.stringify(data));
 
     // 弹出 iframe 窗口
     layer.open({
@@ -208,11 +242,8 @@
       title: '编辑翻译 【' + language + '】',
       area: ['90%', '90%'],
       shadeClose: true,
-      content: './edit-translate-text.html?originalText=' + encodeURIComponent(originalText) +
-              '&language=' + encodeURIComponent(language) +
-              '&text=' + encodeURIComponent(text) +
-              '&domain=' + encodeURIComponent(domain) +
-              '&originalText=' + encodeURIComponent(originalText)
+      content: './edit-translate-text.html?id=' + encodeURIComponent(id) +
+              '&language=' + encodeURIComponent(language)
     });
   }
 

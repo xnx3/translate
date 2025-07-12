@@ -14,7 +14,15 @@
       display: initial;
     }
     .layui-table-cell{
-      overflow: inherit;
+      overflow: visible; /* 确保多行可见 */
+      white-space: pre-wrap; /* 支持 \n 换行和自动换行 */
+      word-wrap: break-word; /* 处理长词 */
+      word-break: break-all; /* 强制断开无空格文本 */
+      height: auto !important; /* 自适应高度 */
+      line-height: normal; /* 正常行间距，避免挤压 */
+    }
+    .layui-table td, .layui-table th {
+      height: auto; /* 覆盖默认行高 */
     }
     .translate-result-language-text-item span {
       white-space: pre-wrap; /* 支持 \n 显示为换行 */
@@ -29,7 +37,7 @@
     <div class="layui-inline">
       <label class="layui-form-label">翻译文本</label>
       <div class="layui-input-inline">
-        <input type="text" id="originalText" name="originalText" required lay-verify="required" placeholder="请输入翻译文本" autocomplete="off" class="layui-input">
+        <input type="text" id="originalText" name="originalText" placeholder="请输入翻译文本" autocomplete="off" class="layui-input">
       </div>
     </div>
     <div class="layui-inline">
@@ -74,11 +82,14 @@
 <script>
   // 清理文本，移除异常字符
   function cleanText(str) {
-    if (!str || typeof str !== 'string') return '';
-    return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim();
+    if (!str || typeof str !== 'string') {
+      return '';
+    } else {
+      return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim();
+    }
   }
 
-  var table;
+  var tableInstance; // 全局保存table实例，便于重载
   layui.use(['form', 'table', 'layer', 'jquery'], function(){
     var form = layui.form;
     var table = layui.table;
@@ -89,63 +100,64 @@
     window.addEventListener('message', function(event) {
       try {
         var data = event.data;
-        if (data && data.type === 'updateTranslation') {
+        if (data && data.type == 'updateTranslation') {
           var spanId = data.id + '_' + data.language;
           var span = document.getElementById(spanId);
           if (span) {
             span.innerHTML = data.text;
+            msg.success('翻译文本更新成功');
+          } else {
+            msg.failure('无法找到对应的翻译文本元素');
           }
           // 关闭弹窗
           var index = layer.getFrameIndex(data.frameName);
           if (index) {
             layer.close(index);
+          } else {
+            msg.failure('无法关闭弹窗，索引不存在');
           }
+        } else {
+          // 无需提示，非更新事件忽略
         }
       } catch (e) {
-        //console.error('postMessage handler error:', e);
+        console.error('postMessage handler error:', e);
+        msg.failure('更新翻译时出错');
       }
     }, false);
 
-    // 搜索功能
+    // 搜索功能 - 渲染表格，支持服务器分页
     window.searchTranslation = function () {
       var originalText = $('#originalText').val().trim();
       var domainInput = $('#domain').val().trim();
       var to = $('#to').val().trim();
 
-      // 校验翻译文本是否为空
-      /*if (!originalText) {
-        msg.failure('翻译文本不能为空');
-        return;
-      }*/
+      // 渲染表格，使用服务器分页
+      tableInstance = table.render({
+        elem: '#ID-table-demo-data',
+        url: domain + 'admin/cache/getCacheTextList.json', // API地址
+        method: 'post',
+        where: { // 查询参数
+          token: token,
+          originalText: originalText,
+          domain: domainInput,
+          to: to
+        },
+        request: { // 自定义分页参数名，匹配API
+          pageName: 'currentPage',
+          limitName: 'everyNumber'
+        },
+        parseData: function(res){ // 转换API返回为Layui格式，并处理数据
+          if (res.result == 1) {
+            let tableData = res.list || [];
 
-      var params = {
-        token: token,
-        originalText: originalText
-      };
-      if (domainInput) params.domain = domainInput;
-      if (to) params.to = to;
-
-      // 发送请求
-      try {
-        request.post(domain + 'admin/cache/getCacheTextList.json', params, function (result) {
-          console.log('API Response:', result);
-
-          // 初始化表格数据
-          let tableData = [];
-
-          // 检查接口返回结果
-          if (result.result === 0 && result.info) {
-            msg.failure(result.info); // 显示错误提示
-            // 继续渲染空表格
-          } else if (result.list && result.list.length > 0) {
-            // 正常数据处理逻辑
-            for (var i = 0; i < result.list.length; i++) {
-              var item = result.list[i];
+            // 添加原逻辑：构建 translateResult 数组
+            for (var i = 0; i < tableData.length; i++) {
+              var item = tableData[i];
               item.translateResult = []; // 初始化 translateResult 数组
 
               // 遍历所有 to_<language> 字段
               for (var key in item) {
-                if (key.indexOf('to_') === 0 && item[key] && item[key].length > 0) {
+                if (key.indexOf('to_') == 0 && item[key] && item[key].length > 0) {
                   var language = key.replace('to_', '');
                   var cleanedText = cleanText(item[key]); // 清理文本
                   item.translateResult.push({
@@ -157,107 +169,109 @@
                   });
                 }
               }
-
-              // 将 addtime 的时间戳转为 2025-12-12 23:23:23 格式
-              item.addtime = timestampToTime(item.addtime);
-
-              // 调试：输出 translateResult
-              console.log('Item translateResult:', item.translateResult);
             }
-            tableData = result.list; // 使用处理后的数据
+
+            return {
+              "code": 0, // 成功
+              "msg": res.info,
+              "count": res.page.allRecordNumber, // 总条数
+              "data": tableData // 处理后的数据
+            };
+          } else {
+            msg.failure(res.info || 'API 请求失败');
+            return {
+              "code": 1, // 失败
+              "msg": res.info || '请求失败',
+              "count": 0,
+              "data": []
+            };
+          }
+        },
+        cols: [[
+          { field: 'text', title: '翻译前的原文本', width: 300, sort: true },
+          { field: 'translateResult', title: '翻译结果', minWidth: 250, templet: '#translate-result-td' },
+          { field: 'domain', title: '域名/key', width: 120 },
+          { field: 'addtime', title: '初次翻译时间', width: 160, templet: function(d){
+              return timestampToTime(d.addtime); // 时间转换
+            } }
+        ]],
+        skin: 'line',
+        page: true, // 启用分页
+        limit: 20, // 每页条数，默认匹配API
+        limits: [10, 20, 50, 100], // 可选每页条数
+        done: function (res, curr, count) {
+          //console.log('Rendered table data:', res.data);
+          if (count > 0) {
+            //msg.success('数据加载成功');
+          } else {
+            msg.failure('暂无数据');
           }
 
-          // 调试：输出最终 tableData
-          console.log('Table Data:', tableData);
-
-          // 渲染表格
-          table.render({
-            elem: '#ID-table-demo-data',
-            cols: [[
-              { field: 'text', title: '翻译前的原文本', width: 300, sort: true },
-              { field: 'domain', title: '域名/key', width: 120 },
-              { field: 'addtime', title: '初次翻译时间', minWidth: 160 },
-              { field: 'translateResult', title: '翻译结果', width: 300, templet: '#translate-result-td' }
-            ]],
-            data: tableData,
-            skin: 'line',
-            page: true,
-            limit: 200,
-            done: function (res, curr, count) {
-              console.log('Rendered table data:', res.data);
-              if (count === 0) {
-                msg.failure('暂无数据');
-              }
-
-              // 动态绑定编辑按钮的点击事件
-              $('.translate-edit-btn').each(function() {
-                var $btn = $(this);
-                var id = $btn.data('id');
-                var language = $btn.data('language');
-                var text = $btn.data('text');
-                var domain = $btn.data('domain');
-                var originalText = $btn.data('originaltext');
-                $btn.on('click', function() {
-                  console.log('Button data:', { id, language, text, domain, originalText });
-                  editTranslateText(id, language, text, domain, originalText);
-                });
-              });
-              console.log('Event binding completed for .translate-edit-btn');
-            }
+          // 动态绑定编辑按钮的点击事件
+          $('.translate-edit-btn').each(function() {
+            var $btn = $(this);
+            var id = $btn.data('id');
+            var language = $btn.data('language');
+            var text = $btn.data('text');
+            var domain = $btn.data('domain');
+            var originalText = $btn.data('originaltext');
+            $btn.on('click', function() {
+              //console.log('Button data:', { id, language, text, domain, originalText });
+              editTranslateText(id, language, text, domain, originalText);
+            });
           });
-        });
-      } catch (e) {
-        console.error('searchTranslation error:', e);
+          //console.log('Event binding completed for .translate-edit-btn');
+        }
+      });
+    };
+
+    // 编辑某条翻译的结果
+    function editTranslateText(id, language, text, domain, originalText) {
+      //console.log('editTranslateText params:', { id, language, text, domain, originalText });
+
+      // 将数据存储到 localStorage
+      // 获取 DOM 元素的 innerHTML（如果需要）
+      var spanElement = document.getElementById(id + '_' + language);
+      var spanText = spanElement ? spanElement.innerHTML : text; // 回退到传入的 text
+
+      // 构造数据对象，明确属性名
+      var data = {
+        id: id,
+        language: language,
+        text: spanText, // 使用 DOM 的 innerHTML 或传入的 text
+        domain: domain,
+        originalText: originalText
+      };
+
+      // 存储到 localStorage
+      localStorage.setItem('translateData', JSON.stringify(data));
+
+      // 弹出 iframe 窗口
+      layer.open({
+        type: 2,
+        title: '编辑翻译 【' + language + '】',
+        area: ['90%', '90%'],
+        shadeClose: true,
+        content: './edit-translate-text.html?id=' + encodeURIComponent(id) +
+                '&language=' + encodeURIComponent(language)
+      });
+    }
+
+    function timestampToTime(timestamp) {
+      // 时间戳为10位需*1000，时间戳为13位不需乘1000
+      if (timestamp.toString().length == 10) {
+        timestamp = timestamp * 1000;
       }
-    };
-
-    // 初始加载表格
-    searchTranslation();
+      var date = new Date(timestamp);
+      var Y = date.getFullYear() + "-";
+      var M = (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1) + "-";
+      var D = (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) + " ";
+      var h = (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) + ":";
+      var m = (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()) + ":";
+      var s = (date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds());
+      return Y + M + D + h + m + s;
+    }
   });
-
-  // 编辑某条翻译的结果
-  function editTranslateText(id, language, text, domain, originalText) {
-    console.log('editTranslateText params:', { id, language, text, domain, originalText });
-
-    // 将数据存储到 sessionStorage
-    // 获取 DOM 元素的 innerHTML（如果需要）
-    var spanElement = document.getElementById(id + '_' + language);
-    var spanText = spanElement ? spanElement.innerHTML : text; // 回退到传入的 text
-
-    // 构造数据对象，明确属性名
-    var data = {
-      id: id,
-      language: language,
-      text: spanText, // 使用 DOM 的 innerHTML 或传入的 text
-      domain: domain,
-      originalText: originalText
-    };
-
-    // 存储到 sessionStorage
-    sessionStorage.setItem('translateData', JSON.stringify(data));
-
-    // 弹出 iframe 窗口
-    layer.open({
-      type: 2,
-      title: '编辑翻译 【' + language + '】',
-      area: ['90%', '90%'],
-      shadeClose: true,
-      content: './edit-translate-text.html?id=' + encodeURIComponent(id) +
-              '&language=' + encodeURIComponent(language)
-    });
-  }
-
-  function timestampToTime(timestamp) {
-    // 时间戳为10位需*1000，时间戳为13位不需乘1000
-    var date = new Date(timestamp * 1000);
-    var Y = date.getFullYear() + "-";
-    var M = (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1) + "-";
-    var D = (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) + " ";
-    var h = (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) + ":";
-    var m = (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()) + ":";
-    var s = (date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds());
-    return Y + M + D + h + m + s;
-  }
 </script>
 </body>
 </html>

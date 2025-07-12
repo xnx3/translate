@@ -100,8 +100,8 @@
         var urlId = cleanText(getQueryParam('id'));
         var urlLanguage = cleanText(getQueryParam('language'));
 
-        // 从 sessionStorage 获取数据
-        var data = JSON.parse(sessionStorage.getItem('translateData') || '{}');
+        // 从 localStorage 获取数据
+        var data = JSON.parse(localStorage.getItem('translateData') || '{}');
         var sessionId = cleanText(data.id || '');
         var sessionLanguage = cleanText(data.language || '');
         var text = cleanText(data.text || '');
@@ -109,12 +109,12 @@
         var domainParam = cleanText(data.domain || '');
 
         // 调试：输出参数
-        console.log('URL params:', { urlId, urlLanguage });
-        console.log('Session params:', { sessionId, sessionLanguage, text, originalText, domainParam });
+        //console.log('URL params:', { urlId, urlLanguage });
+        //console.log('Session params:', { sessionId, sessionLanguage, text, originalText, domainParam });
 
-        // 比较 URL 和 sessionStorage 的 id 和 language
-        if (urlId !== sessionId || urlLanguage !== sessionLanguage) {
-            console.log('Data mismatch:', { urlId, urlLanguage, sessionId, sessionLanguage });
+        // 比较 URL 和 localStorage 的 id 和 language
+        if (urlId != sessionId || urlLanguage != sessionLanguage) {
+            //console.log('Data mismatch:', { urlId, urlLanguage, sessionId, sessionLanguage });
             // 显示加载提示，类似保存成功的风格
             var loadIndex = msg.failure('数据不一致，请刷新后重试');
             setTimeout(function() {
@@ -140,8 +140,8 @@
         $('#originalText').val(originalText);
         $('#translatedText').val(text);
 
-        // 可选择清除 sessionStorage 数据
-        sessionStorage.removeItem('translateData');
+        // 可选择清除 localStorage 数据
+        localStorage.removeItem('translateData');
 
         // 保存翻译
         window.saveTranslation = function() {
@@ -162,13 +162,13 @@
                 domain: domainParam
             };
 
-            console.log('Saving params:', params);
+            //console.log('Saving params:', params);
 
             request.post(domain + 'admin/cache/setCacheText.json', params, function(result) {
                 // 关闭保存中的加载提示
                 msg.close(loadIndex);
 
-                if (result.result === 1) {
+                if (result.result == 1) {
                     // 显示更新中的加载提示
                     var updateLoadIndex = msg.loading('保存成功，正在更新数据...');
                     setTimeout(function() {
@@ -181,14 +181,16 @@
                                 frameName: window.name,
                                 updateLoadIndex: updateLoadIndex
                             }, '*');
-                            console.log('Sent postMessage:', { id: sessionId, language: sessionLanguage, text: updatedText, frameName: window.name, updateLoadIndex });
+                            //console.log('Sent postMessage:', { id: sessionId, language: sessionLanguage, text: updatedText, frameName: window.name, updateLoadIndex });
                         } catch (e) {
                             console.error('Failed to send postMessage:', e);
                             msg.close(updateLoadIndex);
                         }
                     }, 2000);
+                } else if (result.result == 0) {
+                    msg.failure(result.info || '保存失败'); // 显式处理 result=0，显示 info 或默认错误
                 } else {
-                    msg.failure(result.info || '保存失败');
+                    msg.failure('API 返回异常，请重试'); // 处理其他意外 result 值
                 }
             });
         };

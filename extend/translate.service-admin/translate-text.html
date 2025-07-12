@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="./src/css/layui.css">
   <style>
     body {padding: 32px; /*overflow-y: scroll;*/}
+    .translate-result-language-text-ul{
+      display: grid;
+    }
     .translate-result-language-text-item{
       float:left;
       text-align:left;
@@ -59,7 +62,7 @@
 </div>
 
 <script type="text/html" id="translate-result-td">
-  <ul>
+  <ul class="translate-result-language-text-ul">
     {{#  layui.each(d.translateResult, function(index, item){ }}
     <li class="translate-result-language-text-item">
       <b>{{ item.language }}</b>  : <span id="{{ d.id }}_{{ item.language }}">{{ item.text }}</span>

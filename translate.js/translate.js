@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.2.20250705',
+	version: '3.17.3.20250712',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -178,17 +178,19 @@ var translate = {
 
 			//从服务器加载支持的语言库
 			if(typeof(translate.request.api.language) == 'string' && translate.request.api.language.length > 0){
+				//从接口加载语种
 				translate.request.post(translate.request.api.language, {}, function(data){
 					if(data.result == 0){
 						console.log('load language list error : '+data.info);
 						return;
 					}
-					
+					//console.log(data.list);
 					translate.selectLanguageTag.customUI(data.list);
 				}, null);
+			}else if(typeof(translate.request.api.language) == 'object'){
+				//无网络环境下，自定义显示语种
+				translate.selectLanguageTag.customUI(translate.request.api.language);
 			}
-			
-			
 			
 		}
 	},

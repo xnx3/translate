@@ -146,10 +146,10 @@
         // 保存翻译
         window.saveTranslation = function() {
             var updatedText = $('#translatedText').val().trim();
-            if (!updatedText) {
+          /*  if (!updatedText) {
                 msg.failure('译文不能为空');
                 return;
-            }
+            }*/
 
             // 显示保存中的加载提示
             var loadIndex = msg.loading('正在保存...');
@@ -159,7 +159,8 @@
                 originalText: originalText,
                 to: sessionLanguage,
                 resultText: updatedText,
-                domain: domainParam
+                domain: domainParam,
+                translatetextId:urlId
             };
 
             //console.log('Saving params:', params);

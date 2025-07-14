@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.3.20250712',
+	version: '3.17.4.20250714',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6325,40 +6325,73 @@ var translate = {
 				}
 			}
 			
-			/*
-			for(var i = texts.length - 1; i >= 0; i--){
-				console.log(texts[i]);
+			//返回的翻译结果，下标跟 obj.texts 一一对应的
+			var translateResultArray = new Array();
 
+			// 筛选需要翻译的文本及其原始索引
+  			var apiTranslateText = [];
+			var apiTranslateArray = {};
+			for(var i = 0; i < texts.length; i++){
 				//判断是否在浏览器缓存中出现了
-				var cacheHash = translate.util.hash(texts[i]);
-				var cache = translate.storage.get('hash_'+translate.to+'_'+cacheHash);
+				var hash = translate.util.hash(texts[i]);
+				var cache = translate.storage.get('hash_'+to+'_'+hash);
+				//console.log(hash+'\t'+texts[i]+'\t'+cache);
 				if(cache != null && cache.length > 0){
 					//缓存中发现了这个得结果，那这个就不需要再进行翻译了
+					translateResultArray[i] = cache;
+				}else{
+					translateResultArray[i] = '';
+					apiTranslateText.push(texts[i]);
+					apiTranslateArray[hash] = i;
 				}
 			}
-			*/
-			
+			if (apiTranslateText.length == 0) {
+				//没有需要进行通过网络API翻译的任务了，全部命中缓存，那么直接返回
+				var data = {
+					from:from,
+					to: to,
+					text:translateResultArray
+				};
+			    func(data);
+			    return;
+			}
 
+			//还有需要进行通过API接口进行翻译的文本，需要调用翻译接口
 			var url = translate.request.api.translate;
 			var data = {
 				from:from,
 				to: to,
-				text:encodeURIComponent(JSON.stringify(texts))
+				text:encodeURIComponent(JSON.stringify(apiTranslateText))
 			};
-			//console.log(data);
-			translate.request.post(url, data, function(data){
+			//console.log(apiTranslateText);
+			translate.request.post(url, data, function(resultData){
+				//console.log(resultData); 
 				//console.log(data); 
-				if(data.result == 0){
+				if(resultData.result == 0){
 					console.log('=======ERROR START=======');
-					console.log('from : '+data.from);
-					console.log('to : '+data.to);
+					console.log('from : '+resultData.from);
+					console.log('to : '+resultData.to);
 					console.log('translate text array : '+texts);
-					console.log('response : '+data.info);
+					console.log('response : '+resultData.info);
 					console.log('=======ERROR END  =======');
 					//return;
 				}
 
-				func(data);
+				for(var i = 0; i < resultData.text.length; i++){
+					//将翻译结果以 key：hash  value翻译结果的形式缓存
+					var hash = translate.util.hash(apiTranslateText[i]);
+					translate.storage.set('hash_'+to+'_'+hash, resultData.text[i]);
+					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
+					if(translate.office.fullExtract.isUse){
+						translate.office.fullExtract.set(hash, apiTranslateText[i], data.to, resultData.text[i]);
+					}
+
+					//进行组合数据到 translateResultArray
+					translateResultArray[apiTranslateArray[hash]] = resultData.text[i];
+				}
+				resultData.text = translateResultArray;			
+
+				func(resultData);
 			}, null);
 		},
 		listener:{

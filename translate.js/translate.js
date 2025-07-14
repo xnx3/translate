@@ -6324,7 +6324,7 @@ var translate = {
 					return;
 				}
 			}
-			
+			//console.log(obj);
 			//返回的翻译结果，下标跟 obj.texts 一一对应的
 			var translateResultArray = new Array();
 
@@ -6350,8 +6350,10 @@ var translate = {
 				var data = {
 					from:from,
 					to: to,
-					text:translateResultArray
+					text:translateResultArray,
+					result:1
 				};
+				//console.log(data);
 			    func(data);
 			    return;
 			}

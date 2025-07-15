@@ -465,7 +465,10 @@ public enum LanguageEnum {
     TUNISIAN_ARABIC("tunisian_arabic", "تونسي", "塔伊兹-阿德尼语"),
     TUNISIAN("tunisian", "الجمهورية التونسية", "突尼斯语"),
 	//2025.7.15增加
-	HAITIESE("haitiese", "Ayiti", "海地语");
+	HAITIESE("haitiese", "Ayiti", "海地语"),
+	NORTHREN_SOTHO("northern_sotho", "Sophia", "北索托语"),
+	SWATI("swati", "TITSaholic", "斯威士语");
+	
 				
 
     //百度/谷歌---Null---end----------------------------------------

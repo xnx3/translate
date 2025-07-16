@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.4.20250714',
+	version: '3.17.5.20250716',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3675,6 +3675,14 @@ var translate = {
 			清除历史翻译语种的缓存
 		*/
 		clearCacheLanguage:function(){
+			if(typeof(translate.language.setUrlParamControl_use) != 'undefined'){
+				if(translate.language.setUrlParamControl_use){
+					console.log('使用提示：')
+					console.log('translate.language.setUrlParamControl(...) 的作用是 可以通过URL传一个语种，来指定当前页面以什么语种显示。 参考文档： http://translate.zvo.cn/4075.html');
+					console.log('translate.language.clearCacheLanguage() 是清除历史翻译语种缓存，也就是清除之前指定翻译为什么语种。 参考文档：http://translate.zvo.cn/4080.html')
+					console.log('如果你执行了 translate.language.setUrlParamControl(...) 那么是要根据url传参来切换语种的，但是后面又出现了 translate.language.clearCacheLanguage() 它会阻止 translate.language.setUrlParamControl(...) 它的设置，即使有url传递翻译为什么语言，也会因为 translate.language.clearCacheLanguage() 给清除掉，使URL传参的语种不起任何作用。')
+				}
+			}
 			translate.to = '';
 			translate.storage.set('to','');
 		},
@@ -3682,6 +3690,7 @@ var translate = {
 		//设置可以根据当前访问url的某个get参数来控制使用哪种语言显示。
 		//比如当前语种是简体中文，网页url是http://translate.zvo.cn/index.html ,那么可以通过在url后面增加 language 参数指定翻译语种，来使网页内容以英文形态显示 http://translate.zvo.cn/index.html?language=english
 		setUrlParamControl:function(paramName){
+			translate.language.setUrlParamControl_use = true; //标记已执行了 translate.language.setUrlParamControl  ,仅仅只是标记，无其他作用
 			if(typeof(paramName) == 'undefined' || paramName.length < 1){
 				paramName = 'language';
 			}

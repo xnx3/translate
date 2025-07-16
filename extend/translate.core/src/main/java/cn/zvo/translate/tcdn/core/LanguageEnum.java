@@ -463,7 +463,13 @@ public enum LanguageEnum {
     MOROCCAN("moroccan", "מרוקאית יהודית", "摩洛哥语"),
     MESOPOTAMIAN("mesopotamian", "ܒܝܬ ܢܗܪܝܢ", "美索不达米亚语"),
     TUNISIAN_ARABIC("tunisian_arabic", "تونسي", "塔伊兹-阿德尼语"),
-    TUNISIAN("tunisian", "الجمهورية التونسية", "突尼斯语");
+    TUNISIAN("tunisian", "الجمهورية التونسية", "突尼斯语"),
+	//2025.7.15增加
+	HAITIESE("haitiese", "Ayiti", "海地语"),
+	NORTHREN_SOTHO("northern_sotho", "Sophia", "北索托语"),
+	SWATI("swati", "TITSaholic", "斯威士语");
+	
+				
 
     //百度/谷歌---Null---end----------------------------------------
     //百度/谷歌---Null---end----------------------------------------

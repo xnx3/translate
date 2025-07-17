@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.5.20250716',
+	version: '3.17.6.20250717',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1790,11 +1790,11 @@ var translate = {
 			//未指定，判断如果指定了自动获取用户本国语种了，那么进行获取
 			if(translate.autoDiscriminateLocalLanguage){
 				translate.executeByLocalLanguage();
+			}else{
+				//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
+				translate.state = 0;
+				return;
 			}
-			
-			//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
-			translate.state = 0;
-			return;
 		}
 		
 		//判断本地语种跟要翻译的目标语种是否一样，如果是一样，那就不需要进行任何翻译

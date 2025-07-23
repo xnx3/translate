@@ -21,47 +21,34 @@ layui.define(function(exports){
     //设置本地语种
     translate.language.setLocal('chinese_simplified');
     //设置翻译通道
-    //translate.service.use('client.edge');
+    translate.service.use('client.edge');
     //开启html页面变化的监控
     translate.listener.start();    
-
-    //translate.request.api.host='https://glm-api-translate.zvo.cn/'; //将这里面的ip地址换成你服务器的ip，注意开头，及结尾还有个 / 别拉下
-
-    //translate.request.listener.start();
-
-    //更多设置项，可以参考  https://translate.zvo.cn/4019.html  可以更灵活的配置你的项目
-
-    //渲染加载出select切换语言选择框
-    translate.selectLanguageTag.render();
+    //开启ajax请求监控
+    translate.request.listener.start();
 
     //当页面DOM跟外部JS加载执行完后，执行翻译触发
     const intervalId = setInterval(function(){
         if (document.readyState === 'interactive' || document.readyState === 'complete') {
-            console.log(translate.ignore.id);
+            //console.log(translate.ignore.id);
             translate.execute();
+
+            //判断是否已经加载了form模块，如果有加载form模块，那么要重新渲染 select ，select渲染也会只渲染一次
+            if(typeof(layui.form) != 'undefined'){
+                setTimeout(function(){
+                    layui.form.render('select');
+                    translate.execute(document.getElementsByTagName('input')); //这个得作用是，当select渲染后，如果select显示的文本（input标签）有 placeholder ，它会被还原回原本的文字，需要在对他进行处理翻译。
+                    translate.execute(document.getElementsByClassName('layui-select-tips')); //这个得作用是，当select渲染完毕后，点击后出现下拉框时，这个select下拉框第一项的提示文字
+                },"500");   //渲染 select 选择框，延迟执行
+            }
+            //setTimeout(function(){ translate.execute(); }, 500);
             //清除定时器，终止
             clearInterval(intervalId);
         }
     }, 50);
  
   });
-  /* 追加样式，主要针对中文翻译为英文后，英文字符长度要远大于中文，造成撑破布局 */
-  const cssCode = `
-      /* 扩展农历组件 iframe/views/component/laydate/special-demo.html */
-      .laydate-theme-lunar .date-cell-inner i {
-          overflow: hidden;
-          height: 14px;
-      }
-      .layui-laydate .layui-laydate-footer .layui-laydate-preview .preview-inner > *:not(:first-child){
-            display: none;
-      }
-  `;
-  const styleTag = `<style>${cssCode}</style>`;
-  // 将样式插入到 body 元素的末尾
-  document.body.insertAdjacentHTML('beforeend', styleTag);
   /* AI i18n end */
-
-
 
   
   //退出

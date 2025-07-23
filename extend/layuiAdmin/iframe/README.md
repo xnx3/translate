@@ -33,6 +33,7 @@ translate.js 在 layui admin 的 iframe 版本中的使用
 ![](./demo-images/iframe-views-index.html.png)
 
 #### 2. 修改 res/modules/common.js 
+需要增加代码，是所有页面都能支持多语言切换能力：
 ````
 /* AI i18n start */
 layui.use(['translate'], function(){
@@ -69,5 +70,7 @@ layui.use(['translate'], function(){
 });
 /* AI i18n end */
 ````
+增加代码的位置，如图所示：  
+![](./demo-images/iframe-res-modules-common.js.png)
 
 #### 3. 新增 res/modules/translate.js

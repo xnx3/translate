@@ -1,4 +1,5 @@
 translate.js 在 layui admin 的 iframe 版本中的使用
+[](https://gitee-ai.su.bcebos.com/v1/public/users/mail_osc/app/16/PSTB0HMACSM4KCF.mp4)
 
 ## 改动项
 

@@ -30,7 +30,8 @@ translate.js 在 layui admin 的 iframe 版本中的使用
 <!-- AI i18n end -->
 ````
 增加代码的位置，如图所示：  
-![](./demo-images/iframe-views-index.html.png)
+![](./demo-images/iframe-views-index.html.png)  
+[点此查看修改之后的 views/index.html 文件](./views/index.html)
 
 #### 2. 修改 res/modules/common.js 
 需要增加代码，是所有页面都能支持多语言切换能力：
@@ -72,5 +73,7 @@ layui.use(['translate'], function(){
 ````
 增加代码的位置，如图所示：  
 ![](./demo-images/iframe-res-modules-common.js.png)
+[点此查看修改之后的 res/modules/common.js  文件](./res/modules/common.js)
 
 #### 3. 新增 res/modules/translate.js
+这个文件下载：  https://gitee.com/mail_osc/translate/raw/master/extend/layuiAdmin/iframe/res/modules/translate.js

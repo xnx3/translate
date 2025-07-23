@@ -11,7 +11,7 @@
     <a href="http://translate.zvo.cn/index.html?language=chinese_traditional">繁體中文</a> | 
     <a href="http://translate.zvo.cn/index.html?language=english">English</a> | 
     <a href="http://translate.zvo.cn/index.html?language=japanese">日語</a> | 
-    <a href="http://translate.zvo.cn/index.html?language=russian">Русский язык</a> | 
+    <a href="http://translate.zvo.cn/index.html?language=russian">Русский</a> | 
     <a href="http://translate.zvo.cn/index.html?language=german">deutsch</a> | 
     <a href="http://translate.zvo.cn/index.html?language=french">Français</a> 
 </h4> 

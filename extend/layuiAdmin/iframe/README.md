@@ -1,5 +1,5 @@
 translate.js 在 layui admin 的 iframe 版本中的使用
-[](./demo-images/demo.gif)
+![](./demo-images/demo.gif)
 
 ## 改动项
 

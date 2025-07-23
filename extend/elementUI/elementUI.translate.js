@@ -2,11 +2,8 @@
 translate.extend = {
     elementUI:{
         mounted:function(){
-            // 使用事件委托，监听整个文档的input事件
-            document.addEventListener('input', translate.extend.elementUI.handleAllInputChange, true);
-
-            // 对于ElementUI的输入框，有时需要监听change事件
-            document.addEventListener('change', translate.extend.elementUI.handleAllInputChange, true);
+            translate.element.tagAttribute['input']=['value']; //对 input 的value也进行翻译
+            
         },
         beforeDestroy:function() {
             // 移除事件监听，防止内存泄漏
@@ -15,6 +12,7 @@ translate.extend = {
         },
         handleAllInputChange:function(event){
             const target = event.target;
+            console.log(target);
             // 检查触发事件的是否是input元素
             if (target.tagName === 'INPUT') {
                 console.log('当前变化的元素：', target);

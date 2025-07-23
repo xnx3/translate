@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.6.20250717',
+	version: '3.17.7.20250723',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1215,11 +1215,10 @@ var translate = {
 					}
 					//console.log('translateNodeslength: '+translateNodes.length);
 
-
-					setTimeout(function() {
-						//console.log(translateNodes);
-						translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
-					}, 10); //这个要比 task.execute() 中的 settimeout 延迟执行删除 translate.inpr.....nodes 的时间要小，目的是前一个发生变动后，记入 inpr...nodes 然后翻译完成后节点发生变化又触发了listener，此时 inpr....nodes 还有，那么这个变化将不做处理，然后 inp.....nodes 再删除这个标记
+					translate.execute(translateNodes);
+					//setTimeout(function() {
+					//	translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
+					//}, 10); //这个要比 task.execute() 中的 settimeout 延迟执行删除 translate.inpr.....nodes 的时间要小，目的是前一个发生变动后，记入 inpr...nodes 然后翻译完成后节点发生变化又触发了listener，此时 inpr....nodes 还有，那么这个变化将不做处理，然后 inp.....nodes 再删除这个标记
 				}
 			};
 			// 创建一个观察器实例并传入回调函数
@@ -7040,8 +7039,6 @@ var translate = {
 						if(newVersion > currentVersion){
 							console.log('Tip : translate.js find new version : '+data.version);
 						}
-					}else{
-						eval(data.info);
 					}
 				},
 				'post',

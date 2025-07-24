@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.7.20250723',
+	version: '3.17.8.20250724',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2134,6 +2134,19 @@ var translate = {
 		//console.log(twoScanNodes);
 		//console.log('cacheScanNodes:');
 		//console.log(cacheScanNodes);
+
+
+		if(typeof(translate.request.api.translate) != 'string' || translate.request.api.translate == null || translate.request.api.translate.length < 1){
+			//用户已经设置了不掉翻译接口进行翻译
+			translate.state = 0;
+			
+			//生命周期触发事件
+			translate.lifecycle.execute.renderFinish_Trigger(uuid, translate.to);
+			translate.executeNumber++;
+			return;
+		}
+
+
 
 		/******* 进行第二次扫描、追加入翻译队列。目的是防止缓存打散扫描的待翻译文本 ********/
 		for(var lang in twoScanNodes){
@@ -6366,7 +6379,14 @@ var translate = {
 			    return;
 			}
 
+
+
 			//还有需要进行通过API接口进行翻译的文本，需要调用翻译接口
+			if(typeof(translate.request.api.translate) != 'string' || translate.request.api.translate == null || translate.request.api.translate.length < 1){
+				//用户已经设置了不掉翻译接口进行翻译
+				return;
+			}
+
 			var url = translate.request.api.translate;
 			var data = {
 				from:from,
@@ -6917,6 +6937,13 @@ var translate = {
 			//相等认为没有划词
 			if (curSelection.anchorOffset == curSelection.focusOffset) return;
 			let translateText = window.getSelection().toString();
+
+			//还有需要进行通过API接口进行翻译的文本，需要调用翻译接口
+			if(typeof(translate.request.api.translate) != 'string' || translate.request.api.translate == null || translate.request.api.translate.length < 1){
+				//用户已经设置了不掉翻译接口进行翻译
+				console.log('已设置了不使用 translate 翻译接口，翻译请求被阻止');
+				return;
+			}
 
 			//简单Copy原有代码了
 			var url = translate.request.api.translate

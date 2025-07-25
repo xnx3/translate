@@ -158,6 +158,13 @@ translate.execute();//完成翻译初始化，进行翻译
 还可以通过管理的后台，对译文的结果进行自定义修改，来人工校对翻译结果，使其更精准。  
 具体部署方式参见： [http://translate.zvo.cn/391129.html](http://translate.zvo.cn/391129.html)
 
+# 开放翻译大模型
+[https://huggingface.co/xnx3/translate100](https://huggingface.co/xnx3/translate100) 是一个用于翻译任务的 seq-to-seq 架构、基于 Transformer 的神经机器翻译模型，由m2m100(12B)经过蒸馏(small100)及各种处理后，得到的完全适配 translate.js 的一键部署应用。  
+它的翻译能力很一般，它最大的特点是在超低配置的终端（1核2G内存）运行使用、及做到适配全球主流的上百个语言。  
+它在CPU(Intel 7700k)上可以达到43token/s，在淘宝100块钱就能买到的p106显卡上可以达到90tokens/s  
+它的初衷，是我们针对私有化部署场景，采用qwen3 8~32B 做主要翻译时，针对千问大模型处理不了的部分，又做的一层保障，将qwen3翻译不达标的文本再交由 translate100 来进行最后的翻译，以完成大模型翻译的可靠稳定性闭环，避免返回翻译失败。  
+
+
 # 谁在使用
 
 开源项目：  

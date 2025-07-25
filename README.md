@@ -269,6 +269,7 @@ Telegram : [untran](https://t.me/untran)
 交流QQ群:240567964(已满)  
 交流QQ群:1034085260  
 交流QQ群:1017938586  
+交流QQ群:749330213  
 作者邮箱：921153866@qq.com  
 微信公众号：wangmarket  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.8.20250724',
+	version: '3.17.9.20250728',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2552,6 +2552,32 @@ var translate = {
 			有几个要翻译的属性，就写上几个。
 			同样，有几个要额外翻译的tag，就加上几行。  
 			详细文档参考：  http://translate.zvo.cn/231504.html
+
+	
+			//针对宁德时代提出的需求，需要对 标签本身进行一个判定，是否符合条件符合条件才会翻译，不符合条件则不要进行翻译
+			//比如标签带有 disabled 的才会被翻译，所以要增加一个自定义入参的 function ，返回 true、false
+			translate.element.tagAttribute['input']={
+				//要被翻译的tag的属性，这里是要翻译 input 的 value 、 data-value 这两个属性。 
+				//数组格式，可以一个或多个属性
+				attribute:['value','data-value'],  
+				//条件，传入一个function，返回一个布尔值。
+				//只有当返回的布尔值是true时，才会对上面设置的 attribute 进行翻译，否则并不会对当前设定标签的 attribute 进行任何翻译操作。
+				condition:function(element){ 	   
+					//	element 便是当前的元素，
+					//	比如这里是 translate.element.tagAttribute['input']  那这个 element 参数便是扫描到的具体的 input 元素
+					//	可以针对 element 这个当前元素本身来进行判定，来决定是否进行翻译。
+					//	返回值是布尔值 true、false
+					//	    return true; //要对 attribute中设置的 ['value','data-value'] 这两个input 的属性的值进行翻译。 
+					//	                     如果不设置或传入 condition ，比如单纯这样设置： 
+					//	                     translate.element.tagAttribute['input']={ 
+					//	                         attribute:['value','data-value'] 
+					//	                     } 
+					//	                     那么这里默认就是 return true;
+					//	    return false; //不对 attribute中设置的 ['value','data-value'] 这两个input 的属性的值进行任何操作
+					return true;
+				}
+			};
+
 		*/
 		tagAttribute : {},
 
@@ -5380,6 +5406,7 @@ var translate = {
 			value: translate.js 的语种标识
 		 */
 		browserLanguage:{
+			'zh':'chinese_simplified',
 			'zh-CN':'chinese_simplified',
 			'zh-TW':'chinese_traditional',
 			'zh-HK':'chinese_traditional',

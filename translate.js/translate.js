@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.9.20250728',
+	version: '3.17.9.20250729',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1854,6 +1854,27 @@ var translate = {
 			console.log('translate.execute( docs ) 传入的docs.length 过大，超过500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前500个元素进行翻译');
 		}
 
+		//初始化 translate.element.tagAttribute ，主要针对 v3.17.10 版本的适配调整，对 translate.element.tagAttribute  的设置做了改变，做旧版本的适配
+		try{
+			for(var te_tag in translate.element.tagAttribute){
+				if (!translate.element.tagAttribute.hasOwnProperty(te_tag)) {
+		    		continue;
+		    	}
+		    	if(translate.element.tagAttribute[te_tag] instanceof Array){
+		    		//是 v3.17.10 之前版本的设置方式，要进行对旧版本的适配
+		    		var tArray = translate.element.tagAttribute[te_tag];
+		    		translate.element.tagAttribute[te_tag] = {
+		    			attribute: tArray,
+		    			condition: function(element){
+							return true;
+						}
+		    		}
+		    	}
+			}  
+		}catch(e){
+			console.log(e);
+		}
+
 		//检索目标内的node元素
 		for(var i = 0; i< all.length & i < 500; i++){
 			var node = all[i];
@@ -2883,12 +2904,15 @@ var translate = {
 				//console.log('find:'+nodeNameLowerCase);
 				//console.log(translate.element.tagAttribute[nodeNameLowerCase]);
 
-				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase]){
-					if (!translate.element.tagAttribute[nodeNameLowerCase].hasOwnProperty(attributeName_index)) {
+				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase].attribute){
+					if (!translate.element.tagAttribute[nodeNameLowerCase].attribute.hasOwnProperty(attributeName_index)) {
+			    		continue;
+			    	}
+			    	if(!translate.element.tagAttribute[nodeNameLowerCase].condition(node)){
 			    		continue;
 			    	}
 					
-					var attributeName = translate.element.tagAttribute[nodeNameLowerCase][attributeName_index];
+					var attributeName = translate.element.tagAttribute[nodeNameLowerCase].attribute[attributeName_index];
 					//console.log(attributeName);
 					//console.log(node.getAttribute(attributeName));
 

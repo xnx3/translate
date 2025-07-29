@@ -2908,7 +2908,7 @@ var translate = {
 					if (!translate.element.tagAttribute[nodeNameLowerCase].attribute.hasOwnProperty(attributeName_index)) {
 			    		continue;
 			    	}
-			    	if(!translate.element.tagAttribute[nodeNameLowerCase].condition(node)){
+			    	if(typeof(translate.element.tagAttribute[nodeNameLowerCase].condition) !='undefined' && !translate.element.tagAttribute[nodeNameLowerCase].condition(node)){
 			    		continue;
 			    	}
 					

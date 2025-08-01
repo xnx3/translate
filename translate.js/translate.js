@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.9.20250729',
+	version: '3.17.10.20250801',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5696,6 +5696,7 @@ var translate = {
 			},
 
 			language:{
+
 				json:[{"id":"ukrainian","name":"Україна","serviceId":"uk"},{"id":"norwegian","name":"Norge","serviceId":"no"},{"id":"welsh","name":"Iaith Weleg","serviceId":"cy"},{"id":"dutch","name":"nederlands","serviceId":"nl"},{"id":"japanese","name":"日本語","serviceId":"ja"},{"id":"filipino","name":"Pilipino","serviceId":"fil"},{"id":"english","name":"English","serviceId":"en"},{"id":"lao","name":"ກະຣຸນາ","serviceId":"lo"},{"id":"telugu","name":"తెలుగుName","serviceId":"te"},{"id":"romanian","name":"Română","serviceId":"ro"},{"id":"nepali","name":"नेपालीName","serviceId":"ne"},{"id":"french","name":"Français","serviceId":"fr"},{"id":"haitian_creole","name":"Kreyòl ayisyen","serviceId":"ht"},{"id":"czech","name":"český","serviceId":"cs"},{"id":"swedish","name":"Svenska","serviceId":"sv"},{"id":"russian","name":"Русский язык","serviceId":"ru"},{"id":"malagasy","name":"Malagasy","serviceId":"mg"},{"id":"burmese","name":"ဗာရမ်","serviceId":"my"},{"id":"pashto","name":"پښتوName","serviceId":"ps"},{"id":"thai","name":"คนไทย","serviceId":"th"},{"id":"armenian","name":"Արմենյան","serviceId":"hy"},{"id":"chinese_simplified","name":"简体中文","serviceId":"zh-CHS"},{"id":"persian","name":"Persian","serviceId":"fa"},{"id":"chinese_traditional","name":"繁體中文","serviceId":"zh-CHT"},{"id":"kurdish","name":"Kurdî","serviceId":"ku"},{"id":"turkish","name":"Türkçe","serviceId":"tr"},{"id":"hindi","name":"हिन्दी","serviceId":"hi"},{"id":"bulgarian","name":"български","serviceId":"bg"},{"id":"malay","name":"Malay","serviceId":"ms"},{"id":"swahili","name":"Kiswahili","serviceId":"sw"},{"id":"oriya","name":"ଓଡିଆ","serviceId":"or"},{"id":"icelandic","name":"ÍslandName","serviceId":"is"},{"id":"irish","name":"Íris","serviceId":"ga"},{"id":"khmer","name":"ភាសា​ខ្មែរName","serviceId":"km"},{"id":"gujarati","name":"ગુજરાતી","serviceId":"gu"},{"id":"slovak","name":"Slovenská","serviceId":"sk"},{"id":"kannada","name":"ಕನ್ನಡ್Name","serviceId":"kn"},{"id":"hebrew","name":"היברית","serviceId":"he"},{"id":"hungarian","name":"magyar","serviceId":"hu"},{"id":"marathi","name":"मराठीName","serviceId":"mr"},{"id":"tamil","name":"தாமில்","serviceId":"ta"},{"id":"estonian","name":"eesti keel","serviceId":"et"},{"id":"malayalam","name":"മലമാലം","serviceId":"ml"},{"id":"inuktitut","name":"ᐃᓄᒃᑎᑐᑦ","serviceId":"iu"},{"id":"arabic","name":"بالعربية","serviceId":"ar"},{"id":"deutsch","name":"Deutsch","serviceId":"de"},{"id":"slovene","name":"slovenščina","serviceId":"sl"},{"id":"bengali","name":"বেঙ্গালী","serviceId":"bn"},{"id":"urdu","name":"اوردو","serviceId":"ur"},{"id":"azerbaijani","name":"azerbaijani","serviceId":"az"},{"id":"portuguese","name":"português","serviceId":"pt"},{"id":"samoan","name":"lifiava","serviceId":"sm"},{"id":"afrikaans","name":"afrikaans","serviceId":"af"},{"id":"tongan","name":"汤加语","serviceId":"to"},{"id":"greek","name":"ελληνικά","serviceId":"el"},{"id":"indonesian","name":"IndonesiaName","serviceId":"id"},{"id":"spanish","name":"Español","serviceId":"es"},{"id":"danish","name":"dansk","serviceId":"da"},{"id":"amharic","name":"amharic","serviceId":"am"},{"id":"punjabi","name":"ਪੰਜਾਬੀName","serviceId":"pa"},{"id":"albanian","name":"albanian","serviceId":"sq"},{"id":"lithuanian","name":"Lietuva","serviceId":"lt"},{"id":"italian","name":"italiano","serviceId":"it"},{"id":"vietnamese","name":"Tiếng Việt","serviceId":"vi"},{"id":"korean","name":"한국어","serviceId":"ko"},{"id":"maltese","name":"Malti","serviceId":"mt"},{"id":"finnish","name":"suomi","serviceId":"fi"},{"id":"catalan","name":"català","serviceId":"ca"},{"id":"croatian","name":"hrvatski","serviceId":"hr"},{"id":"bosnian","name":"bosnian","serviceId":"bs-Latn"},{"id":"polish","name":"Polski","serviceId":"pl"},{"id":"latvian","name":"latviešu","serviceId":"lv"},{"id":"maori","name":"Maori","serviceId":"mi"}],
 				/*
 					获取map形式的语言列表 
@@ -5724,11 +5725,22 @@ var translate = {
 				var textArray = JSON.parse(decodeURIComponent(data.text));
 				let translateTextArray = translate.util.split(textArray, 40000, 900);
 				
-				translate.request.send(translate.service.edge.api.auth, {}, function(auth){
+				translate.request.send(translate.service.edge.api.auth, {},{}, function(auth){
+					var appendXhrData = {
+						"from":data.from+'',
+						"to":data.to,
+						"text":data.text
+					};
 					var from = data.from;
 					if(from != 'auto'){
-						from = translate.service.edge.language.getMap()[data.from];
+						if(from == 'romance'){
+							//这里额外加了一个罗曼语族(romance)会自动认为是法语(fr)
+							from = 'fr';
+						}else{
+							from = translate.service.edge.language.getMap()[data.from];
+						}
 					}
+					
 					var to = translate.service.edge.language.getMap()[data.to];
 					var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
 
@@ -5739,7 +5751,7 @@ var translate = {
 							json.push({"Text":translateTextArray[tai][i]});
 						}
 
-						translate.request.send(transUrl, JSON.stringify(json), function(result){
+						translate.request.send(transUrl, JSON.stringify(json), appendXhrData, function(result){
 							var d = {};
 							d.info = 'SUCCESS';
 							d.result = 1;
@@ -6037,6 +6049,7 @@ var translate = {
 						translate.request.send(
 							host+translate.request.api.connectTest,
 							{host:host},
+							{host:host},
 							function(data){
 								var host = data.info;
 								var map = translate.request.speedDetectionControl.checkHostQueueMap[host];
@@ -6173,12 +6186,13 @@ var translate = {
 			}
 			// ------- edge end --------
 
-			this.send(path, data, func, 'post', true, headers, abnormalFunc, true);
+			this.send(path, data, data, func, 'post', true, headers, abnormalFunc, true);
 		},
 		/**
 		 * 发送请求
 		 * url 请求的url或者path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * data 请求的数据，如 {"author":"管雷鸣",'site':'www.guanleiming.com'} 
+		 * appendXhrData 附加到 xhr.data 中的对象数据，传入比如  {"from":"english","to":"japanese"} ，他会直接赋予 xhr.data
 		 * func 请求完成的回调，传入如 function(data){}
 		 * method 请求方式，可传入 post、get
 		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求。 如果传入false，则本方法返回xhr
@@ -6186,7 +6200,7 @@ var translate = {
 		 * abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}  另外这里的 xhr 会额外有个参数  xhr.requestURL 返回当前请求失败的url
 		 * showErrorLog 是否控制台打印出来错误日志，true打印， false 不打印
 		 */
-		send:function(url, data, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
+		send:function(url, data, appendXhrData, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
 			//post提交的参数
 			var params = '';
 
@@ -6195,7 +6209,7 @@ var translate = {
 			}
 			
 			if(typeof(data) == 'string'){
-				params = data; //payload 方式
+				params = data; //payload 方式 , edge 的方式
 			}else{
 				//表单提交方式
 				
@@ -6242,7 +6256,7 @@ var translate = {
 			}catch(e){
 				xhr=new ActiveXObject("Microsoft.XMLHTTP");
 			}
-			xhr.data=data;
+			xhr.data=appendXhrData;
 			//2.调用open方法（true----异步）
 			xhr.open(method,url,isAsynchronize);
 			//设置headers
@@ -7103,6 +7117,7 @@ var translate = {
 		try{
 			translate.request.send(
 				translate.request.api.init,
+				{},
 				{},
 				function(data){
 					if (data.result == 0){

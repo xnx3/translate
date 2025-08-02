@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.10.20250801',
+	version: '3.17.12.20250802',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2659,14 +2659,29 @@ var translate = {
 
 				if(attribute != null && typeof(attribute) == 'string' && attribute.length > 0){
 					//这个node有属性，替换的是node的属性，而不是nodeValue
-					result['text'] = node[attribute];
+
+					var nodeAttributeValue; //这个 attribute 属性的值
+					if(nodename == 'INPUT' && attribute.toLowerCase() == 'value'){
+						//如果是input 的value属性，那么要直接获取，而非通过 attribute ，不然用户自己输入的通过 attribute 是获取不到的 -- catl 赵阳 提出
+						
+						nodeAttributeValue = node.value;
+					}else{
+						nodeAttributeValue = node[attribute];
+					}
+					result['text'] = nodeAttributeValue;
+					
 
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
-						if(typeof(node[attribute]) != 'undefined'){
+						if(typeof(nodeAttributeValue) != 'undefined'){
 							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
-							var resultShowText = translate.util.textReplace(node[attribute], originalText, resultText, translate.to);
-							node[attribute] = resultShowText;  //2025.4.26 变更为此方式
+							var resultShowText = translate.util.textReplace(nodeAttributeValue, originalText, resultText, translate.to);
+							if(nodename == 'INPUT' && attribute.toLowerCase() == 'value'){
+								//input 的value 对于用户输入的必须用 .value 操作
+								node.value = resultShowText;
+							}else{
+								node[attribute] = resultShowText;  //2025.4.26 变更为此方式
+							}
 							if(resultShowText.indexOf(resultText) > -1){
 								result['resultText'] = resultShowText;
 							}else{
@@ -2916,28 +2931,35 @@ var translate = {
 					//console.log(attributeName);
 					//console.log(node.getAttribute(attributeName));
 
-					/*
-					 * 默认是 HtmlAtrribute 也就是 HTML特性。取值有两个:
-					 * HTMLAtrribute : HTML特性
-					 * DOMProperty : DOM属性
-					 */
-					var DOMPropOrHTMLAttr = 'HTMLAtrribute'; 
-					var attributeValue = node.getAttribute(attributeName);
-					if(typeof(attributeValue) == 'undefined' || attributeValue == null){
-						//vue、element、react 中的一些动态赋值，比如 element 中的 el-select 选中后赋予显示出来的文本，getAttribute 就取不到，因为是改动的 DOM属性，所以要用这种方式才能取出来
-						attributeValue = node[attributeName];
+
+					if(nodeNameLowerCase == 'input' && attributeName.toLowerCase() == 'value'){
+						//如果是input 的value属性，那么要直接获取，而非通过 attribute ，不然用户自己输入的通过 attribute 是获取不到的 - catl 赵阳 提出
+						attributeValue = node.value;
 						DOMPropOrHTMLAttr = 'DOMProperty';
+					}else{
+						/*
+						 * 默认是 HtmlAtrribute 也就是 HTML特性。取值有两个:
+						 * HTMLAtrribute : HTML特性
+						 * DOMProperty : DOM属性
+						 */
+						var DOMPropOrHTMLAttr = 'HTMLAtrribute'; 
+						var attributeValue = node.getAttribute(attributeName);
+						if(typeof(attributeValue) == 'undefined' || attributeValue == null){
+							//vue、element、react 中的一些动态赋值，比如 element 中的 el-select 选中后赋予显示出来的文本，getAttribute 就取不到，因为是改动的 DOM属性，所以要用这种方式才能取出来
+							attributeValue = node[attributeName];
+							DOMPropOrHTMLAttr = 'DOMProperty';
+						}
+						if(typeof(attributeValue) == 'undefined' || attributeValue == null){
+							//这个tag标签没有这个属性，忽略
+							continue;
+						}
 					}
-					if(typeof(attributeValue) == 'undefined' || attributeValue == null){
-						//这个tag标签没有这个属性，忽略
-						continue;
-					}
+					
 
 					//if(typeof(node.getAttribute(attributeName)) == 'undefined' && typeof(node[attributeName]) == 'undefined'){
 					//	//这个tag标签没有这个 attribute，忽略
 					//	continue
 					//}
-
 					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加					
 					if(!translate.ignore.isIgnore(node)){
 						//加入翻译
@@ -3016,6 +3038,7 @@ var translate = {
 
 			//node分析
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);
+			//console.log(nodeAnaly)
 			if(nodeAnaly['text'].length > 0){
 				//有要翻译的目标内容，加入翻译队列
 				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
@@ -5669,6 +5692,9 @@ var translate = {
 			if(typeof(serviceName) == 'string'){
 				translate.service.name = serviceName;
 				if(serviceName != 'translate.service'){
+					//增加元素整体翻译能力
+					translate.whole.enableAll();
+
 					if(serviceName.toLowerCase() == 'giteeai'){
 						//设定翻译接口为GiteeAI的
 						translate.request.api.host=['https://giteeai.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn:1000/','https://api.translate.zvo.cn:1000/'];
@@ -5679,9 +5705,6 @@ var translate = {
 						translate.request.api.host=['https://siliconflow.zvo.cn/','https://america.api.translate.zvo.cn:1414/','https://deutsch.enterprise.api.translate.zvo.cn:1414/'];
 						return;
 					}
-
-					//增加元素整体翻译能力
-					translate.whole.enableAll();
 				}
 			}
 		},

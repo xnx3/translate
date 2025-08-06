@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.12.20250802',
+	version: '3.17.13.20250806',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1649,13 +1649,27 @@ var translate = {
 	lifecycle:{
 		execute:{
 			/*
-                每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
-
+                每当触发执行 translate.execute() 时，会先进行当前是否可以正常进行翻译的判定，比如 当前语种是否就已经是翻译之后的语种了是否没必要翻译了等。（这些初始判定可以理解成它的耗时小于1毫秒，几乎没有耗时）
+                经过初始的判断后，发现允许被翻译，那么在向后执行之前，先触发此。  
+                也就是在进行翻译之前，触发此。 
+				
                 @param uuid：translate.nodeQueue[uuid] 这里的
-                @param from 来源语种，翻译前的语种
 				@param to 翻译为的语种
             */
             start : [],
+            start_Trigger:function(uuid, to){
+                for(var i = 0; i < translate.lifecycle.execute.start.length; i++){
+                    try{
+                        translate.lifecycle.execute.start[i](uuid, to);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
+
+
+			//待整理
+            start_old : [],
             startRun:function(uuid, from, to){
                 //console.log(translate.nodeQueue[uuid]);
                 for(var i = 0; i < translate.listener.execute.renderStartByApi.length; i++){
@@ -1669,20 +1683,40 @@ var translate = {
 
             /*
                 当扫描整个节点完成，进行翻译（1. 命中本地缓存、 2.进行网络翻译请求）之前，触发
+                待整理
 			 */
             scanNodesFinsh: [],
 
+            
             /*
-                当进行触发网络翻译请求之前，触发此
-			 */
+                每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
+
+                @param uuid：translate.nodeQueue[uuid] 这里的
+                @param from 来源语种，翻译前的语种
+				@param to 翻译为的语种
+				@param texts 要翻译的文本，它是一个数组形态，是要进行通过API翻译接口进行翻译的文本，格式如 ['你好','世界']
+            */
             translateNetworkBefore:[],
+            translateNetworkBefore_Trigger:function(uuid, from, to, texts){
+            	for(var i = 0; i < translate.lifecycle.execute.translateNetworkBefore.length; i++){
+                    try{
+                        translate.lifecycle.execute.translateNetworkBefore[i](uuid,from, to, texts);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
 
             /*
 				当 translate.execute() 触发网络翻译请求完毕（不管成功还是失败），并将翻译结果渲染到页面完毕后，触发此。
 				@param uuid translate.nodeQueue 的uuid
+				@param from 
 				@param to 当前是执行的翻译为什么语种
+				@param text 网络请求翻译的文本/节点/。。。待定
             */
-            translateNetworkFinish:[],
+            translateNetworkAfter:[], //已废弃
+            /*
+            
             translateNetworkAfter_Trigger:function(uuid, to){
                 for(var i = 0; i < translate.lifecycle.execute.translateNetworkAfter.length; i++){
                     try{
@@ -1692,6 +1726,7 @@ var translate = {
                     }
                 }
             },
+            */
 
             /*
 				translate.execute() 的翻译渲染完毕触发
@@ -1809,6 +1844,10 @@ var translate = {
 		
 
 		/********** 翻译进行 */
+
+		//生命周期-触发翻译进行之前，用户自定义的钩子
+		translate.lifecycle.execute.start_Trigger(uuid, translate.to);
+
 		
 		//先进行图片的翻译替换，毕竟图片还有加载的过程
 		translate.images.execute();
@@ -2395,7 +2434,8 @@ var translate = {
 
 			//listener
 			translate.listener.execute.renderStartByApiRun(uuid, lang, translate.to); 
-
+			translate.lifecycle.execute.translateNetworkBefore_Trigger(uuid, lang, translate.to, translateTextArray[lang]); 
+			
 			/*** 翻译开始 ***/
 			var url = translate.request.api.translate;
 			var data = {

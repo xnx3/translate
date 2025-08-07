@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.13.20250806',
+	version: '3.17.14.20250807s',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -367,7 +367,10 @@ var translate = {
 			if(window.self !== window.top){
 				if(typeof(window.parent.translate) == 'object' && typeof(window.parent.translate.version) == 'string'){
 					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-					window.parent.translate.changeLanguage(languageName);
+					if(window.parent.translate.language.getCurrent() != languageName){
+						//如果父页面当前的语种不是需要翻译的语种，对其进行翻译
+						window.parent.translate.changeLanguage(languageName);
+					}
 				}
 			}
 		}catch(e){

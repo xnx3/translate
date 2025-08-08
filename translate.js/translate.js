@@ -408,7 +408,9 @@ var translate = {
 
 		//当用户代码设置里启用了 translate.listener.start() 然后用户加载页面后并没有翻译（这时listener是不启动的只是把listener.use标记为true），然后手动点击翻译按钮翻译为其他语种（这是不会刷新页面），翻译后也要跟着启动监听
 		if(translate.listener.use == true && translate.listener.isStart == false){
-			translate.listener.start();
+			if(typeof(translate.listener.start) != 'undefined'){
+				translate.listener.start();
+			}
 		}
 	},
 	
@@ -6622,6 +6624,8 @@ var translate = {
 			trigger:function(url){
 				return true;
 			},
+
+			/*js translate.request.listener.start start*/
 			/*
 				启动根据ajax请求来自动触发执行翻译，避免有时候有的框架存在漏翻译的情况。
 				这个只需要执行一次即可，如果执行多次，只有第一次会生效
@@ -6737,6 +6741,7 @@ var translate = {
 				}
 
 			}
+			/*js translate.request.listener.start end*/
 		}
 	},
 	//存储，本地缓存

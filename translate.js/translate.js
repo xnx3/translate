@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.15.20250808',
+	version: '3.17.16.20250808',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -554,7 +554,9 @@ var translate = {
 					throw new Error('第' + i + '项不是RegExp对象');
 				}
 			}
-			this.textRegex = [...this.textRegex, ...arr];
+			//this.textRegex = [...this.textRegex, ...arr];
+			//改为兼容 es5 的方式，提供更多兼容
+			this.textRegex = this.textRegex.concat(arr); 
 		},
 	},
 	//刷新页面，你可以自定义刷新页面的方式，比如在 uniapp 打包生成 apk 时，apk中的刷新页面就不是h5的这个刷新，而是app的刷新方式，就需要自己进行重写这个刷新页面的方法了

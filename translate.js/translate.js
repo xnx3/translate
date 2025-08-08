@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.16.20250808',
+	version: '3.17.17.20250808',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5707,15 +5707,15 @@ var translate = {
 			const endX = startX + width;
 			const endY = startY + height;
 
-			// 返回包含所有信息的对象
-			return {
-				startX,
-				startY,
-				endX,
-				endY,
-				width,
-				height
-			};
+			// 返回包含所有信息的对象（使用ES5兼容语法）
+		    return {
+		        startX: startX,
+		        startY: startY,
+		        endX: endX,
+		        endY: endY,
+		        width: width,
+		        height: height
+		    };
 		}
 		/*js translate.util.getElementPosition end*/
 	},

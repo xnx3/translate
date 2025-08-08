@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.14.20250807',
+	version: '3.17.15.20250808',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4983,7 +4983,7 @@ var translate = {
 
 	                //判断它后面是否还有文本
 	                if(originalIndex+1 < text.length){
-	                    let char = text.charAt(originalIndex+translateOriginal.length);
+	                	let char = text.charAt(originalIndex+translateOriginal.length);
 	                    //console.log(char);
 	                    if(/。/.test(char)){
 	                    	replaceResultText = replaceResultText + '. ';
@@ -4997,9 +4997,12 @@ var translate = {
 	                    }else if([' ', '\n','\t',']','|', '_','-','/'].indexOf(char) !== -1){
 							// 如果后面的字符是 这些字符，那么不用添加空格隔开
 						}else{
-							//补充上一个空格，用于将两个单词隔开
-	                        replaceResultText = replaceResultText + ' ';
-	                        //console.log('after add space : '+replaceResultText);
+							//补充上一个空格，用于将两个单词隔开。  不过 ，如果当前 replaceResultText 的最后一个字符也是空格，那就不需要再加空格了。 这里就只判断空格就好了，至于其他的换行等基本不会出现这个情况，所以不考虑
+							if(replaceResultText.length > 0 && replaceResultText.charAt(replaceResultText.length-1) == ' '){
+								//replaceResultText 本身有值，且最后一个字符就是空格，就不需要再追加空格进行隔开了
+							}else{
+								replaceResultText = replaceResultText + ' ';
+							}
 	                    }
 	                    
 	                }
@@ -5020,10 +5023,14 @@ var translate = {
 	                    	replaceOriginalText = '：'+replaceOriginalText;	
 	                    }else if([' ', '\n','\t','[', '|', '_','-','/'].indexOf(char) !== -1){
 							// 如果前面的字符是 这些字符，那么不用添加空格隔开
+							//console.log('不需要空格隔开的');
 						}else{
-							//补充上一个空格，用于将两个单词隔开
-	                        //text = text.replace(translateOriginal, ' '+translateResult);
-							replaceResultText = ' '+replaceResultText;
+	                        //补充上一个空格，用于将两个单词隔开。  不过 ，如果当前 replaceResultText 的第一个字符也是空格，那就不需要再加空格了。  这里就只判断空格就好了，至于其他的换行等基本不会出现这个情况，所以不考虑
+							if(replaceResultText.length > 0 && replaceResultText.charAt(0) == ' '){
+								//replaceResultText 本身有值，且最后一个字符就是空格，就不需要再追加空格进行隔开了
+							}else{
+								replaceResultText = ' '+replaceResultText;
+							}
 							//console.log('before add space : '+replaceResultText);
 	                    }
 	                }
@@ -5031,6 +5038,8 @@ var translate = {
 	            	//如果是其他语种比如英语法语翻译为中文、日文，那么标点符号也要判断的，这个因为目前这个场景还没咋遇到，就不判断了，遇到了在加。
 
 	            }
+	            //console.log(replaceResultText)
+	            //console.log(replaceResultText.length)
 
 	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, replaceOriginalText, replaceResultText);
 	            if(replaceResult.replaceEndIndex < 1){

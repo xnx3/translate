@@ -1743,7 +1743,9 @@ var translate = {
 				@param to 当前是执行的翻译为什么语种
             */
             renderFinish:[function(uuid, to){ //这里默认带着一个触发翻译为英文后，自动对英文进行元素视觉处理，追加空格的
-            	translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
+            	if(typeof(translate.visual) != 'undefined'){
+            		translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
+            	}
             }],
             renderFinish_Trigger:function(uuid, to){
             	for(var i = 0; i < translate.lifecycle.execute.renderFinish.length; i++){

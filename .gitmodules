@@ -1,0 +1,3 @@
+[submodule "extend/react"]
+	path = extend/react
+	url = https://github.com/TatsukiMengChen/react-translate-js-demo.git

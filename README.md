@@ -150,7 +150,7 @@ translate.execute();//完成翻译初始化，进行翻译
     const translate = require("i18n-jsautotranslate")
     ```
 
-[详细使用说明](https://translate.zvo.cn/4041.html) |  [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js)
+[详细使用说明](https://translate.zvo.cn/4041.html) | [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js) | [React 18 中 使用 translate.js Demo](https://tatsukimengchen.github.io/react-translate-js-demo/)
 
 # 翻译服务私有部署
 可以对提供后端文本翻译API的服务进行私有部署，跟开源中国GiteeAI联合定制，采用GiteeAI大模型算力作为支撑，部署后按照提示步骤自助完成大模型的配置接入，提供高效稳定、翻译质量高的翻译能力支持。（当然你也可以在无网络环境进行部署，介入自己私有化的大模型算力）。  
@@ -186,7 +186,7 @@ translate.execute();//完成翻译初始化，进行翻译
 * [Masuit.MyBlogs](https://gitee.com/masuit/Masuit.MyBlogs) 高性能高安全性低占用的个人博客系统
 
 ...  
-  
+
 |   |   | | | | 
 | ------------ | ------------ |------------ |------------ |------------ | 
 |  高校 |  清华大学 | 北京理工大学 |  西苏格兰大学 | 中国美术学院 | 亚利桑那州立大学|  

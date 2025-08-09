@@ -1,1 +1,0 @@
-react 的 translate.js 翻译插件  

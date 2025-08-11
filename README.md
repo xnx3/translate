@@ -152,6 +152,13 @@ translate.execute();//完成翻译初始化，进行翻译
 
 [详细使用说明](https://translate.zvo.cn/4041.html) | [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js) | [React 18 中 使用 translate.js Demo](https://tatsukimengchen.github.io/react-translate-js-demo/)
 
+## 项目中接入步骤实践
+[快速接入，看看效果](http://translate.zvo.cn/532777.html)  
+[实际在网站使用-多个页面怎么都能翻译](http://translate.zvo.cn/547814.html)  
+[上线使用，更换更稳定效果更好的大模型翻译通道](http://translate.zvo.cn/545867.html)  
+
+
+
 # 翻译服务私有部署
 可以对提供后端文本翻译API的服务进行私有部署，跟开源中国GiteeAI联合定制，采用GiteeAI大模型算力作为支撑，部署后按照提示步骤自助完成大模型的配置接入，提供高效稳定、翻译质量高的翻译能力支持。（当然你也可以在无网络环境进行部署，介入自己私有化的大模型算力）。  
 私有化部署后，可开启内存缓存能力，来极大提高翻译速度！  

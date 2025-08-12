@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.18.20250812',
+	version: '3.17.19.20250812',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1654,6 +1654,10 @@ var translate = {
 	executeNumber:0,
 	
 	lifecycle:{
+
+		/*
+			translate.execute() 执行相关
+		*/
 		execute:{
 			/*
                 每当触发执行 translate.execute() 时，会先进行当前是否可以正常进行翻译的判定，比如 当前语种是否就已经是翻译之后的语种了是否没必要翻译了等。（这些初始判定可以理解成它的耗时小于1毫秒，几乎没有耗时）
@@ -8260,7 +8264,95 @@ var translate = {
 			if(typeof(uuid) == 'string' && uuid.length > 1){
 				translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
 			}
+		},
+
+		/**
+		 * 隐藏当前网页的所有文本
+		 *
+		 */
+		hideText:{
+			style:`
+				/* 文本隐藏核心样式 - 仅隐藏文本内容 */
+		        html.translatejs-text-hidden p, html.translatejs-text-hidden div,
+		        html.translatejs-text-hidden h1, html.translatejs-text-hidden h2, html.translatejs-text-hidden h3,
+		        html.translatejs-text-hidden h4, html.translatejs-text-hidden h5, html.translatejs-text-hidden h6,
+		        html.translatejs-text-hidden span, html.translatejs-text-hidden a, html.translatejs-text-hidden b,
+		        html.translatejs-text-hidden strong, html.translatejs-text-hidden i, html.translatejs-text-hidden em,
+		        html.translatejs-text-hidden mark,
+		        html.translatejs-text-hidden blockquote, html.translatejs-text-hidden ul, html.translatejs-text-hidden ol,
+		        html.translatejs-text-hidden li, html.translatejs-text-hidden table, html.translatejs-text-hidden th,
+		        html.translatejs-text-hidden td, html.translatejs-text-hidden label, html.translatejs-text-hidden button,
+		        html.translatejs-text-hidden input, html.translatejs-text-hidden select, html.translatejs-text-hidden textarea {
+		            color: transparent !important;
+		            text-shadow: none !important;
+		        }
+
+		        /* 隐藏占位符文字 */
+		        html.translatejs-text-hidden ::placeholder {
+		            color: transparent !important;
+		        }
+
+		        /* 确保媒体元素不受影响 */
+		        img, video, iframe, canvas, svg,
+		        object, embed, picture, source {
+		            color: initial !important;
+		        }
+
+		        /* 忽略隐藏的元素保持可见 */
+		        .ignore-hidden {
+		            color: inherit !important;
+		        }
+			`,
+
+			/**
+			 * 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
+			 * 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
+			 * 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
+			 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+			 */
+			hide:function(){
+				const style = document.createElement('style');
+				style.textContent = translate.visual.hideText.style;
+			    document.head.appendChild(style);
+			    document.documentElement.classList.add('translatejs-text-hidden');
+			},
+			/**
+			 * 撤销隐藏状态，将原本的文本正常显示出来 
+			 * 
+			 */
+			show:function(){
+				document.documentElement.classList.remove('translatejs-text-hidden');
+			}
+		},
+
+		/**
+		 * 网页加载，且要进行翻译时，翻译之前，隐藏当前网页的文本。
+		 * 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
+		 * 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
+		 * 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
+		 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+		 */
+		webPageLoadTranslateBeforeHiddenText:function(){
+			if(typeof(document.body) == 'undefined' || document.body == null){
+				//正常，body还没加载
+			}else{
+				console.log('错误警告： translate.visual.webPageLoadTranslateBeforeHiddenText() 要在 head 标签中触发才能达到最好的效果！');
+			}
+			if(translate.language.local == ''){
+				console.log('错误警告：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
+			}
+
+			if(translate.language.local == '' || translate.language.local != translate.language.getCurrent()){
+				translate.visual.hideText.hide();
+
+				//设置翻译完成后，移除隐藏文本的css 的class name
+				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
+					translate.visual.hideText.show();
+				});
+			}
 		}
+
+		
 
 
 

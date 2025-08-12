@@ -36,9 +36,18 @@ public class Set {
 	 */
 	private Map<String, String> requestParams;
 	
+	/**
+	 * 翻译精确度。
+	 *	取值为0~100 ，数值越大说明对翻译精准度要求越高。  
+	 *	注意，设置的数值越高，对精确度要求越高。
+	 *	如果不设置，默认是普通的翻译质量 50
+	 */
+	private int accuracy;
+	
 	public Set() {
 		useRepair = true;
-		useRepair = false;
+		contain = false;
+		accuracy = 50;
 	}
 	
 	public boolean isUseRepair() {
@@ -63,6 +72,14 @@ public class Set {
 
 	public void setRequestParams(Map<String, String> requestParams) {
 		this.requestParams = requestParams;
+	}
+
+	public int getAccuracy() {
+		return accuracy;
+	}
+
+	public void setAccuracy(int accuracy) {
+		this.accuracy = accuracy;
 	}
 	
 }

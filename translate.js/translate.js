@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.17.20250808',
+	version: '3.17.18.20250812',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4126,25 +4126,15 @@ var translate = {
 
 			
 			/*
-				如果发现日语、简体中文或繁体中文 一起存在，且当前 data.languageName 认定是简体或繁体中文，那么要判定一下：
-					如果 日语的字符数/(简体中文+繁体中文)的字符数 > 0.1 ， 那么认为当前是日语的
+				日语判定
+				如果发现日语存在，且当前 data.languageName 认定不是日语，那么要判定一下：
+					如果 日语的字符数/所有字符数 的字符数 > 0.08 ， 那么认为当前是日语的
 			*/
-			if( (typeof(languagesSize['chinese_simplified']) != 'undefined' || typeof(languagesSize['chinese_traditional']) != 'undefined' ) && typeof(languagesSize['japanese']) != 'undefined' && (data.languageName == 'chinese_simplified' || data.languageName == 'chinese_traditional' )){
-				var size = 0;
-				if(typeof(languagesSize['chinese_simplified']) != 'undefined'){
-					size = size + languagesSize['chinese_simplified'];
-				}
-				if(typeof(languagesSize['chinese_traditional']) != 'undefined'){
-					size = size + languagesSize['chinese_traditional'];
-				}
-				if(languagesSize['japanese']/size > 0.1){
+			if( typeof(languagesSize['japanese']) != 'undefined' && data.languageName != 'japanese'){
+				if(languagesSize['japanese']/allSize > 0.08){
 					data.languageName = 'japanese'
 				}
 			}
-			/* if(langkeys.length > 1 && langkeys.indexOf('japanese') > -1){
-				langsNumber['chinese_simplified'] = 0;
-				langsNumber['chinese_traditional'] = 0;
-			} */
 
 			/*
 				如果发现英语、简体中文或繁体中文 一起存在，且当前 data.languageName 认定是英语时，那么要判定一下：

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.17.19.20250812',
+	version: '3.17.20.20250813',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4142,7 +4142,7 @@ var translate = {
 
 			/*
 				如果发现英语、简体中文或繁体中文 一起存在，且当前 data.languageName 认定是英语时，那么要判定一下：
-					如果 (简体中文+繁体中文)的字符数/英语 > 0.08 ， 那么认为当前是简体中文（不认为是繁体中文，因为下面还有 简体中文跟繁体中文的判定）
+					如果 (简体中文+繁体中文)的字符数/英语 > 0.05 ， 那么认为当前是简体中文（不认为是繁体中文，因为下面还有 简体中文跟繁体中文的判定）
 			*/
 			if( (typeof(languagesSize['chinese_simplified']) != 'undefined' || typeof(languagesSize['chinese_traditional']) != 'undefined' ) && typeof(languagesSize['english']) != 'undefined' && data.languageName == 'english'){
 				var size = 0;
@@ -4152,7 +4152,7 @@ var translate = {
 				if(typeof(languagesSize['chinese_traditional']) != 'undefined'){
 					size = size + languagesSize['chinese_traditional'];
 				}
-				if(size/languagesSize['english'] > 0.08){
+				if(size/languagesSize['english'] > 0.05){
 					data.languageName = 'chinese_simplified'
 				}
 			}

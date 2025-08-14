@@ -33,7 +33,46 @@
 
 
 
-# 微调指令
+# 测试效果
+先拿别人的网站动手试试效果
+![效果](http://cdn.weiunity.com/site/341/news/9a7228aaae28475996da9026b93356c8.gif "")
+
+1. 随便打开一个网页
+2. 右键 - 审查元素
+3. 粘贴入以下代码：	  
+	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector_v2.js';  head.appendChild(script);  ````
+4. Enter 回车键 ， 执行
+5. 在当前网页的左上角，就出现了一个大大的切换语言，切换试试看。
+
+# 在线体验
+http://res.zvo.cn/translate/demo.html
+
+
+# 使用
+
+### 快速接入
+在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部，就会选择语言的 select 切换标签 ：
+
+````
+<script src="https://cdn.staticfile.net/translate.js/3.17.0/translate.js"></script>
+<script>
+translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等
+translate.service.use('client.edge'); //设置机器翻译服务通道，相关说明参考 http://translate.zvo.cn/545867.html
+translate.listener.start(); //开启页面元素动态监控，js改变的内容也会被翻译，参考文档： http://translate.zvo.cn/4067.html
+translate.execute();//完成翻译初始化，进行翻译
+</script>
+````
+
+**更深入使用：**
+
+1. [快速使用 - 让你最快看到效果，了解它翻译的原理](http://translate.zvo.cn/532777.html)  
+1. [常见问题 - 我有多个页面，怎么都能每个页面都能翻译](http://translate.zvo.cn/547814.html)  
+1. [最优体验 - 打开新页面后先显示原文1秒然后再显示译文，如何不显示原文？](http://translate.zvo.cn/549731.html)  
+1. [项目上线 - 更换更稳定响应更快翻译更好的大模型翻译通道](http://translate.zvo.cn/545867.html)  
+
+它支持极其丰富的微调扩展方式，可以参考下面的，凡是你想的，都可以做到！如果做不到，请反馈，我们来加！  
+
+### 微调指令
 它有极其丰富的扩展指令，让你可以对它进行各种精准控制，满足各种难缠客户的各种脑洞要求。（如果满足不了，可提出来，我们加）
 
 * **[切换语言select选择框的自定义设置](https://translate.zvo.cn/41541.html)**，设置切换语言选择框位置、CSS美化、是否出现、显示的语种、触发后的自定义、以及重写等。
@@ -76,87 +115,15 @@
 * **[翻译相关网络请求的自定义控制](http://translate.zvo.cn/521713.html)**，进行翻译的时候，会有一些初始化、多节点测速、当前支持语种、等请求，可以通过提前配置的方式，不在发起这几个网络请求，以及对翻译接口请求进行转发修改等。
 * **[获取翻译区域显示的原始文本](http://translate.zvo.cn/513197.html)**，获取翻译区域的原始文本，翻译前的文本。这里会把空白符等过滤掉，只返回纯显示的文本
 * **[重写语种识别策略](http://translate.zvo.cn/513538.html)**，识别当前语种、或某个元素是什么语种的计算方式
+* **[进行翻译的生命周期监控及触发](http://translate.zvo.cn/540189.html)**，监控执行翻译 translate.execute(); 之后，它会进行的一系列动作，可以针对其某一刻，进行触发自定义方法。
+* **[网页打开时自动隐藏文字，翻译完成后显示译文](https://translate.zvo.cn/549731.html)**，避免这种情况：刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。
 
+### 框架中使用
 
-
-# 在线体验
-http://res.zvo.cn/translate/demo.html
-
-
-# 测试效果
-先拿别人的网站动手试试效果
-![效果](http://cdn.weiunity.com/site/341/news/9a7228aaae28475996da9026b93356c8.gif "")
-
-1. 随便打开一个网页
-2. 右键 - 审查元素
-3. 粘贴入以下代码：	  
-	```` var head= document.getElementsByTagName('head')[0];  var script= document.createElement('script');  script.type= 'text/javascript';  script.src= 'https://res.zvo.cn/translate/inspector_v2.js';  head.appendChild(script);  ````
-4. Enter 回车键 ， 执行
-5. 在当前网页的左上角，就出现了一个大大的切换语言，切换试试看。
-
-# 快速使用
-在网页最末尾， ````</html>```` 之前，加入以下代码，一般在页面的最底部就出现了选择语言的 select 切换标签。 其实就这么简单：
-
-````
-<script src="https://cdn.staticfile.net/translate.js/3.17.0/translate.js"></script>
-<script>
-translate.language.setLocal('chinese_simplified'); //设置本地语种（当前网页的语种）。如果不设置，默认自动识别当前网页显示文字的语种。 可填写如 'english'、'chinese_simplified' 等
-translate.service.use('client.edge'); //设置机器翻译服务通道，相关说明参考 http://translate.zvo.cn/43086.html
-translate.execute();//完成翻译初始化，进行翻译
-</script>
-````
-
-
-
-# 使用示例
-
-## 在浏览器使用
-
-**普通网站中点击某个语言进行切换**
-如下图所示，网站中的某个位置要有几种语言切换  
-![](doc/resources/uws-demo.png?raw=true)  
-直接在其html代码末尾的位置加入以下代码：  
-
-````
-<!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
-<ul class="ignore">
-	<li><a href="javascript:translate.changeLanguage('english');">English</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
-</ul>
- 
-<!-- 引入多语言切换的js -->
-<script src="https://cdn.staticfile.net/translate.js/3.17.0/translate.js"></script>
-<script>
-	translate.selectLanguageTag.show = false; //不出现的select的选择语言
-    translate.service.use('client.edge'); //设置翻译服务通道
-	translate.execute();
-</script>
-````
-
-## 在 NPM 中使用
-
-1. Install
-
-    ```bash
-    npm i i18n-jsautotranslate
-    ```
-
-2. Import
-
-    ```javascript
-    import translate from 'i18n-jsautotranslate'
-    /* Or */
-    const translate = require("i18n-jsautotranslate")
-    ```
-
-[详细使用说明](https://translate.zvo.cn/4041.html) | [Vue2 中使用 translate.js 在线 Demo](https://lruihao.github.io/vue-el-demo/#/translate-js) | [React 18 中 使用 translate.js Demo](https://tatsukimengchen.github.io/react-translate-js-demo/)
-
-## 项目中接入步骤实践
-[快速接入，看看效果](http://translate.zvo.cn/532777.html)  
-[实际在网站使用-多个页面怎么都能翻译](http://translate.zvo.cn/547814.html)  
-[上线使用，更换更稳定效果更好的大模型翻译通道](http://translate.zvo.cn/545867.html)  
-
+* [Vue](https://translate.zvo.cn/4041.html) | [vue2 demo](https://lruihao.github.io/vue-el-demo/#/translate-js)
+* [React](extend/react/) | [React 18 Demo](https://tatsukimengchen.github.io/react-translate-js-demo/)
+* [Uniapp]() | [打包APP使用的说明及Demo](extend/uniapp/)
+* [Layui](extend/layui/) | [Demo](https://res.zvo.cn/translate/else/layui_exts/demo.html)
 
 
 # 翻译服务私有部署

@@ -9,7 +9,8 @@
 
 1. 全局注册后在需要翻译的页面引用该组件即可。
 2. 主要功能是初始化和启动翻译。
-3. 额外提供一个响应式的属性 `translateId` 用来手动触发翻译刷新。
+3. 额外提供一个响应式的属性 `translateId` 用来手动触发翻译刷新。  
+
 ![pictureOne](resource/pictureOne.png)
 ![pictureTwo](resource/pictureTwo.png)
 ![pictureTwo](resource/pictureThree.png)

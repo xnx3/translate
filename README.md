@@ -63,7 +63,7 @@ translate.execute();//完成翻译初始化，进行翻译
 </script>
 ````
 
-**更深入使用：**
+### 更深入使用
 
 1. [快速使用 - 让你最快看到效果，了解它翻译的原理](http://translate.zvo.cn/532777.html)  
 1. [常见问题 - 我有多个页面，怎么都能每个页面都能翻译](http://translate.zvo.cn/547814.html)  

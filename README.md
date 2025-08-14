@@ -22,14 +22,10 @@
 * **极其灵活扩展。** 您可指定它[只翻译某些指定区域的元素](http://translate.zvo.cn/4063.html)、[自定义切换语言方式及美化](http://translate.zvo.cn/4056.html)、[某些id、class、tag不被翻译](https://translate.zvo.cn/4061.html)、[自定义翻译术语](https://translate.zvo.cn/4070.html) ...... 只要你想的，它都能做到。做不到的，你找我我来让它做到！
 * **自动切换语种。** [自动根据用户的语言喜好及所在的国家切换到这个语种进行浏览](http://translate.zvo.cn/4065.html)
 * **极速翻译能力。** [内置三层缓存、预加载机制，毫秒级瞬间翻译的能力。它并不是你理解的大模型蜗牛似的逐个字往外出的那样](http://translate.zvo.cn/4026.html)
-* [**永久开源免费。** 采用MIT开源协议，您可永久免费使用](https://github.com/xnx3/translate/blob/master/LICENSE)。[另外你可以用它来做某些系统的三方插件直接售卖盈利](http://translate.zvo.cn/4036.html)、或者你是建站公司用它来做为一项高级功能盈利，我们都是完全认可并支持的，并不需要给我们任何费用！
-* **搜索引擎友好。** 完全不影响你本身网站搜索引擎的收录。爬虫所爬取的网页源代码，它不会对其进行任何改动，你可完全放心。[另外我们还有高级版本让你翻译之后的页面也能被搜索引擎收录](http://translate.zvo.cn/236896.html)
+* [**永久开源免费](https://github.com/xnx3/translate/blob/master/LICENSE。)** 采用MIT开源协议，您可永久免费使用。[另外你可以用它来做某些系统的三方插件直接售卖盈利](http://translate.zvo.cn/4036.html)
+* **搜索引擎友好。** 完全不影响你本身网站搜索引擎的收录。爬虫所爬取的网页源代码，它不会对其进行任何改动，你可完全放心。
 * **支持私有部署。** [在某些政府机关及大集团内部项目中，对数据隐私及安全保密有强要求场景、或者完全不通外网的场景，可以自行私有部署翻译API服务](http://translate.zvo.cn/391129.html) 
 * **全球网络节点**。美洲、亚洲、欧洲 ... 都有网络节点，它能自动适配最快节点，每间隔1分钟自动获取一次延迟最小的节点进行接入使用，使全球范围使用都可高效稳定。
-* **HTML整体翻译**。[提供开放API接口，传入html文件（html源代码）及要翻译为的语言即可拿到翻译后的html源码。完美支持识别各种复杂及不规范html代码，
-支持翻译前的微调，比如不翻译某个区域、图片翻译、js语法操作html文件中的元素进行增删改等。](https://translate.zvo.cn/4022.html)
-* **源站翻译及域名分发**。[将您现有的网站，翻译成全新的小语种网站，小语种网站可以分别绑定域名并支持搜索引擎收录和排名。而您的源站无需任何改动。也就是你可以将你朋友的网站，翻译为小语种网站，绑定上自己的域名，提供对外访问。而你无需向你朋友取得任何的如账号等相关权限](https://translate.zvo.cn/236896.html)
-* **浏览器翻译插件**。[提供整体的浏览器翻译插件的全套方案，您如果是开发者，完全可以拿去将界面美化包装一下，而后直接提交应用市场进行售卖盈利](https://translate.zvo.cn/4037.html)
 
 
 
@@ -62,6 +58,7 @@ translate.listener.start(); //开启页面元素动态监控，js改变的内容
 translate.execute();//完成翻译初始化，进行翻译
 </script>
 ````
+
 
 ### 更深入使用
 
@@ -126,17 +123,38 @@ translate.execute();//完成翻译初始化，进行翻译
 * [Layui](extend/layui/) | [Demo](https://res.zvo.cn/translate/else/layui_exts/demo.html)
 
 
+# 扩展分支
+translate.js 衍生了一系列的扩展项目。 translate.js 专注于网页的多语言切换，而其他的扩展分支，则在其他各个不同的领域，继续发光发热。
+
+
+### 浏览器翻译插件
+提供整体的浏览器翻译插件的全套方案，您如果是开发者，完全可以拿去将界面美化包装一下，而后直接提交应用市场进行售卖盈利。  
+[浏览器插件的源码](extend/chrome_plugin/) | [能直接安装到浏览器的插件Demo](http://translate.zvo.cn/4037.html)
+
+### HTML文件翻译API
+提供开放API接口，传入html文件（html源代码）及要翻译为的语言即可拿到翻译后的html源码。完美支持识别各种复杂及不规范html代码，支持翻译前的微调，比如不翻译某个区域、图片翻译、js语法操作html文件中的元素进行增删改等。  
+[详细说明](http://translate.zvo.cn/4022.html) | [Demo](http://doc.zvo.cn/tcdn/api/doc.html)
+
 # 翻译服务私有部署
-可以对提供后端文本翻译API的服务进行私有部署，跟开源中国GiteeAI联合定制，采用GiteeAI大模型算力作为支撑，部署后按照提示步骤自助完成大模型的配置接入，提供高效稳定、翻译质量高的翻译能力支持。（当然你也可以在无网络环境进行部署，介入自己私有化的大模型算力）。  
+可以对提供后端文本翻译API的服务进行私有部署，跟开源中国GiteeAI联合定制，采用GiteeAI大模型算力作为支撑，部署后按照提示步骤自助完成大模型的配置接入，提供高效稳定、翻译质量高的翻译能力支持。（当然你也可以在无网络环境进行部署，接入自己私有化的大模型，比如qwen、seed-x、gemma、glm、deepseek 等，它将各种大模型、传统文本翻译转化为统一的文本翻译API输出）。  
 私有化部署后，可开启内存缓存能力，来极大提高翻译速度！  
 还可以通过管理的后台，对译文的结果进行自定义修改，来人工校对翻译结果，使其更精准。  
-具体部署方式参见： [http://translate.zvo.cn/391129.html](http://translate.zvo.cn/391129.html)
+[开放的文本翻译API](http://api.zvo.cn/translate/service/20250814/translate.json.html) | [linux上私有部署](http://translate.zvo.cn/391129.html)
 
-# 开放翻译大模型
-[https://huggingface.co/xnx3/translate100](https://huggingface.co/xnx3/translate100) 是一个用于翻译任务的 seq-to-seq 架构、基于 Transformer 的神经机器翻译模型，由m2m100(12B)经过蒸馏(small100)及各种处理后，得到的完全适配 translate.js 的一键部署应用。  
+### 源站翻译及域名分发
+将您现有的网站，翻译成全新的小语种网站，小语种网站可以分别绑定域名并支持搜索引擎收录和排名。而您的源站无需任何改动。也就是你可以将你朋友的网站，翻译为小语种网站，绑定上自己的域名，提供对外访问。而你无需向你朋友取得任何的如账号等相关权限  
+[更多介绍及视频说明](https://translate.zvo.cn/236896.html) | [某个网站的Demo](http://http.qiye1.wang.market.zvo.cn/index.html)
+
+### 文本翻译大模型
+[https://huggingface.co/xnx3/translate100](https://huggingface.co/xnx3/translate100) 是一个用于翻译任务的 seq-to-seq 架构、基于 Transformer 的神经机器翻译模型，由m2m100(12B)经过蒸馏(small100)及各种处理后，得到的可以完全适配 translate.js 的一键部署应用。  
 它的翻译能力很一般，它最大的特点是在超低配置的终端（1核2G内存）运行使用、及做到适配全球主流的上百个语言。  
 它在CPU(Intel 7700k)上可以达到43token/s，在淘宝100块钱就能买到的p106显卡上可以达到90tokens/s  
 它的初衷，是我们针对私有化部署场景，采用qwen3 8~32B 做主要翻译时，针对千问大模型处理不了的部分，又做的一层保障，将qwen3翻译不达标的文本再交由 translate100 来进行最后的翻译，以完成大模型翻译的可靠稳定性闭环，避免返回翻译失败。  
+当然，你也可以部署它后，通过它开放的文本翻译API，来进行使用。 它最大的优势是对硬件要求极低极低，完全无需联网就能使用。  
+（注意，https://huggingface.co/xnx3/translate100 这个链接需要科学上网才能打开）
+  
+[开放的文本翻译API（它跟translate.js 使用的翻译API是完全一致的）](http://api.zvo.cn/translate/service/20250814/translate.json.html) | [私有部署](https://huggingface.co/xnx3/translate100)
+
 
 
 # 谁在使用

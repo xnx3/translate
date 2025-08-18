@@ -6,9 +6,13 @@ import com.xnx3.BaseVO;
 /**
  * 翻译结果
  * @author 管雷鸣
- *
  */
 public class TranslateResultVO extends BaseVO implements java.io.Serializable{
+	/**
+	 * giteeai 添加，当还未购买按量套餐时，返回这个提示，表示账户未激活
+	 */
+	public final static int ERROR_ACCOUNT_NOT_ACTIVATED=401;
+	
 	private String from; //将什么语言进行转换
 	private String to;  //转换为什么语言输出
 	private List<String> text;	//转换的结果的json数组。<br/>跟传入的数组一一对应。如果 result = 0，响应失败，那这里会将文本原样返回，并不会进行任何翻译

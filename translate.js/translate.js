@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.0.20250816',
+	version: '3.18.1.20250819',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1627,16 +1627,13 @@ var translate = {
 				if (!translate.translateRequest[uuid].hasOwnProperty(lang)) {
 		    		continue;
 		    	}
-				//console.log(translate.translateRequest[uuid])
-				for(var i = 0; i<translate.translateRequest[uuid][lang].length; i++){
-					if(translate.translateRequest[uuid][lang][i].executeFinish == 0){
-						//这个还没执行完，那么直接退出，不在向后执行了
-						//console.log('uuid:'+uuid+'  lang:'+lang+'  executeFinish:0  time:'+translate.translateRequest[uuid][lang][i][addtime]);
-						
-						//这里要考虑进行时间判断
+				if(translate.translateRequest[uuid][lang].executeFinish == 0){
+					//这个还没执行完，那么直接退出，不在向后执行了
+					//console.log('uuid:'+uuid+'  lang:'+lang+'  executeFinish:0  time:'+translate.translateRequest[uuid][lang][i][addtime]);
+					
+					//这里要考虑进行时间判断
 
-						return;
-					}
+					return;
 				}
 			}
 
@@ -1669,7 +1666,7 @@ var translate = {
             */
             start : [],
             start_Trigger:function(uuid, to){
-                for(var i = 0; i < translate.lifecycle.execute.start.length; i++){
+            	for(var i = 0; i < translate.lifecycle.execute.start.length; i++){
                     try{
                         translate.lifecycle.execute.start[i](uuid, to);
                     }catch(e){
@@ -2461,7 +2458,9 @@ var translate = {
 			translate.request.post(url, data, function(data){
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
-				if(data.result == 0){
+
+				//针对 giteeai 增加了账户余额、账户是否激活的拍的判定，所以增加了 401 这个参数，凡是账户异常的，参数值是 401~499 之间。所以只要不是1都是失败
+				if(data.result != 1){
 					if(typeof(translate.translateRequest[uuid]) == 'object' && typeof(translate.translateRequest[uuid][data.from]) == 'object'){
 						translate.translateRequest[uuid][data.from]['result'] = 2;
 						translate.translateRequest[uuid][data.from].executeFinish = 1; //1是执行完毕
@@ -8345,8 +8344,38 @@ var translate = {
 			if(translate.language.local == '' || translate.language.local != translate.language.getCurrent()){
 				translate.visual.hideText.hide();
 
+				//设置发起网络请求前，记录发起了几次翻译请求，避免发起了多次，但是第一次执行完了就显示文本了，但是后几次还在翻译中，还是会出现显示原文的情况
+				translate.lifecycle.execute.translateNetworkBefore.push(function(uuid, from, to, texts){
+					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){ 
+						//是第一次翻译请求，记录其uuid
+						translate.visual.hideText.first_translate_request_uuid = uuid;
+					}
+
+					//只有第一次通过网络翻译接口请求才会记录uuid
+					if(translate.visual.hideText.first_translate_request_uuid == uuid){
+						if(typeof(translate.visual.hideText.first_translate_request_number) == 'undefined'){
+							translate.visual.hideText.first_translate_request_number = 0;
+						}
+						translate.visual.hideText.first_translate_request_number++;
+						//console.log('translate.visual.hideText.first_translate_request_number++   from:'+from);
+					}
+				});
+
 				//设置翻译完成后，移除隐藏文本的css 的class name
 				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
+					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){
+						//为空，那么可能是已经触发过浏览器缓存了，所有翻译的文本在浏览器缓存中都有，就不必再发起网络请求了
+
+
+					}else{
+						//是发起过网络请求的，要计算请求数，所有的语种都翻译完后才能显示文本
+						if(translate.visual.hideText.first_translate_request_uuid != uuid){
+							//不是同一个uuid的，直接退出
+							return;
+						}
+					}
+
+					//console.log('translate.visual.hideText.show()');
 					translate.visual.hideText.show();
 				});
 			}

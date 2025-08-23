@@ -4,6 +4,9 @@ var msg={version:1.11,errorIcon:'<svg style="width: 3rem; height:3rem; padding: 
 // https://gitee.com/mail_osc/request
 var request={get:function(e,n,t){this.send(e,n,t,"get",!0,{"content-type":"application/x-www-form-urlencoded"},null)},post:function(e,n,t){this.send(e,n,t,"post",!0,{"content-type":"application/x-www-form-urlencoded"},null)},send:function(e,n,t,l,a,o,r){var s="";if(null!=n)for(var c in n)s.length>0&&(s+="&"),s=s+c+"="+n[c];var u=null;try{u=new XMLHttpRequest}catch(e){u=new ActiveXObject("Microsoft.XMLHTTP")}if(u.open(l,e,a),null!=o)for(var c in o)u.setRequestHeader(c,o[c]);u.send(s),u.onreadystatechange=function(){if(4==u.readyState)if(200==u.status){var e=null;try{e=JSON.parse(u.responseText)}catch(e){console.log(e)}t(null==e?u.responseText:e)}else null!=r&&r(u)}},upload:function(e,n,t,l,a,o){var r=new FormData;if(r.append("file",t),null!=n)for(var s in n)r.append(s,n[s]);var c=null;try{c=new XMLHttpRequest}catch(e){c=new ActiveXObject("Microsoft.XMLHTTP")}if(c.open("POST",e,!0),null!=a)for(var s in a)c.setRequestHeader(s,a[s]);c.send(r),c.onreadystatechange=function(){if(4==c.readyState)if(200==c.status){var e=null;try{e=JSON.parse(c.responseText)}catch(e){console.log(e)}l(null==e?c.responseText:e)}else null!=o&&o(c)}}};
 
+//wm.js
+var wm={token:{get:function(){return localStorage.getItem("token")},set:function(e){localStorage.setItem("token",e)}},load:{synchronizesLoadJs:function(e){var t=null;if(window.ActiveXObject)try{t=new ActiveXObject("Msxml2.XMLHTTP")}catch(e){t=new ActiveXObject("Microsoft.XMLHTTP")}else window.XMLHttpRequest&&(t=new XMLHttpRequest);if(t.open("GET",e,!1),t.send(null),4==t.readyState){if(t.status>=200&&t.status<300||0==t.status||304==t.status){var n=document.getElementsByTagName("HTML")[0],o=document.createElement("script");o.language="javascript",o.type="text/javascript";try{o.appendChild(document.createTextNode(t.responseText))}catch(e){o.text=t.responseText}return n.appendChild(o),!0}return!1}return!1},css:function(e){if(!e||0===e.length)throw new Error('argument "url" is required !');var t=document.getElementsByTagName("HTML")[0],n=document.createElement("link");n.href=e,n.rel="stylesheet",n.type="text/css",t.appendChild(n)}},post:function(e,t,n){if("undefined"==typeof request){var o="";"file:"==window.location.protocol&&(o="http:"),this.load.synchronizesLoadJs(o+"//res.zvo.cn/request/request.js")}null!=this.token.get()&&this.token.get().length>0&&(t.token=this.token.get());request.send(e,t,n,"post",!0,{"content-type":"application/x-www-form-urlencoded"},function(e){console.log("request api,  status : "+e.status)})},getUrlParams:function(e){var t=new RegExp("(^|&)"+e+"=([^&]*)(&|$)"),n=window.location.search.substr(1).match(t);return null!=n?unescape(n[2]):null},formatTime:function(e,t){var n=["Y","M","D","h","m","s"],o=[],r=new Date(1e3*e);for(var s in o.push(r.getFullYear()),o.push(this.formatNumber(r.getMonth()+1)),o.push(this.formatNumber(r.getDate())),o.push(this.formatNumber(r.getHours())),o.push(this.formatNumber(r.getMinutes())),o.push(this.formatNumber(r.getSeconds())),o)t=t.replace(n[s],o[s]);return t},formatNumber:function(e){return(e=e.toString())[1]?e:"0"+e},lineToHump:function(e){return e.replace(/\_(\w)/g,function(e,t){return t.toUpperCase()})},humpToLine:function(e){return e.replace(/([A-Z])/g,e=>"_"+e.toLowerCase())},getJsonObjectByForm:function(e){var t={},n=e.serializeArray();return $.each(n,function(){void 0!==t[this.name]?(t[this.name].push||(t[this.name]=[t[this.name]]),t[this.name].push(this.value||"")):t[this.name]=this.value||"";try{null!=this.name&&this.name.length>0&&this.name.indexOf("_")>-1&&(t[wm.lineToHump(this.name)]=t[this.name])}catch(e){console.log(e)}}),t},fillFormValues:function(e,t){for(var n in t){var o=wm.humpToLine(n);"line"!=n&&(t[o]=t[n])}for(var r=e.serializeArray(),s=0;s<r.length;s++){var a=r[s].name,i=t[r[s].name];if(null!=i&&void 0!==i){document.getElementsByName(a)[0].nodeName.toLowerCase();if(document.getElementsByName(a).length>0&&(document.getElementsByName(a)[0].value=i),document.getElementsByName(wm.humpToLine(a)).length>0&&(document.getElementsByName(wm.humpToLine(a))[0].value=i),null!=document.getElementById(a+"_titlePicA"))try{document.getElementById(a+"_titlePicA").href=i,document.getElementById(a+"_titlePicImg").src=i,document.getElementById(a+"_titlePicImg").style.display=""}catch(e){console.log(e)}}}"undefined"!=typeof layui&&layui.use(["form"],function(){layui.form.render()})}};
+
 //判断当前是否是登录状态，已经设置了domain、token
 //返回一个数组，下标0 是是否成功，相当于 result 的1成功；0失败，  下标1 是失败提示，相当于info , 下标2的值是跟下标1对应的，是要填写的key，取值有  token \ domain
 function isLogin(){
@@ -14,7 +17,7 @@ function isLogin(){
 	window.domain = localStorage.getItem('domain');
 
 	if(typeof(token) == 'undefined' || token == null || token.length < 1){
-		return ['0', '请设置当前 translate.service 服务器中，配置文件 config.properties 配置的授权码（authorize），或自助安装后提示让你保存的 GA_ 开头的那个授权码','token'];
+		return ['0', '请设置当前 translate.service 服务器中，配置文件 config.properties 配置的授权码（authorize）','token'];
 	}
 	if(typeof(domain) == 'undefined' || domain == null || domain.length < 1){
 		return ['0','请设置当前 translate.service 服务的访问域名，格式如: <br/>http://xxxxx.com:80/<br/> 请严格按照格式输入','domain'];
@@ -31,7 +34,7 @@ window.domain = localStorage.getItem('domain');
 
 /*
 if(typeof(token) == 'undefined' || token == null || token.length < 1){
-	msg.input('请设置当前 translate.service 服务器中，配置文件 config.properties 配置的授权码（authorize），或自助安装后提示让你保存的 GA_ 开头的那个授权码',function(value){
+	msg.input('请设置当前 translate.service 服务器中，配置文件 config.properties 配置的授权码（authorize的值）',function(value){
 		localStorage.setItem('token', value);
 		location.reload();
 	});
@@ -44,3 +47,11 @@ if(typeof(domain) == 'undefined' || domain == null || domain.length < 1){
 }
 */
 
+/*
+	post 请求，自动携带token等
+	path 传入如 admin/system/stauts.json 前缀不带 /
+*/
+function post(path, data, func){
+	data.token = window.token;
+	wm.post(window.domain+path, data, func);
+}

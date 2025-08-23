@@ -68,15 +68,17 @@ body{margin: 0;padding: 0px;height: 100%;overflow: hidden;}
 
 <div id="leftMenu" class="layui-nav layui-nav-tree layui-nav-side menu">
   <ul class="">
-    
+  
+  <!--
     <div style="margin-left: 3px;">
       <li id="li_domainList" class="layui-nav-item" >
-        <a href="javascript:loadUrl('translate-text.html');">
+        <a href="javascript:loadUrl('domainList.html');">
           <i class="layui-icon firstMenuIcon">&#xe633;</i>
           <span class="firstMenuFont">域名管理</span>
         </a>
       </li>
     </div>
+	-->
     <div style="margin-left: 3px;">
       <li id="li_translate-text" class="layui-nav-item" >
         <a href="javascript:loadUrl('translate-text.html');">
@@ -143,7 +145,7 @@ function loadUrl(url){
 }
 
 //加载登录后的默认页面
-loadUrl('https://translate.zvo.cn');
+loadUrl('welcome.html');
 
 
 

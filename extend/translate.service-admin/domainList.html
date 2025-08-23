@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>translate.service - admin</title>
+    <link rel="stylesheet" href="./src/css/layui.css">
+    <style>
+        body {padding: 32px 32px 32px 80px;}
+        .translate-result-language-text-ul{
+            display: grid;
+        }
+        .translate-result-language-text-item{
+            float:left;
+            text-align:left;
+            display: initial;
+        }
+        .layui-table-cell{
+            overflow: visible;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+            height: auto !important;
+            line-height: normal;
+        }
+        .layui-table td, .layui-table th {
+            height: auto;
+        }
+        .translate-result-language-text-item span {
+            white-space: pre-wrap;
+        }
+        .layui-laypage>.layui-laypage-limits{
+            display:none;
+        }
+    </style>
+</head>
+<body>
+<!-- 搜索表单 -->
+<div class="layui-form" style="padding-bottom: 20px;">
+    <input type="text" id="to" name="to" style="display:none;">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">目标域名</label>
+            <div class="layui-input-inline">
+                <input type="text" id="domain" name="domain" placeholder="请输入目标域名" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <a class="layui-btn" href="javascript:;" onclick="searchTranslation();" style="margin-left: 15px;">搜索</a>
+            <a class="layui-btn layui-btn-normal" id="addDomainButton" href="javascript:;" onclick="showAddDomainDialog();" style="margin-left: 15px;">添加域名</a>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="translate-result-td">
+    <ul class="translate-result-language-text-ul">
+        {{# if (d.translateResult.length === 0) { }}
+        <li class="translate-result-language-text-item">{{ d.dayMaxSize }}</li>
+        {{# } else { }}
+        {{# layui.each(d.translateResult, function(index, item){ }}
+        <li class="translate-result-language-text-item">
+            <b>{{ item.language }}</b>  : <span id="{{ d.id }}_{{ item.language }}">{{ item.text }}</span>
+            <button class="layui-btn layui-btn-xs translate-edit-btn" data-id="{{ d.id }}" data-language="{{ item.language }}" data-text="{{ item.text }}" data-domain="{{ item.domain }}">
+                <i class="layui-icon layui-icon-edit"></i>
+            </button>
+        </li>
+        {{# }); }}
+        {{# } }}
+    </ul>
+</script>
+<table class="layui-hide" id="ID-table-demo-data"></table>
+<script src="./src/layui.js"></script>
+<script src="./translate.service.js"></script>
+<script src="./src/msg.js"></script>
+<script>
+    var domainListData; //当前加载的域名列表数据
+    // 清理文本，移除异常字符
+    function cleanText(str) {
+        if (!str || typeof str !== 'string') {
+            return '';
+        } else {
+            return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim();
+        }
+    }
+    var tableInstance;
+    layui.use(['form', 'table', 'layer', 'jquery'], function(){
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var $ = layui.jquery;
+        // 监听 postMessage 事件，更新 <span> 并关闭弹窗
+        window.addEventListener('message', function(event) {
+            try {
+                var data = event.data;
+                console.log('Received postMessage:', event.data, 'from:', event.origin);
+                if (data && data.type == 'updateTranslation') {
+                    var spanId = data.id + '_' + data.language;
+                    var span = document.getElementById(spanId);
+                    if (span) {
+                        span.innerHTML = data.text;
+                        msg.success('翻译文本更新成功');
+                    } else {
+                        msg.failure('无法找到对应的翻译文本元素');
+                    }
+                    var index = layer.getFrameIndex(data.frameName);
+                    if (index) {
+                        layer.close(index);
+                    } else {
+                        msg.failure('无法关闭弹窗，索引不存在');
+                    }
+                }
+                // 新增：监听充值完成消息
+                if (data && data.action == 'rechargeComplete') {
+
+                    msg.success('充值成功', function(){
+                        //alert('充值成功');
+                    });
+
+                    var index = window.rechargePopupIndex || layer.getFrameIndex(window.name);
+                    if (index) {
+                        layer.close(index);
+                    } else {
+                        layer.closeAll();
+                    }
+
+                    window.accountTip = false;
+                    loadUserAccount(); // 刷新账户余额
+                }
+            } catch (e) {
+                console.error('postMessage handler error:', e);
+                msg.failure('更新翻译时出错');
+            }
+        }, false);
+        // 搜索功能 - 渲染表格，支持服务器分页
+        window.searchTranslation = function () {
+            var domainInput = $('#domain').val().trim();
+            var to = $('#to').val().trim();
+            tableInstance = table.render({
+                elem: '#ID-table-demo-data',
+                url: domain + 'admin/domain/list.json',
+                method: 'post',
+                where: {
+                    token: token,
+                    domain: domainInput,
+                    to: to
+                },
+                request: {
+                    pageName: 'currentPage',
+                    limitName: 'everyNumber'
+                },
+                parseData: function(res) {
+                    console.log(res)
+                    if (res.result == 1) {
+                        domainListData = res.list;
+                        let tableData = res.list || [];
+                        // 初始化 translateResult 为空数组
+                        for (var i = 0; i < tableData.length; i++) {
+                            tableData[i].translateResult = [];
+                        }
+                        if(res.list.length == 1){
+                            document.getElementById('tongji').style.display='';
+                            document.getElementById('fileCacheHitSize').innerHTML=res.list[0].fileCacheHitSize;
+                            document.getElementById('memoryCacheHitSize').innerHTML=res.list[0].memoryCacheHitSize;
+                            document.getElementById('dayMaxSize').innerHTML=res.list[0].dayMaxSize;
+                            document.getElementById('maxCacheMemorySize').innerHTML=res.list[0].maxCacheMemorySize;
+                            document.getElementById('maxCacheFileSize').innerHTML=res.list[0].maxCacheFileSize;
+                            //加载账户信息，并且如果没有激活，则出现引导提示
+                            window.accountTip=true;
+                            loadUserAccount();
+                        }else{
+                            document.getElementById('tongji').style.display='none';
+                        }
+                        return {
+                            "res":res,
+                            "code": 0,
+                            "msg": res.info,
+                            "count": res.page ? res.page.allRecordNumber : tableData.length,
+                            "data": tableData
+                        };
+                    } else {
+                        document.getElementById('tongji').style.display='none';
+                        //msg.failure(res.info || 'API 请求失败');
+                        if(res.info.indexOf('还未添加网站') > -1){
+                            yindaoStart();
+                        }
+                        return {
+                            "res":res,
+                            "code": 1,
+                            "msg": res.info || '请求失败',
+                            "count": 0,
+                            "data": []
+                        };
+                    }
+                },
+                cols: [[
+                    { field: 'domain', title: '域名', width: '15%', sort: true },
+                    { field: 'dayMaxSize', title: '每日翻译上限(字)', width: '12%', templet: '#translate-result-td' },
+                    { field: 'maxCacheMemorySize', title: '内存缓存大小(字)', width: '12%' },
+                    { field: 'maxCacheFileSize', title: '文件缓存大小(字)', width: '12%' },
+                    { field: 'model', title: '使用的大模型', width: '16%' },
+                    { field: 'addtime', title: '添加时间', width: '', templet: function(d){
+                            return timestampToTime(d.addtime);
+                        } },
+                    { title: '操作', width: '', templet: function(d){
+                            return '<button class="layui-btn layui-btn layui-btn-xs update-domain" data-domain="' + d.domain + '" data-model="' + d.model + '">修改大模型</button>'+
+                                '<button class="layui-btn layui-btn-danger layui-btn-xs delete-domain-btn" >删除</button>';
+                        } }
+                ]],
+                skin: 'line',
+                page: true,
+                limit: 20,
+                limits: [10, 20, 50, 100],
+                done: function (res, curr, count) {
+                    if(res.res.result == 2){
+                        //未登录
+                        msg.failure('请先登录', function(){
+                            localStorage.removeItem('token');
+                            window.top.location.reload();
+                        });
+                        return;
+                    }
+                    if (count > 0) {
+                        //msg.success('数据加载成功');
+                    } else {
+                        //msg.failure('暂无数据');
+                    }
+                    // 动态绑定编辑按钮的点击事件
+                    $('.translate-edit-btn').each(function() {
+                        var $btn = $(this);
+                        var id = $btn.data('id');
+                        var language = $btn.data('language');
+                        var text = $btn.data('text');
+                        var domain = $btn.data('domain');
+                        $btn.on('click', function() {
+                            editTranslateText(id, language, text, domain);
+                        });
+                    });
+                    // 动态绑定删除按钮的点击事件
+                    $('.delete-domain-btn').each(function() {
+                        var $btn = $(this);
+                        var domain = $btn.data('domain');
+                        $btn.on('click', function() {
+                            deleteDomain(domain);
+                        });
+                    });
+                    // 动态绑定改大模型按钮的点击事件
+                    $('.update-domain').each(function() {
+                        var $btn = $(this);
+                        var domain = $btn.data('domain');
+                        var model = $btn.data('model');
+                        $btn.on('click', function() {
+                            layer.open({
+                                type: 2,
+                                title: '修改大模型',
+                                area: ['500px', '300px'],
+                                shadeClose: true,
+                                content: './domainEdit.html?domain=' + encodeURIComponent(domain) + '&model=' + encodeURIComponent(model)
+                            });
+                        });
+                    });
+                }
+            });
+        };
+        // 编辑某条翻译的结果
+        function editTranslateText(id, language, text, domain) {
+            var spanElement = document.getElementById(id + '_' + language);
+            var spanText = spanElement ? spanElement.innerHTML : text;
+            var data = {
+                id: id,
+                language: language,
+                text: spanText,
+                domain: domain
+            };
+            localStorage.setItem('translateData', JSON.stringify(data));
+            layer.open({
+                type: 2,
+                title: '编辑翻译 【' + language + '】',
+                area: ['90%', '90%'],
+                shadeClose: true,
+                content: './edit-translate-text.html?id=' + encodeURIComponent(id) + '&language=' + encodeURIComponent(language)
+            });
+        }
+        function timestampToTime(timestamp) {
+            if (timestamp.toString().length == 10) {
+                timestamp = timestamp * 1000;
+            }
+            var date = new Date(timestamp);
+            var Y = date.getFullYear() + "-";
+            var M = (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1) + "-";
+            var D = (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) + " ";
+            var h = (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) + ":";
+            var m = (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()) + ":";
+            var s = (date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds());
+            return Y + M + D + h + m + s;
+        }
+        // 删除域名
+        function deleteDomain(domain) {
+            layer.confirm('确定要删除该域名吗？', {icon: 3, title:'提示'}, function(index){
+                $.ajax({
+                    url: 'admin/domain/delete.json',
+                    type: 'post',
+                    data: {
+                        token: token,
+                        domain: domain
+                    },
+                    success: function(res) {
+                        if (res.result == 1) {
+                            msg.success('删除成功');
+                            searchTranslation();
+                        } else {
+                            msg.failure(res.info || '删除失败');
+                        }
+                    },
+                    error: function() {
+                        msg.failure('网络错误，删除失败');
+                    }
+                });
+                layer.close(index);
+            });
+        }
+        // 显示添加域名对话框
+        window.showAddDomainDialog = function() {
+            layer.open({
+                type: 2,
+                title: '添加域名',
+                area: ['500px', '430px'],
+                shadeClose: true,
+                content: './add-domain.html'
+            });
+        }
+        searchTranslation();
+    });
+    //账户余额
+    window.accountTip=false; //如果账户余额不正常，是否显示引导提示，提示用于引导充值，true 是
+    //加载用户账户信息
+    function loadUserAccount(){
+        wm.post('admin/app/user',{}, function(data){
+            console.log(data);
+            if(data.result == 1){
+                //成功
+                if(data.purchase_status != 'ACTIVE'){
+                    //未激活
+                    document.getElementById('amount_div').innerHTML = '<a style="color:red;">GiteeAI 大模型尚未激活</a>';
+                    if(window.accountTip){
+                        yindaoAccountStart();
+                    }
+                }else{
+                    if(typeof(data.balance) != 'undefined'){
+                        document.getElementById('amount_div').innerHTML = '账户余额: '+data.balance+' 元';
+                        if(data.balance < 0.01){
+                            yindaoAccountBuzu();
+                        }
+                    }else{
+                        document.getElementById('amount_div').innerHTML = '异常！';
+                    }
+                }
+            }else{
+                msg.alert(data.info);
+            }
+        });
+    }
+    loadUserAccount();
+    //账户余额充值
+    function accountChongzhi(){
+        var index = layer.open({
+            type: 2,
+            title: '余额充值',
+            area: ['550px', '650px'],
+            shadeClose: true,
+            content: '/admin/accountRecharge.html?token='+wm.token.get()
+        });
+        window.rechargePopupIndex = index; // 存储弹窗索引
+    }
+</script>
+<!-- 引导 -->
+<script src="/module/driver.js/driver.min.js"></script>
+<link rel="stylesheet" href="/module/driver.js/driver.min.css">
+<script>
+    /**
+     * 运行引导。如果还没有网站，会出现引导提示，提示添加网站
+     */
+    function yindaoStart(){
+        const driver = new Driver({
+            doneBtnText: '结束指引', // 最终按钮上的文本 Text on the final button
+            closeBtnText: '关闭', // 当前步骤关闭按钮上的文本 Text on the close button for this step
+            nextBtnText: '下一步', //当前步骤下一步按钮上的文本 Next button text for this step
+            prevBtnText: '上一步', // 当前步骤上一步按钮上的文本 Previous button text for this step
+            onReset: function(Element) {
+                //打开添加网站的弹窗
+                showAddDomainDialog();
+            }, // 遮罩将要关闭时调用
+        });
+        //Define the steps for introduction
+        driver.defineSteps([
+            {
+                element: '#addDomainButton',
+                popover: {
+                    title: '通过这里添加网站',
+                    description: '您可以通过此处添加您的网站域名，添加后您的网站就可以使用大模型提供的翻译，并启用三层缓存加速，在此控制台方便查看实时数据信息',
+                    position: 'right'
+                }
+            },
+            {
+                element: '#translatejsUpdate',
+                popover: {
+                    title: '切换翻译通道',
+                    description: '您需要将您原本接入 translate.js 的地方，加一行js代码，来设置翻译通道是走当前的通道。',
+                    position: 'top'
+                }
+            },
+            {
+                element: '#jiaoliu',
+                popover: {
+                    title: '遇到困难求助',
+                    description: '如果您使用过程中遇到困难，可加入QQ群求助、以及关注公众号接收后续最新消息通知',
+                    position: 'top'
+                }
+            }
+        ]);
+        //Start the introduction
+        driver.start();
+    }
+    /**
+     * 运行引导。如果还没充值，引导用户开通按量并充值
+     */
+    function yindaoAccountStart(){
+        const driver = new Driver({
+            doneBtnText: '结束指引', // 最终按钮上的文本 Text on the final button
+            closeBtnText: '关闭', // 当前步骤关闭按钮上的文本 Text on the close button for this step
+            nextBtnText: '下一步', //当前步骤下一步按钮上的文本 Next button text for this step
+            prevBtnText: '上一步', // 当前步骤上一步按钮上的文本 Previous button text for this step
+            onReset: function(Element) {
+                //打开添加网站的弹窗
+                accountChongzhi();
+            }, // 遮罩将要关闭时调用
+        });
+        //Define the steps for introduction
+        driver.defineSteps([
+            {
+                element: '#amount_div',
+                popover: {
+                    title: '激活账户',
+                    description: '冲上1块钱，激活你的大模型平台账户，作为余额。使用大模型进行翻译后，将实时从余额中扣取。大模型翻译很便宜，近似于忽略的地步，无需担心费用问题。',
+                    position: 'left'
+                }
+            }
+        ]);
+        //Start the introduction
+        driver.start();
+    }
+    /**
+     * 运行引导。余额不足提示
+     */
+    function yindaoAccountBuzu(){
+        const driver = new Driver({
+            doneBtnText: '结束指引', // 最终按钮上的文本 Text on the final button
+            closeBtnText: '关闭', // 当前步骤关闭按钮上的文本 Text on the close button for this step
+            nextBtnText: '下一步', //当前步骤下一步按钮上的文本 Next button text for this step
+            prevBtnText: '上一步', // 当前步骤上一步按钮上的文本 Previous button text for this step
+            onReset: function(Element) {
+                //打开添加网站的弹窗
+            }, // 遮罩将要关闭时调用
+        });
+        //Define the steps for introduction
+        driver.defineSteps([
+            {
+                element: '#amount_div',
+                popover: {
+                    title: '余额不足',
+                    description: '冲上1块钱，作为余额。使用大模型进行翻译后，将实时从余额中扣取。大模型翻译很便宜，近似于忽略的地步，无需担心费用问题。',
+                    position: 'left'
+                }
+            }
+        ]);
+        //Start the introduction
+        driver.start();
+    }
+</script>
+<div id="tongji" style="display:none;margin-top: 15px;">
+    今日命中文件缓存翻译的字符数： <span id="fileCacheHitSize"></span> <br/>
+    今日命中内存缓存翻译的字符数： <span id="memoryCacheHitSize"></span> <br/>
+    今日通过本翻译服务共翻译的字符数： <span id="dayMaxSize"></span> (已使用/总量) <br/>
+    当前内存缓存中的字符数： <span id="maxCacheMemorySize"></span> (已使用/总量) <br/>
+    当前文件缓存中的字符数： <span id="maxCacheFileSize"></span> (已使用/总量)
+</div>
+<div style="margin-top: 80px;" id="translatejsUpdate">
+    <h2>网站接入的 translate.js 部分改动</h2>
+    <div>
+        您可以先以开源的方式接入 translate.js ，接入完成上线后，将实际访问的域名，录入本系统，以打开您这个域名的白名单。
+        <br/>然后在你原本接入 translate.js 的地方，只需增加一行代码，即可接入有 <b>开源中国GiteeAI & 雷鸣云translate.js</b> 联合打造的大模型翻译通道，提供高速、稳定的使用体验。
+        <br/> 切换本通道时，如果你有设置 translate.service.use('client.edge'); 需要你将其改为 : translate.service.use('giteeAI');
+        <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 如果你没有设置翻译通道，那就直接在 translate.execute(); 的前面增加一行: translate.service.use('giteeAI');
+        <br/>如此，就完成了翻译通道的切换。你可以去你这个域名的页面，切换语言试试效果。第一次可能会有3~7秒的时间会稍慢，大模型翻译速度会稍慢，翻译之后服务端会加入缓存，第二次在切换这个语种时，则享受极速响应！
+        <br/>使用之后，再看这里看看上面的数据，它会实时显示你当前的用量情况
+        <br/>如果你是网络公司服务多个客户，我们建议你 <a href="http://translate.zvo.cn/391129.html" style="text-decoration: underline;" target="_black">私有部署我们这套系统</a>，用量限制、域名多少你自己做主。
+    </div>
+</div>
+<div id="jiaoliu" style="padding-top: 32px; position: fixed; bottom: 50px; width: 100%; padding-right: 80px; text-align: center; font-size: 16px;">
+    <a id="qqGroup" href="https://gitee.com/mail_osc/translate#%E4%BA%A4%E6%B5%81" target="_black">交流QQ群</a> | <span id="weixinhao">请关注微信公众号 wangmarket 以便随时接收最新消息。</span>
+</div>
+</body>
+</html>

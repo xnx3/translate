@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>welcome</title>
+    <link rel="stylesheet" href="./src/css/layui.css">
+</head>
+<body>
+
+1. 当前余额、充值按钮
+
+2.  系统状态信息，表格列出来
+
+3. 今天的所有网站及其使用的翻译字符数列表，不需要分页直接全列出来
+
+<script src="./src/layui.js"></script>
+<script src="./translate.service.js"></script>
+<script>
+//系统状态
+post('admin/system/status.json', {}, function(data){
+	console.log(data);
+});
+
+
+//获取 20250305 这天，所有网站使用的翻译字符数 ，便是 statistics:day:20250823:*
+post('admin/cache/getCache.json', {key:'statistics:day:20250823:*'}, function(data){
+	console.log(data);
+});
+
+
+
+
+</script>
+</body>
+</html>

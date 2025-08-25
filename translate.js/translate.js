@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.1.20250819',
+	version: '3.18.2.20250825',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3317,6 +3317,8 @@ var translate = {
 	 * @return 处理过后的 textArray 如果没有命中则返回的是传入的 textArray ，命中了则是切割以及删除原本判断的text之后的 textArray
 	 */
 	addNodeToQueueTextAnalysis:function(uuid, node,textArray, attribute, nomenclatureKey, nomenclatureValue){
+		//console.log('textArray input:')
+		//console.log(textArray)
 		var deleteTextArray = new Array();	//记录要从 textArray 中删除的字符串
 
 		for(var tai = 0; tai<textArray.length; tai++){
@@ -3339,6 +3341,42 @@ var translate = {
 				 * 其中要判断一下 key 不等于value，因为key等于value，属于是指定这个key不被翻译的情况
 				 */
 				if(nomenclatureKey != nomenclatureValue){
+					//判断是否会出现包含的情况，这里根据自定义术语的key和value的长度，判断是否会出现谁包含谁的情况
+					// 这里判定的是 key包含value 
+					if(nomenclatureKey.length >= nomenclatureValue.length && nomenclatureKey.indexOf(nomenclatureValue) > -1){
+						//那么value的长度将小于key的长度，不会存在重复替换问题
+					}else if(nomenclatureValue.length >= nomenclatureKey.length && nomenclatureValue.indexOf(nomenclatureKey) > -1){
+						//这里判定的是 value 包含 key， 那么value的长度将大于key的长度，会存在重复替换问题，比如要将 好 替换为  你好 ，如果重复替换，可能会出来 你你你你你好
+						//这里就要判定一下，发现的key是否已经是替换后的value，判定方式是 找到key的坐标，然后从这个坐标截取value-key 的长度，看是否等于value
+						//注意，可能会出现多个key的情况
+						var positions = [];
+						var pos = text.indexOf(nomenclatureKey);
+						// 当找到 key的文字时继续查找
+						while (pos !== -1) {
+							positions.push(pos);
+							// 从当前位置的下一个字符开始继续查找
+							pos = text.indexOf(nomenclatureKey, pos + 1);
+						}
+						// 遍历所有找到的位置，判断是否是已经自定义术语替换后的，如果全部都是替换后的，那么就不需要继续替换了，直接 return 退出，避免重复替换。
+						//但是如果只要有一次是没有被替换的，那么都会往下执行，可能会存在重复替换。
+						//比如  "你好吗我好吗大家好都好呀" 将 "好" 替换为 “好吗”，这里会替换为 “你好吗吗我好吗吗大家好吗都好吗呀” ，因为最后的俩“好”经过识别，是没有被替换过的，所以这句是要被进行替换执行的，这个整句替换是现有的方法，这个后续可以把提花你方法拆分一下，进行针对性的只针对最后的俩“好”进行精准替换，而不对前面的俩“好吗”在进行替换
+						var findNumber = 0; //发现value存在额次数
+						for (var i = 0; i < positions.length; i++) {
+							var pos = positions[i];
+							// 检查是否是替换后的字符串
+							if (text.substring(pos, pos + nomenclatureValue.length) === nomenclatureValue) {
+								// 是替换后的字符串，忽略
+								findNumber = findNumber+1;
+							}
+						}
+						//console.log('findNumber:'+findNumber+', positions.length：'+positions.length);
+						if(findNumber - positions.length == 0){
+							//符合全部已经替换的逻辑，那么这里就不能再继续替换了，退出 text 这个文本的替换，不要产生重复替换
+							continue;
+						}
+					}
+					
+					/*
 					var substringStart = wordKeyIndex-nomenclatureValue.length;
 					if(substringStart < 0){
 						substringStart = 0;
@@ -3353,6 +3391,8 @@ var translate = {
 						//已经替换过了，可能会重复替换，所以忽略掉
 						continue;
 					}
+					*/
+
 				}
 
 				// 2025.4.26 优化，将不再在此处进行处理，交有 translate.util.textReplace 在页面最终渲染前处理
@@ -3379,16 +3419,16 @@ var translate = {
 				// 	}
 				// }
 				
-				//如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下
-				//console.log(nomenclatureKey+':'+nomenclatureValue);
+				//如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费
 				if(nomenclatureKey != nomenclatureValue){
+					//console.log(nomenclatureKey+':'+nomenclatureValue);
 					translate.element.nodeAnalyse.set(node, nomenclatureKey, nomenclatureValue, attribute);
 				}
 				
 				
 				//从 text 中将自定义术语的部分删掉，自定义术语的不被翻译
 				var wordSplits = text.split(nomenclatureKey);
-				var isPushTextArray = false;
+				//var isPushTextArray = false;
 				for(var index = 0; index < wordSplits.length; index++){
 					//console.log(index);
 					var subWord = wordSplits[index]; //分割后的子字符串
@@ -3423,6 +3463,7 @@ var translate = {
 			}
 		}
 
+		//console.log('textArray return:');
 		//console.log(textArray);
 		return textArray;
 	},

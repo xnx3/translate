@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.3.20250826',
+	version: '3.18.4.20250826',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7360,18 +7360,36 @@ var translate = {
 				}
 				node.className = node.className.replace(/translate_api_in_progress/g, '');
 			},
+			
 			startUITip:function(){
-				// 创建一个 style 元素
-		        const style = document.createElement('style');
-		        // 设置 style 元素的文本内容为要添加的 CSS 规则
-		       	style.textContent = translate.progress.style;
-		        // 将 style 元素插入到 head 元素中
-		        document.head.appendChild(style);
+				
+				//创建隐藏文字的 style
+				var translatejsTextElementHidden = document.getElementById('translatejs-text-element-hidden');
+				if(typeof(translatejsTextElementHidden) == 'undefined' || translatejsTextElementHidden == null){
+					const style = document.createElement('style');
+			        // 设置 style 元素的文本内容为要添加的 CSS 规则
+			       	style.textContent = ' .translatejs-text-element-hidden{color: transparent !important; text-shadow: none !important;}';
+			        style.id = 'translatejs-text-element-hidden';
+			        // 将 style 元素插入到 head 元素中
+			        document.head.appendChild(style);
+				}
 
+				// 创建一个 遮罩层加载中动画的 style 元素
+				var translatejsMaskLayerAnimation = document.getElementById('translatejs-mask-layer-animation');
+				if(typeof(translatejsMaskLayerAnimation) == 'undefined' || translatejsMaskLayerAnimation == null){
+					const style = document.createElement('style');
+			        // 设置 style 元素的文本内容为要添加的 CSS 规则
+			       	style.textContent = translate.progress.style;
+			       	style.id = 'translatejs-mask-layer-animation';
+			        // 将 style 元素插入到 head 元素中
+			        document.head.appendChild(style);
+				}
+		        
 
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
-						
+						var nodes = new Array(); //要改动的元素节点
+
 					    for(var hash in translate.nodeQueue[uuid].list[from]){
 					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 					    		continue;
@@ -7385,10 +7403,13 @@ var translate = {
 					    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
 					    			continue;
 					    		}
+
+					    		/*
 					    		var nodeParent = node.parentNode;
 						        if(nodeParent == null){
 						        	continue;
 						        }
+						        */
 						        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
 								if(nodeParent.childNodes.length != 1){
 									//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
@@ -7396,6 +7417,12 @@ var translate = {
 								}
 								*/
 
+
+						        nodes.push(node);
+
+
+
+						        /*
 
 						        //判断其在上一层的父级是否已经加了，如果父级加了，那作为子集就不需要在加了，免得出现两个重合的 loading 遮罩
 						        var nodeParentParent = node.parentNode;
@@ -7416,9 +7443,57 @@ var translate = {
 									}
 									nodeParent.className = nodeParent.className+' translate_api_in_progress';
 								}
-
+								*/
 					    	}
 					    }
+
+					    //隐藏所有node的文本
+					    for(var r = 0; r<nodes.length; r++){
+							if(nodes[r].nodeType === 1){
+					        	nodes[r].className = nodes[r].className+' translatejs-text-element-hidden';
+					        }else{
+					        	//不是元素，那么就取父级了
+					        	var nodeParent = nodes[r].parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
+						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translatejs-text-element-hidden') > -1){
+					        		//父有了，那么子就不需要再加了
+						        	continue;
+						        }else{
+						        	//没有，添加
+						        	nodeParent.className = nodeParent.className+' translatejs-text-element-hidden';
+						        }
+					        }
+						}
+
+
+					    var rects = translate.visual.getRects(nodes);
+					    var rectsOneArray = translate.visual.rectsToOneArray(rects);
+
+					    //排序
+					    //var sortRects = translate.visual.coordinateSort(rectsOneArray);
+					    //console.log(sortRects);
+
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray,2);
+						for(var r = 0; r<rectLineSplit.length; r++){
+						    if(rectLineSplit[r].node.nodeType === 1){
+					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
+					        }else{
+					        	//不是元素，那么就取父级了
+					        	var nodeParent = rectLineSplit[r].node.parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
+						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translate_api_in_progress') > -1){
+					        		//父有了，那么子就不需要再加了
+						        	continue;
+						        }else{
+						        	//没有，添加
+						        	nodeParent.className = nodeParent.className+' translate_api_in_progress';
+						        }
+					        }
+						}
 						
 					});
 					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
@@ -7433,29 +7508,32 @@ var translate = {
 						    	}
 
 					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
-					    		var nodeParent = node.parentNode;
-						        if(nodeParent == null){
-						        	continue;
-						        }
+					    		
+					    		var operationNode;
+								if(node.nodeType === 1){
+									//是元素
+									operationNode = node;
+								}else{
+									//节点，如 #text
+									operationNode = node.parentNode;
+							        if(operationNode == null){
+							        	continue;
+							        }
+								}
 
-						        /*
-						        注释这个，因为可能是给这个元素动态追加删除导致其子元素不是11
-								if(nodeParent.childNodes.length != 1){
-									continue;
-								}
-								*/
 
-								var parentClassName = nodeParent.className;
-								if(typeof(parentClassName) == 'undefined' || parentClassName == null || parentClassName == ''){
-									continue;
+								if(typeof(operationNode.className) != 'undefined' && operationNode.className != null){
+									if(operationNode.className.indexOf('translate_api_in_progress') > -1){
+										operationNode.className = operationNode.className.replace(/translate_api_in_progress/g, '');	
+									}
+									if(operationNode.className.indexOf('translatejs-text-element-hidden') > -1){
+										operationNode.className = operationNode.className.replace(/translatejs-text-element-hidden/g, '');	
+									}
 								}
-								if(parentClassName.indexOf('translate_api_in_progress') < -1){
-									continue;
-								}
+									
+
+								//nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
 								
-
-								nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
-								//nodeParent.className = parentClassName.replace(/loading/g, '');
 					    	}
 					    }
 						
@@ -8123,6 +8201,79 @@ var translate = {
                 return rects;
             });
 		},
+		/**
+		 * 将 translate.visual.getRects 获取到的二维坐标数据转为一维坐标
+		 */
+		rectsToOneArray:function(rects){
+			// 将 reacts 二维数组转化为 一维数组，以便对一维数组进行排序
+			var oneArrayRects = new Array();
+			for(var r = 0; r < rects.length; r++){
+				for(var twoR = 0; twoR < rects[r].length; twoR++){
+					oneArrayRects.push(rects[r][twoR]);
+				}
+			}
+			return oneArrayRects;
+		},
+		/**
+		 * 按行间隔筛选rects数组中的节点
+		 * @param rects 一维的矩形信息数组（包含node和坐标信息），也就是 translate.visual.rectsToOneArray(translate.visual.getRects(nodes)); 取得的信息。它并不需要提前排序
+		 * @param line - 间隔行数，1表示每行都取，2表示隔一行取一个，3表示隔2行取一个，以此类推
+		 * @returns 筛选后的矩形信息数组，并按照 top 的值有小往大排序
+		 */
+		filterRectsByLineInterval:function(rects, line) {
+	        // 验证输入
+		    if (!Array.isArray(rects) || typeof line !== 'number' || line < 1) {
+		        console.error('输入参数无效，请确保rects是数组且line是大于0的数字');
+		        return [];
+		    }
+		    
+		    // 1. 先处理所有矩形，计算每行的基准线（使用top作为主要依据）
+		    // 为每个矩形添加行标识临时属性
+		    const processedRects = rects.map(rect => {
+		        if (!rect || rect.top === undefined) {
+		            return null; // 过滤无效矩形
+		        }
+		        return {
+		            ...rect,
+		            // 计算行基准（使用top的整数部分，处理可能的浮点精度问题）
+		            rowBase: Math.round(rect.top)
+		        };
+		    }).filter(Boolean); // 移除null值
+		    
+		    // 2. 按行基准分组（完全相同的rowBase属于同一行）
+		    const rowMap = new Map();
+		    processedRects.forEach(rect => {
+		        const key = rect.rowBase;
+		        if (!rowMap.has(key)) {
+		            rowMap.set(key, []);
+		        }
+		        rowMap.get(key).push(rect);
+		    });
+		    
+		    // 3. 将Map转换为数组并按行基准排序（确保从上到下的顺序）
+		    const lineGroups = Array.from(rowMap.entries())
+		        .sort((a, b) => a[0] - b[0]) // 按行基准升序排序
+		        .map(entry => entry[1]); // 提取每组的矩形数组
+		    
+		    // 4. 按间隔行数筛选行组，并只保留每行的第一个元素
+		    const filtered = [];
+		    lineGroups.forEach((group, index) => {
+		        if (index % line === 0 && group.length > 0) {
+		            // 保留每行的第一个元素
+		            filtered.push(group[0]);
+		        }
+		    });
+		    
+		    // 调试：打印所有行组的基准值和数量，方便验证
+		    console.log('行分组基准与数量:', lineGroups.map((g, i) => ({
+		        rowBase: g[0].rowBase,
+		        top: g[0].top,
+		        count: g.length,
+		        isSelected: i % line === 0 // 是否被选中
+		    })));
+		    
+		    return filtered;
+		},
 		/*
 			对一组坐标进行排序
 			按开始坐标从左到右、从上到下排序
@@ -8280,12 +8431,7 @@ var translate = {
 			const rects = translate.visual.getRects(nodes);
 
 			// 将 reacts 二维数组转化为 一维数组，以便对一维数组进行排序
-			var oneArrayRects = new Array();
-			for(var r = 0; r < rects.length; r++){
-				for(var twoR = 0; twoR < rects[r].length; twoR++){
-					oneArrayRects.push(rects[r][twoR]);
-				}
-			}
+			var oneArrayRects = translate.visual.rectsToOneArray(rects);
 
 			//console.log('rects:');
 			//console.log(rects);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.4.20250826',
+	version: '3.18.5.20250826',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1040,12 +1040,22 @@ var translate = {
 		use:false, 
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
+			if(typeof(translate.temp_listenerStartInterval) != 'undefined'){
+				//已经触发过一次了，不需要再触发了
+				return;
+			}
 			translate.listener.use = true;
-			translate.temp_linstenerStartInterval = setInterval(function(){
+			translate.temp_listenerStartInterval = setInterval(function(){
 				if(document.readyState == 'complete'){
 					//dom加载完成，进行启动
-					clearInterval(translate.temp_linstenerStartInterval);//停止
 
+					// 先判断定时器是否已被清除（防止重复执行）
+    				if (!translate.temp_listenerStartInterval){
+    					return;
+    				}
+
+					clearInterval(translate.temp_listenerStartInterval);//停止
+					
 					//如果不需要翻译的情况，是不需要进行监听的
 					if(translate.language.getCurrent() == translate.language.getLocal()){
 						if(translate.language.translateLocal){
@@ -1070,8 +1080,7 @@ var translate = {
 					//console.log('translate.temp_linstenerStartInterval Finish!');
 				//}
 	        }, 300);
-			
-			
+	        
 		},
 		/* 
 			key: nodeid node的唯一标识，格式如 HTML1_BODY1_DIV2_#text1  ，它是使用 nodeuuid.uuid(node) 获得的
@@ -8265,12 +8274,14 @@ var translate = {
 		    });
 		    
 		    // 调试：打印所有行组的基准值和数量，方便验证
+		    /*
 		    console.log('行分组基准与数量:', lineGroups.map((g, i) => ({
 		        rowBase: g[0].rowBase,
 		        top: g[0].top,
 		        count: g.length,
 		        isSelected: i % line === 0 // 是否被选中
 		    })));
+		    */
 		    
 		    return filtered;
 		},

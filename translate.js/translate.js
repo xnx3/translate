@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.2.20250825',
+	version: '3.18.3.20250826',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -8050,11 +8050,16 @@ var translate = {
 	visual: {
 		/**
 		 * 获取一组节点的视觉矩形信息
-		 * @param {Node[]} nodes - 节点数组，格式如 
+		 * @param nodes - 节点数组，格式如 ：
 		 * 			[node1,node2,node3]
-		 * @returns {Object[]} - 矩形信息数组，与输入节点一一对应
+		 * @returns 返回的是二维数组，其中第一维度跟输入的 nodes 下标一一对应。
+		 * 				其中第二维度，是应对换行的情况。比如  node1 没有换行，那第二维度就只有一个
+		 * 												node2 有换行，有三行，那么第二维度就有三个，每行一个。 这个也是每行都有一个 开始坐标(x,y)、结束坐标(x,y)
+		 * 	
 		 */
 		getRects:function(nodes){
+			/*
+
 		  return nodes.map(node => {
 		    if (!node) return null;
 		    
@@ -8079,6 +8084,44 @@ var translate = {
 		      height: rect.height
 		    } : null;
 		  });
+		  */
+
+			return nodes.map(node => {
+                if (!node) return []; // 节点不存在时返回空数组
+                
+                let rects = [];
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // 处理文本节点：获取所有行的矩形
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    const clientRects = range.getClientRects();
+                    // 转换为数组并处理每个行矩形
+                    rects = Array.from(clientRects).map(rect => ({
+                        node,
+                        left: rect.left,
+                        top: rect.top,
+                        right: rect.right,
+                        bottom: rect.bottom,
+                        width: rect.width,
+                        height: rect.height,
+                        lineIndex: Array.from(clientRects).indexOf(rect) // 增加行索引，方便区分第几行
+                    }));
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    // 处理元素节点：获取元素整体矩形（保持原有逻辑）
+                    const rect = node.getBoundingClientRect();
+                    rects = rect ? [{
+                        node,
+                        left: rect.left,
+                        top: rect.top,
+                        right: rect.right,
+                        bottom: rect.bottom,
+                        width: rect.width,
+                        height: rect.height
+                    }] : [];
+                }
+                
+                return rects;
+            });
 		},
 		/*
 			对一组坐标进行排序
@@ -8099,12 +8142,11 @@ var translate = {
 		},
 		/**
 		 * 查找左右紧邻的矩形对
-		 * @param rects translate.visual.getRects获取到的坐标数据
+		 * @param rects translate.visual.getRects 获取到的坐标数据，转化为 一维数组 后传入
 		 * @returns {Array<{before: Object, after: Object}>} - 左右紧邻的矩形对数组
 		 */
 		afterAdjacent:function(rects){
 		  var sortedRects = translate.visual.coordinateSort(rects);
-		  
 		  const adjacentPairs = [];
 		  const lineGroups = translate.visual.groupRectsByLine(sortedRects);
 		  
@@ -8236,11 +8278,22 @@ var translate = {
 			//var startTime = Date.now();
 			// 1. 获取节点视觉矩形
 			const rects = translate.visual.getRects(nodes);
+
+			// 将 reacts 二维数组转化为 一维数组，以便对一维数组进行排序
+			var oneArrayRects = new Array();
+			for(var r = 0; r < rects.length; r++){
+				for(var twoR = 0; twoR < rects[r].length; twoR++){
+					oneArrayRects.push(rects[r][twoR]);
+				}
+			}
+
 			//console.log('rects:');
 			//console.log(rects);
+			//console.log('将 reacts 二维数组转化为一维数组 oneArrayRects:');
+			//console.log(oneArrayRects);
 
 			// 2. 查找左右紧邻的矩形对
-			const adjacentPairs = translate.visual.afterAdjacent(rects);
+			const adjacentPairs = translate.visual.afterAdjacent(oneArrayRects);
 			//console.log('adjacentPairs:');
 			//console.log(adjacentPairs);
 
@@ -8349,19 +8402,45 @@ var translate = {
 			 * 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
 			 * 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
 			 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+			 * 
+			 * id 唯一标识，可能会隐藏多次，或者同一时间出发多次不同的元素隐藏，每次隐藏跟显示都是根据这个id唯一标识来的， 字符串类型。 如果没有，默认就是 translatejs-text-hidden
 			 */
-			hide:function(){
+			hide:function(id){
 				const style = document.createElement('style');
-				style.textContent = translate.visual.hideText.style;
-			    document.head.appendChild(style);
-			    document.documentElement.classList.add('translatejs-text-hidden');
+
+				var styleHtml;
+				if(typeof(id) == 'undefined' || id == null || id.length == 0){
+					id = 'translatejs-text-hidden';
+					style.textContent = translate.visual.hideText.style;
+				}else{
+					//有值
+					id = 'translatejs-text-hidden-'+id;
+					style.textContent = translate.visual.hideText.style.replace(/translatejs-text-hidden/g, id);
+				}
+				style.id = id;
+				document.head.appendChild(style);
+			    document.documentElement.classList.add(id);
 			},
 			/**
 			 * 撤销隐藏状态，将原本的文本正常显示出来 
 			 * 
+			 * id 同 hide 的
 			 */
-			show:function(){
-				document.documentElement.classList.remove('translatejs-text-hidden');
+			show:function(id){
+				if(typeof(id) == 'undefined' || id == null || id.length == 0){
+					id = 'translatejs-text-hidden';
+				}else{
+					//有值
+					id = 'translatejs-text-hidden-'+id;
+				}
+
+				//删除html 的 class name
+				document.documentElement.classList.remove(id);
+				//删除 style
+				var style_translatejs_text_hidden = document.getElementById(id);
+				if(typeof(style_translatejs_text_hidden) != null && style_translatejs_text_hidden != null){
+					style_translatejs_text_hidden.remove();
+				}
 			}
 		},
 

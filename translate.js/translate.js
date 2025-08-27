@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.5.20250826',
+	version: '3.18.6.20250827',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2876,7 +2876,9 @@ var translate = {
 					result['text'] = '';
 					return result;
 				}
+
 				if(nodename == 'IMG'){
+
 					if(typeof(node.alt) == 'undefined' || node.alt == null){
 						result['text'] = '';
 						return result;
@@ -3099,7 +3101,6 @@ var translate = {
 
 			//node分析
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);
-			//console.log(nodeAnaly)
 			if(nodeAnaly['text'].length > 0){
 				//有要翻译的目标内容，加入翻译队列
 				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
@@ -3543,7 +3544,7 @@ var translate = {
 					var beforeText = langs[lang].list[word_index]['beforeText'];
 					var afterText = langs[lang].list[word_index]['afterText'];
 
-					//console.log(lang+' - '+word);
+					//console.log(lang+' - '+word+', attribute:'+attribute);
 					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
 
 					/*
@@ -3655,13 +3656,16 @@ var translate = {
 		}
 
 
-		var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node情况）
+		var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node且同一 attribute的 情况）
 		if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
 			for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 				if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
-					//相同，那就不用在存入了
-					//console.log('相同，那就不用在存入了')
-					isEquals = true;
+					//在判断 attribute 是否相同
+					//console.log('attribute:'+attribute+", 对比的 :"+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index].attribute)
+					if(attribute === translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index].attribute){
+						//相同，那就不用在存入了
+						isEquals = true;
+					}
 					//console.log(node)
 					continue;
 				}

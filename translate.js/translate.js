@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.9.20250828',
+	version: '3.18.10.20250828',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7854,6 +7854,27 @@ var translate = {
 				stringResult:kvs,
 				functionResult:frs
 			};
+		},
+		/*
+			将 translate.js.transString 执行结果的 obj 对象 转化为 字符串输出
+			这个可以直接输出到 textarea 中显示
+
+			obj: js对象
+			formatSupplementaryCharLength: 对这个js对象进行格式化自动补充字符的长度，比如 2、 4
+		*/
+		objToString:function(obj, formatSupplementaryCharLength){
+			// 自定义replacer函数，将函数转换为字符串
+			const jsonStr = JSON.stringify(obj, (key, value) => {
+			  if (typeof value === 'function') {
+			    // 将函数转换为其源代码字符串
+			    return value.toString();
+			  }
+			  return value;
+			}, formatSupplementaryCharLength);
+
+			// 将转义的\n替换为实际的换行符
+			const formattedStr = jsonStr.replace(/\\n/g, '\n');
+			return formattedStr;
 		}
 	},
 	/*js dispose end*/

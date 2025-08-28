@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.7.20250828',
+	version: '3.18.8.20250828',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7628,11 +7628,83 @@ var translate = {
 				texts.push(key);
 			}
 
+			/*
+				它主要用于拆分场景，如果不需要拆分，它用不到
+				下标对应，上面 texts 的原始下标跟拆分后的下标对应
+				key 新数组的下标
+				value 对象，包含:
+					  index: 旧数组的下标
+					  original: 翻译的原始文本
+					  isSplit: 是否是被拆分的， true是，false不是
+				
+			*/
+			var originalArrayIndexMap = new Array();
+
 			var obj = {
 				from:'auto',
 				to: targetLanguage,
 				texts: texts
 			}
+
+			if(translate.ignore.text.length > 0){ //有设置忽略翻译的文本
+				var newTexts = new Array(); //新组合的
+
+				//组合  split 切割
+				var splitStrng = '';
+				for(var ig = 0; ig < translate.ignore.text.length; ig++){
+					if(translate.ignore.text[ig].trim().length == 0){
+						continue;
+					}
+					var ignoretext = translate.ignore.text[ig];
+					if(ignoretext.indexOf('.') > -1){
+						ignoretext = ignoretext.replaceAll(/\./g, "\\.");
+					}
+					if(ignoretext.indexOf('$') > -1){
+						ignoretext = ignoretext.replaceAll(/\$/g, "\\$");
+					}
+
+					if(splitStrng != ''){
+						splitStrng = splitStrng + '|';
+					}
+					splitStrng = splitStrng + ignoretext;
+				}
+				var regex = new RegExp(splitStrng, 'g'); // 创建正则表达式对象，添加'g'修饰符表示全局匹配
+				//console.log(regex);
+
+				for(var tai = 0; tai<texts.length; tai++){
+					
+					var isFind = false; //是否发现匹配进行拆分了，true是
+						
+					//发现了忽略翻译的文本，将其单独抽取出来，不进行翻译
+					//进行拆分
+					var splits = texts[tai].split(regex);
+					if(splits.length > 1){
+						isFind = true; //拆分了
+						for(var s = 0; s < splits.length; s++){
+							if(splits[s].length > 0){
+								newTexts.push(splits[s]);
+								originalArrayIndexMap[newTexts.length-1] = {
+									index:tai,
+									original:splits[s],
+									isSplit:true
+								};
+							}
+						}
+					}else{
+						//没有拆分，那就原样加入
+						newTexts.push(texts[tai]);
+						originalArrayIndexMap[newTexts.length-1] = {
+							index:tai,
+							original:texts[tai],
+							isSplit:false
+						};
+					}
+					
+				}
+				obj.texts = newTexts;
+			}
+			//console.log(originalArrayIndexMap);
+			
 			translate.request.translateText(obj, function (data) {
 				//打印翻译结果
 				//console.log(data);
@@ -7646,7 +7718,23 @@ var translate = {
 				}
 
 				/**** 第三步，将翻译结果赋予 jsObject ***/
-				const translatedTexts = data.text; // 获取翻译结果数组
+				var translatedTexts; //跟最初拆分前的 texts 下标一一对应
+
+				//判断是否有过分割
+				if(translate.ignore.text.length > 0){ //有过分割，进行合并
+					translatedTexts = new Array();
+
+					for(var i = 0; i < data.text.length; i++){
+						var originalTextIndex = originalArrayIndexMap[i].index; //最初分割前的原数组下标
+						if(translatedTexts.length < originalTextIndex+1){
+							translatedTexts.push(texts[originalTextIndex]);
+						}
+						translatedTexts[originalTextIndex] = translate.util.textReplace(translatedTexts[originalTextIndex], originalArrayIndexMap[i].original, data.text[i], data.to);
+					}
+				}else{
+					translatedTexts = data.text; // 直接获取翻译结果数组赋予
+				}
+
 				if (translatedTexts && translatedTexts.length === texts.length) {
 					texts.forEach((originalText, index) => {
 						const translatedText = translatedTexts[index]; // 根据索引获取翻译结果

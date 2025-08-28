@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.6.20250827',
+	version: '3.18.7.20250828',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7590,8 +7590,13 @@ var translate = {
 			try{
 				jsObject = JSON.parse(jsString);
 			}catch(e){
-				failureFunction(e);
-				return;
+				try{
+					jsObject =  eval('(' + jsString + ')');
+				}catch(e){
+					console.log(e)
+					failureFunction(e);	
+					return;
+				}
 			}
 			translate.js.transObject(jsObject, targetLanguage, successFunction, failureFunction);
 		},

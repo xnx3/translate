@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.8.20250828',
+	version: '3.18.9.20250828',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7618,9 +7618,9 @@ var translate = {
 
 		*/
 		transObject: function (jsObject, targetLanguage, successFunction, failureFunction) {
-			let kvs = translate.js.find(jsObject);
-			//console.log(JSON.stringify(kvs, null, 2));
-
+			let tj_find = translate.js.find(jsObject);
+			let kvs = tj_find.stringResult;
+			
 			/**** 第二步，将文本值进行翻译 ***/
 			//先将其 kvs 的key 取出来
 			var texts = new Array();
@@ -7748,6 +7748,15 @@ var translate = {
 				} else {
 					console.error("翻译结果长度不匹配或为空");
 				}
+
+				if(Object.keys(tj_find.functionResult).length > 0){
+					for(var sf in tj_find.functionResult){
+						if (!tj_find.functionResult.hasOwnProperty(sf)) {
+							continue;
+						}
+						translate.js.setValueByPath(jsObject, sf, tj_find.functionResult[sf]); // 更新 jsObject
+					}
+				}
 				successFunction(jsObject);
 				//console.log("翻译后的 jsObject:", jsObject);
 			});
@@ -7771,37 +7780,67 @@ var translate = {
 			};
 			translate.js.find(obj);
 
+			返回值：
+			{
+				stringResult:
+				functionResult:
+			}
+
 		*/
 		find: function (obj, parentKey = '') {
-			let kvs = {};
+			let kvs = {}; //stringResult
+			let frs = {}; //functionResult
+
 			if (typeof obj === 'object' && obj !== null) {
 				if (Array.isArray(obj)) {
 					obj.forEach((item, index) => {
 						const currentKey = parentKey ? `${parentKey}[${index}]` : `[${index}]`;
-						const subKvs = translate.js.find(item, currentKey);
+						const tj_find = translate.js.find(item, currentKey);
+						const subKvs = tj_find.stringResult;
 						for (const [text, paths] of Object.entries(subKvs)) {
 							if (!kvs[text]) {
 								kvs[text] = [];
 							}
 							kvs[text] = kvs[text].concat(paths);
 						}
+
+						const subFrs = tj_find.functionResult;
+						for(var sf in subFrs){
+							if (!subFrs.hasOwnProperty(sf)) {
+								continue;
+							}
+							frs[sf] = subFrs[sf];
+						}
 					});
 				} else {
+
 					for (const key in obj) {
 						const currentKey = parentKey ? `${parentKey}.${key}` : key;
 						if (typeof obj[key] === 'object' && obj[key] !== null) {
-							const subKvs = translate.js.find(obj[key], currentKey);
+							const tj_find = translate.js.find(obj[key], currentKey);
+							const subKvs = tj_find.stringResult;
 							for (const [text, paths] of Object.entries(subKvs)) {
 								if (!kvs[text]) {
 									kvs[text] = [];
 								}
 								kvs[text] = kvs[text].concat(paths);
 							}
+							const subFrs = tj_find.functionResult;
+							for(var sf in subFrs){
+								if (!subFrs.hasOwnProperty(sf)) {
+									continue;
+								}
+								frs[sf] = subFrs[sf];
+							}
+
 						} else if (typeof obj[key] === 'string') {
 							if (typeof kvs[obj[key]] === 'undefined') {
 								kvs[obj[key]] = [];
 							}
 							kvs[obj[key]].push(currentKey);
+						}else if(typeof(obj[key]) == 'function'){
+							//value是一个方法，那么也将他返回
+							frs[currentKey]=obj[key];
 						}
 					}
 				}
@@ -7811,7 +7850,10 @@ var translate = {
 				}
 				kvs[obj].push(parentKey);
 			}
-			return kvs;
+			return {
+				stringResult:kvs,
+				functionResult:frs
+			};
 		}
 	},
 	/*js dispose end*/

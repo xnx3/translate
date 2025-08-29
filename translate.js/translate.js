@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.10.20250828',
+	version: '3.18.11.20250828',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -615,6 +615,20 @@ var translate = {
 
 		*/
 		append:function(from, to, properties){
+			if(typeof(from) == 'undefined' || from == null || from == 'auto'){
+				//如果from未传入，则自动识别当前页面的语种为from
+				//如果自动识别，也要确保是页面加载完后，免得放到了head里，那肯定啥也识别不出来
+				if(document.body == null){
+					console.log('使用错误！你使用自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但是你当前吧 translate.nomenclature.append 放在了body之前就加载了，body都还没加载出来，翻译区域当前无内容，所以无法识别当前页面的语种。请将 translate.nomenclature.append 放在翻译内容加载完后再执行 （注意，要将 translate.nomenclature.append 放在 translate.execute() 的前面），建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+				}else{
+					if (document.readyState === 'loading') {
+	   					console.log('使用异常告警：你使用的自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但页面Dom还未加载完毕时就触发了它，如果翻译区域当前无内容或者内容不是完整的，会造成识别当前页面的语种会有异常不准确，你需要仔细确认这个问题。建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+					}
+				}
+				
+				from = translate.language.getLocal();
+			}
+
 			if(typeof(translate.nomenclature.data[from]) == 'undefined'){
 				translate.nomenclature.data[from] = new Array();
 			}

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.11.20250828',
+	version: '3.18.12.20250829',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -344,6 +344,8 @@ var translate = {
 			return;
 		}
 		
+		translate.lifecycle.changeLanguage_Trigger(languageName);
+
 		//用的是v2.x或更高
 		//translate.setUseVersion2();
 		translate.useVersion = 'v2';
@@ -1674,6 +1676,23 @@ var translate = {
 	executeNumber:0,
 	
 	lifecycle:{
+
+		/*
+			当执行 translate.changeLanguage() 后立即触发此。
+			也就是当用户点击切换语言时，立即触发，然后再进行切换语言
+
+			@param to 翻译为的语种
+		*/
+		changeLanguage:[],
+		changeLanguage_Trigger: function(to){
+			for(var i = 0; i < translate.lifecycle.changeLanguage.length; i++){
+                try{
+                    translate.lifecycle.changeLanguage[i](to);
+                }catch(e){
+                    console.log(e);
+                }
+            }
+		},
 
 		/*
 			translate.execute() 执行相关

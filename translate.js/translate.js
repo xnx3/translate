@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.12.20250829',
+	version: '3.18.13.20250830',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -322,6 +322,7 @@ var translate = {
 	 * 														传入 chinese_simplified 、english 等，则会使用 v2.x版本
 	 */
 	changeLanguage:function(languageName){
+		translate.time.log('触发');
 		//判断使用的是否是v1.x
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
@@ -380,6 +381,8 @@ var translate = {
 			console.log(e);
 		}
 		
+		translate.time.log('iframe 完成');
+
 		if(isReload){
 			location.reload(); //刷新页面
 		}else{
@@ -411,7 +414,7 @@ var translate = {
 		//当用户代码设置里启用了 translate.listener.start() 然后用户加载页面后并没有翻译（这时listener是不启动的只是把listener.use标记为true），然后手动点击翻译按钮翻译为其他语种（这是不会刷新页面），翻译后也要跟着启动监听
 		if(translate.listener.use == true && translate.listener.isStart == false){
 			if(typeof(translate.listener.start) != 'undefined'){
-				translate.listener.start();
+				translate.listener.addListener();
 			}
 		}
 	},
@@ -1209,6 +1212,8 @@ var translate = {
 				if(documents.length > 0){
 					//有变动，需要看看是否需要翻译，延迟10毫秒执行
 					
+					translate.time.log('监听到元素发生变化,'+documents.length+'个元素');
+
 					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
 					var translateNodes = [];
 					//console.log(translate.inProgressNodes.length);
@@ -1246,6 +1251,8 @@ var translate = {
 						return;
 					}
 					//console.log('translateNodeslength: '+translateNodes.length);
+
+					translate.time.log('将监听到的发生变化的元素进行整理,得到'+translateNodes.length+'个元素，对其进行翻译');
 
 					translate.execute(translateNodes);
 					//setTimeout(function() {
@@ -1809,6 +1816,8 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
+		translate.time.log('触发');
+
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
 				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
@@ -1844,6 +1853,7 @@ var translate = {
 
 		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
 		var uuid = translate.util.uuid();
+		translate.time.log('创建uuid:'+uuid);
 		//console.log('=====')
 		//console.log(translate.nodeQueue);
 		
@@ -1864,6 +1874,7 @@ var translate = {
 			}
 		}
 		
+		translate.time.log('渲染出选择语言的select窗口-开始');
 		//渲染select选择语言
 		try{
 			translate.selectLanguageTag.render();	
@@ -1871,6 +1882,8 @@ var translate = {
 			console.log(e);
 		}
 		
+		translate.time.log('渲染出选择语言的select窗口-已完成');
+
 		//判断是否还未指定翻译的目标语言
 		if(translate.to == null || typeof(translate.to) == 'undefined' || translate.to.length == 0){
 			//未指定，判断如果指定了自动获取用户本国语种了，那么进行获取
@@ -1896,14 +1909,18 @@ var translate = {
 		
 
 		/********** 翻译进行 */
+		
+		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-开始');
 
 		//生命周期-触发翻译进行之前，用户自定义的钩子
 		translate.lifecycle.execute.start_Trigger(uuid, translate.to);
-
+		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-完成');
 		
+		translate.time.log('进行图片翻译-开始');
 		//先进行图片的翻译替换，毕竟图片还有加载的过程
 		translate.images.execute();
-		
+		translate.time.log('进行图片翻译-完成');
+
 		/*
 			进行翻译指定的node操作。优先级为：
 			1. 这个方法已经指定的翻译 nodes
@@ -1966,11 +1983,13 @@ var translate = {
 			console.log(e);
 		}
 
+		translate.time.log('开始扫描要翻译区域的元素');
 		//检索目标内的node元素
 		for(var i = 0; i< all.length & i < 500; i++){
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}
+		translate.time.log('扫描要翻译区域的元素完成');
 
 		/***** translate.language.translateLanguagesRange 开始 *****/
 		if(translate.language.translateLanguagesRange.length > 0){
@@ -2052,6 +2071,8 @@ var translate = {
 				delete translate.nodeQueue[uuid].list[lang];
 			}
 		}
+
+		translate.time.log('对扫描到的元素进行预处理完毕');
 		//console.log('new queuq');
 		//console.log(translate.nodeQueue[uuid])
 		//translate.nodeHistory[nodeid]
@@ -2243,6 +2264,8 @@ var translate = {
 
 			task.execute(); //执行渲染任务
 		}
+
+		translate.time.log('对扫描到的元素进行浏览器本地缓存命中-完毕');
 		//console.log(twoScanNodes);
 		//console.log('cacheScanNodes:');
 		//console.log(cacheScanNodes);
@@ -2338,6 +2361,7 @@ var translate = {
 			}
 			
 		}
+		translate.time.log('对未命中本地缓存的元素进行第二轮扫描-完毕');
 		/******* 进行第二次扫描、追加入翻译队列  -- 结束 ********/
 
 		
@@ -2448,6 +2472,8 @@ var translate = {
 	
 		//状态
 		translate.state = 20;
+
+		translate.time.log('调用翻译接口进行翻译 - 开始');
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
@@ -8855,9 +8881,66 @@ var translate = {
 
 
 
-	}
+	},
 	/*js translate.visual end*/
 	
+	/*
+		记录打印翻译执行的耗时情况
+	*/
+	time:{
+		use:false, //true启用， false不启用，默认是不启用状态
+		printTime: 0, //打印耗时大于这个的，默认是0，也就是全部打印。单位是毫秒。 比如设置为 100 ，则只打印耗时大于等于100毫秒的动作
+
+		/**
+		 * 增加一条日志记录
+		 * functionName 触发调用此处log的方法名，传入如 translate.execute
+		 * remark 备注文字，说明
+		 */ 
+		log:function(remark){
+			if(translate.time.use == false){
+				return;
+			}
+
+			var timestamp = new Date().getTime(); // 例如：1725053445123
+
+			var usetime = 0; //跟上一次记录的间隔耗时，单位是毫秒
+			if(typeof(translate.time.temp_lasttime) != 'undefined'){
+				usetime = timestamp-translate.time.temp_lasttime;
+			}
+			translate.time.temp_lasttime = timestamp;
+			
+			if(usetime < translate.time.printTime){
+				//不需要打印
+				return; 
+			}
+
+			var functionName = '';
+			try {
+				// 创建一个Error对象来获取调用栈
+				var error = new Error();
+				// 解析调用栈，获取调用者信息
+				// 不同环境下调用栈的索引可能不同，这里做了兼容处理
+				var stackLines = error.stack.split('\n');
+				//console.log(stackLines);
+				var callerLine = stackLines[2] || stackLines[3]; // 兼容不同环境
+
+				// 从调用栈中提取方法名
+				var functionMatch = callerLine.match(/at (\S+)/);
+
+				if (functionMatch && functionMatch[1]) {
+				  functionName = functionMatch[1];
+				}
+			} catch (e) {
+				// 如果获取调用栈失败，使用原始log方法
+				console.log(e);
+			}
+
+			functionName = functionName.replace('Object.','translate.');
+			console.log(functionName+'() '+usetime+' -> '+remark);
+		}
+
+	}
+
 }
 /*
 	将页面中的所有node节点，生成其在当前页面的唯一标识字符串uuid

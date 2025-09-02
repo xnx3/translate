@@ -275,7 +275,7 @@ public enum LanguageEnum {
     GUN("gun","龚语","龚语"),
     CONGO_SWAHILI("congo_swahili","刚果斯瓦希里语","刚果斯瓦希里语"),
     GUIMI("guimi","圭米语","圭米语"),
-    KAZAKH_CYRILLIC("kazakh(cyrillic)","哈萨克语(西里尔)","哈萨克语(西里尔)"),
+    KAZAKH_CYRILLIC("kazakh_cyrillic","哈萨克语(西里尔)","哈萨克语(西里尔)"),
     HULI("huli","胡里语","胡里语"),
     HALBI("halbi","亥比语","亥比语"),
     HERERO("herero","赫雷罗语","赫雷罗语"),
@@ -294,11 +294,11 @@ public enum LanguageEnum {
     COPTIC("coptic","科普特语","科普特语"),
     CAMSA("camsa","科奇语","科奇语"),
     QUERETARO_OTOMI("queretaro_otomi","克雷塔罗奥托米语","克雷塔罗奥托米语"),
-    KURDISH_KURMANJI("kurdish(kurmanji)","库尔德语(库尔曼奇语)","库尔德语(库尔曼奇语)"),
+    KURDISH_KURMANJI("kurdish_kurmanji","库尔德语(库尔曼奇语)","库尔德语(库尔曼奇语)"),
     KUANUA("kuanua","库阿努阿语","库阿努阿语"),
     CUSCO_QUECHUA("cusco_quechua","库斯科克丘亚语","库斯科克丘亚语"),
     KAPINGAMARANGI("kapingamarangi","卡平阿马朗伊语","卡平阿马朗伊语"),
-    KALMYK_OIRAT("kalmyk-oirat","卡尔梅克卫拉特语","卡尔梅克卫拉特语"),
+    KALMYK_OIRAT("kalmyk_oirat","卡尔梅克卫拉特语","卡尔梅克卫拉特语"),
     KELIKO("keliko","克利科语","克利科语"),
     KAKWA("kakwa","卡库瓦语","卡库瓦语"),
     KAQCHIKEL("kaqchikel","喀克其奎语","喀克其奎语"),
@@ -317,15 +317,15 @@ public enum LanguageEnum {
     LACID("lacid","勒期语","勒期语"),
     LINGAO("lingao","临高语","临高语"),
     LOZI("lozi","罗子语","罗子语"),
-    LUBA_KASAI("luba-kasai","卢巴开赛语","卢巴开赛语"),
-    LUBA_KATANGA("luba-katanga","卢巴-加丹加语","卢巴-加丹加语"),
+    LUBA_KASAI("luba_kasai","卢巴开赛语","卢巴开赛语"),
+    LUBA_KATANGA("luba_katanga","卢巴-加丹加语","卢巴-加丹加语"),
     LUNDA("lunda","隆打语","隆打语"),
     RUUND("ruund","卢乌德语","卢乌德语"),
     LUVALE("luvale","卢瓦来语","卢瓦来语"),
     MANX("manx","马恩岛语","马恩岛语"),
     MARI("mari","马里语","马里语"),
     MAM("mam","马姆语","马姆语"),
-    MONGOLIAN_CYRILLIC("mongolian(cyrillic)","蒙古语(西里尔)","蒙古语(西里尔)"),
+    MONGOLIAN_CYRILLIC("mongolian_cyrillic","蒙古语(西里尔)","蒙古语(西里尔)"),
     MOTU("motu","摩图语","摩图语"),
     MARANAO("maranao","马拉瑙语","马拉瑙语"),
     MAALE("maale","马勒语","马勒语"),
@@ -350,7 +350,7 @@ public enum LanguageEnum {
     NYANEKA("nyaneka","尼亚内卡语","尼亚内卡语"),
     NIGERIAN_PIDGIN("nigerian_pidgin","尼日利亚皮钦语","尼日利亚皮钦语"),
     PAITE("paite","派特语","派特语"),
-    PELE_ATA("pele-ata","佩勒-阿塔语","佩勒-阿塔语"),
+    PELE_ATA("pele_ata","佩勒-阿塔语","佩勒-阿塔语"),
     PIJIN("pijin","皮京语","皮京语"),
     CHEROKEE("cherokee","切诺基语","切诺基语"),
     CHINANTEC("chinantec","奇南特克语","奇南特克语"),
@@ -380,7 +380,7 @@ public enum LanguageEnum {
     TAMPULMA("tampulma","坦普尔马语","坦普尔马语"),
     TEDIM_CHIN("tedim_chin","特丁钦语","特丁钦语"),
     TUVAN("tuvan","图瓦语","图瓦语"),
-    TUMA_IRUMU("tuma-irumu","图马伊鲁穆语","图马伊鲁穆语"),
+    TUMA_IRUMU("tuma_irumu","图马伊鲁穆语","图马伊鲁穆语"),
     TENNET("tennet","腾内特语","腾内特语"),
     TUNGAG("tungag","通加格语","通加格语"),
     TESO("teso","特索语","特索语"),
@@ -499,7 +499,7 @@ public enum LanguageEnum {
 	
 	
 	
-	public final String id;		//语言名，如 english、chinese_simplified、chinese_traditional
+	public final String id;		//语言名，如 english、chinese_simplified、chinese_traditional  它有英文跟_ 组成，不允许出现其他符号
 	public final String name;		//文字说明，对应语种的文字说明，如 english、简体中文、繁体中文、한국어
 	public final String chinese_name;	//中文的说明，以中文方式的语种说明
 	

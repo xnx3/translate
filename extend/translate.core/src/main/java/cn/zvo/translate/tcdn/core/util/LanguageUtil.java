@@ -23,10 +23,32 @@ public class LanguageUtil {
 		return languageMap;
 	}
 	
+	/**
+	 * 对 languageId 进行处理，比如德语的id再 2023.11.08 进行更改过
+	 * @param languageId 传入如 english ，枚举类中定义的语种的id，这个可以是很早之前枚举中的，但是后面废弃了的，这里做转换兼容
+	 * @return 返回枚举类中定义的语种的id
+	 */
+	public static String languageIdHandle(String languageId) {
+		if(languageId == null) {
+			return null;
+		}
+		
+		//德语的id更改过一次
+		if(languageId.equalsIgnoreCase("german")) {
+			languageId = "deutsch";
+		}
+		if(languageId.indexOf("-") > 0) {
+			languageId = languageId.replaceAll("-", "_");
+		}
+		
+		return languageId;
+	}
 	
 	public static void main(String[] args) {
-		System.out.println(getLanguageMap());
-		
+		System.out.println(languageIdHandle("english"));
+		System.out.println(languageIdHandle("scottish-gaelic"));
+		System.out.println(languageIdHandle("scottish_gaelic"));
+		System.out.println(languageIdHandle("scottish-ga-e-lic"));
 	}
 	
 }

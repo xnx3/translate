@@ -6,7 +6,7 @@
 # 删除所有 down.zvo.cn 的条目
 sed -i '/[[:space:]]down\.zvo\.cn$/d' /etc/hosts
 # 添加新的记录
-echo "125.208.20.35 down.zvo.cn" >> /etc/hosts
+# echo "125.208.20.35 down.zvo.cn" >> /etc/hosts
 service nscd restart
 systemctl restart network
 
@@ -51,14 +51,14 @@ rm -rf /mnt/service/bin/translate.service
 # 启动 tcdn
 echo "下载最新 translate.service ..."
 
-wget http://down.zvo.cn/translate/translate.service/linux_x86_64/translate.service -O /mnt/service/bin/translate.service
+wget http://down.zvo.cn/translate/translate.service/linux_x86_64/translate.service?v=3.18.18.20250902 -O /mnt/service/bin/translate.service
 
 # ip2region.xdb
 # 定义文件路径
 IP_FILE="/mnt/service/bin/ip2region.xdb"
 # 判断文件是否存在
-if [ ! -f "$FILE" ]; then
-    echo "文件 $FILE 不存在，开始下载..."
+if [ ! -f "$IP_FILE" ]; then
+    echo "文件 $IP_FILE 不存在，开始下载..."
     wget http://down.zvo.cn/translate/translate.service/ip2region.xdb -O "$IP_FILE"
 else
     echo "文件 $IP_FILE 已存在，跳过"

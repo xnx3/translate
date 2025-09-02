@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.2.20250825',
+	version: '3.18.13.20250830',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -322,6 +322,7 @@ var translate = {
 	 * 														传入 chinese_simplified 、english 等，则会使用 v2.x版本
 	 */
 	changeLanguage:function(languageName){
+		translate.time.log('触发');
 		//判断使用的是否是v1.x
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
@@ -344,6 +345,8 @@ var translate = {
 			return;
 		}
 		
+		translate.lifecycle.changeLanguage_Trigger(languageName);
+
 		//用的是v2.x或更高
 		//translate.setUseVersion2();
 		translate.useVersion = 'v2';
@@ -378,6 +381,8 @@ var translate = {
 			console.log(e);
 		}
 		
+		translate.time.log('iframe 完成');
+
 		if(isReload){
 			location.reload(); //刷新页面
 		}else{
@@ -409,7 +414,7 @@ var translate = {
 		//当用户代码设置里启用了 translate.listener.start() 然后用户加载页面后并没有翻译（这时listener是不启动的只是把listener.use标记为true），然后手动点击翻译按钮翻译为其他语种（这是不会刷新页面），翻译后也要跟着启动监听
 		if(translate.listener.use == true && translate.listener.isStart == false){
 			if(typeof(translate.listener.start) != 'undefined'){
-				translate.listener.start();
+				translate.listener.addListener();
 			}
 		}
 	},
@@ -615,6 +620,20 @@ var translate = {
 
 		*/
 		append:function(from, to, properties){
+			if(typeof(from) == 'undefined' || from == null || from == 'auto'){
+				//如果from未传入，则自动识别当前页面的语种为from
+				//如果自动识别，也要确保是页面加载完后，免得放到了head里，那肯定啥也识别不出来
+				if(document.body == null){
+					console.log('使用错误！你使用自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但是你当前吧 translate.nomenclature.append 放在了body之前就加载了，body都还没加载出来，翻译区域当前无内容，所以无法识别当前页面的语种。请将 translate.nomenclature.append 放在翻译内容加载完后再执行 （注意，要将 translate.nomenclature.append 放在 translate.execute() 的前面），建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+				}else{
+					if (document.readyState === 'loading') {
+	   					console.log('使用异常告警：你使用的自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但页面Dom还未加载完毕时就触发了它，如果翻译区域当前无内容或者内容不是完整的，会造成识别当前页面的语种会有异常不准确，你需要仔细确认这个问题。建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+					}
+				}
+				
+				from = translate.language.getLocal();
+			}
+
 			if(typeof(translate.nomenclature.data[from]) == 'undefined'){
 				translate.nomenclature.data[from] = new Array();
 			}
@@ -1040,12 +1059,22 @@ var translate = {
 		use:false, 
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
+			if(typeof(translate.temp_listenerStartInterval) != 'undefined'){
+				//已经触发过一次了，不需要再触发了
+				return;
+			}
 			translate.listener.use = true;
-			translate.temp_linstenerStartInterval = setInterval(function(){
+			translate.temp_listenerStartInterval = setInterval(function(){
 				if(document.readyState == 'complete'){
 					//dom加载完成，进行启动
-					clearInterval(translate.temp_linstenerStartInterval);//停止
 
+					// 先判断定时器是否已被清除（防止重复执行）
+    				if (!translate.temp_listenerStartInterval){
+    					return;
+    				}
+
+					clearInterval(translate.temp_listenerStartInterval);//停止
+					
 					//如果不需要翻译的情况，是不需要进行监听的
 					if(translate.language.getCurrent() == translate.language.getLocal()){
 						if(translate.language.translateLocal){
@@ -1070,8 +1099,7 @@ var translate = {
 					//console.log('translate.temp_linstenerStartInterval Finish!');
 				//}
 	        }, 300);
-			
-			
+	        
 		},
 		/* 
 			key: nodeid node的唯一标识，格式如 HTML1_BODY1_DIV2_#text1  ，它是使用 nodeuuid.uuid(node) 获得的
@@ -1184,6 +1212,8 @@ var translate = {
 				if(documents.length > 0){
 					//有变动，需要看看是否需要翻译，延迟10毫秒执行
 					
+					translate.time.log('监听到元素发生变化,'+documents.length+'个元素');
+
 					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
 					var translateNodes = [];
 					//console.log(translate.inProgressNodes.length);
@@ -1221,6 +1251,8 @@ var translate = {
 						return;
 					}
 					//console.log('translateNodeslength: '+translateNodes.length);
+
+					translate.time.log('将监听到的发生变化的元素进行整理,得到'+translateNodes.length+'个元素，对其进行翻译');
 
 					translate.execute(translateNodes);
 					//setTimeout(function() {
@@ -1653,6 +1685,23 @@ var translate = {
 	lifecycle:{
 
 		/*
+			当执行 translate.changeLanguage() 后立即触发此。
+			也就是当用户点击切换语言时，立即触发，然后再进行切换语言
+
+			@param to 翻译为的语种
+		*/
+		changeLanguage:[],
+		changeLanguage_Trigger: function(to){
+			for(var i = 0; i < translate.lifecycle.changeLanguage.length; i++){
+                try{
+                    translate.lifecycle.changeLanguage[i](to);
+                }catch(e){
+                    console.log(e);
+                }
+            }
+		},
+
+		/*
 			translate.execute() 执行相关
 		*/
 		execute:{
@@ -1767,6 +1816,8 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
+		translate.time.log('触发');
+
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
 				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
@@ -1802,6 +1853,7 @@ var translate = {
 
 		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
 		var uuid = translate.util.uuid();
+		translate.time.log('创建uuid:'+uuid);
 		//console.log('=====')
 		//console.log(translate.nodeQueue);
 		
@@ -1822,6 +1874,7 @@ var translate = {
 			}
 		}
 		
+		translate.time.log('渲染出选择语言的select窗口-开始');
 		//渲染select选择语言
 		try{
 			translate.selectLanguageTag.render();	
@@ -1829,6 +1882,8 @@ var translate = {
 			console.log(e);
 		}
 		
+		translate.time.log('渲染出选择语言的select窗口-已完成');
+
 		//判断是否还未指定翻译的目标语言
 		if(translate.to == null || typeof(translate.to) == 'undefined' || translate.to.length == 0){
 			//未指定，判断如果指定了自动获取用户本国语种了，那么进行获取
@@ -1854,14 +1909,18 @@ var translate = {
 		
 
 		/********** 翻译进行 */
+		
+		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-开始');
 
 		//生命周期-触发翻译进行之前，用户自定义的钩子
 		translate.lifecycle.execute.start_Trigger(uuid, translate.to);
-
+		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-完成');
 		
+		translate.time.log('进行图片翻译-开始');
 		//先进行图片的翻译替换，毕竟图片还有加载的过程
 		translate.images.execute();
-		
+		translate.time.log('进行图片翻译-完成');
+
 		/*
 			进行翻译指定的node操作。优先级为：
 			1. 这个方法已经指定的翻译 nodes
@@ -1924,11 +1983,13 @@ var translate = {
 			console.log(e);
 		}
 
+		translate.time.log('开始扫描要翻译区域的元素');
 		//检索目标内的node元素
 		for(var i = 0; i< all.length & i < 500; i++){
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}
+		translate.time.log('扫描要翻译区域的元素完成');
 
 		/***** translate.language.translateLanguagesRange 开始 *****/
 		if(translate.language.translateLanguagesRange.length > 0){
@@ -2010,6 +2071,8 @@ var translate = {
 				delete translate.nodeQueue[uuid].list[lang];
 			}
 		}
+
+		translate.time.log('对扫描到的元素进行预处理完毕');
 		//console.log('new queuq');
 		//console.log(translate.nodeQueue[uuid])
 		//translate.nodeHistory[nodeid]
@@ -2201,6 +2264,8 @@ var translate = {
 
 			task.execute(); //执行渲染任务
 		}
+
+		translate.time.log('对扫描到的元素进行浏览器本地缓存命中-完毕');
 		//console.log(twoScanNodes);
 		//console.log('cacheScanNodes:');
 		//console.log(cacheScanNodes);
@@ -2296,6 +2361,7 @@ var translate = {
 			}
 			
 		}
+		translate.time.log('对未命中本地缓存的元素进行第二轮扫描-完毕');
 		/******* 进行第二次扫描、追加入翻译队列  -- 结束 ********/
 
 		
@@ -2406,6 +2472,8 @@ var translate = {
 	
 		//状态
 		translate.state = 20;
+
+		translate.time.log('调用翻译接口进行翻译 - 开始');
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
@@ -2867,7 +2935,9 @@ var translate = {
 					result['text'] = '';
 					return result;
 				}
+
 				if(nodename == 'IMG'){
+
 					if(typeof(node.alt) == 'undefined' || node.alt == null){
 						result['text'] = '';
 						return result;
@@ -3090,7 +3160,6 @@ var translate = {
 
 			//node分析
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);
-			//console.log(nodeAnaly)
 			if(nodeAnaly['text'].length > 0){
 				//有要翻译的目标内容，加入翻译队列
 				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
@@ -3534,7 +3603,7 @@ var translate = {
 					var beforeText = langs[lang].list[word_index]['beforeText'];
 					var afterText = langs[lang].list[word_index]['afterText'];
 
-					//console.log(lang+' - '+word);
+					//console.log(lang+' - '+word+', attribute:'+attribute);
 					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
 
 					/*
@@ -3646,13 +3715,16 @@ var translate = {
 		}
 
 
-		var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node情况）
+		var isEquals = false; //queue中是否已经加入过这个node了（当然是同一hash同一node且同一 attribute的 情况）
 		if(typeof(node.isSameNode) != 'undefined'){	//支持 isSameNode 方法判断对象是否相等
 			for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 				if(node.isSameNode(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'])){
-					//相同，那就不用在存入了
-					//console.log('相同，那就不用在存入了')
-					isEquals = true;
+					//在判断 attribute 是否相同
+					//console.log('attribute:'+attribute+", 对比的 :"+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index].attribute)
+					if(attribute === translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index].attribute){
+						//相同，那就不用在存入了
+						isEquals = true;
+					}
 					//console.log(node)
 					continue;
 				}
@@ -7360,18 +7432,36 @@ var translate = {
 				}
 				node.className = node.className.replace(/translate_api_in_progress/g, '');
 			},
+			
 			startUITip:function(){
-				// 创建一个 style 元素
-		        const style = document.createElement('style');
-		        // 设置 style 元素的文本内容为要添加的 CSS 规则
-		       	style.textContent = translate.progress.style;
-		        // 将 style 元素插入到 head 元素中
-		        document.head.appendChild(style);
+				
+				//创建隐藏文字的 style
+				var translatejsTextElementHidden = document.getElementById('translatejs-text-element-hidden');
+				if(typeof(translatejsTextElementHidden) == 'undefined' || translatejsTextElementHidden == null){
+					const style = document.createElement('style');
+			        // 设置 style 元素的文本内容为要添加的 CSS 规则
+			       	style.textContent = ' .translatejs-text-element-hidden{color: transparent !important; text-shadow: none !important;}';
+			        style.id = 'translatejs-text-element-hidden';
+			        // 将 style 元素插入到 head 元素中
+			        document.head.appendChild(style);
+				}
 
+				// 创建一个 遮罩层加载中动画的 style 元素
+				var translatejsMaskLayerAnimation = document.getElementById('translatejs-mask-layer-animation');
+				if(typeof(translatejsMaskLayerAnimation) == 'undefined' || translatejsMaskLayerAnimation == null){
+					const style = document.createElement('style');
+			        // 设置 style 元素的文本内容为要添加的 CSS 规则
+			       	style.textContent = translate.progress.style;
+			       	style.id = 'translatejs-mask-layer-animation';
+			        // 将 style 元素插入到 head 元素中
+			        document.head.appendChild(style);
+				}
+		        
 
 				if(translate.progress.api.isTip){
 					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
-						
+						var nodes = new Array(); //要改动的元素节点
+
 					    for(var hash in translate.nodeQueue[uuid].list[from]){
 					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 					    		continue;
@@ -7385,10 +7475,13 @@ var translate = {
 					    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
 					    			continue;
 					    		}
+
+					    		/*
 					    		var nodeParent = node.parentNode;
 						        if(nodeParent == null){
 						        	continue;
 						        }
+						        */
 						        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
 								if(nodeParent.childNodes.length != 1){
 									//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
@@ -7396,6 +7489,12 @@ var translate = {
 								}
 								*/
 
+
+						        nodes.push(node);
+
+
+
+						        /*
 
 						        //判断其在上一层的父级是否已经加了，如果父级加了，那作为子集就不需要在加了，免得出现两个重合的 loading 遮罩
 						        var nodeParentParent = node.parentNode;
@@ -7416,9 +7515,57 @@ var translate = {
 									}
 									nodeParent.className = nodeParent.className+' translate_api_in_progress';
 								}
-
+								*/
 					    	}
 					    }
+
+					    //隐藏所有node的文本
+					    for(var r = 0; r<nodes.length; r++){
+							if(nodes[r].nodeType === 1){
+					        	nodes[r].className = nodes[r].className+' translatejs-text-element-hidden';
+					        }else{
+					        	//不是元素，那么就取父级了
+					        	var nodeParent = nodes[r].parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
+						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translatejs-text-element-hidden') > -1){
+					        		//父有了，那么子就不需要再加了
+						        	continue;
+						        }else{
+						        	//没有，添加
+						        	nodeParent.className = nodeParent.className+' translatejs-text-element-hidden';
+						        }
+					        }
+						}
+
+
+					    var rects = translate.visual.getRects(nodes);
+					    var rectsOneArray = translate.visual.rectsToOneArray(rects);
+
+					    //排序
+					    //var sortRects = translate.visual.coordinateSort(rectsOneArray);
+					    //console.log(sortRects);
+
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray,2);
+						for(var r = 0; r<rectLineSplit.length; r++){
+						    if(rectLineSplit[r].node.nodeType === 1){
+					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
+					        }else{
+					        	//不是元素，那么就取父级了
+					        	var nodeParent = rectLineSplit[r].node.parentNode;
+						        if(nodeParent == null){
+						        	continue;
+						        }
+						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translate_api_in_progress') > -1){
+					        		//父有了，那么子就不需要再加了
+						        	continue;
+						        }else{
+						        	//没有，添加
+						        	nodeParent.className = nodeParent.className+' translate_api_in_progress';
+						        }
+					        }
+						}
 						
 					});
 					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
@@ -7433,29 +7580,32 @@ var translate = {
 						    	}
 
 					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
-					    		var nodeParent = node.parentNode;
-						        if(nodeParent == null){
-						        	continue;
-						        }
+					    		
+					    		var operationNode;
+								if(node.nodeType === 1){
+									//是元素
+									operationNode = node;
+								}else{
+									//节点，如 #text
+									operationNode = node.parentNode;
+							        if(operationNode == null){
+							        	continue;
+							        }
+								}
 
-						        /*
-						        注释这个，因为可能是给这个元素动态追加删除导致其子元素不是11
-								if(nodeParent.childNodes.length != 1){
-									continue;
-								}
-								*/
 
-								var parentClassName = nodeParent.className;
-								if(typeof(parentClassName) == 'undefined' || parentClassName == null || parentClassName == ''){
-									continue;
+								if(typeof(operationNode.className) != 'undefined' && operationNode.className != null){
+									if(operationNode.className.indexOf('translate_api_in_progress') > -1){
+										operationNode.className = operationNode.className.replace(/translate_api_in_progress/g, '');	
+									}
+									if(operationNode.className.indexOf('translatejs-text-element-hidden') > -1){
+										operationNode.className = operationNode.className.replace(/translatejs-text-element-hidden/g, '');	
+									}
 								}
-								if(parentClassName.indexOf('translate_api_in_progress') < -1){
-									continue;
-								}
+									
+
+								//nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
 								
-
-								nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
-								//nodeParent.className = parentClassName.replace(/loading/g, '');
 					    	}
 					    }
 						
@@ -7499,8 +7649,13 @@ var translate = {
 			try{
 				jsObject = JSON.parse(jsString);
 			}catch(e){
-				failureFunction(e);
-				return;
+				try{
+					jsObject =  eval('(' + jsString + ')');
+				}catch(e){
+					console.log(e)
+					failureFunction(e);	
+					return;
+				}
 			}
 			translate.js.transObject(jsObject, targetLanguage, successFunction, failureFunction);
 		},
@@ -7522,9 +7677,9 @@ var translate = {
 
 		*/
 		transObject: function (jsObject, targetLanguage, successFunction, failureFunction) {
-			let kvs = translate.js.find(jsObject);
-			//console.log(JSON.stringify(kvs, null, 2));
-
+			let tj_find = translate.js.find(jsObject);
+			let kvs = tj_find.stringResult;
+			
 			/**** 第二步，将文本值进行翻译 ***/
 			//先将其 kvs 的key 取出来
 			var texts = new Array();
@@ -7532,11 +7687,83 @@ var translate = {
 				texts.push(key);
 			}
 
+			/*
+				它主要用于拆分场景，如果不需要拆分，它用不到
+				下标对应，上面 texts 的原始下标跟拆分后的下标对应
+				key 新数组的下标
+				value 对象，包含:
+					  index: 旧数组的下标
+					  original: 翻译的原始文本
+					  isSplit: 是否是被拆分的， true是，false不是
+				
+			*/
+			var originalArrayIndexMap = new Array();
+
 			var obj = {
 				from:'auto',
 				to: targetLanguage,
 				texts: texts
 			}
+
+			if(translate.ignore.text.length > 0){ //有设置忽略翻译的文本
+				var newTexts = new Array(); //新组合的
+
+				//组合  split 切割
+				var splitStrng = '';
+				for(var ig = 0; ig < translate.ignore.text.length; ig++){
+					if(translate.ignore.text[ig].trim().length == 0){
+						continue;
+					}
+					var ignoretext = translate.ignore.text[ig];
+					if(ignoretext.indexOf('.') > -1){
+						ignoretext = ignoretext.replaceAll(/\./g, "\\.");
+					}
+					if(ignoretext.indexOf('$') > -1){
+						ignoretext = ignoretext.replaceAll(/\$/g, "\\$");
+					}
+
+					if(splitStrng != ''){
+						splitStrng = splitStrng + '|';
+					}
+					splitStrng = splitStrng + ignoretext;
+				}
+				var regex = new RegExp(splitStrng, 'g'); // 创建正则表达式对象，添加'g'修饰符表示全局匹配
+				//console.log(regex);
+
+				for(var tai = 0; tai<texts.length; tai++){
+					
+					var isFind = false; //是否发现匹配进行拆分了，true是
+						
+					//发现了忽略翻译的文本，将其单独抽取出来，不进行翻译
+					//进行拆分
+					var splits = texts[tai].split(regex);
+					if(splits.length > 1){
+						isFind = true; //拆分了
+						for(var s = 0; s < splits.length; s++){
+							if(splits[s].length > 0){
+								newTexts.push(splits[s]);
+								originalArrayIndexMap[newTexts.length-1] = {
+									index:tai,
+									original:splits[s],
+									isSplit:true
+								};
+							}
+						}
+					}else{
+						//没有拆分，那就原样加入
+						newTexts.push(texts[tai]);
+						originalArrayIndexMap[newTexts.length-1] = {
+							index:tai,
+							original:texts[tai],
+							isSplit:false
+						};
+					}
+					
+				}
+				obj.texts = newTexts;
+			}
+			//console.log(originalArrayIndexMap);
+			
 			translate.request.translateText(obj, function (data) {
 				//打印翻译结果
 				//console.log(data);
@@ -7550,7 +7777,23 @@ var translate = {
 				}
 
 				/**** 第三步，将翻译结果赋予 jsObject ***/
-				const translatedTexts = data.text; // 获取翻译结果数组
+				var translatedTexts; //跟最初拆分前的 texts 下标一一对应
+
+				//判断是否有过分割
+				if(translate.ignore.text.length > 0){ //有过分割，进行合并
+					translatedTexts = new Array();
+
+					for(var i = 0; i < data.text.length; i++){
+						var originalTextIndex = originalArrayIndexMap[i].index; //最初分割前的原数组下标
+						if(translatedTexts.length < originalTextIndex+1){
+							translatedTexts.push(texts[originalTextIndex]);
+						}
+						translatedTexts[originalTextIndex] = translate.util.textReplace(translatedTexts[originalTextIndex], originalArrayIndexMap[i].original, data.text[i], data.to);
+					}
+				}else{
+					translatedTexts = data.text; // 直接获取翻译结果数组赋予
+				}
+
 				if (translatedTexts && translatedTexts.length === texts.length) {
 					texts.forEach((originalText, index) => {
 						const translatedText = translatedTexts[index]; // 根据索引获取翻译结果
@@ -7563,6 +7806,15 @@ var translate = {
 					});
 				} else {
 					console.error("翻译结果长度不匹配或为空");
+				}
+
+				if(Object.keys(tj_find.functionResult).length > 0){
+					for(var sf in tj_find.functionResult){
+						if (!tj_find.functionResult.hasOwnProperty(sf)) {
+							continue;
+						}
+						translate.js.setValueByPath(jsObject, sf, tj_find.functionResult[sf]); // 更新 jsObject
+					}
 				}
 				successFunction(jsObject);
 				//console.log("翻译后的 jsObject:", jsObject);
@@ -7587,37 +7839,67 @@ var translate = {
 			};
 			translate.js.find(obj);
 
+			返回值：
+			{
+				stringResult:
+				functionResult:
+			}
+
 		*/
 		find: function (obj, parentKey = '') {
-			let kvs = {};
+			let kvs = {}; //stringResult
+			let frs = {}; //functionResult
+
 			if (typeof obj === 'object' && obj !== null) {
 				if (Array.isArray(obj)) {
 					obj.forEach((item, index) => {
 						const currentKey = parentKey ? `${parentKey}[${index}]` : `[${index}]`;
-						const subKvs = translate.js.find(item, currentKey);
+						const tj_find = translate.js.find(item, currentKey);
+						const subKvs = tj_find.stringResult;
 						for (const [text, paths] of Object.entries(subKvs)) {
 							if (!kvs[text]) {
 								kvs[text] = [];
 							}
 							kvs[text] = kvs[text].concat(paths);
 						}
+
+						const subFrs = tj_find.functionResult;
+						for(var sf in subFrs){
+							if (!subFrs.hasOwnProperty(sf)) {
+								continue;
+							}
+							frs[sf] = subFrs[sf];
+						}
 					});
 				} else {
+
 					for (const key in obj) {
 						const currentKey = parentKey ? `${parentKey}.${key}` : key;
 						if (typeof obj[key] === 'object' && obj[key] !== null) {
-							const subKvs = translate.js.find(obj[key], currentKey);
+							const tj_find = translate.js.find(obj[key], currentKey);
+							const subKvs = tj_find.stringResult;
 							for (const [text, paths] of Object.entries(subKvs)) {
 								if (!kvs[text]) {
 									kvs[text] = [];
 								}
 								kvs[text] = kvs[text].concat(paths);
 							}
+							const subFrs = tj_find.functionResult;
+							for(var sf in subFrs){
+								if (!subFrs.hasOwnProperty(sf)) {
+									continue;
+								}
+								frs[sf] = subFrs[sf];
+							}
+
 						} else if (typeof obj[key] === 'string') {
 							if (typeof kvs[obj[key]] === 'undefined') {
 								kvs[obj[key]] = [];
 							}
 							kvs[obj[key]].push(currentKey);
+						}else if(typeof(obj[key]) == 'function'){
+							//value是一个方法，那么也将他返回
+							frs[currentKey]=obj[key];
 						}
 					}
 				}
@@ -7627,7 +7909,31 @@ var translate = {
 				}
 				kvs[obj].push(parentKey);
 			}
-			return kvs;
+			return {
+				stringResult:kvs,
+				functionResult:frs
+			};
+		},
+		/*
+			将 translate.js.transString 执行结果的 obj 对象 转化为 字符串输出
+			这个可以直接输出到 textarea 中显示
+
+			obj: js对象
+			formatSupplementaryCharLength: 对这个js对象进行格式化自动补充字符的长度，比如 2、 4
+		*/
+		objToString:function(obj, formatSupplementaryCharLength){
+			// 自定义replacer函数，将函数转换为字符串
+			const jsonStr = JSON.stringify(obj, (key, value) => {
+			  if (typeof value === 'function') {
+			    // 将函数转换为其源代码字符串
+			    return value.toString();
+			  }
+			  return value;
+			}, formatSupplementaryCharLength);
+
+			// 将转义的\n替换为实际的换行符
+			const formattedStr = jsonStr.replace(/\\n/g, '\n');
+			return formattedStr;
 		}
 	},
 	/*js dispose end*/
@@ -8050,11 +8356,16 @@ var translate = {
 	visual: {
 		/**
 		 * 获取一组节点的视觉矩形信息
-		 * @param {Node[]} nodes - 节点数组，格式如 
+		 * @param nodes - 节点数组，格式如 ：
 		 * 			[node1,node2,node3]
-		 * @returns {Object[]} - 矩形信息数组，与输入节点一一对应
+		 * @returns 返回的是二维数组，其中第一维度跟输入的 nodes 下标一一对应。
+		 * 				其中第二维度，是应对换行的情况。比如  node1 没有换行，那第二维度就只有一个
+		 * 												node2 有换行，有三行，那么第二维度就有三个，每行一个。 这个也是每行都有一个 开始坐标(x,y)、结束坐标(x,y)
+		 * 	
 		 */
 		getRects:function(nodes){
+			/*
+
 		  return nodes.map(node => {
 		    if (!node) return null;
 		    
@@ -8079,6 +8390,119 @@ var translate = {
 		      height: rect.height
 		    } : null;
 		  });
+		  */
+
+			return nodes.map(node => {
+                if (!node) return []; // 节点不存在时返回空数组
+                
+                let rects = [];
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // 处理文本节点：获取所有行的矩形
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    const clientRects = range.getClientRects();
+                    // 转换为数组并处理每个行矩形
+                    rects = Array.from(clientRects).map(rect => ({
+                        node,
+                        left: rect.left,
+                        top: rect.top,
+                        right: rect.right,
+                        bottom: rect.bottom,
+                        width: rect.width,
+                        height: rect.height,
+                        lineIndex: Array.from(clientRects).indexOf(rect) // 增加行索引，方便区分第几行
+                    }));
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    // 处理元素节点：获取元素整体矩形（保持原有逻辑）
+                    const rect = node.getBoundingClientRect();
+                    rects = rect ? [{
+                        node,
+                        left: rect.left,
+                        top: rect.top,
+                        right: rect.right,
+                        bottom: rect.bottom,
+                        width: rect.width,
+                        height: rect.height
+                    }] : [];
+                }
+                
+                return rects;
+            });
+		},
+		/**
+		 * 将 translate.visual.getRects 获取到的二维坐标数据转为一维坐标
+		 */
+		rectsToOneArray:function(rects){
+			// 将 reacts 二维数组转化为 一维数组，以便对一维数组进行排序
+			var oneArrayRects = new Array();
+			for(var r = 0; r < rects.length; r++){
+				for(var twoR = 0; twoR < rects[r].length; twoR++){
+					oneArrayRects.push(rects[r][twoR]);
+				}
+			}
+			return oneArrayRects;
+		},
+		/**
+		 * 按行间隔筛选rects数组中的节点
+		 * @param rects 一维的矩形信息数组（包含node和坐标信息），也就是 translate.visual.rectsToOneArray(translate.visual.getRects(nodes)); 取得的信息。它并不需要提前排序
+		 * @param line - 间隔行数，1表示每行都取，2表示隔一行取一个，3表示隔2行取一个，以此类推
+		 * @returns 筛选后的矩形信息数组，并按照 top 的值有小往大排序
+		 */
+		filterRectsByLineInterval:function(rects, line) {
+	        // 验证输入
+		    if (!Array.isArray(rects) || typeof line !== 'number' || line < 1) {
+		        console.error('输入参数无效，请确保rects是数组且line是大于0的数字');
+		        return [];
+		    }
+		    
+		    // 1. 先处理所有矩形，计算每行的基准线（使用top作为主要依据）
+		    // 为每个矩形添加行标识临时属性
+		    const processedRects = rects.map(rect => {
+		        if (!rect || rect.top === undefined) {
+		            return null; // 过滤无效矩形
+		        }
+		        return {
+		            ...rect,
+		            // 计算行基准（使用top的整数部分，处理可能的浮点精度问题）
+		            rowBase: Math.round(rect.top)
+		        };
+		    }).filter(Boolean); // 移除null值
+		    
+		    // 2. 按行基准分组（完全相同的rowBase属于同一行）
+		    const rowMap = new Map();
+		    processedRects.forEach(rect => {
+		        const key = rect.rowBase;
+		        if (!rowMap.has(key)) {
+		            rowMap.set(key, []);
+		        }
+		        rowMap.get(key).push(rect);
+		    });
+		    
+		    // 3. 将Map转换为数组并按行基准排序（确保从上到下的顺序）
+		    const lineGroups = Array.from(rowMap.entries())
+		        .sort((a, b) => a[0] - b[0]) // 按行基准升序排序
+		        .map(entry => entry[1]); // 提取每组的矩形数组
+		    
+		    // 4. 按间隔行数筛选行组，并只保留每行的第一个元素
+		    const filtered = [];
+		    lineGroups.forEach((group, index) => {
+		        if (index % line === 0 && group.length > 0) {
+		            // 保留每行的第一个元素
+		            filtered.push(group[0]);
+		        }
+		    });
+		    
+		    // 调试：打印所有行组的基准值和数量，方便验证
+		    /*
+		    console.log('行分组基准与数量:', lineGroups.map((g, i) => ({
+		        rowBase: g[0].rowBase,
+		        top: g[0].top,
+		        count: g.length,
+		        isSelected: i % line === 0 // 是否被选中
+		    })));
+		    */
+		    
+		    return filtered;
 		},
 		/*
 			对一组坐标进行排序
@@ -8099,12 +8523,11 @@ var translate = {
 		},
 		/**
 		 * 查找左右紧邻的矩形对
-		 * @param rects translate.visual.getRects获取到的坐标数据
+		 * @param rects translate.visual.getRects 获取到的坐标数据，转化为 一维数组 后传入
 		 * @returns {Array<{before: Object, after: Object}>} - 左右紧邻的矩形对数组
 		 */
 		afterAdjacent:function(rects){
 		  var sortedRects = translate.visual.coordinateSort(rects);
-		  
 		  const adjacentPairs = [];
 		  const lineGroups = translate.visual.groupRectsByLine(sortedRects);
 		  
@@ -8236,11 +8659,17 @@ var translate = {
 			//var startTime = Date.now();
 			// 1. 获取节点视觉矩形
 			const rects = translate.visual.getRects(nodes);
+
+			// 将 reacts 二维数组转化为 一维数组，以便对一维数组进行排序
+			var oneArrayRects = translate.visual.rectsToOneArray(rects);
+
 			//console.log('rects:');
 			//console.log(rects);
+			//console.log('将 reacts 二维数组转化为一维数组 oneArrayRects:');
+			//console.log(oneArrayRects);
 
 			// 2. 查找左右紧邻的矩形对
-			const adjacentPairs = translate.visual.afterAdjacent(rects);
+			const adjacentPairs = translate.visual.afterAdjacent(oneArrayRects);
 			//console.log('adjacentPairs:');
 			//console.log(adjacentPairs);
 
@@ -8349,19 +8778,45 @@ var translate = {
 			 * 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
 			 * 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
 			 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+			 * 
+			 * id 唯一标识，可能会隐藏多次，或者同一时间出发多次不同的元素隐藏，每次隐藏跟显示都是根据这个id唯一标识来的， 字符串类型。 如果没有，默认就是 translatejs-text-hidden
 			 */
-			hide:function(){
+			hide:function(id){
 				const style = document.createElement('style');
-				style.textContent = translate.visual.hideText.style;
-			    document.head.appendChild(style);
-			    document.documentElement.classList.add('translatejs-text-hidden');
+
+				var styleHtml;
+				if(typeof(id) == 'undefined' || id == null || id.length == 0){
+					id = 'translatejs-text-hidden';
+					style.textContent = translate.visual.hideText.style;
+				}else{
+					//有值
+					id = 'translatejs-text-hidden-'+id;
+					style.textContent = translate.visual.hideText.style.replace(/translatejs-text-hidden/g, id);
+				}
+				style.id = id;
+				document.head.appendChild(style);
+			    document.documentElement.classList.add(id);
 			},
 			/**
 			 * 撤销隐藏状态，将原本的文本正常显示出来 
 			 * 
+			 * id 同 hide 的
 			 */
-			show:function(){
-				document.documentElement.classList.remove('translatejs-text-hidden');
+			show:function(id){
+				if(typeof(id) == 'undefined' || id == null || id.length == 0){
+					id = 'translatejs-text-hidden';
+				}else{
+					//有值
+					id = 'translatejs-text-hidden-'+id;
+				}
+
+				//删除html 的 class name
+				document.documentElement.classList.remove(id);
+				//删除 style
+				var style_translatejs_text_hidden = document.getElementById(id);
+				if(typeof(style_translatejs_text_hidden) != null && style_translatejs_text_hidden != null){
+					style_translatejs_text_hidden.remove();
+				}
 			}
 		},
 
@@ -8426,9 +8881,66 @@ var translate = {
 
 
 
-	}
+	},
 	/*js translate.visual end*/
 	
+	/*
+		记录打印翻译执行的耗时情况
+	*/
+	time:{
+		use:false, //true启用， false不启用，默认是不启用状态
+		printTime: 0, //打印耗时大于这个的，默认是0，也就是全部打印。单位是毫秒。 比如设置为 100 ，则只打印耗时大于等于100毫秒的动作
+
+		/**
+		 * 增加一条日志记录
+		 * functionName 触发调用此处log的方法名，传入如 translate.execute
+		 * remark 备注文字，说明
+		 */ 
+		log:function(remark){
+			if(translate.time.use == false){
+				return;
+			}
+
+			var timestamp = new Date().getTime(); // 例如：1725053445123
+
+			var usetime = 0; //跟上一次记录的间隔耗时，单位是毫秒
+			if(typeof(translate.time.temp_lasttime) != 'undefined'){
+				usetime = timestamp-translate.time.temp_lasttime;
+			}
+			translate.time.temp_lasttime = timestamp;
+			
+			if(usetime < translate.time.printTime){
+				//不需要打印
+				return; 
+			}
+
+			var functionName = '';
+			try {
+				// 创建一个Error对象来获取调用栈
+				var error = new Error();
+				// 解析调用栈，获取调用者信息
+				// 不同环境下调用栈的索引可能不同，这里做了兼容处理
+				var stackLines = error.stack.split('\n');
+				//console.log(stackLines);
+				var callerLine = stackLines[2] || stackLines[3]; // 兼容不同环境
+
+				// 从调用栈中提取方法名
+				var functionMatch = callerLine.match(/at (\S+)/);
+
+				if (functionMatch && functionMatch[1]) {
+				  functionName = functionMatch[1];
+				}
+			} catch (e) {
+				// 如果获取调用栈失败，使用原始log方法
+				console.log(e);
+			}
+
+			functionName = functionName.replace('Object.','translate.');
+			console.log(functionName+'() '+usetime+' -> '+remark);
+		}
+
+	}
+
 }
 /*
 	将页面中的所有node节点，生成其在当前页面的唯一标识字符串uuid

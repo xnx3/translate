@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>新增域名 - translate.service</title>
+    <link rel="stylesheet" href="./src/css/layui.css">
+</head>
+<body style="padding: 20px;">
+<div class="layui-form" style="max-width: 550px; margin: 0 auto;">
+    <style>
+        .layui-form-label{width: 120px}
+        .layui-input-block{margin-left: 150px}
+    </style>
+    <div class="layui-form-item">
+        <label class="layui-form-label">域名 <span style="color: red;">*</span></label>
+        <div class="layui-input-block">
+            <input type="text" id="domain" name="domain" placeholder="请输入域名" class="layui-input" lay-verify="required">
+            <div style="font-size: 9px; color: gray;"> 将你的网站域名添加到这里。注意，是具体的域名。 <br/>比如你用 abc.123.com 访问网站，那这里就要填写 abc.123.com 而不是填写 123.com <br/>比如你访问网站是 http://abc.123.com:8080/a/b.html 那这里也是填写 abc.123.com </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">每日翻译上限(字)</label>
+        <div class="layui-input-block">
+            <input type="number" id="dayMaxSize" name="dayMaxSize" placeholder="请输入每日翻译上限" class="layui-input" lay-verify="number" min="1">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">内存缓存大小(字)</label>
+        <div class="layui-input-block">
+            <input type="number" id="maxCacheMemorySize" name="maxCacheMemorySize" placeholder="请输入内存缓存大小" class="layui-input" lay-verify="number" min="1">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">文件缓存大小(字)</label>
+        <div class="layui-input-block">
+            <input type="number" id="maxCacheFileSize" name="maxCacheFileSize" placeholder="请输入文件缓存大小" class="layui-input" lay-verify="number" min="1">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">大模型</label>
+        <div class="layui-input-block">
+            <select id="serviceChannelConfig" name="serviceChannelConfig" class="layui-select">
+                <option value="">默认</option>
+                <option value="Qwen3-8B">Qwen3-8B (免费)</option>
+                <option value="Hunyuan-MT-Chimera-7B">Hunyuan-MT-Chimera-7B (0.3元/百万Token) (推荐)</option>
+                <option value="Qwen3-30B-A3B">Qwen3-30B-A3B (2.8元/百万Token) (推荐)</option>
+                <option value="Qwen3-32B">Qwen3-32B (4元/百万Token)</option>
+            </select>
+            <div style="font-size:12px; color:gray;">
+                建议使用 Hunyuan-MT-Chimera-7B 、Qwen3-30B-A3B 翻译质量高，速度快。 它俩的区别是Hunyuan-MT-Chimera-7B支持<a style="text-decoration: underline;" href="https://giteeai.zvo.cn/language.json?service=hunyuanMtChimera" target="_black">三十余个语种</a>，qwen3支持<a style="text-decoration: underline;" href="https://giteeai.zvo.cn/language.json?service=qwen3" target="_black">百个语种</a>。如果只是几个语种，推荐hunyuan，便宜
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="addDomain">提交</button>
+            <button class="layui-btn layui-btn-primary" onclick="parent.layer.closeAll();">取消</button>
+        </div>
+    </div>
+</div>
+<script src="./src/layui.js"></script>
+<script src="./translate.service.js"></script>
+<script src="./src/msg.js"></script>
+<script>
+    layui.use(['form', 'layer', 'jquery'], function(){
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.jquery;
+        
+        // 表单提交
+        form.on('submit(addDomain)', function(data){
+            var formData = data.field;
+            
+            // 非空验证
+            if(!formData.domain || !formData.domain.trim()) {
+                msg.failure('域名不能为空');
+                return false;
+            }
+            
+            // 构建请求参数
+            var requestData = {
+                token: token,
+                domain: formData.domain.trim()
+            };
+            
+            // 只有当字段有值且不为NaN时才添加到请求参数中
+            if(formData.dayMaxSize && formData.dayMaxSize.trim() && !isNaN(parseInt(formData.dayMaxSize))) {
+                requestData.dayMaxSize = parseInt(formData.dayMaxSize);
+            }
+            if(formData.maxCacheMemorySize && formData.maxCacheMemorySize.trim() && !isNaN(parseInt(formData.maxCacheMemorySize))) {
+                requestData.maxCacheMemorySize = parseInt(formData.maxCacheMemorySize);
+            }
+            if(formData.maxCacheFileSize && formData.maxCacheFileSize.trim() && !isNaN(parseInt(formData.maxCacheFileSize))) {
+                requestData.maxCacheFileSize = parseInt(formData.maxCacheFileSize);
+            }
+            
+            // 如果选择了大模型（不是默认空值），则添加serviceChannelConfig参数
+            if(formData.serviceChannelConfig && formData.serviceChannelConfig.trim()) {
+                requestData.serviceChannelConfig = JSON.stringify({
+                    name: "giteeAl",
+                    mode: formData.serviceChannelConfig
+                });
+            }
+            
+            msg.success('保存中...');
+            $.ajax({
+                url: domain + 'admin/domain/setDomain.json',
+                type: 'post',
+                data: requestData,
+                success: function(res) {
+                    msg.close();
+                    if (res.result == 1) {
+                        msg.success('操作成功');
+                        setTimeout(function() {
+                            parent.layer.closeAll();
+                            // 通知父页面刷新数据
+                            parent.searchTranslation();
+                        }, 1500);
+                    } else {
+                        msg.failure(res.info || '操作失败');
+                    }
+                },
+                error: function() {
+                    msg.close();
+                    msg.failure('网络错误，操作失败');
+                }
+            });
+            
+            return false; // 阻止表单跳转
+        });
+    });
+</script>
+</body>
+</html>

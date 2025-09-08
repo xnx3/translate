@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>余额管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="./src/css/layui.css" media="all">
+    <script src="./src/layui.js"></script>
+    <script src="./translate.service.js"></script>
+    <style>
+        body {
+            padding: 20px;
+            background-color: white;
+        }
+        .balance-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        .balance-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .balance-amount {
+            font-size: 48px;
+            color: #1E9FFF;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .balance-label {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .refresh-btn {
+            margin-top: 30px;
+        }
+        .loading-container {
+            text-align: center;
+            padding: 50px;
+        }
+        .error-container {
+            text-align: center;
+            padding: 50px;
+            color: #ff5722;
+        }
+    </style>
+</head>
+<body>
+    <div class="balance-container">
+        <div class="balance-title">
+            <i class="layui-icon layui-icon-rmb" style="font-size: 28px; margin-right: 10px;"></i>
+            余额管理
+        </div>
+        
+        <div id="loadingDiv" class="loading-container">
+            <i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop" style="font-size: 30px;"></i>
+            <div style="margin-top: 10px;">正在获取余额信息...</div>
+        </div>
+        
+        <div id="balanceDiv" style="display: none;">
+            <div class="balance-label">当前余额</div>
+            <div class="balance-amount" id="balanceAmount">0</div>
+            <div style="color: #999; font-size: 14px;">余额单位：元</div>
+            
+            <div class="refresh-btn">
+                <button type="button" class="layui-btn layui-btn-primary" onclick="refreshBalance()">
+                    <i class="layui-icon layui-icon-refresh"></i> 刷新余额
+                </button>
+                <button type="button" class="layui-btn layui-btn-normal" onclick="accountChongzhi()" style="margin-left: 10px;">
+                    <i class="layui-icon layui-icon-addition"></i> 充值
+                </button>
+            </div>
+        </div>
+        
+        <div id="errorDiv" class="error-container" style="display: none;">
+            <i class="layui-icon layui-icon-close" style="font-size: 30px;"></i>
+            <div style="margin-top: 10px;" id="errorMessage">获取余额信息失败</div>
+            <div class="refresh-btn">
+                <button type="button" class="layui-btn layui-btn-danger" onclick="refreshBalance()">
+                    <i class="layui-icon layui-icon-refresh"></i> 重试
+                </button>
+            </div>
+        </div>
+        
+        <!-- 授权提示区域 -->
+        <div id="authWarningDiv" style="display: none; background: #fff2e8; border: 1px solid #ffb800; border-radius: 6px; padding: 15px; margin-top: 20px; text-align: center;">
+            <i class="layui-icon layui-icon-tips" style="color: #ff9900; font-size: 18px; margin-right: 8px;"></i>
+            <span style="color: #ff9900;">您尚未进行购买使用授权或授权已过期，请 <a href="https://translate.zvo.cn/4030.html" target="_blank" style="color: #1E9FFF; text-decoration: none;">联系我们</a> 购买授权</span>
+        </div>
+    </div>
+
+    <script>
+        layui.use(['layer'], function(){
+            var layer = layui.layer;
+            
+            // 页面加载时获取余额
+            getBalance();
+        });
+        
+        // 监听 postMessage 事件，处理充值完成消息
+        window.addEventListener('message', function(event) {
+            try {
+                var data = event.data;
+                console.log('Received postMessage:', event.data, 'from:', event.origin);
+                
+                // 监听充值完成消息
+                if (data && data.action == 'rechargeComplete') {
+                    msg.success('充值成功', function(){
+                        // 充值成功后的回调
+                    });
+
+                    var index = window.rechargePopupIndex || layer.getFrameIndex(window.name);
+                    if (index) {
+                        layer.close(index);
+                    } else {
+                        layer.closeAll();
+                    }
+
+                    // 刷新余额信息
+                    getBalance();
+                }
+            } catch (e) {
+                console.error('postMessage handler error:', e);
+                msg.failure('处理充值消息时出错');
+            }
+        }, false);
+        
+        /**
+         * 获取用户余额
+         */
+        function getBalance() {
+            // 显示加载状态
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('balanceDiv').style.display = 'none';
+            document.getElementById('errorDiv').style.display = 'none';
+            
+            // 先检查认证状态
+            wm.post(domain + 'admin/system/auth.json', {}, function(authData) {
+                if (authData.info == 0) {
+                    // 未认证，显示授权提示区域
+                    document.getElementById('authWarningDiv').style.display = 'block';
+                } else {
+                    // 已认证，隐藏授权提示区域
+                    document.getElementById('authWarningDiv').style.display = 'none';
+                }
+            }, function(error) {
+                console.log('认证检查失败:', error);
+                // 认证检查失败时隐藏提示区域
+                document.getElementById('authWarningDiv').style.display = 'none';
+            });
+            
+            // 独立获取余额，不受认证状态影响
+            wm.post(domain +'admin/giteeAI/app/user', {}, function(data) {
+                // 隐藏加载状态
+                document.getElementById('loadingDiv').style.display = 'none';
+                
+                if (data.result == 1) {
+                    // 成功获取余额
+                    document.getElementById('balanceAmount').textContent = data.balance || '0';
+                    document.getElementById('balanceDiv').style.display = 'block';
+                } else {
+                    // 获取失败，显示错误信息
+                    var errorMsg = data.info || '获取余额信息失败';
+                    document.getElementById('errorMessage').textContent = errorMsg;
+                    document.getElementById('errorDiv').style.display = 'block';
+                    msg.failure(errorMsg);
+                }
+            }, function(error) {
+                // 余额请求失败
+                document.getElementById('loadingDiv').style.display = 'none';
+                document.getElementById('errorDiv').style.display = 'block';
+                document.getElementById('errorMessage').textContent = '网络请求失败，请检查网络连接';
+                msg.failure('网络请求失败，请检查网络连接');
+            });
+        }
+        
+        /**
+         * 刷新余额
+         */
+        function refreshBalance() {
+            getBalance();
+        }
+        
+        /**
+         * 账户余额充值
+         */
+        function accountChongzhi(){
+            var index = layer.open({
+                type: 2,
+                title: '余额充值',
+                area: ['550px', '650px'],
+                shadeClose: true,
+                content: domain + 'admin/giteeAI/accountRecharge.html?token='+wm.token.get()
+            });
+            window.rechargePopupIndex = index; // 存储弹窗索引
+        }
+    </script>
+</body>
+</html>

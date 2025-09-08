@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>安装SSL证书</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/layui@2.6.8/dist/css/layui.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .ssl-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .ssl-status {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1E9FFF;
+        }
+        .ssl-status.error {
+            border-left-color: #FF5722;
+            background: #fff2f0;
+        }
+        .ssl-status.success {
+            border-left-color: #5FB878;
+            background: #f6ffed;
+        }
+        .install-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-item {
+            margin-bottom: 15px;
+        }
+        .form-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-item input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        .btn-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="ssl-container">
+        <h2>SSL证书管理</h2>
+        
+        <!-- SSL状态显示区域 -->
+        <div id="sslStatus" class="ssl-status">
+            <div class="loading">
+                <i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i>
+                正在检查SSL证书状态...
+            </div>
+            <div id="statusContent" style="display: none;">
+                <h3 id="statusTitle">SSL证书状态</h3>
+                <p id="statusMessage"></p>
+            </div>
+        </div>
+
+        <!-- SSL安装表单 -->
+        <div id="installForm" class="install-form" style="display: none;">
+            <h3>安装SSL证书</h3>
+            <form id="sslForm">
+                <div class="form-item">
+                    <label for="domain">域名:</label>
+                    <input type="text" id="domain" name="domain" placeholder="请输入域名，如：example.com" required>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="layui-btn" onclick="installSsl()">安装SSL证书</button>
+                    <button type="button" class="layui-btn layui-btn-primary" onclick="checkSslStatus()">重新检查状态</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/layui@2.6.8/dist/layui.js"></script>
+    <script src="translate.service.js"></script>
+    <script>
+        layui.use(['layer', 'form'], function(){
+            var layer = layui.layer;
+            var form = layui.form;
+            
+            // 页面加载时检查SSL状态
+            checkSslStatus();
+        });
+
+        // 检查SSL证书状态
+        function checkSslStatus() {
+            // 显示加载状态
+            document.getElementById('sslStatus').className = 'ssl-status';
+            document.querySelector('.loading').style.display = 'block';
+            document.getElementById('statusContent').style.display = 'none';
+            document.getElementById('installForm').style.display = 'none';
+
+            // 调用检查SSL状态的接口
+            post('admin/install/isSslInstalled.json', {}, function(response) {
+                document.querySelector('.loading').style.display = 'none';
+                document.getElementById('statusContent').style.display = 'block';
+                
+                if (response && response.result == 1) {
+                    // 检查info字段判断是否已安装
+                    if (response.info == 0) {
+                        // 未安装SSL证书
+                        document.getElementById('sslStatus').className = 'ssl-status error';
+                        document.getElementById('statusTitle').textContent = 'SSL证书未安装';
+                        document.getElementById('statusMessage').textContent = '检测到您的服务器尚未安装SSL证书，建议安装以提高网站安全性。';
+                        document.getElementById('installForm').style.display = 'block';
+                    } else {
+                        // 已安装SSL证书
+                        document.getElementById('sslStatus').className = 'ssl-status success';
+                        document.getElementById('statusTitle').textContent = 'SSL证书已安装';
+                        document.getElementById('statusMessage').textContent = '您的服务器已安装SSL证书，网站连接安全。';
+                        document.getElementById('installForm').style.display = 'none';
+                    }
+                } else {
+                    // 接口调用失败
+                    document.getElementById('sslStatus').className = 'ssl-status error';
+                    document.getElementById('statusTitle').textContent = '检查失败';
+                    document.getElementById('statusMessage').textContent = response ? (response.info || '检查SSL状态时发生错误') : '网络连接失败，请稍后重试';
+                    document.getElementById('installForm').style.display = 'none';
+                }
+            });
+        }
+
+        // 安装SSL证书
+        function installSsl() {
+            var domain = document.getElementById('domain').value.trim();
+            
+            if (!domain) {
+                msg.failure('请输入域名');
+                return;
+            }
+
+            // 显示加载提示
+            var loadingIndex = layui.layer.load(1, {
+                shade: [0.3, '#000']
+            });
+
+            // 调用安装SSL的接口
+            post('admin/install/openSsl.json', {
+                domain: domain
+            }, function(response) {
+                layui.layer.close(loadingIndex);
+                
+                if (response && response.result == 1) {
+                    // 显示成功提示
+                    //msg.success(response.info || 'SSL证书安装请求已提交');
+                    // 清空输入框
+                    document.getElementById('domain').value = '';
+                    
+                    // 显示加载提示并开始轮询检查状态
+                    msg.loading('正在安装SSL证书，请稍候...');
+                    pollSslStatus();
+                } else {
+                    msg.failure(response ? (response.info || 'SSL证书安装失败') : '网络连接失败，请稍后重试');
+                }
+            });
+        }
+
+        // 轮询检查SSL状态
+        function pollSslStatus() {
+            var pollInterval = setInterval(function() {
+                post('admin/install/isSslInstalled.json', {}, function(response) {
+                    if (response && response.result == 1 && response.info == 1) {
+                        // SSL证书安装成功
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutTimer); // 清除超时定时器
+                        msg.close();
+                        msg.success('SSL证书安装成功，请等待大约五分钟后访问进行测试！');
+                        // 延迟1秒后刷新页面状态
+                        setTimeout(function() {
+                            checkSslStatus();
+                        }, 1000);
+                    } else if (response && response.result == 0) {
+                        // 安装失败
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutTimer); // 清除超时定时器
+                        msg.close();
+                        msg.failure(response.info || 'SSL证书安装失败');
+                    }
+                    // 如果response.info == 0，继续轮询
+                });
+            }, 3000); // 每3秒检查一次
+            
+            // 设置最大轮询时间为5分钟，避免无限轮询
+            var timeoutTimer = setTimeout(function() {
+                clearInterval(pollInterval);
+                msg.close();
+                msg.failure('SSL证书安装超时，请手动检查状态');
+            }, 300000); // 5分钟超时
+        }
+
+        // 监听父窗口消息
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'reload') {
+                checkSslStatus();
+            }
+        });
+    </script>
+</body>
+</html>

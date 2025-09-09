@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.15.20250909',
+	version: '3.18.16.20250909',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -147,6 +147,7 @@ var translate = {
 				
 		},
 		render:function(){ //v2增加
+			
 			if(translate.selectLanguageTag.alreadyRender){
 				return;
 			}
@@ -323,6 +324,7 @@ var translate = {
 	 */
 	changeLanguage:function(languageName){
 		translate.time.log('触发');
+		console.log('changeLanguage -> '+languageName);
 		//判断使用的是否是v1.x
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
@@ -1254,8 +1256,8 @@ var translate = {
 					}else if(mutation.type === 'characterData'){
 						//内容改变
 						addNodes = [mutation.target];
-						console.log('-------\n'+(translate.node.get(mutation.target) != null ? translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText:''));
-						console.log(mutation.target.nodeValue);
+						//console.log('-------\n'+(translate.node.get(mutation.target) != null ? translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText:''));
+						//console.log(mutation.target.nodeValue);
 
 						//如果是因为翻译替换而导致的改变，那么忽略这个
 						//if(translate.node.get(mutation.target) != null && translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText === mutation.target.nodeValue){
@@ -2966,15 +2968,17 @@ var translate = {
 						}
 
 						//这种 Html Attribute 方式 是 v3.12 版本之前一直使用的方式，速度上要慢于 上面的，为了向前兼容不至于升级出问题，后面可能会优化掉
-						var htmlAttributeValue = node.getAttribute(attribute);
-						if(htmlAttributeValue != null && typeof(htmlAttributeValue) != 'undefined'){
-							var resultShowText = translate.util.textReplace(htmlAttributeValue, originalText, resultText, translate.to);
-							//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
-							node.setAttribute(attribute, resultShowText); 
-							if(resultShowText.indexOf(resultText) > -1){
-								result['resultText'] = resultShowText;
-							}else{
-								result['resultText'] = '';
+						if(node.nodeType === 1){ //是 element 节点
+							var htmlAttributeValue = node.getAttribute(attribute);
+							if(htmlAttributeValue != null && typeof(htmlAttributeValue) != 'undefined'){
+								var resultShowText = translate.util.textReplace(htmlAttributeValue, originalText, resultText, translate.to);
+								//这个才是在v3.9.2 后要用的，上面的留着只是为了适配以前的
+								node.setAttribute(attribute, resultShowText); 
+								if(resultShowText.indexOf(resultText) > -1){
+									result['resultText'] = resultShowText;
+								}else{
+									result['resultText'] = '';
+								}
 							}
 						}
 					}
@@ -7038,11 +7042,13 @@ var translate = {
 					if(translate.request.listener.executetime > 1 && currentTime > translate.request.listener.executetime+translate.request.listener.delayExecuteTime){
 						translate.request.listener.executetime = 0;
 						translate.request.listener.lasttime = currentTime;
-						try{
-							//console.log('执行翻译 --'+currentTime);
-							translate.execute();
-						}catch(e){
-							console.log(e);
+						if(translate.executeNumber > 0 || translate.state > 0){ //已经执行过了 translate.execute() ，那么才会触发
+							try{
+								//console.log('执行翻译 --'+currentTime);
+								translate.execute();
+							}catch(e){
+								console.log(e);
+							}
 						}
 					}
 				}, 100);
@@ -7853,7 +7859,7 @@ var translate = {
 					    //var sortRects = translate.visual.coordinateSort(rectsOneArray);
 					    //console.log(sortRects);
 
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray,2);
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray,1);
 						for(var r = 0; r<rectLineSplit.length; r++){
 						    if(rectLineSplit[r].node.nodeType === 1){
 					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
@@ -9048,7 +9054,7 @@ var translate = {
 		hideText:{
 			style:`
 				/* 文本隐藏核心样式 - 仅隐藏文本内容 */
-		        html.translatejs-text-hidden p, html.translatejs-text-hidden div,
+		        html.translatejs-text-hidden p, html.translatejs-text-hidden div, html.translatejs-text-hidden small, 
 		        html.translatejs-text-hidden h1, html.translatejs-text-hidden h2, html.translatejs-text-hidden h3,
 		        html.translatejs-text-hidden h4, html.translatejs-text-hidden h5, html.translatejs-text-hidden h6,
 		        html.translatejs-text-hidden span, html.translatejs-text-hidden a, html.translatejs-text-hidden b,

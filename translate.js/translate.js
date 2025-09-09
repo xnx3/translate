@@ -7475,12 +7475,12 @@ var translate = {
 		
 		//清除 translate.nodeQueue 的记录
 		translate.nodeQueue = {};
-
+		
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');
 		translate.to = null;
-		//重新渲染select
-		translate.selectLanguageTag.render();
+		//重新绘制 select 选择语言
+		translate.selectLanguageTag.refreshRender();
 	},
 	/*js translate.reset end*/
 	

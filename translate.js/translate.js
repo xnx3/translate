@@ -2785,6 +2785,47 @@ var translate = {
 				key:history_attribute,
 				attribute:attribute
 			}
+		},
+		/*
+			刷新 translate.node.data 中的数据，剔除过时的（node已经不存在于dom的）
+		*/
+		refresh: function(){
+
+			// 收集要删除的无效节点
+			const deleteKeys = new Array();
+
+			for (let key of translate.node.data.keys()) {
+				// 检查节点是否还在DOM中
+			    let isValidNode = false;
+			    
+			    if (key.nodeType === Node.ELEMENT_NODE) {
+			        // 元素节点
+			        isValidNode = key.isConnected;
+			    } else if (key.nodeType === Node.ATTRIBUTE_NODE) {
+			        // 属性节点（如placeholder）
+			        isValidNode = key.ownerElement && key.ownerElement.isConnected;
+			    } else if (key.nodeType === Node.TEXT_NODE) {
+			        // 文本节点
+			        isValidNode = key.isConnected;
+			    }
+			    
+			    if (!isValidNode) {
+			        //console.log('节点已经不存在，剔除节点');
+			        deleteKeys.push(key);
+			    }
+			    
+			    // 处理有效节点...
+				//if(!key.isConnected){  text node 没有 isConnected
+				//	console.log(key.nodeValue+' 这个translate.node 中的 node不存在,忽略');
+				//	continue;
+				//}
+			}
+
+			// 统一删除无效节点
+			for (var i = 0; i < deleteKeys.length; i++) {
+			    translate.node.data.delete(deleteKeys[i]);
+			}
+
 		}
 	},
 
@@ -3421,7 +3462,7 @@ var translate = {
 		}else{
 			//没有过，是第一次，那么赋予值
 			translate.node.get(node)[nodeAttribute.key].originalText = text;
-			console.log(translate.node.get(node));
+			//console.log(translate.node.get(node));
 		}
 		/*
 		if(typeof(translate.node.get(node).translateTexts) != 'undefined'){ 
@@ -7401,21 +7442,39 @@ var translate = {
 
 		/** 使用基于 translate.node 的还原 **/
 		for (let key of translate.node.data.keys()) {
-			if(!key.isConnected){
-				console.log(key.nodeValue+' 这个translate.node 中的 node不存在,忽略');
-				continue;
-			}
+			if (!translate.node.get(key) == null) {
+	    		continue;
+	    	}
+			//if(!key.isConnected){  text node 没有 isConnected
+			//	console.log(key.nodeValue+' 这个translate.node 中的 node不存在,忽略');
+			//	continue;
+			//}
 
 			for(var attr in translate.node.get(key)){
+				if (!translate.node.get(key).hasOwnProperty(attr)) {
+		    		continue;
+		    	}
+
 				//console.log(attr);
-				translate.node.get(key)[attr]
+				//translate.node.get(key)[attr]
 				var analyse = translate.element.nodeAnalyse.get(key, '', '', translate.node.get(key)[attr].attribute);
+				//console.log(analyse.text+'\t-->\t'+translate.node.get(key)[attr].originalText);
+				if(typeof(translate.node.get(key)[attr].originalText) != 'string'){
+					continue;
+				}
 				translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key)[attr].originalText, translate.node.get(key)[attr].attribute);
 			}
 			//var analyse = translate.element.nodeAnalyse.get(item.nodes[index].node, '', '', attribute);
 			//translate.element.nodeAnalyse.analyse(key, analyse.text, item.original, attribute);
 		}
 
+		//清除 node 中的记录
+		if(translate.node.data != null){
+			translate.node.data.clear();
+		}
+		
+		//清除 translate.nodeQueue 的记录
+		translate.nodeQueue = {};
 
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');

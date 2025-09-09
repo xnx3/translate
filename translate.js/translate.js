@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.13.20250830',
+	version: '3.18.15.20250909',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -679,108 +679,174 @@ var translate = {
 		get:function(){
 			return translate.nomenclature.data;
 		},
-		//对传入的str字符进行替换，将其中的自定义术语提前进行替换，然后将替换后的结果返回
-		//v3.11 后此方法已废弃，不再使用
-		dispose:function(str){
-			if(str == null || str.length == 0){
-				return str;
-			}
-			//if(translate.nomenclature.data.length == 0){
-			//	return str;
-			//}
-			//判断当前翻译的两种语种是否有自定义术语库
-			//console.log(typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]))
-			if(typeof(translate.nomenclature.data[translate.language.getLocal()]) == 'undefined' || typeof(translate.nomenclature.data[translate.language.getLocal()][translate.to]) == 'undefined'){
-				return str;
-			}
-			//console.log(str)
-			for(var originalText in translate.nomenclature.data[translate.language.getLocal()][translate.to]){
-				if (!translate.nomenclature.data[translate.language.getLocal()][translate.to].hasOwnProperty(originalText)) {
-		    		continue;
-		    	}
 
-				var translateText = translate.nomenclature.data[translate.language.getLocal()][translate.to][originalText];
-				if(typeof(translateText) == 'function'){
-					//进行异常的预处理调出
-					continue;
-				}
+		/**
+		 * 对指定文本进行自定义术语替换
+		 * 示例：
+		 *  translate.nomenclature.replace(['你好我好她也好'],'好','hao', null)
+		 * 结果：
+		   {
+		       find:true,
+		       texts: ['你', '我', '她也'],
+		       resultText: "你hao我hao她也hao"
+		    }
+		 * 
+		 * @param text 要进行自定义术语替换的文本
+		 * @param nomenclatureKey 自定义术语的key
+		 * @param nomenclatureValue 自定义术语的value
+		 * @param nodeObject 要进行替换的节点对象，自定义术语命中后，会直接在这个节点上进行替换显示
+		 *                  如果传入 null，则不进行任何替换操作
+		 *                  如果传入具体的值，则是： 
+		 *                      {
+		 *                          node: node节点
+		 *                          attribute: 要替换的node的attribute名称。如果传入 null,则是直接对 nodeValue 生效
+		 *                      }
+		 *
+		 * @returns {
+		 *              find:false,    //是否命中了自定义术语，命中了，则是 true，也代表 textArray 已经不是传入的那个了，已经被处理分割过了
+		                texts:['你','好'],    //针对传入的 textArray 参数，进行术语命中完成后，将命中术语的部分剔除掉，进行分割，所返回的新的textArray
+		                resultText: "你hao我hao她也hao"  //对text处理后，替换后的文本
 
-				var index = str.indexOf(originalText);
-				if(index > -1){
-					//console.log('find -- '+originalText+', \t'+translateText);
-					if(translate.language.getLocal() == 'english'){
-						//如果本地语种是英文，那么还要判断它的前后，避免比如要替换 is 将 display 中的is给替换，将单词给强行拆分了
-						
-						//判断这个词前面是否符合
-						var beforeChar = '';	//前面的字符
-						if(index == 0){
-							//前面没别的字符了，那前面合适
-						}else{
-							//前面有别的字符,判断是什么字符，如果是英文，那么这个是不能被拆分的，要忽略
-							beforeChar = str.substr(index-1,1);
-							//console.log('beforeChar:'+beforeChar+', str:'+str)
-							var lang = translate.language.getCharLanguage(beforeChar);
-							//console.log(lang);
-							if(lang == 'english' || lang == 'romance'){
-								//调出，不能强拆
-								continue;
-							}
-						}
+		            }
+		 */
+		replace: function(text, nomenclatureKey, nomenclatureValue, nodeObject){
+		    if(text.trim() == nomenclatureValue.trim() || nomenclatureKey.length == 0){
 
-						//判断这个词的后面是否符合
-						var afterChar = ''; //后面的字符
-						if(index + originalText.length == str.length ){
-							//后面没别的字符了，那前面合适
-							//console.log(originalText+'， meile '+str)
-						}else{
-							//后面有别的字符,判断是什么字符，如果是英文，那么这个是不能被拆分的，要忽略
-							afterChar = str.substr(index+originalText.length,1);
-							var lang = translate.language.getCharLanguage(afterChar);
-							if(lang == 'english' || lang == 'romance'){
-								//跳出，不能强拆
-								continue;
-							}
-						}
+		        //这里是自定义术语被替换后，重新扫描时扫出来的，那么直接忽略，不做任何处理。因为自定义术语的结果就是最终结果了
+		        return {
+		            texts:[text],
+		            find:false,
+		            resultText:text
+		        }
+		    }
 
-						str = str.replace(new RegExp(beforeChar+originalText+afterChar,'g'), beforeChar+translateText+afterChar);
-					}else{
-						//其他情况，如汉语、汉语等语种
-						str = str.replace(new RegExp(originalText,'g'), translateText);
-					}
+		    //判断一下原始文本是否有出现在了这个word要翻译的字符串中
+		    var wordKeyIndex = text.indexOf(nomenclatureKey);
+		    if(wordKeyIndex > -1){
+		        //出现了，那么需要将其立即进行更改，将自定义术语定义的结果渲染到页面中，并且将 word 要翻译的字符串中，自定义术语部分删除，只翻译除了自定义术语剩余的部分
+		        
+		        //这里考虑重复替换问题，比如要将 好 替换为  你好 ，如果重复替换，可能会出来 你你你你你好
+		        //另外还要考虑特殊字符问题，如果用 split 会出现异常
+		        //注意，可能会出现多个key的情况
+		        var positions = [];
+		        var pos = wordKeyIndex;
+		        // 当找到 key的文字时继续查找
+		        while (pos !== -1) {
+		            positions.push(pos);
+		            // 从当前位置的下一个字符开始继续查找
+		            pos = text.indexOf(nomenclatureKey, pos + 1);
+		        }
+		        // 遍历所有找到的位置，判断是否是已经自定义术语替换后的，如果全部都是替换后的，那么就不需要继续替换了，直接 return 退出，避免重复替换。
+		        //但是如果只要有一次是没有被替换的，那么都会往下执行，可能会存在重复替换。
+		        //比如  "你好吗我好吗大家好都好呀" 将 "好" 替换为 “好吗”，这里会替换为 “你好吗吗我好吗吗大家好吗都好吗呀” ，因为最后的俩“好”经过识别，是没有被替换过的，所以这句是要被进行替换执行的，这个整句替换是现有的方法，这个后续可以把提花你方法拆分一下，进行针对性的只针对最后的俩“好”进行精准替换，而不对前面的俩“好吗”在进行替换
+		        
+		        var texts = new Array(); //它是text经过pos的分割后的数组，要返回的数组
+		        var resultText = text; //这是有text文本经过将 nomenclatureKey 替换为 nomenclatureValue 之后，得到的新的文本
+		        var lastPos = text.length; //记录上一个pos的位置
+		        for(var i = positions.length-1; i>=0; i--){ //采用--的方式，保证替换后下标依旧能保持一致
+		            var itempos = positions[i];
 
-				}
-			}
+		            //将pos分割之后的文本，加入到 wordSplits 数组中
+		            texts.unshift(text.substring(itempos + nomenclatureKey.length, lastPos));
+		            //console.log(pos +' --> '+text.substring(pos + nomenclatureKey.length, lastPos));
 
-			return str;
+		            // 将 text 中 的 pos 下标的文本，也就是从 pos 开始，到pos+nomenclatureKey.length 结束的文本，替换为 nomenclatureValue 
+		            resultText = resultText.substring(0, itempos) + nomenclatureValue + resultText.substring(itempos+nomenclatureKey.length);
 
-			/*
-			//遍历一维
-			for(var originalText in translate.nomenclature.data){
-				var languageResult = translate.nomenclature.data[originalText];
-				if(typeof(languageResult) == 'function'){
-					//进行异常的预处理调出
-					continue;
-				}
+		            lastPos = itempos;
+		        }
+		        if(lastPos > 0){
+		            //将pos分割之前的文本，加入到 wordSplits 数组中
+		            texts.unshift(text.substring(0, lastPos));
+		        }
 
-				if(typeof(languageResult[translate.to]) == 'undefined'){
-					//console.log('und');
-					continue;
-				}
+		        //筛选 texts ，将空字符串 length == 0 的剔除
+		        if(texts.length > 0){
+		            for(var di = texts.length - 1; di >= 0; di--){
+		                if(texts[di].length == 0){
+		                    texts.splice(di, 1);
+		                }
+		            }
+		        }
 
-				//var hash = translate.util.hash(originalText);
 
-				//console.log(originalText+',\t'+str);
-				if(str.indexOf(originalText) > -1){
-					//console.log('find -- '+originalText+', \t'+languageResult[translate.to]);
-					str = str.replace(new RegExp(originalText,'g'),languageResult[translate.to]);
-				}
-			}
-			
-			
-			return str;
-			*/
+		        //如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费
+		        if(nodeObject != null && nomenclatureKey != nomenclatureValue){
+		            //console.log(nomenclatureKey+':'+nomenclatureValue);
+		            translate.element.nodeAnalyse.set(nodeObject.node, nomenclatureKey, nomenclatureValue, nodeObject.attribute);
+		        }
+		        
+		        return {
+		            texts:texts,
+		            find:true,
+		            resultText:resultText
+		        }
+		    }else{
+		        return {
+		            texts:[text],
+		            find:false,
+		            resultText:text
+		        }
+		    }
 		},
-		
+		//对传入的str字符进行替换，将其中的自定义术语提前进行替换，然后将替换后的结果返回
+		/*
+		  自定义术语
+		  示例：
+		   translate.nomenclature.dispose(['你好我好她也好'],'好','hao', null)
+		  结果：
+		    {
+		       find:true,
+		       texts: ['你', '我', '她也'],
+		       resultText: "你hao我hao她也hao"
+		    }
+		  
+		  @param {*} texts 要进行自定义术语替换的文本数组，传入比如 ["你好","世界"]
+		  @param {*} nomenclatureKey 
+		  @param {*} nomenclatureValue 
+		  @param {*} nodeObject 要进行替换的节点对象，自定义术语命中后，会直接在这个节点上进行替换显示
+		                   如果传入 null，则不进行任何替换操作
+		                   如果传入具体的值，则是： 
+		                       {
+		                           node: node节点
+		                           attribute: 要替换的node的attribute名称。如果传入 null,则是直接对 nodeValue 生效
+		                       }
+		 
+		  @returns {
+		               find:false,    //是否命中了自定义术语，命中了，则是 true，也代表 textArray 已经不是传入的那个了，已经被处理分割过了
+		               texts:['你','好'],    //针对传入的 textArray 参数，进行术语命中完成后，将命中术语的部分剔除掉，进行分割，所返回的新的textArray . 如果没有命中术语，那么这里是只有一个值，那便是返回传入的text
+		               resultText: "你hao我hao她也hao"
+		           }
+		 */
+		dispose: function(textArray, nomenclatureKey, nomenclatureValue, nodeObject){
+		    // 输入验证
+		    if (!Array.isArray(textArray)) {
+		        textArray = [String(textArray)];
+		    }
+
+		    //这里要调用 translate.nomenclature.replace 方法，对 textArray 中的每个文本进行自定义术语替换处理
+		    var result = {};
+		    result.texts = new Array();
+		    result.resultText = new Array();
+		    for(var i = 0; i < textArray.length; i++){
+		        var text = textArray[i];
+		        var res = translate.nomenclature.replace(text, nomenclatureKey, nomenclatureValue, nodeObject);
+		        result.texts = result.texts.concat(res.texts);
+		        result.resultText.push(res.resultText);
+		    }
+
+		    //对 result.texts 进行去重处理
+		    if(result.texts.length > 0){
+		        for(var di = result.texts.length - 1; di >= 0; di--){
+		            if(result.texts.indexOf(result.texts[di]) != di){
+		                result.texts.splice(di, 1);
+		            }
+		        }
+		    }
+
+		    return result;
+
+		},
 	},
 
 	office:{
@@ -1166,6 +1232,7 @@ var translate = {
 			translate.listener.callback = function(mutationsList, observer) {
 				var documents = []; //有变动的元素
 				//console.log('--------- lisetner 变动');
+				//console.log(mutationsList);
 			    // Use traditional 'for loops' for IE 11
 			    for(let mutation of mutationsList) {
 			    	let addNodes = [];
@@ -1174,18 +1241,32 @@ var translate = {
 							//多了组件
 							addNodes = mutation.addedNodes;
 							//documents.push.apply(documents, mutation.addedNodes);
-						}else if(mutation.removedNodes.length > 0){
+						}
+						if(mutation.removedNodes.length > 0){
 							//console.log('remove:');
 							//console.log(mutation.removedNodes);
-						}else{
-							//console.log('not find:');
-							//console.log(mutation);
+							for(var ri = 0; ri < mutation.removedNodes.length; ri++){
+								translate.node.data.delete(mutation.removedNodes[ri]); //删除掉被dom给移除的节点，比如执行了 InnerHTML 操作的元素会自动删除
+							}
 						}
 					}else if (mutation.type === 'attributes') {
 						//console.log('The ' + mutation.attributeName + ' attribute was modified.');
 					}else if(mutation.type === 'characterData'){
 						//内容改变
 						addNodes = [mutation.target];
+						console.log('-------\n'+(translate.node.get(mutation.target) != null ? translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText:''));
+						console.log(mutation.target.nodeValue);
+
+						//如果是因为翻译替换而导致的改变，那么忽略这个
+						//if(translate.node.get(mutation.target) != null && translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText === mutation.target.nodeValue){
+						if(translate.node.get(mutation.target) != null && typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
+							//如果这个node元素，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作
+						}else{
+							//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
+							translate.node.data.delete(mutation.target); 
+						}
+						
+						//console.log(mutation.target.nodeValue)
 						//documents.push.apply(documents, [mutation.target]);
 					}
 
@@ -1471,8 +1552,31 @@ var translate = {
 							
 						}, 50, ipnode);
 
+
+						// translate.node 记录
+						var nodeAttribute = translate.node.getAttribute(task['attribute']);
+						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
+							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
+							translate.node.get(this.nodes[hash][task_index]).lastTranslateRenderTime = Date.now();
+						}
+
 						//渲染页面进行翻译显示
 						var analyseSet = translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
+						
+						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
+							if(typeof(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key]) == 'undefined'){
+								//这里不应该的
+								console.log('执行异常，渲染时，node 的 '+(nodeAttribute.attribute.length == 0? 'nodeValue':'attribute : '+nodeAttribute.attribute)+' 未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							}else{
+								//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
+								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].translateTexts[task.originalText] = task.resultText;
+								//将翻译完成后要显示出的文本进行记录
+								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].resultText = analyseSet.text;
+							}
+						}else{
+							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+						}
+						
 						//加入 translate.listener.ignoreNode
 						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime, analyseSet.resultText);
 
@@ -1512,67 +1616,9 @@ var translate = {
 				//50毫秒后执行，以便页面渲染完毕
 				var renderTask = this;
 				setTimeout(function() {
-
-					/** 执行完成后，保存翻译的历史node **/
-					//将当前翻译完成的node进行缓存记录，以node唯一标识为key，  node、以及node当前翻译之后的内容为值进行缓存。方便下一次执行 translate.execute() 时，若值未变化则不进行翻译
-					for(var hash in renderTask.nodes){
-						if (!renderTask.nodes.hasOwnProperty(hash)) {
-				    		continue;
-				    	}
-
-						//console.log(translate.nodeQueue[uuid].list[lang][hash])
-						for(var nodeindex in renderTask.nodes[hash]){
-							if (!renderTask.nodes[hash].hasOwnProperty(nodeindex)) {
-					    		continue;
-					    	}
-
-							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
-							//var nodename = translate.element.getNodeName(translate.nodeQueue[uuid].list[lang][hash].nodes[0].node);
-							//console.log("nodename:"+nodename);
-							var analyse = translate.element.nodeAnalyse.get(renderTask.nodes[hash][nodeindex]);
-							//analyse.text  analyse.node
-							var nodeid = nodeuuid.uuid(analyse.node);
-							
-							if(nodeid.length == 0){
-								//像是input的placeholder 暂时没考虑进去，这种就直接忽略了
-								continue;
-							}
-
-							//加入
-							/*
-							if(typeof(translate.nodeHistory[nodeid]) == 'object'){
-								//已经加入过了，判断它的值是否有发生过变化
-
-								if(translate.nodeHistory[nodeid].translateText == analyse.text){
-									//值相同，就不用再加入了
-									continue;
-								}
-							}
-							这里就不用判断了，直接同步到最新的，因为同一个node，可能有本地缓存直接更新，这样会非常快，网络的会慢2秒，因时间导致同步不是最新的
-							*/
-							//console.log(analyse);
-							//console.log('add-----'+analyse.text +', uuid:'+nodeid);
-							//console.log(analyse.node);
-							translate.nodeHistory[nodeid] = {};
-							translate.nodeHistory[nodeid].node = analyse.node;
-							if(translate.whole.isWhole(analyse.node)){
-								//这个元素使用的是整体翻译的方式，那就直接将API接口返回的翻译内容作为node最终显示的结果。
-								//这样即使在翻译过程中其他js对这个元素的内容有改动了，那下次再触发翻译，还能对改动后的文本正常翻译，不至于使这个元素已被标记翻译过了，造成漏翻译。
-								translate.nodeHistory[nodeid].translateText = renderTask.taskQueue[hash][nodeindex].resultText;
-							}else{
-								//时间差会造成漏翻译情况，见if中的注释
-								translate.nodeHistory[nodeid].translateText = analyse.text;	
-							}
-							
-						}
-						
-					}
-					//console.log(translate.nodeHistory);
-
 					/** 执行完成后，触发用户自定义的翻译完成执行函数 **/
 					translate.listener.renderTaskFinish(renderTask);
-
-				}, 50);
+				}, 5);
 				
 			}else{
 				//console.log(this.taskQueue);
@@ -1818,6 +1864,11 @@ var translate = {
 	execute:function(docs){
 		translate.time.log('触发');
 
+		//初始化
+		if(translate.node.data == null){
+			translate.node.data = new Map();
+		}
+
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
 				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
@@ -2033,26 +2084,29 @@ var translate = {
 					continue;
 				}
 				for(var nodeindex = translate.nodeQueue[uuid].list[lang][hash].nodes.length-1; nodeindex > -1; nodeindex--){
-					//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes);
+					//console.log(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex]);
 					var analyse = translate.element.nodeAnalyse.get(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].node);
 					//analyse.text  analyse.node
 					var nodeid = nodeuuid.uuid(analyse.node);
 					//translate.nodeQueue[uuid].list[lang][hash].nodes.splice(nodeindex, 1);
 					//console.log(nodeid+'\t'+analyse.text);
-					if(typeof(translate.nodeHistory[nodeid]) != 'undefined'){
+					//这个放到了node扫描里去进行判定了,后续要考虑删除
+					if(translate.node.get(analyse.node) != null){
 						//存在，判断其内容是否发生了改变
 						//console.log('比较---------');
-						//console.log(translate.nodeHistory[nodeid].translateText);
+						//console.log(translate.node[nodeid].translateText);
 						//console.log(analyse.text);
-						if(translate.nodeHistory[nodeid].translateText == analyse.text){
+						var nodeAttribute = translate.node.getAttribute(translate.nodeQueue[uuid].list[lang][hash].nodes[nodeindex].attribute);
+						//console.log(translate.node.get(analyse.node)[nodeAttribute.key]);
+						if(translate.node.get(analyse.node)[nodeAttribute.key].resultText == analyse.text){
 							//内容未发生改变，那么不需要再翻译了，从translate.nodeQueue中删除这个node
 							translate.nodeQueue[uuid].list[lang][hash].nodes.splice(nodeindex, 1);
 							//console.log('发现相等的node，删除 '+analyse.text+'\t'+hash);
 						}else{
 							//console.log("发现变化的node =======nodeid:"+nodeid);
-							//console.log(translate.nodeHistory[nodeid].translateText == analyse.text);
-							//console.log(translate.nodeHistory[nodeid].node);
-							//console.log(translate.nodeHistory[nodeid].translateText);
+							//console.log(translate.node[nodeid].translateText == analyse.text);
+							//console.log(translate.node[nodeid].node);
+							//console.log(translate.node[nodeid].translateText);
 							//console.log(analyse.text);
 							
 						}
@@ -2060,6 +2114,9 @@ var translate = {
 						//console.log('未在 nodeHistory 中发现，新的node  nodeid:'+nodeid);
 						//console.log(analyse.node)
 					}
+
+					//以上考虑删除
+
 				}
 				if(translate.nodeQueue[uuid].list[lang][hash].nodes.length == 0){
 					//如果node数组中已经没有了，那么直接把这个hash去掉
@@ -2075,7 +2132,7 @@ var translate = {
 		translate.time.log('对扫描到的元素进行预处理完毕');
 		//console.log('new queuq');
 		//console.log(translate.nodeQueue[uuid])
-		//translate.nodeHistory[nodeid]
+		//translate.node.data[nodeid]
 
 		
 		//console.log('-----待翻译：----');
@@ -2092,9 +2149,10 @@ var translate = {
 				二维 key: hash
 				三维 key: 
 						node: 当前的node元素
-				四维		array: 当前缓存中进行翻译的文本数组：
+
+				四维	-delete ...	 array: 当前缓存中进行翻译的文本数组：
 							cacheOriginal: 已缓存被替换前的文本
-							cacheTranslateText: 已缓存被替换后的翻译文本
+							cacheTranslateText: 已缓存被替换后的翻译文本		
 					
 		*/
 		var twoScanNodes = {};
@@ -2126,118 +2184,107 @@ var translate = {
 					continue;
 				}
 
-				//取原始的词，还未经过翻译的，需要进行翻译的词
-				//var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
-
 				//原始的node中的词
 				var originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];	
 				//要翻译的词
 				var translateText = translate.nodeQueue[uuid]['list'][lang][hash]['translateText'];
 				//console.log(originalWord);
-/*
-				//自定义术语后的。如果
-				var nomenclatureOriginalWord = translate.nomenclature.dispose(cache);
-				if(nomenclatureOriginalWord != originalWord){
-					has
-				}
-*/				
-				//console.log(originalWord == translateText ? '1':'xin：'+translateText);
+
 				//根据hash，判断本地是否有缓存了
 				var cacheHash = originalWord == translateText ? hash:translate.util.hash(translateText); //如果匹配到了自定义术语库，那翻译前的hash是被改变了
 				translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'] = cacheHash; //缓存的hash。 缓存时，其hash跟翻译的语言是完全对应的，缓存的hash就是翻译的语言转换来的
 				var cache = translate.storage.get('hash_'+translate.to+'_'+cacheHash);
-				//console.log(cacheHash+', '+cache);
 
-				//var twoScanNodes[] = [];	//要进行第二次扫描的node
+				//缓存是否有拿到具体缓存内容
 				if(cache != null && cache.length > 0){
-					//有缓存了
-					//console.log('find cache：'+cache);
-					//直接将缓存赋予
-					//for(var index = 0; index < this.nodeQueue[lang][hash].length; index++){
-						//this.nodeQueue[lang][hash][index].nodeValue = cache;
-
-						for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-							//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
+					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
+						//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
 
 
-							//加入 translate.inProgressNodes
-							//取得这个翻译的node
-							var ipnode = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+						//加入 translate.inProgressNodes
+						//取得这个翻译的node
+						var ipnode = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
 
-							//判断这个node是否已经在 inProgressNodes 记录了
-							var isFind = false;
-							for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-								if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
-									//有记录了，那么出现次数 +1
-									translate.inProgressNodes[ini].number++;
-									isFind = true;
-									//console.log('cache - find - ++ ');
-									//console.log(ipnode);
-								}
+						//判断这个node是否已经在 inProgressNodes 记录了
+						var isFind = false;
+						for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
+							if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
+								//有记录了，那么出现次数 +1
+								translate.inProgressNodes[ini].number++;
+								isFind = true;
 							}
-							//未发现，那么还要将这个node加入进去
-							if(!isFind){
-								//console.log('cache - find - add -- lang:'+lang+', hash:'+hash+' node_index:'+node_index);
-								//console.log(ipnode.nodeValue);
-								translate.inProgressNodes.push({node: ipnode, number:1});
-							}
-
-							//console.log(translate.inProgressNodes);
-							//加入 translate.inProgressNodes -- 结束
-
-							//翻译结果的文本，包含了before  、 after 了
-							var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
-							task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
-							//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
-							//console.log(translateResultText);
-
-							//重新扫描这个node,避免这种情况：
-							//localstorage缓存中有几个词的缓存了，但是从缓存中使用时，把原本识别的要翻译的数据给打散了，导致翻译结果没法赋予，导致用户展示时有些句子没成功翻译的问题 -- 2023.8.22
-							//console.log('继续扫描 + 1 - '+twoScanNodes.length);
-							var twoScanIndex = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
-							for(var i = 0; i<twoScanNodes[lang].length; i++){
-								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
-								//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
-									//如果已经加入过了，那么跳过
-									twoScanIndex = i;
-									break;
-								}
-							}
-							var twoScanIndex_cache = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
-							for(var i = 0; i<cacheScanNodes.length; i++){
-								//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
-								if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
-									//如果已经加入过了，那么跳过
-									twoScanIndex_cache = i;
-									break;
-								}
-							}
-
-							if(twoScanIndex == -1){
-								//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node']);
-								twoScanIndex = twoScanNodes[lang].length;
-								twoScanNodes[lang][twoScanIndex] = {};
-								twoScanNodes[lang][twoScanIndex]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
-								twoScanNodes[lang][twoScanIndex]['array'] = [];
-							}
-
-							if(twoScanIndex_cache == -1){
-								twoScanIndex_cache = cacheScanNodes.length;
-								cacheScanNodes[twoScanIndex_cache] = {};
-								cacheScanNodes[twoScanIndex_cache]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
-								cacheScanNodes[twoScanIndex_cache]['array'] = [];
-							}
-
-							//未加入过，那么加入
-							var arrayIndex = twoScanNodes[lang][twoScanIndex]['array'].length;
-							twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translateResultText;
-							
-							var arrayIndex_cache = cacheScanNodes[twoScanIndex_cache]['array'].length;
-							cacheScanNodes[twoScanIndex_cache]['array'][arrayIndex_cache] = translateResultText;
-							
-							//twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['afterText'];
 						}
-					//}
+						//未发现，那么还要将这个node加入进去
+						if(!isFind){
+							//console.log('cache - find - add -- lang:'+lang+', hash:'+hash+' node_index:'+node_index);
+							//console.log(ipnode.nodeValue);
+							translate.inProgressNodes.push({node: ipnode, number:1});
+						}
+
+						//console.log(translate.inProgressNodes);
+						//加入 translate.inProgressNodes -- 结束
+
+						//翻译结果的文本，包含了before  、 after 了
+						var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+						//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
+						//console.log(translateResultText);
+
+						//重新扫描这个node,避免这种情况：
+						/*
+							localstorage缓存中有几个词的缓存了，但是从缓存中使用时，把原本识别的要翻译的数据给打散了，导致翻译结果没法赋予，导致用户展示时有些句子没成功翻译的问题 -- 2023.8.22
+							比如有这个 node，其内容为：
+								你是谁？你好世界
+							扫描完后，触发了自定义术语将文本分割成多个、或者未启用整体翻译，出现分割后的文本数组为
+								['你是谁','你','世界']
+							这时， '你' 这个字发现有本地缓存，被触发立即替换为 you ，替换完成后，会导致将 '你是谁' 也被替换了，node 当前的文本变成了
+								you 是谁？you 好世界
+							
+						*/
+						//console.log('继续扫描 + 1 - '+twoScanNodes.length);
+						var twoScanIndex = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
+						for(var i = 0; i<twoScanNodes[lang].length; i++){
+							if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
+							//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
+								//如果已经加入过了，那么跳过
+								twoScanIndex = i;
+								break;
+							}
+						}
+						var twoScanIndex_cache = -1; //当前元素是否在 twoScan 中已经加入了，如果已经加入了，那么这里赋予当前所在的下标
+						for(var i = 0; i<cacheScanNodes.length; i++){
+							//if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(twoScanNodes[lang][i]['node'])){
+							if(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'].isSameNode(cacheScanNodes[i]['node'])){
+								//如果已经加入过了，那么跳过
+								twoScanIndex_cache = i;
+								break;
+							}
+						}
+
+						if(twoScanIndex == -1){
+							//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node']);
+							twoScanIndex = twoScanNodes[lang].length;
+							twoScanNodes[lang][twoScanIndex] = {};
+							twoScanNodes[lang][twoScanIndex]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+							twoScanNodes[lang][twoScanIndex]['array'] = [];
+						}
+
+						if(twoScanIndex_cache == -1){
+							twoScanIndex_cache = cacheScanNodes.length;
+							cacheScanNodes[twoScanIndex_cache] = {};
+							cacheScanNodes[twoScanIndex_cache]['node'] = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
+							cacheScanNodes[twoScanIndex_cache]['array'] = [];
+						}
+
+						//未加入过，那么加入
+						var arrayIndex = twoScanNodes[lang][twoScanIndex]['array'].length;
+						twoScanNodes[lang][twoScanIndex]['array'][arrayIndex] = translateResultText;
+						
+						var arrayIndex_cache = cacheScanNodes[twoScanIndex_cache]['array'].length;
+						cacheScanNodes[twoScanIndex_cache]['array'][arrayIndex_cache] = translateResultText;
+						
+					}
+					
 
 
 						
@@ -2269,7 +2316,8 @@ var translate = {
 		//console.log(twoScanNodes);
 		//console.log('cacheScanNodes:');
 		//console.log(cacheScanNodes);
-
+		//console.log(translateTextArray);
+		//return;
 
 		if(typeof(translate.request.api.translate) != 'string' || translate.request.api.translate == null || translate.request.api.translate.length < 1){
 			//用户已经设置了不掉翻译接口进行翻译
@@ -2284,6 +2332,7 @@ var translate = {
 
 
 		/******* 进行第二次扫描、追加入翻译队列。目的是防止缓存打散扫描的待翻译文本 ********/
+		/*
 		for(var lang in twoScanNodes){
 			if (!twoScanNodes.hasOwnProperty(lang)) {
 	    		continue;
@@ -2362,6 +2411,7 @@ var translate = {
 			
 		}
 		translate.time.log('对未命中本地缓存的元素进行第二轮扫描-完毕');
+		*/
 		/******* 进行第二次扫描、追加入翻译队列  -- 结束 ********/
 
 		
@@ -2674,14 +2724,70 @@ var translate = {
 		*/
 	},
 
-	/*
-		将已成功翻译并渲染的node节点进行缓存记录
-		key: node节点的唯一标识符，通过 nodeuuid.uuid() 生成
-		value: 
-			node: node节点
-			translateText: 翻译完成后，当前node节点的内容文本（是已经翻译渲染过的）
-	*/
-	nodeHistory:{},
+	//20250908 废弃，要删除这个
+	nodeHistory:null,
+
+	//当前页面中，翻译后操作的 ，dom 中有效的node节点
+	node:{
+		/*
+			将已扫描的节点进行记录，这里是只要进行扫描到了，也就是在加入 translate.nodeQueue 时就也要加入到这里。
+			这是一个map，为了兼容es5，这里设置为null，在 translate.execute 中在进行初始化
+
+			key: node
+			value: 这是一个对像
+				其中，key的取值有三种：
+				lastTranslateRenderTime: 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳。
+										 每当触发渲染时这里都会重新赋予一次最新的时间，这里也就是最后一次渲染的时间。 如果还没渲染那这里便是 undefined 或者 null，总之 typeof 不是 number
+				translate_default_value: 如果当前翻译的是元素本身的值或node节点本身的值(nodeValue)，那么这里的key就是固定的 translate_default_value
+				attribute_属性名: 如果当前翻译的是元素的attribute 的某个属性，那么这里就是 attribute_属性名， 比如 a 标签的 title ，那这里便是 attribute_title
+				
+
+				value值是翻译的这个attribute对象的一些具体数据了
+					attribute 这个翻译的node对象是否是翻译的其中的某个attribute属性，如果是，那么这里便是长度大于0， 如果是元素或节点本身(nodeValue)，那么这里就是空字符串，注意，是空字符串 ''
+					resultText: string 翻译完成后，当前node节点的内容文本，注意，是node节点整体所有的内容文本（是已经翻译渲染过的）
+					originalText: string 翻译前显示的文本，是node节点所有的内容文本，原始的文本，（当前这里仅仅只对元素整体翻译时才会记录这个 - v3.18.14.20250903 增加）	
+					translateTexts: array string 文本数组，这里是被文本翻译接口所翻译的文本。 比如其中某项为 '你好':'hello' ，其中key是翻译前的， value是翻译后的结果， 如果 value 为 null，则代表还未进行翻译拿到翻译结果
+					whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  true:是节点内容整体翻译
+
+		*/
+		data:null,
+		/*
+			从 translate.node.data 中，根据key，进行获取 translate.node.data.get(node)
+		 */ 
+		get:function(node){
+			return translate.node.data.get(node);
+		},
+		set:function(node, value){
+			translate.node.data.set(node,value);
+		},
+		/*
+			获取 translate.node.get(node)[attribute] 这里的 attribute
+			
+			attribute 传入的可以是 undefined、null、'' 、 以及具体的字符串
+
+			返回的是一个对象：
+			{
+				key: translate.node 中 translate.node.get(node)[attribute] 所使用的 attribute 的字符串，如 attribute_title 、translate_default_value
+				attribute: 这里是attribute具体的内容，比如 key 是 attribute_title 那么这里就是 title , key 是 translate_default_value 这里就是 '' 空字符串
+			}
+		 */
+		getAttribute:function(attribute){
+			var history_attribute;
+			if(typeof(attribute) != 'undefined' && attribute.length > 0){
+				//是对 attribute 进行的操作
+				history_attribute = 'attribute_'+attribute
+			}else{
+				//是对节点本身进行的操作，操作的是 nodeValue
+				attribute = '';
+				history_attribute = 'translate_default_value';
+			}
+			return {
+				key:history_attribute,
+				attribute:attribute
+			}
+		}
+	},
+
 	element:{
 
 		/*
@@ -2739,6 +2845,15 @@ var translate = {
 			},
 			/*
 				进行翻译之后的渲染显示
+				注意，它会对node本身进行扫描的，需要进行通过文本翻译接口进行翻译的文本进行识别，比如 这个 node 其内容为：
+					你是谁？你好世界
+				扫描完后，触发了自定义术语将文本分割成多个、或者未启用整体翻译，出现分割后的文本数组为
+					['你是谁','你','世界']
+				那如果命中缓存 '你' 后，进行替换时，就不能将 '你是谁' 给替换了，不然会造成字符串无需拆分，直接纯单词翻译，没有什么语义了。另外这样也会导致漏翻译的情况。  经过这次调整，将 translate.execute() 二次扫描直接给优化掉了，提高了语义通顺、自定义术语的精准
+				这个取值，是从 translate.node.get(node).translateTexts 中取这个要进行文本翻译的数组的。 
+				当然，如果 translate.node.get(node).whole 为 true，本身就是整体翻译，那就没这些破事，直接替换就好了
+
+
 				参数：
 					node 当前翻译的node元素
 					originalText 翻译之前的内容文本
@@ -2764,7 +2879,7 @@ var translate = {
 					则是进行翻译之后的渲染显示
 
 				attribute : 进行替换渲染时使用，存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
-
+				
 				返回结果是一个数组，其中：
 					resultText: 翻译完成之后的text内容文本。 当使用 translate.element.nodeAnalyse.set 时才会有这个参数返回。 注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
 					text : 要进行翻译的text内容文本，当使用 translate.element.nodeAnalyse.get 时才会有这个参数的返回
@@ -3088,7 +3203,6 @@ var translate = {
 						translate.addNodeToQueue(uuid, node, attributeValue, attributeName);
 					}
 				}
-
 			}
 
 			
@@ -3237,6 +3351,7 @@ var translate = {
 	 * node 当前text所在的node
 	 * text 当前要翻译的目标文本
 	 * attribute 是否是元素的某个属性。比如 a标签中的title属性， a.title 再以node参数传入时是string类型的，本身并不是node类型，所以就要传入这个 attribute=title 来代表这是a标签的title属性。同样第二个参数node传入的也不能是a.title，而是传入a这个node元素
+	 			如果不穿或者传入 '' 空字符串，则代表不是 attribute 属性，而是nodeValue 本身
 	 */
 	addNodeToQueue:function(uuid, node, text, attribute){
 		if(node == null || text == null || text.length == 0){
@@ -3287,29 +3402,96 @@ var translate = {
 		//console.log(node.nodeValue);
 
 
+		/***** 记录这个node 到 translate.node.data，这也是node进入 translate.node.data 记录的第一入口 *****/
+		if(translate.node.get(node) == null){
+			translate.node.set(node, {});
+		}
+		
+		
+		var nodeAttribute = translate.node.getAttribute(attribute);
+		if(typeof(translate.node.get(node)[nodeAttribute.key]) == 'undefined'){
+			translate.node.get(node)[nodeAttribute.key] = {};
+			//console.log(typeof(translate.node.get(node)[nodeAttribute.key]));
+		}
+		translate.node.get(node)[nodeAttribute.key].attribute = nodeAttribute.attribute;
+		if(typeof(translate.node.get(node)[nodeAttribute.key].originalText) == 'string'){
+			//这个节点有过记录原始显示的文本了，那么不再对其进行后续的扫描，除非它有被触发过动态监听元素改变， --- 至于它有被触发过动态监听元素改变--后续想怎么判定
+			//console.log(translate.node.get(node).originalText+'\t又过了，不在翻译');
+			return;
+		}else{
+			//没有过，是第一次，那么赋予值
+			translate.node.get(node)[nodeAttribute.key].originalText = text;
+			console.log(translate.node.get(node));
+		}
+		/*
+		if(typeof(translate.node.get(node).translateTexts) != 'undefined'){ 
+			//这个node之前已经被扫描过了，那么判断一下上次扫描的文本跟当前获取到的文本是否一致，如果一致，那就没必要进行翻译了
+			//这个一致，是跟通过文本翻译接口的，翻译前或者翻译后的文本，任何一个相等，就都不需要被翻译
+			for(var originalText in translate.node.get(node).translateTexts){
+				if (!translate.node.get(node).translateTexts.hasOwnProperty(originalText)) {
+		    		continue;
+		    	}
+			    if(originalText === text || (translate.node.get(node).translateTexts[originalText] != null && translate.node.get(node).translateTexts[originalText] === text)){
+			    	console.log('这个node之前已经被翻译过了，有翻译结果，那么判断一下翻译结果跟当前获取到的文本是否一致，如果一致，那就没必要进行翻译了, text：'+text);
+					return;
+			    }
+			}
+		}
+		*/
+		/*
+		// 将传入的 hitNomenclatureArray 的所有键值对添加到 translate.node.get(node).hitNomenclatureArray 中
+		hitNomenclatureArray.forEach((value, key) => {
+		  translate.node.get(node).hitNomenclatureArray.set(key, value);
+		});
+		*/
+		/*
+		if(typeof(translate.node.get(node).originalText) == 'string' && translate.node.get(node).originalText === text){ 
+			console.log('这个node之前已经被搜索节点并分析过了, text：'+text);
+			return;
+		}
+		*/
+		if(typeof(translate.node.get(node)[nodeAttribute.key].translateTexts) == 'undefined'){
+			translate.node.get(node)[nodeAttribute.key].translateTexts = {};
+		}
+		/***** 自检完毕，准备进行翻译了 *****/
+
+
+
 		//原本传入的text会被切割为多个小块
 		var textArray = new Array();
 		textArray.push(text); //先将主 text 赋予 ，后面如果对主text进行加工分割，分割后会将主text给删除掉
 		//console.log(textArray);
 
 		// 处理 ignore.regex
+		var temporaryIgnoreTexts;  //仅仅针对当前text文本，通过 translate.ignore.textRegex 所产生的临时不翻译的文本，它并不能作用于其他节点的文本
 		for (var ri = 0; ri < translate.ignore.textRegex.length; ri++) {
 			var regex = translate.ignore.textRegex[ri];
 			for (var tai = 0; tai < textArray.length; tai++) {
 				var text = textArray[tai];
-				var ignoreTexts = text.match(regex) || []
-				translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
+				temporaryIgnoreTexts = text.match(regex) || []
+				//translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
 			}
+		}
+		//将当前节点文本的 不翻译文本规则，重新组合到 temporaryIgnoreTextsByRegex
+		if(typeof(temporaryIgnoreTexts) == 'undefined'){
+			temporaryIgnoreTexts = translate.ignore.text;
+		}else{
+			temporaryIgnoreTexts.concat(translate.ignore.text);
 		}
 
 		/**** v3.10.2.20241206 - 增加自定义忽略翻译的文本，忽略翻译的文本不会被翻译 - 当然这样会打乱翻译之后阅读的连贯性 ****/
-		for(var ti = 0; ti<translate.ignore.text.length; ti++){
-			if(translate.ignore.text[ti].trim().length == 0){
+		for(var ti = 0; ti<temporaryIgnoreTexts.length; ti++){
+			if(temporaryIgnoreTexts[ti].trim().length == 0){
 				continue;
 			}
 
-			textArray = translate.addNodeToQueueTextAnalysis(uuid, node, textArray, attribute, translate.ignore.text[ti], translate.ignore.text[ti]);
+			//textArray = translate.addNodeToQueueTextAnalysis(uuid, node, textArray, attribute, temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti]);
 			
+			//console.log(textArray);
+			textArray = translate.nomenclature.dispose(textArray, temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti], {
+				node:node,
+				attribute:attribute
+			}).texts;
 			//console.log(textArray);
 		}
 
@@ -3332,13 +3514,17 @@ var translate = {
 				//console.log(nomenclatureKey);
 				//自定义属于的指定的结果字符串
 				var nomenclatureValue = translate.nomenclature.data[translate.language.getLocal()][translate.to][nomenclatureKey];
+
+				//console.log(textArray);
+				textArray = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
+					node:node,
+					attribute:attribute
+				}).texts;
+				//console.log(textArray);
 				
-				textArray = translate.addNodeToQueueTextAnalysis(uuid, node, textArray, attribute, nomenclatureKey, nomenclatureValue);
-			
 				if(typeof(nomenclatureKeyArray) != 'undefined'){
 					nomenclatureKeyArray.push(nomenclatureKey);
 				}
-
 			}
 
 			if(typeof(translate.temp_nomenclature[translate.language.getLocal()]) == 'undefined'){
@@ -3349,7 +3535,13 @@ var translate = {
 		
 
 
-
+		//记录 nodeHistory - 判断text是否已经被拆分了
+		//console.log(textArray);
+		if(textArray.length > 1 || textArray[0] != text){
+			translate.node.get(node)[nodeAttribute.key].whole = false; //已经被拆分了，不是整体翻译了
+		}else{
+			translate.node.get(node)[nodeAttribute.key].whole = true; //未拆分，是整体翻译
+		}
 
 		
 		for(var tai = 0; tai<textArray.length; tai++){
@@ -3377,165 +3569,7 @@ var translate = {
 		//this.nodeQueue[lang][key][this.nodeQueue[lang][key].length]=node; //往数组中追加
 	},
 
-	/**
-	 * 服务于上面的 addNodeToQueue ，用于区分不同type情况，进行调用此加入 translate.nodeQueue
-	 * uuid, node, attribute 这及个参数说明见 addNodeToQueue 的参数说明，相同
-	 * textArray 进行处理的要翻译的文本数组。这个最开始只是一个，但是命中后分割的多了也就变成多个了
-	 * nomenclatureKey 替换的原始文本，也就是自定义术语的key部分
-	 * nomenclatureValue 替换的目标文本，也就是自定义术语的value部分 。 如果 nomenclatureKey = nomenclatureValue 则是自定义忽略翻译的文本。这个文本不被翻译
-	 * @return 处理过后的 textArray 如果没有命中则返回的是传入的 textArray ，命中了则是切割以及删除原本判断的text之后的 textArray
-	 */
-	addNodeToQueueTextAnalysis:function(uuid, node,textArray, attribute, nomenclatureKey, nomenclatureValue){
-		//console.log('textArray input:')
-		//console.log(textArray)
-		var deleteTextArray = new Array();	//记录要从 textArray 中删除的字符串
-
-		for(var tai = 0; tai<textArray.length; tai++){
-			var text = textArray[tai];
-
-			if(text.trim() == nomenclatureValue.trim()){
-				//这里是自定义术语被替换后，重新扫描时扫出来的，那么直接忽略，不做任何处理。因为自定义术语的结果就是最终结果了
-				continue;
-			}
-
-			//判断一下原始文本是否有出现在了这个word要翻译的字符串中
-			var wordKeyIndex = text.indexOf(nomenclatureKey);
-			if(wordKeyIndex > -1){
-				//出现了，那么需要将其立即进行更改，将自定义术语定义的结果渲染到页面中，并且将 word 要翻译的字符串中，自定义术语部分删除，只翻译除了自定义术语剩余的部分
-				//console.log(text+' --> '+nomenclatureKey);
-
-				
-				/*
-				 * 判断一下这个text中，出现匹配自定义术语的部分，是否是已经被替换过了，比如要将 好 替换为  你好 ，这里的好会重复替换。这里是判断这种情况
-				 * 其中要判断一下 key 不等于value，因为key等于value，属于是指定这个key不被翻译的情况
-				 */
-				if(nomenclatureKey != nomenclatureValue){
-					//判断是否会出现包含的情况，这里根据自定义术语的key和value的长度，判断是否会出现谁包含谁的情况
-					// 这里判定的是 key包含value 
-					if(nomenclatureKey.length >= nomenclatureValue.length && nomenclatureKey.indexOf(nomenclatureValue) > -1){
-						//那么value的长度将小于key的长度，不会存在重复替换问题
-					}else if(nomenclatureValue.length >= nomenclatureKey.length && nomenclatureValue.indexOf(nomenclatureKey) > -1){
-						//这里判定的是 value 包含 key， 那么value的长度将大于key的长度，会存在重复替换问题，比如要将 好 替换为  你好 ，如果重复替换，可能会出来 你你你你你好
-						//这里就要判定一下，发现的key是否已经是替换后的value，判定方式是 找到key的坐标，然后从这个坐标截取value-key 的长度，看是否等于value
-						//注意，可能会出现多个key的情况
-						var positions = [];
-						var pos = text.indexOf(nomenclatureKey);
-						// 当找到 key的文字时继续查找
-						while (pos !== -1) {
-							positions.push(pos);
-							// 从当前位置的下一个字符开始继续查找
-							pos = text.indexOf(nomenclatureKey, pos + 1);
-						}
-						// 遍历所有找到的位置，判断是否是已经自定义术语替换后的，如果全部都是替换后的，那么就不需要继续替换了，直接 return 退出，避免重复替换。
-						//但是如果只要有一次是没有被替换的，那么都会往下执行，可能会存在重复替换。
-						//比如  "你好吗我好吗大家好都好呀" 将 "好" 替换为 “好吗”，这里会替换为 “你好吗吗我好吗吗大家好吗都好吗呀” ，因为最后的俩“好”经过识别，是没有被替换过的，所以这句是要被进行替换执行的，这个整句替换是现有的方法，这个后续可以把提花你方法拆分一下，进行针对性的只针对最后的俩“好”进行精准替换，而不对前面的俩“好吗”在进行替换
-						var findNumber = 0; //发现value存在额次数
-						for (var i = 0; i < positions.length; i++) {
-							var pos = positions[i];
-							// 检查是否是替换后的字符串
-							if (text.substring(pos, pos + nomenclatureValue.length) === nomenclatureValue) {
-								// 是替换后的字符串，忽略
-								findNumber = findNumber+1;
-							}
-						}
-						//console.log('findNumber:'+findNumber+', positions.length：'+positions.length);
-						if(findNumber - positions.length == 0){
-							//符合全部已经替换的逻辑，那么这里就不能再继续替换了，退出 text 这个文本的替换，不要产生重复替换
-							continue;
-						}
-					}
-					
-					/*
-					var substringStart = wordKeyIndex-nomenclatureValue.length;
-					if(substringStart < 0){
-						substringStart = 0;
-					}
-					var substringEnd = wordKeyIndex+nomenclatureValue.length;
-					if(substringEnd > text.length){
-						substringEnd = text.length;
-					}
-					var nomenclatureValueJudgement = text.substring(substringStart, substringEnd);
-					//console.log(text+', '+nomenclatureValueJudgement);
-					if(nomenclatureValueJudgement.indexOf(nomenclatureValue) > -1){
-						//已经替换过了，可能会重复替换，所以忽略掉
-						continue;
-					}
-					*/
-
-				}
-
-				// 2025.4.26 优化，将不再在此处进行处理，交有 translate.util.textReplace 在页面最终渲染前处理
-				// //判断当前是否是英语及变种，也就是单词之间需要有空格的，如果前后没有空格，要补充上空格
-				// if(translate.language.wordBlankConnector(translate.to)){
-				// 	if(wordKeyIndex > 0){
-				// 		//它前面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
-				// 		var before = text.charAt(wordKeyIndex-1);
-				// 		//console.log(before);
-				// 		if(!(/\s/.test(before))){
-				// 			//不是空白字符，补充上一个空格，用于将两个单词隔开
-				// 			nomenclatureValue = ' '+nomenclatureValue
-				// 		}
-				// 	}
-				// 	if(wordKeyIndex + nomenclatureKey.length < text.length){
-				// 		//它后面还有文本，判断它前面的文本是否是空格，如果不是，那么要补充上空格
-				// 		var after = text.charAt(wordKeyIndex + nomenclatureKey.length);
-				// 		//console.log(after);
-				// 		// 2025.4.23  woodsway提出bug修复 https://gitee.com/mail_osc/translate/issues/IC34VN
-				// 		if(!(/\s/.test(after))){
-				// 			//不是空白字符，补充上一个空格，用于将两个单词隔开
-				// 			nomenclatureValue = nomenclatureValue+' ';
-				// 		}
-				// 	}
-				// }
-				
-				//如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费
-				if(nomenclatureKey != nomenclatureValue){
-					//console.log(nomenclatureKey+':'+nomenclatureValue);
-					translate.element.nodeAnalyse.set(node, nomenclatureKey, nomenclatureValue, attribute);
-				}
-				
-				
-				//从 text 中将自定义术语的部分删掉，自定义术语的不被翻译
-				var wordSplits = text.split(nomenclatureKey);
-				//var isPushTextArray = false;
-				for(var index = 0; index < wordSplits.length; index++){
-					//console.log(index);
-					var subWord = wordSplits[index]; //分割后的子字符串
-					if(subWord.trim().length == 0){
-						continue;
-					}
-					//console.log(subWord);
-
-					//将其加入 textArray 中
-					textArray.push(subWord);
-					deleteTextArray.push(text);
-				}
-				
-				//console.log(wordSplits);
-				//自定义术语适配完后就直接退出了
-				//return wordSplits;
-			}
-
-		}
-
-		//console.log(deleteTextArray)
-		//从 textArray 中删除
-		if(deleteTextArray.length > 0){
-			for(var di = 0; di<deleteTextArray.length; di++){
-				let index = textArray.indexOf(deleteTextArray[di]); 
-				if (index > -1) {   
-					//console.log(textArray);
-					//console.log(deleteTextArray[di]);
-					textArray.splice(index, 1); 
-					//console.log(textArray);
-				}
-			}
-		}
-
-		//console.log('textArray return:');
-		//console.log(textArray);
-		return textArray;
-	},
+	
 
 	/*
 
@@ -3743,7 +3777,18 @@ var translate = {
 		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
 		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
 		
-
+		/*
+		//记录这个node
+		if(translate.node.get(node) == null){
+			translate.node.set(node, {});
+		}
+		
+		if(typeof(translate.node.get(node).hitNomenclatureArray) == 'undefined'){
+			translate.node.get(node).hitNomenclatureArray = new Map();
+		}
+		translate.node.get(node).translateTexts[word] = null; //设置要进行通过文本翻译接口翻译的文字
+		*/
+		
 	},
 
 	//全部翻译，node内容全部翻译，而不是进行语种提取，直接对node本身的全部内容拿出来进行直接全部翻译
@@ -5052,23 +5097,128 @@ var translate = {
             translateOriginal: 翻译的某个词或句，在翻译之前的文本
             translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
             language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。 另外这里传入的语种也是 translate.js 的语种标识
-        	
+        	participles: 分词，数组形态。默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
+        		比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
+
         	(注意，如果 translateResult 中发现 translateOriginal 的存在，将不进行任何处理，因为没必要了，还会造成死循环。直接将 text 返回)
 			
 			使用此方法：
 			var text = '你世好word世界';
 			var translateOriginal = '世';
 			var translateResult = '世杰'; //翻译结果
-			translate.util.textReplace(text, translateOriginal, translateResult, 'english');
+			translate.util.textReplace(text, translateOriginal, translateResult, 'english'); //没有分词，正常替换
+			translate.util.textReplace(text, translateOriginal, translateResult, 'english',['世界','好word']); //有分词，要保留分词结构，不能被拆分替换，不能拆分分词的语义
 
         */
-        textReplace:function(text, translateOriginal, translateResult, language){
-
+        textReplace:function(text, translateOriginal, translateResult, language, participles){
+        	//console.log('----text:'+text+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
         	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
         	if(text == translateOriginal){
         		return translateResult;
         	}
         	
+        	var findText = translateOriginal;
+
+        	/**** 判断 findText 的开始字符跟结束字符是否包含着 特殊符号 ，：。 因为在 translate.util.textReplace 替换时，会根据当前语种，自动将前后有句号等符号时进行中英的符号转换，此时如果 findText 传入的带有句号的，比如 “你好，” 而实际上text的内容是已经被替换过，就会导致 “你好，” 找不到，而 “你好,” 能找到 ****/
+			var punctuationMarks_fullWidth = ['，','：','。']; //标点符号-全角，用于中文等语种
+			var punctuationMarks_halfWidth = [',',':','.']; //标点符号-半角，用于英文等语种
+			
+			//取第一个字符
+			var findTextFirstChar = findText.charAt(0);
+			var findTextLastChar = findText.charAt(findText.length-1);
+
+
+			if(punctuationMarks_fullWidth.indexOf(findTextFirstChar) > -1){
+				//第一个字符发现了全角符号，将其替换为半角
+
+				var newFindText = punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextFirstChar)]+findText.substring(1, findText.length);
+				//console.log('\t第一个字符发现了全角符号，将其替换为半角 - > '+newFindText);
+				//先进针对第一个字符的半角后替换处理
+				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+
+				if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+					//最后一个字符发现了全角符号，将其替换为半角
+
+					//第一个字符不转换情况下在进行替换
+					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
+
+					//第一个字符转换后再进行替换
+					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
+					//console.log('\tlast - 全角变半角 - > '+newFindText);
+					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+					
+				}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+					//最后一个字符发现了半角符号，将其替换为全角
+
+					//第一个字符不转换情况下在进行替换
+					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
+
+					//第一个字符转换后再进行替换
+					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
+					//console.log('\tlast - 半角变全角 - > '+newFindText);
+					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+					text = translate.util.textReplace_service(text, findText, translateResult, language, participles); //第一个字符不转换情况下在进行替换
+				}
+
+			}else if(punctuationMarks_halfWidth.indexOf(findTextFirstChar) > -1){
+				//第一个字符发现了半角符号，将其替换为全角
+
+				var newFindText = punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextFirstChar)]+findText.substring(1, findText.length);
+				//console.log('\t第一个字符发现了半角符号，将其替换为全角 - > '+newFindText);
+				//先进针对第一个字符的全角后替换处理
+				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+
+				if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+					//最后一个字符发现了全角符号，将其替换为半角
+
+					//第一个字符不转换情况下在进行替换
+					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
+
+					//第一个字符转换后再进行替换
+					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
+					//console.log('\tlast - 全角变半角 - > '+newFindText);
+					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+				}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+					//最后一个字符发现了半角符号，将其替换为全角
+					
+					//第一个字符不转换情况下在进行替换
+					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
+
+					//第一个字符转换后再进行替换
+					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
+					//console.log('\tlast - 半角变全角 - > '+newFindText);
+					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+				}
+			}else if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+				//第一个字符不是那几种标点符号，最后一个字符发现了全角符号，将其替换为半角
+				var newFindText = findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
+				//console.log('第一个字符不是标点符号 - 最后一个字符是全角标点符号 - 全角变半角 - > '+newFindText);
+				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);				
+			}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+				//第一个字符不是那几种标点符号，最后一个字符发现了半角符号，将其替换为全角
+				var newFindText = findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
+				//console.log('第一个字符不是标点符号 - 最后一个字符是半角标点符号 - 半角变全角 - > '+newFindText);
+				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);				
+			}
+
+			//最后，进行一次正常替换
+			text = translate.util.textReplace_service(text, translateOriginal, translateResult, language, participles);
+			
+            return text;
+        },
+        /*
+            它服务于上面的 textReplace，不需要直接使用这个
+
+        */
+        textReplace_service:function(text, translateOriginal, translateResult, language, participles){
+        	//console.log('----text:'+text+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
+        	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
+        	if(text == translateOriginal){
+        		return translateResult;
+        	}
+        	
+        	/*
+
         	//当前替换后，替换结果结束位置的下标。 
         	//一开始还没进行替换，那么这个下标就是 0
         	//比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
@@ -5076,11 +5226,14 @@ var translate = {
 
         	//while最大循环次数30次，免得出现未知异常导致死循环
         	let maxWhileNumber = 30;
-
-        	//因为text中可能有多个位置要被替换，所以使用循环
-        	while(text.indexOf(translateOriginal, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
+			*/
+			
+			var indexArray = translate.util.findParticiple(text, translateOriginal, participles);
+			for(var i = indexArray.length-1; i > -1 ; i--){
         		//console.log('text:'+text+'\tcurrentReplaceEndIndex:'+currentReplaceEndIndex);
 
+        		//通过 translate.util.replaceFromIndex 进行替换时的 index 开始位置 。 比如如果下面识别前面的一个字符，要变为, 那也就是要继续向前一位，这里就要 -1
+        		let replaceIndex = indexArray[i]; 
         		//要替换的结果文本（这个文本可能前面有加空格或者后面有加空格的）
            		let replaceResultText = ''+translateResult; 
            		//替换的文本 ，这里有可能会追加上某些标点符号，所以单独也列出来，而不是使用方法中传入的 translateOriginal
@@ -5088,15 +5241,17 @@ var translate = {
 
            		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
            		if(translate.language.wordBlankConnector(language)){
-	                let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的起始坐标（0开始）
+	                //let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的起始坐标（0开始）
+	                let originalIndex = indexArray[i];
 	                //console.log("originalIndex: "+originalIndex);
 
 	                //要先判断后面，不然先判断前面，加了后它的长度就又变了
 
 	                //判断它后面是否还有文本
-	                if(originalIndex+1 < text.length){
-	                	let char = text.charAt(originalIndex+translateOriginal.length);
-	                    //console.log(char);
+	                var afterCharIndex = indexArray[i]+translateOriginal.length; //translateOriginal之后的第一个文本的index下标
+	                if(afterCharIndex < text.length){
+	                	let char = text.charAt(afterCharIndex);
+	                    //console.log(translateOriginal+' after char : '+char+", index:"+afterCharIndex);
 	                    if(/。/.test(char)){
 	                    	replaceResultText = replaceResultText + '. ';
 	                    	replaceOriginalText = translateOriginal + '。';
@@ -5116,7 +5271,6 @@ var translate = {
 								replaceResultText = replaceResultText + ' ';
 							}
 	                    }
-	                    
 	                }
 
 	                //判断它前面是否还有文本
@@ -5125,12 +5279,15 @@ var translate = {
 	                    //console.log(char);
 	                    
   						if(/。/.test(char)){
+  							replaceIndex--;
 	                    	replaceResultText = '. '+replaceResultText;
 	                    	replaceOriginalText = '。'+replaceOriginalText;
 	                    }else if(/，/.test(char)){
+	                    	replaceIndex--;
 	                    	replaceResultText = ', '+replaceResultText;
 	                    	replaceOriginalText = '，'+replaceOriginalText;
 	                    }else if(/：/.test(char)){
+	                    	replaceIndex--;
 	                    	replaceResultText = ': '+replaceResultText;
 	                    	replaceOriginalText = '：'+replaceOriginalText;	
 	                    }else if([' ', '\n','\t','[', '|', '_','-','/'].indexOf(char) !== -1){
@@ -5150,21 +5307,106 @@ var translate = {
 	            	//如果是其他语种比如英语法语翻译为中文、日文，那么标点符号也要判断的，这个因为目前这个场景还没咋遇到，就不判断了，遇到了在加。
 
 	            }
-	            //console.log(replaceResultText)
-	            //console.log(replaceResultText.length)
+	            //console.log('replaceOriginalText: '+ replaceOriginalText+" --> replaceResultText: "+replaceResultText);
+	            
+	            let replaceResult  = translate.util.replaceFromIndex(text, replaceIndex, replaceOriginalText, replaceResultText);
 
-	            let replaceResult  = translate.util.replaceFromIndex(text, currentReplaceEndIndex, replaceOriginalText, replaceResultText);
 	            if(replaceResult.replaceEndIndex < 1){
-	            	console.log('while中已经 indexOf发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , translateOriginal:'+translateOriginal);
+	            	console.log('translate.util.findParticiple 中已经发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , index:'+indexArray[i]+',  translateOriginal:'+translateOriginal);
 	            }else{
-	            	currentReplaceEndIndex = replaceResult.replaceEndIndex;
 	            	text = replaceResult.text;
 	            }
-	            
         	}
 
-            //console.log(resultText);
             return text;
+        },
+        /*
+			从一个字符串中, 寻找某个分词。这个分词不能破坏其他分词。
+			text: 原始文本，翻译的某句或者某个词就在这个文本之中
+			findParticiple: 寻找的分词文本
+			participles: 分词，数组形态。默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
+        		比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
+			
+			
+			return 返回寻找到的分词文本在 text 中的下标数组（下标是从0开始）
+					比如： [0, 3, 6] 便是在 text 中的0下标出现了这个 findParticiple 寻找的分词文本
+				   如果没有发现，则返回 [] 空数组
+				   注意，它里面的元素都是按照顺序由小往大，顺序排的
+
+        */
+        findParticiple:function(text, findText, translateTexts){
+        	var resultArray = [];
+
+			//兼容 translateTexts 不传入的情况
+			if(typeof(translateTexts) == 'undefined' || translateTexts == null){
+				translateTexts = [];
+			}
+
+			/*****1. 先过滤，过滤掉 translateTexts 中 不包含 translateOriginal、 以及文本长度小于等于 translateOriginal  这个分词的情况*****/
+			var newTranslateTexts = []; 
+			for(var i = 0; i < translateTexts.length; i++){
+				if(translateTexts[i].indexOf(findText) != -1 && translateTexts[i].length > findText.length){
+					newTranslateTexts.push(translateTexts[i]);
+				}
+			}
+			//console.log('包含'+findText+'的分词：');
+			//console.log(newTranslateTexts)
+
+			//当前替换后，替换结果结束位置的下标。 
+			//一开始还没进行替换，那么这个下标就是 0
+			//比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
+			var currentReplaceEndIndex = 0;
+
+			//while最大循环次数30次，免得出现未知异常导致死循环
+			var maxWhileNumber = 30;
+
+			// 识别，indexOf 逐个识别 '你' ，识别到之后，再跟 其他比如 '你是谁'  进行判断，比如  '你是谁'  就要讲 indexOf 的下标+2 来截取这text中的三个字符，去跟 '你是谁' 判定，以判定是否是一个正常的不能拆分的分词
+			while(text.indexOf(findText, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
+				var index = text.indexOf(findText, currentReplaceEndIndex);
+
+				var findParticiple = false; //发现是其他分词了是true，没发现可以替换则是false
+
+				//进行其他分词发现策略
+				if(newTranslateTexts.length > 0){
+					//发现的这个词可能是其他分词中的一部分，这个要判断当前index是否是其他分词的一部分。 这里要进行遍历 newTranslateTexts 逐个取出进行对比
+
+					for(var j = 0; j < newTranslateTexts.length; j++){
+						//判断 newTranslateTexts[j] 这个分词中包含的 findText 这个文本，这个文本是在 newTranslateTexts[j] 的下标的多少
+						var indexInNewTranslateTexts = newTranslateTexts[j].indexOf(findText);
+						// 因为 newTranslateTexts 是通过筛选包含 findText 而出的，所以它肯定是包含的，有下标的
+						// 这里要从 text 中，根据 indexInNewTranslateTexts 及 原本 findText 的 index，在这个index的前或者后，追加几个文本，这追加的文本长度，也就是根据 indexInNewTranslateTexts 以及 newTranslateTexts[j] 的长度
+
+						//这里准备要根据 newTranslateTexts[j] 、 indexInNewTranslateTexts ，来定义从 text 中去取 对应 newTranslateTexts[j] 的长度，以判断当前index是否是取的 newTranslateTexts[j] 这个分词的 
+						var length = newTranslateTexts[j].length;
+						var split_text = text.substring(index-indexInNewTranslateTexts, index-indexInNewTranslateTexts + length);
+						if(split_text == newTranslateTexts[j]){
+							//说明当前index是取的 newTranslateTexts[j] 这个分词的,那这个就不能替换，要忽略
+							console.log('当前是其他分词，不能直接替换 ： '+newTranslateTexts[j]);
+							findParticiple = true;
+							break;
+						}
+					}
+				}
+
+				if(!findParticiple){
+					resultArray.push(index);
+				}
+				currentReplaceEndIndex = index+findText.length;
+			}
+
+
+
+			  /*
+			    这里需要将下面的 9、7 这个下标找出来，然后进行替换。  注意要先从后进行替换，避免从前替换，之后的下标长度出现变化
+			  */
+
+			  //text = translate.util.replaceFromIndex(text, 9, translateOriginal, translateResult).text;
+			  //text = translate.util.replaceFromIndex(text, 7, translateOriginal, translateResult).text;
+
+
+			  //return text;
+
+			return resultArray;
         },
         /*
 			js 的 replace 能力，这个是可以指定从第几个字符开始进行replace
@@ -5196,8 +5438,10 @@ var translate = {
 		    	}
 		    }else{
 		    	//没有发现可替换的字符，那么就原样返回
+		    	//console.log('after:'+after);
+		    	//console.log(text+originalText);
 		    	return {
-		    		text: before + replacedAfter, 
+		    		text: before, 
 		    		replaceEndIndex: 0
 		    	};
 		    }
@@ -6464,7 +6708,7 @@ var translate = {
 				xhr.setRequestHeader(ahindex,translate.request.appendHeaders[ahindex]);
 			}
 
-			if(translate.service.name == 'translate.service'){
+			if(translate.service.name != 'client.edge'){
 				xhr.setRequestHeader('currentpage', window.location.href+'');
 			}
 			xhr.send(params);
@@ -7094,6 +7338,7 @@ var translate = {
 	/*js translate.reset start*/
 	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
 	reset:function(){
+
 		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
 
 		var lastUuid = ''; //最后一次的uuid
@@ -7110,6 +7355,7 @@ var translate = {
 			return;
 		}
 
+		/*
 		for(var lang in translate.nodeQueue[lastUuid].list){
 			if (!translate.nodeQueue[lastUuid].list.hasOwnProperty(lang)) {
 	    		continue;
@@ -7139,22 +7385,6 @@ var translate = {
 					if(currentShow.length == 0){
 						continue;
 					}
-/*
-					if(item.beforeText.length > 0 || item.afterText.length > 0){
-						console.log('----'+currentShow);
-						console.log(item);
-					}
-					
-					if(item.beforeText.length > 0){
-						currentShow = currentShow.substring(currentShow.lastIndexOf(item.beforeText)+1, currentShow.length);
-					}
-					if(item.afterText.length > 0){
-						currentShow = currentShow.substring(0, currentShow.lastIndexOf(item.afterText));
-					}
-					if(item.beforeText.length > 0 || item.afterText.length > 0){
-						console.log(currentShow);
-					}
-*/						
 					// v3.16.5 针对gitee 的 readme 接入优化
 					if(typeof(item.nodes[index].node) == 'undefined'){
 						continue;
@@ -7167,7 +7397,24 @@ var translate = {
 			}
 		}
 
+		*/
 
+		/** 使用基于 translate.node 的还原 **/
+		for (let key of translate.node.data.keys()) {
+			if(!key.isConnected){
+				console.log(key.nodeValue+' 这个translate.node 中的 node不存在,忽略');
+				continue;
+			}
+
+			for(var attr in translate.node.get(key)){
+				//console.log(attr);
+				translate.node.get(key)[attr]
+				var analyse = translate.element.nodeAnalyse.get(key, '', '', translate.node.get(key)[attr].attribute);
+				translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key)[attr].originalText, translate.node.get(key)[attr].attribute);
+			}
+			//var analyse = translate.element.nodeAnalyse.get(item.nodes[index].node, '', '', attribute);
+			//translate.element.nodeAnalyse.analyse(key, analyse.text, item.original, attribute);
+		}
 
 
 		//清除设置storage中的翻译至的语种

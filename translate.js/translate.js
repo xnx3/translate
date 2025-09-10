@@ -1565,6 +1565,9 @@ var translate = {
 						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
 							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
 							translate.node.get(this.nodes[hash][task_index]).lastTranslateRenderTime = Date.now();
+						}else{
+							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							console.log(this.nodes[hash][task_index]);
 						}
 
 						//渲染页面进行翻译显示
@@ -1582,6 +1585,7 @@ var translate = {
 							}
 						}else{
 							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							console.log(this.nodes[hash][task_index]);
 						}
 						
 						//加入 translate.listener.ignoreNode
@@ -3568,12 +3572,13 @@ var translate = {
 				//自定义属于的指定的结果字符串
 				var nomenclatureValue = translate.nomenclature.data[translate.language.getLocal()][translate.to][nomenclatureKey];
 
-				//console.log(textArray);
+				console.log('----translate.nomenclature.dispose---');
+				console.log(textArray);
 				textArray = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
 					node:node,
 					attribute:attribute
 				}).texts;
-				//console.log(textArray);
+				console.log(textArray);
 				
 				if(typeof(nomenclatureKeyArray) != 'undefined'){
 					nomenclatureKeyArray.push(nomenclatureKey);
@@ -3592,11 +3597,16 @@ var translate = {
 		//console.log(textArray);
 		if(textArray.length > 1 || textArray[0] != text){
 			translate.node.get(node)[nodeAttribute.key].whole = false; //已经被拆分了，不是整体翻译了
+			//这时，也默认给其赋值操作，将自定义术语匹配后的结果进行赋予
+
+
 		}else{
 			translate.node.get(node)[nodeAttribute.key].whole = true; //未拆分，是整体翻译
 		}
 
-		
+		//成功加入到 nodeQueue 的对象。 如果长度为0，那就是还没有加入到 translate.nodeQueue 中，可能全被自定义术语命中了
+		var addQueueObjectArray = [];
+
 		for(var tai = 0; tai<textArray.length; tai++){
 			if(textArray[tai].trim().length == 0){
 				continue;
@@ -3616,10 +3626,25 @@ var translate = {
 				}
 			}
 
-			translate.addNodeToQueueAnalysis(uuid, node, textArray[tai], attribute);
+			var newAddQueueArray = translate.addNodeToQueueAnalysis(uuid, node, textArray[tai], attribute);
+			Array.prototype.push.apply(addQueueObjectArray, newAddQueueArray);
 		}
 		
-		//this.nodeQueue[lang][key][this.nodeQueue[lang][key].length]=node; //往数组中追加
+		console.log('成功加入进nodequeue的数量：'+addQueueObjectArray.length);
+		console.log(addQueueObjectArray);
+
+		if(addQueueObjectArray.length == 0){
+			//没有加入到 nodeQueue 中，那么也就是在自定义术语这一层，就已经完成了渲染，此时要触发相关钩子
+			// translate.node 记录
+			
+			// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
+			translate.node.get(node).lastTranslateRenderTime = Date.now();
+			//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
+			translate.node.get(node)[nodeAttribute.key].translateTexts = {}; //这里全部命中了，所以根本没有走翻译接口的文本
+			//将翻译完成后要显示出的文本进行记录
+			translate.node.get(node)[nodeAttribute.key].resultText = translate.element.nodeAnalyse.get(node).text; //直接获取当前node显示出来的文本作为最后的结果的文本
+		}
+		
 	},
 
 	
@@ -3633,7 +3658,12 @@ var translate = {
 		lang 当前要翻译的文本的语种，如 english
 		beforeText 参见 translate.nodeQueue 注释中第七维的解释
 		afterText 参见 translate.nodeQueue 注释中第七维的解释
+		
 
+		返回:
+			加入 nodeQueue 后的对象。 
+			这里跟addNodeQueueItem方法返回一样，只不过 addNodeQueueItem 方法返回的是一个，而这里是多个，数组的形式。
+			如果一个也没有加入到 nodeQueue,那么这里返回的数组长度便是0
 	*/
 	addNodeToQueueAnalysis:function(uuid, node, text, attribute){
 		//获取当前是什么语种
@@ -3650,7 +3680,10 @@ var translate = {
 		}
 		
 		var isWhole = translate.whole.isWhole(node);
-		//console.log('isWhole:'+isWhole+', '+text);
+		console.log('isWhole:'+isWhole+', '+text);
+
+		//记录成功加入 nodeQueue 的，如果加入了多个，那就是多个数组，如果长度为0，那就是啥也没加入了
+		var addNodeQueueArray = [];
 
 		if(!isWhole){
 			//常规方式，进行语种分类
@@ -3691,7 +3724,10 @@ var translate = {
 					var afterText = langs[lang].list[word_index]['afterText'];
 
 					//console.log(lang+' - '+word+', attribute:'+attribute);
-					translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
+					var addQueue = translate.addNodeQueueItem(uuid, node, word, attribute, lang, beforeText, afterText);
+					if(addQueue != null){
+						addNodeQueueArray.push(addQueue);
+					}
 
 					/*
 					var hash = translate.util.hash(word); 	//要翻译的词的hash					
@@ -3751,10 +3787,14 @@ var translate = {
 			//直接翻译整个元素内的内容，不再做语种分类
 			var lang = translate.language.recognition_languageName_force(textRecognition);
 			//console.log(lang+' - '+text);
-			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
+			var addQueue = translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
+			if(addQueue != null){
+				addNodeQueueArray.push(addQueue);
+			}
 		}
 
-
+		console.log('-----'+addNodeQueueArray.length);
+		return addNodeQueueArray;
 	},
 
 	/*
@@ -3766,6 +3806,12 @@ var translate = {
 		lang 当前要翻译的文本的语种，如 english
 		beforeText 参见 translate.nodeQueue 注释中第七维的解释
 		afterText 参见 translate.nodeQueue 注释中第七维的解释
+
+		返回值判断 不为 null，则是成功加入了 nodeQueue ，返回加入后的  translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex] ,包含这些：
+			afterText: 
+			attribute: 
+			beforeText: 
+			node: 
 
 	*/
 	addNodeQueueItem:function(uuid, node, word, attribute, lang, beforeText, afterText){
@@ -3819,7 +3865,7 @@ var translate = {
 		}
 		if(isEquals){
 			//相同，那就不用在存入了
-			return;
+			return null;
 		}
 
 		//往五维数组nodes中追加node元素
@@ -3830,6 +3876,7 @@ var translate = {
 		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['beforeText'] = beforeText;
 		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex]['afterText'] = afterText;
 		
+		return translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodesIndex];
 		/*
 		//记录这个node
 		if(translate.node.get(node) == null){
@@ -8016,7 +8063,7 @@ var translate = {
 							if(nodes[r].nodeType === 1){
 					        	nodes[r].className = nodes[r].className+' translatejs-text-element-hidden';
 					        }else{
-					        	//不是元素，那么就取父级了
+					        	//不是元素，那么就取父级了  -- 这里即使翻译的属性，也要进行，比如 value 的 placeholder
 					        	var nodeParent = nodes[r].parentNode;
 						        if(nodeParent == null){
 						        	continue;

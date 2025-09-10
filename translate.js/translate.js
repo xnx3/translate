@@ -383,11 +383,12 @@ var translate = {
 		
 		translate.time.log('iframe 完成');
 
-		/*
+		//无刷新切换语言		
 		isReload = false;
-		translate.node.data.clear();
-		translate.nodeQueue = {};
-		*/
+		translate.reset();
+		translate.to = languageName;
+		translate.storage.set('to',languageName);	//设置目标翻译语言
+
 
 		if(isReload){
 			location.reload(); //刷新页面

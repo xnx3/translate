@@ -3572,13 +3572,13 @@ var translate = {
 				//自定义属于的指定的结果字符串
 				var nomenclatureValue = translate.nomenclature.data[translate.language.getLocal()][translate.to][nomenclatureKey];
 
-				console.log('----translate.nomenclature.dispose---');
-				console.log(textArray);
+				//console.log('----translate.nomenclature.dispose---');
+				//console.log(textArray);
 				textArray = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
 					node:node,
 					attribute:attribute
 				}).texts;
-				console.log(textArray);
+				//console.log(textArray);
 				
 				if(typeof(nomenclatureKeyArray) != 'undefined'){
 					nomenclatureKeyArray.push(nomenclatureKey);
@@ -3630,8 +3630,8 @@ var translate = {
 			Array.prototype.push.apply(addQueueObjectArray, newAddQueueArray);
 		}
 		
-		console.log('成功加入进nodequeue的数量：'+addQueueObjectArray.length);
-		console.log(addQueueObjectArray);
+		//console.log('成功加入进nodequeue的数量：'+addQueueObjectArray.length);
+		//console.log(addQueueObjectArray);
 
 		if(addQueueObjectArray.length == 0){
 			//没有加入到 nodeQueue 中，那么也就是在自定义术语这一层，就已经完成了渲染，此时要触发相关钩子
@@ -3680,7 +3680,7 @@ var translate = {
 		}
 		
 		var isWhole = translate.whole.isWhole(node);
-		console.log('isWhole:'+isWhole+', '+text);
+		//console.log('isWhole:'+isWhole+', '+text);
 
 		//记录成功加入 nodeQueue 的，如果加入了多个，那就是多个数组，如果长度为0，那就是啥也没加入了
 		var addNodeQueueArray = [];
@@ -3793,7 +3793,7 @@ var translate = {
 			}
 		}
 
-		console.log('-----'+addNodeQueueArray.length);
+		//console.log('-----'+addNodeQueueArray.length);
 		return addNodeQueueArray;
 	},
 
@@ -8086,7 +8086,7 @@ var translate = {
 					    //var sortRects = translate.visual.coordinateSort(rectsOneArray);
 					    //console.log(sortRects);
 
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray,1);
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
 						for(var r = 0; r<rectLineSplit.length; r++){
 						    if(rectLineSplit[r].node.nodeType === 1){
 					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';

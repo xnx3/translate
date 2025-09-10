@@ -1875,6 +1875,9 @@ var translate = {
 		if(translate.node.data == null){
 			translate.node.data = new Map();
 		}
+		if(translate.language.name == null){
+			translate.language.generateLanguageNameObject();
+		}
 
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
@@ -3953,12 +3956,196 @@ var translate = {
 	},
 
 	language:{
+
+		
+
 		/*	
 			英语的变种语种，也就是在英语26个字母的基础上加了点别的特殊字母另成的一种语言，而这些语言是没法直接通过识别字符来判断出是哪种语种的
 			
 			法语、意大利语、德语、葡萄牙语
+
+			要废弃，用下面的 systems 、 name
 		*/
 		englishVarietys : ['french','italian','deutsch', 'portuguese'],
+
+		/*
+			语言的书写体系，分成哪几个语言体系
+			其中
+			key : 语言体系的名字
+			value: 语言体系的详细信息
+				direction: 书写方向 （当前只是记录，无其他意义）
+				remark: 说明备注 （当前只是记录，无其他意义）
+				languages: 这个语言体系下，有哪些具体语种， translate.js 的语言标识
+
+		 */ 
+		systems : {
+			
+			// 拉丁字母体系
+			latin:{
+				direction: "left-to-right", // 书写方向
+				coreFeatures: "基础字母26个（A-Z），部分语言添加变音符号（如é、ñ、ü），从左到右书写",
+				languages: [ //包含的语种
+			      "english", "latin", "french", "spanish", "deutsch", "portuguese",
+			      "italian", "越南语", "马来语", "印尼语",
+			      "土耳其语", "波兰语", "荷兰语", "瑞典语", "非洲诸语（多数）",
+			      "美洲诸语（多数）", "菲律宾语", "哈萨克语（现代拉丁化）"
+			    ]
+			},
+			
+			// 汉字体系（表意文字）
+			chinese:{
+				direction: "left-to-right",
+				coreFeatures: "表意文字，单字独立，可组合成词，笔画复杂，现代多横向书写",
+				languages: [ 
+			      "chinese_simplified", "chinese_traditional", "japanese", "korean"
+			    ]
+			}
+		},
+
+		/*
+			语言表示：属性相关，他会在translate.js 加载完后自动初始化，从 translate.language.systems 中遍历出来，赋予 translate.language.name
+			它里面的值为： 
+
+				chinese_simplified:{
+					system:'chinese'	//所属系统语族 , 也就是 translate.language.systems[key] 的 key
+				},
+				english:{
+					system:'latin'	//所属系统语族
+				}
+			
+			它会在 translate.execute() 是进行初始化，通过触发 translate.language.generateLanguageNameObject 赋予值
+		*/
+		name:null,
+		/*
+			生成 translate.language.english 这种语种对象，通过 translate.language.systems
+		*/
+		generateLanguageNameObject:function(){
+			for(var key in translate.language.systems){
+				if (!translate.language.systems.hasOwnProperty(key)) {
+		    		continue;
+		    	}
+		    	console.log(key)
+				for(var li = 0; li < translate.language.systems[key].languages.length; li++){
+					//console.log(translate.language.systems[key].languages[li])
+					translate.language.name[translate.language.systems[key].languages[li]] = {
+						system: key
+					}
+				}
+			}
+		},
+
+		/*
+		[
+		 
+		  // 2. 阿拉伯字母体系
+		  {
+		    name: "arabic",
+		    scriptCode: "Arab",
+		    direction: "right-to-left",
+		    coreFeatures: "从右到左书写，字母连笔，元音常省略（需上下文推断），含特殊连接形式",
+		    representativeLanguages: [
+		      "阿拉伯语", "波斯语", "乌尔都语", "旁遮普语（巴基斯坦）",
+		      "豪萨语（西非）", "普什图语", "马来语（历史用Jawi文）", "维吾尔语（历史）"
+		    ]
+		  },
+
+		  // 3. 西里尔字母体系
+		  {
+		    name: "cyrillic",
+		    scriptCode: "Cyrl",
+		    direction: "left-to-right",
+		    coreFeatures: "源于希腊字母，字母形态独特（如п、в、м），部分字母与拉丁字母形似但发音不同",
+		    representativeLanguages: [
+		      "俄语", "乌克兰语", "白俄罗斯语", "保加利亚语", "塞尔维亚语（官方）",
+		      "哈萨克语（旧版）", "乌兹别克语（旧版）", "蒙古语（部分地区）"
+		    ]
+		  },
+
+		  
+		 
+
+		  // 5. 天城文体系
+		  {
+		    name: "devanagari",
+		    scriptCode: "Deva",
+		    direction: "left-to-right",
+		    coreFeatures: "元音附标文字（辅音字母自带元音，可通过符号修改），字母顶部有横线连接",
+		    representativeLanguages: [
+		      "印地语", "尼泊尔语", "马拉地语", "梵语", "阿萨姆语（部分）"
+		    ]
+		  },
+
+		  // 6. 谚文（韩文）体系
+		  {
+		    name: "hangul",
+		    scriptCode: "Hang",
+		    direction: "left-to-right",
+		    coreFeatures: "表音文字，字母按音节块组合（如한국어=韩+国+语），结构规则严谨",
+		    representativeLanguages: ["韩语（朝鲜语）"]
+		  },
+
+		  // 7. 假名体系（日语）
+		  {
+		    name: "kana",
+		    scriptCode: "Kana",
+		    direction: "left-to-right（现代）/ top-to-bottom（传统）",
+		    coreFeatures: "表音文字，分平假名（日常书写）和片假名（外来词），常与汉字混合使用",
+		    representativeLanguages: ["日语"]
+		  },
+
+		  // 8. 泰文字母体系
+		  {
+		    name: "thai",
+		    scriptCode: "Thai",
+		    direction: "left-to-right",
+		    coreFeatures: "元音附标文字，字母弯曲优美，含音调符号（影响词义）",
+		    representativeLanguages: ["泰语", "老挝语（近缘，字母略异）"]
+		  },
+
+		  // 9. 孟加拉字母体系
+		  {
+		    name: "bengali",
+		    scriptCode: "Beng",
+		    direction: "left-to-right",
+		    coreFeatures: "元音附标文字，字母圆润流畅，部分字母有独特连体形式",
+		    representativeLanguages: ["孟加拉语", "阿萨姆语"]
+		  },
+
+		  // 10. 希腊字母体系
+		  {
+		    name: "greek",
+		    scriptCode: "Grek",
+		    direction: "left-to-right",
+		    coreFeatures: "最古老的字母体系之一，字母独立（如α、β、γ），含重音符号",
+		    representativeLanguages: ["希腊语", "塞浦路斯语（部分）"]
+		  },
+
+		  // 11. 希伯来字母体系
+		  {
+		    name: "hebrew",
+		    scriptCode: "Hebr",
+		    direction: "right-to-left",
+		    coreFeatures: "从右到左书写，传统无元音字母（现代加辅助符号），字母形态随位置变化",
+		    representativeLanguages: ["希伯来语", "意第绪语"]
+		  },
+
+		  // 12. 其他区域性体系
+		  {
+		    name: "tamil", // 泰米尔字母
+		    scriptCode: "Taml",
+		    direction: "left-to-right",
+		    coreFeatures: "元音附标文字，历史悠久（超2000年），字母结构对称",
+		    representativeLanguages: ["泰米尔语"]
+		  },
+		  {
+		    name: "georgian", // 格鲁吉亚字母
+		    scriptCode: "Geor",
+		    direction: "left-to-right",
+		    coreFeatures: "独特的曲线字母，无变音符号，自成体系",
+		    representativeLanguages: ["格鲁吉亚语"]
+		  }
+		];
+		*/
 
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
@@ -4378,7 +4565,29 @@ var translate = {
 				langsNumber['chinese_simplified'] = 0;
 			} */
 
+			/*
+				这里要判断当前显示的语种，根据当前显示的语种，来进行进一步处理
+				比如 ：
+					你 @¿Lo que introduzco ahora es contenido español, ¿ se puede traducir en chino? Este texto está en inglés. Si desea 
+				会被识别为西班牙语，因为按照上面的逻辑，简体中文占得比重太小了，而西班牙语占比重大，所以是西班牙语。
+				但是如果当前要翻译为的语种是西班牙语，那么在用户视觉阅读的角度，你只要有简体中文、日语、俄语、韩语 这几种，那么就都要被翻译为西班牙语，不管是出现了多小的比重，都不能在含有 中文、日语的字符，不然不符合用户以西班牙语阅读的习惯，即使显示单个中文单词，那也属于刺眼的
 
+				
+			*/
+
+
+
+			if(translate.language.getLocal() == translate.language.getCurrent() && translate.language.translateLocal === false){
+				//如果本地语种跟当前语种一致,且不进行强制翻译，那么肯定就不进行翻译的,直接原样返回
+				return data;
+			}else{
+				//其他的情况就是要翻译了
+
+				//当前语种
+				var currentLanguage = translate.language.getCurrent(); 
+				//首先，剔除 data 中的当前语种
+				//console.log(data);
+			}
 			return data;
 		},
 

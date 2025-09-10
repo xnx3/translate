@@ -349,21 +349,19 @@ var translate = {
 		
 		translate.lifecycle.changeLanguage_Trigger(languageName);
 
+		
 		//用的是v2.x或更高
 		//translate.setUseVersion2();
 		translate.useVersion = 'v2';
+		var isReload = false; //标记要刷新页面, true刷新， false不刷新
 		//判断是否是第一次翻译，如果是，那就不用刷新页面了。 true则是需要刷新，不是第一次翻译
-		if(translate.to != null && translate.to.length > 0){
-			//当前目标值有值，且目标语言跟当前语言不一致，那当前才是已经被翻译过的
-			if(translate.to != translate.language.getLocal()){
-				var isReload = true; //标记要刷新页面
-			}
+		if(translate.node.data.size > 0){  //那当前已经被翻译过
+			isReload = true; //标记要刷新页面
 		}
-		
 		
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
-
+		
 		/*
 			1. 先触发父级，免得当前刷新了，导致父级不执行翻译了
 		*/
@@ -384,6 +382,12 @@ var translate = {
 		}
 		
 		translate.time.log('iframe 完成');
+
+		/*
+		isReload = false;
+		translate.node.data.clear();
+		translate.nodeQueue = {};
+		*/
 
 		if(isReload){
 			location.reload(); //刷新页面

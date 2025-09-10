@@ -3748,8 +3748,8 @@ var translate = {
 
 
 		}else{
-			//直接翻译整个元素内的内容，不再做语种分类，首先删除英文，然后将出现次数最多的语种作为原本语种
-			var lang = textRecognition.languageName;
+			//直接翻译整个元素内的内容，不再做语种分类
+			var lang = translate.language.recognition_languageName_force(textRecognition);
 			//console.log(lang+' - '+text);
 			translate.addNodeQueueItem(uuid, node, text, attribute, lang, '', '');
 		}
@@ -3969,7 +3969,9 @@ var translate = {
 		englishVarietys : ['french','italian','deutsch', 'portuguese'],
 
 		/*
-			语言的书写体系，分成哪几个语言体系
+			语言的书写体系，分成哪几个语言体系。
+				这里区分，主要是单纯从文字组成长进行区分的。
+
 			其中
 			key : 语言体系的名字
 			value: 语言体系的详细信息
@@ -3999,153 +4001,75 @@ var translate = {
 				languages: [ 
 			      "chinese_simplified", "chinese_traditional", "japanese", "korean"
 			    ]
+			},
+
+			//阿拉伯字母体系
+			arabic:{
+				direction: "right-to-left",
+				coreFeatures: "表意文字，单字独立，可组合成词，笔画复杂，现代多横向书写",
+				languages: [ 
+			      "阿拉伯语", "波斯语", "乌尔都语", "旁遮普语（巴基斯坦）","豪萨语（西非）", "普什图语",
+			    ]
+			},
+
+			//西里尔字母体系
+			cyrillic:{
+				direction: "left-to-right",
+				coreFeatures: "源于希腊字母，字母形态独特（如п、в、м），部分字母与拉丁字母形似但发音不同",
+				languages: [ 
+			      "俄语", "乌克兰语", "白俄罗斯语", "保加利亚语", "塞尔维亚语（官方）"
+			    ]
+			},
+
+			//泰语体系
+			thai:{
+				direction: "left-to-right",
+				coreFeatures: "元音附标文字，字母弯曲优美，含音调符号（影响词义）",
+				languages: [ 
+			      "thai"
+			    ]
+			},
+
+			//其他后续补充吧
+			
+		},
+
+		/*
+			生成 translate.language.english 这种语种对象，通过 translate.language.systems
+		*/
+		generateLanguageNameObject:function(){
+			var languages = new Map();
+			for(var key in translate.language.systems){
+				if (!translate.language.systems.hasOwnProperty(key)) {
+		    		continue;
+		    	}
+				for(var li = 0; li < translate.language.systems[key].languages.length; li++){
+					//console.log(translate.language.systems[key].languages[li])
+					languages.set(translate.language.systems[key].languages[li], {
+						system: key
+					});
+				}
 			}
+			return languages;
 		},
 
 		/*
 			语言表示：属性相关，他会在translate.js 加载完后自动初始化，从 translate.language.systems 中遍历出来，赋予 translate.language.name
 			它里面的值为： 
-
-				chinese_simplified:{
-					system:'chinese'	//所属系统语族 , 也就是 translate.language.systems[key] 的 key
-				},
-				english:{
-					system:'latin'	//所属系统语族
+				translate.language.map.get('english') = {
+					system:'latin'	//所属系统语族 , 也就是 translate.language.systems[key] 的 key
 				}
-			
+				
 			它会在 translate.execute() 是进行初始化，通过触发 translate.language.generateLanguageNameObject 赋予值
 		*/
-		name:null,
-		/*
-			生成 translate.language.english 这种语种对象，通过 translate.language.systems
-		*/
-		generateLanguageNameObject:function(){
-			for(var key in translate.language.systems){
-				if (!translate.language.systems.hasOwnProperty(key)) {
-		    		continue;
-		    	}
-		    	console.log(key)
-				for(var li = 0; li < translate.language.systems[key].languages.length; li++){
-					//console.log(translate.language.systems[key].languages[li])
-					translate.language.name[translate.language.systems[key].languages[li]] = {
-						system: key
-					}
-				}
+		map_data: null, //这是一个map 
+		map: function(){
+			if(translate.language.map_data == null){
+				map_data = translate.language.generateLanguageNameObject();
 			}
+			return map_data;
 		},
-
-		/*
-		[
-		 
-		  // 2. 阿拉伯字母体系
-		  {
-		    name: "arabic",
-		    scriptCode: "Arab",
-		    direction: "right-to-left",
-		    coreFeatures: "从右到左书写，字母连笔，元音常省略（需上下文推断），含特殊连接形式",
-		    representativeLanguages: [
-		      "阿拉伯语", "波斯语", "乌尔都语", "旁遮普语（巴基斯坦）",
-		      "豪萨语（西非）", "普什图语", "马来语（历史用Jawi文）", "维吾尔语（历史）"
-		    ]
-		  },
-
-		  // 3. 西里尔字母体系
-		  {
-		    name: "cyrillic",
-		    scriptCode: "Cyrl",
-		    direction: "left-to-right",
-		    coreFeatures: "源于希腊字母，字母形态独特（如п、в、м），部分字母与拉丁字母形似但发音不同",
-		    representativeLanguages: [
-		      "俄语", "乌克兰语", "白俄罗斯语", "保加利亚语", "塞尔维亚语（官方）",
-		      "哈萨克语（旧版）", "乌兹别克语（旧版）", "蒙古语（部分地区）"
-		    ]
-		  },
-
-		  
-		 
-
-		  // 5. 天城文体系
-		  {
-		    name: "devanagari",
-		    scriptCode: "Deva",
-		    direction: "left-to-right",
-		    coreFeatures: "元音附标文字（辅音字母自带元音，可通过符号修改），字母顶部有横线连接",
-		    representativeLanguages: [
-		      "印地语", "尼泊尔语", "马拉地语", "梵语", "阿萨姆语（部分）"
-		    ]
-		  },
-
-		  // 6. 谚文（韩文）体系
-		  {
-		    name: "hangul",
-		    scriptCode: "Hang",
-		    direction: "left-to-right",
-		    coreFeatures: "表音文字，字母按音节块组合（如한국어=韩+国+语），结构规则严谨",
-		    representativeLanguages: ["韩语（朝鲜语）"]
-		  },
-
-		  // 7. 假名体系（日语）
-		  {
-		    name: "kana",
-		    scriptCode: "Kana",
-		    direction: "left-to-right（现代）/ top-to-bottom（传统）",
-		    coreFeatures: "表音文字，分平假名（日常书写）和片假名（外来词），常与汉字混合使用",
-		    representativeLanguages: ["日语"]
-		  },
-
-		  // 8. 泰文字母体系
-		  {
-		    name: "thai",
-		    scriptCode: "Thai",
-		    direction: "left-to-right",
-		    coreFeatures: "元音附标文字，字母弯曲优美，含音调符号（影响词义）",
-		    representativeLanguages: ["泰语", "老挝语（近缘，字母略异）"]
-		  },
-
-		  // 9. 孟加拉字母体系
-		  {
-		    name: "bengali",
-		    scriptCode: "Beng",
-		    direction: "left-to-right",
-		    coreFeatures: "元音附标文字，字母圆润流畅，部分字母有独特连体形式",
-		    representativeLanguages: ["孟加拉语", "阿萨姆语"]
-		  },
-
-		  // 10. 希腊字母体系
-		  {
-		    name: "greek",
-		    scriptCode: "Grek",
-		    direction: "left-to-right",
-		    coreFeatures: "最古老的字母体系之一，字母独立（如α、β、γ），含重音符号",
-		    representativeLanguages: ["希腊语", "塞浦路斯语（部分）"]
-		  },
-
-		  // 11. 希伯来字母体系
-		  {
-		    name: "hebrew",
-		    scriptCode: "Hebr",
-		    direction: "right-to-left",
-		    coreFeatures: "从右到左书写，传统无元音字母（现代加辅助符号），字母形态随位置变化",
-		    representativeLanguages: ["希伯来语", "意第绪语"]
-		  },
-
-		  // 12. 其他区域性体系
-		  {
-		    name: "tamil", // 泰米尔字母
-		    scriptCode: "Taml",
-		    direction: "left-to-right",
-		    coreFeatures: "元音附标文字，历史悠久（超2000年），字母结构对称",
-		    representativeLanguages: ["泰米尔语"]
-		  },
-		  {
-		    name: "georgian", // 格鲁吉亚字母
-		    scriptCode: "Geor",
-		    direction: "left-to-right",
-		    coreFeatures: "独特的曲线字母，无变音符号，自成体系",
-		    representativeLanguages: ["格鲁吉亚语"]
-		  }
-		];
-		*/
+		
 
 		//当前本地语种，本地语言，默认是简体中文。设置请使用 translate.language.setLocal(...)。不可直接使用，使用需用 getLocal()
 		local:'',
@@ -4565,30 +4489,72 @@ var translate = {
 				langsNumber['chinese_simplified'] = 0;
 			} */
 
-			/*
-				这里要判断当前显示的语种，根据当前显示的语种，来进行进一步处理
-				比如 ：
-					你 @¿Lo que introduzco ahora es contenido español, ¿ se puede traducir en chino? Este texto está en inglés. Si desea 
-				会被识别为西班牙语，因为按照上面的逻辑，简体中文占得比重太小了，而西班牙语占比重大，所以是西班牙语。
-				但是如果当前要翻译为的语种是西班牙语，那么在用户视觉阅读的角度，你只要有简体中文、日语、俄语、韩语 这几种，那么就都要被翻译为西班牙语，不管是出现了多小的比重，都不能在含有 中文、日语的字符，不然不符合用户以西班牙语阅读的习惯，即使显示单个中文单词，那也属于刺眼的
-
-				
-			*/
 
 
+			return data;
+		},
+		/*
+			强制识别，这里目前咱是配合  translate.language.translateLocal 使用，当它为true时才会进行强制识别，不管比例，只要出现字符，就强制识别。 
+			这个也是只能有大模型翻译、自动识别语种的翻译才使用它。
 
+			比如： translate.language.recognition('你 @¿Lo que introduzco ahora es contenido español, ¿ se puede traducir en chino? Este texto está en inglés. Si desea ')
+			会被识别为西班牙语，因为按照上面的逻辑，简体中文占得比重太小了，而西班牙语占比重大，所以是西班牙语。
+			但是如果当前要翻译为的语种是西班牙语，那么它根据比例识别出也是西班牙语，这句话是不会被翻译的，但是用户实际看上去，却是有显示 '你' 这个中文文字，是不合适的，所以不管是出现了多小的比重，都不能在含有 中文、日语的字符，不然不符合用户以西班牙语阅读的习惯，即使显示单个中文单词，那也属于刺眼的
+		
+			返回：
+			当前 recognition 结果识别的语种，比如 english ,translate.js 的语言标识
+		*/
+		recognition_languageName_force:function(recognition_result){
+
+			//未启用，那用 recognition 的结果
+			if(!translate.language.translateLocal){
+				return recognition_result.languageName;
+			}
 			if(translate.language.getLocal() == translate.language.getCurrent() && translate.language.translateLocal === false){
 				//如果本地语种跟当前语种一致,且不进行强制翻译，那么肯定就不进行翻译的,直接原样返回
-				return data;
+				return recognition_result.languageName;
 			}else{
 				//其他的情况就是要翻译了
 
 				//当前语种
 				var currentLanguage = translate.language.getCurrent(); 
-				//首先，剔除 data 中的当前语种
-				//console.log(data);
+				
+				if(typeof(translate.language.map().get(currentLanguage)) != 'undefined' && typeof(translate.language.map().get(translate.language.getLocal())) != 'undefined'){
+					//本地语种跟当前语种都是有语族的
+					
+					/*
+						语族 ，当前文本中的文字包含多少语种
+						key 是语族的名字，如 latin （如果 translate.language.map().get 中没有取到语族，那么这里就直接去掉）
+						value 是具体的语种名字，如 english 。 这里比如字符串中有英语也有西班牙语，那这里只会记录其中一个，因为主要记录的是key语族的名字
+					*/
+					var languageSystem = {}; 	
+					//遍历当前有的语种
+					for (var language in recognition_result.languageArray) {
+						// 必须加 hasOwnProperty 检查，避免遍历原型链上的属性
+						if (!recognition_result.languageArray.hasOwnProperty(language)) {
+					  		continue;
+						}
+
+						if(typeof(translate.language.map().get(language)) != 'undefined'){
+					  		languageSystem[translate.language.map().get(language).system] = language;
+						}
+					}
+
+					if(translate.language.map().get(currentLanguage).system == 'latin'){
+						//要以拉丁语族显示，那如果其中字符有 chinese 语族的，那么要把这个语族的全部翻译
+						
+						delete languageSystem['latin'];
+						var yuzuArray = Object.keys(languageSystem);
+						if(yuzuArray.length > 0){
+							//发现还有其他语族的，那么以其他语族为主，目的是能一起翻译，那么直接返回第一个语族名即可
+							return languageSystem[yuzuArray[0]];
+						}
+					}
+				}
 			}
-			return data;
+
+			//其他那就都是用 recognition 的结果
+			return recognition_result.languageName;
 		},
 
 		/*

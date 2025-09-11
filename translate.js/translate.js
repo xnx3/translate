@@ -355,6 +355,9 @@ var translate = {
 		translate.useVersion = 'v2';
 		var isReload = false; //标记要刷新页面, true刷新， false不刷新
 		//判断是否是第一次翻译，如果是，那就不用刷新页面了。 true则是需要刷新，不是第一次翻译
+		if(translate.node.data == null){
+			translate.node.data = new Map();
+		}
 		if(translate.node.data.size > 0){  //那当前已经被翻译过
 			isReload = true; //标记要刷新页面
 		}
@@ -1576,8 +1579,10 @@ var translate = {
 						}
 
 						//渲染页面进行翻译显示
+						//console.log(task.originalText+' ('+task['attribute']+') --> ' + task.resultText);
 						var analyseSet = translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
-						
+						//console.log(analyseSet);
+
 						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
 							if(typeof(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key]) == 'undefined'){
 								//这里不应该的
@@ -1586,7 +1591,7 @@ var translate = {
 								//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
 								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].translateTexts[task.originalText] = task.resultText;
 								//将翻译完成后要显示出的文本进行记录
-								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].resultText = analyseSet.text;
+								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].resultText = analyseSet.resultText;
 							}
 						}else{
 							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
@@ -2769,7 +2774,7 @@ var translate = {
 					whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  true:是节点内容整体翻译
 
 		*/
-		data:null,
+		data: null,
 		/*
 			从 translate.node.data 中，根据key，进行获取 translate.node.data.get(node)
 		 */ 
@@ -2922,6 +2927,8 @@ var translate = {
 				返回结果是一个数组，其中：
 					resultText: 翻译完成之后的text内容文本，注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
 					node: 进行翻译的目标node	
+
+				注意，使用本set方法，不要用 返回的 text参数，要用 	resultText 这个参数，这个才是翻译之后的文本	
 			*/
 			set:function(node, originalText, resultText, attribute){
 				return translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
@@ -7703,8 +7710,9 @@ var translate = {
 
 				//console.log(attr);
 				//translate.node.get(key)[attr]
-				var analyse = translate.element.nodeAnalyse.get(key, '', '', translate.node.get(key)[attr].attribute);
-				//console.log(analyse.text+'\t-->\t'+translate.node.get(key)[attr].originalText);
+				var analyse = translate.element.nodeAnalyse.get(key,translate.node.get(key)[attr].attribute);
+				//console.log(analyse);
+				//console.log(analyse.text+' ('+translate.node.get(key)[attr].attribute+')\t-->\t'+translate.node.get(key)[attr].originalText);
 				if(typeof(translate.node.get(key)[attr].originalText) != 'string'){
 					continue;
 				}

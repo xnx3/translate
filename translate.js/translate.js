@@ -832,12 +832,17 @@ var translate = {
 		    }
 
 		    //这里要调用 translate.nomenclature.replace 方法，对 textArray 中的每个文本进行自定义术语替换处理
-		    var result = {};
+		    var result = {
+		    	find:false
+		    };
 		    result.texts = new Array();
 		    result.resultText = new Array();
 		    for(var i = 0; i < textArray.length; i++){
 		        var text = textArray[i];
 		        var res = translate.nomenclature.replace(text, nomenclatureKey, nomenclatureValue, nodeObject);
+		        if(res.find){
+		        	result.find = true;
+		        }
 		        result.texts = result.texts.concat(res.texts);
 		        result.resultText.push(res.resultText);
 		    }
@@ -3574,11 +3579,16 @@ var translate = {
 
 				//console.log('----translate.nomenclature.dispose---');
 				//console.log(textArray);
-				textArray = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
+				var nomenclatureDispose = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
 					node:node,
 					attribute:attribute
-				}).texts;
-				//console.log(textArray);
+				});
+				
+				textArray = nomenclatureDispose.texts;
+				if(nomenclatureDispose.find){
+					//console.log('发现自定义术语，并已进行替换处理：');
+					//console.log(nomenclatureDispose);
+				}
 				
 				if(typeof(nomenclatureKeyArray) != 'undefined'){
 					nomenclatureKeyArray.push(nomenclatureKey);
@@ -3598,8 +3608,6 @@ var translate = {
 		if(textArray.length > 1 || textArray[0] != text){
 			translate.node.get(node)[nodeAttribute.key].whole = false; //已经被拆分了，不是整体翻译了
 			//这时，也默认给其赋值操作，将自定义术语匹配后的结果进行赋予
-
-
 		}else{
 			translate.node.get(node)[nodeAttribute.key].whole = true; //未拆分，是整体翻译
 		}
@@ -3607,17 +3615,21 @@ var translate = {
 		//成功加入到 nodeQueue 的对象。 如果长度为0，那就是还没有加入到 translate.nodeQueue 中，可能全被自定义术语命中了
 		var addQueueObjectArray = [];
 
+		//console.log(textArray);
 		for(var tai = 0; tai<textArray.length; tai++){
 			if(textArray[tai].trim().length == 0){
 				continue;
 			}
 
+			/* 自定义术语 - 忽略翻译文本  ， 在本方法的上面已经完成了识别，这里就不再需要了
 			//判断是否出现在自定义忽略字符串
 			if(translate.ignore.text.indexOf(textArray[tai].trim()) > -1){
 				//console.log(textArray[tai]+' 是忽略翻译的文本，不翻译');
 				continue;
 			}
+			*/
 
+			/* 自定义术语，在本方法的上面已经完成了识别，这里就不再需要了
 			//判断是否出现在自定义术语的
 			if(typeof(translate.temp_nomenclature[translate.language.getLocal()]) != 'undefined'){
 				if(translate.temp_nomenclature[translate.language.getLocal()].indexOf(textArray[tai].trim()) > -1){
@@ -3625,6 +3637,7 @@ var translate = {
 					continue;
 				}
 			}
+			*/
 
 			var newAddQueueArray = translate.addNodeToQueueAnalysis(uuid, node, textArray[tai], attribute);
 			Array.prototype.push.apply(addQueueObjectArray, newAddQueueArray);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.16.20250909',
+	version: '3.18.18.20250911',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5107,7 +5107,8 @@ var translate = {
 		russian:function(str){
 			// 正则表达式匹配俄语大小写字母（包含 Ё/ё，排除其他语言特有的西里尔字符）
 			//АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЮюЯя
-			if(/^[А-Яа-яЁё]$/.test(str)){ 
+			//if(/^[А-Яа-яЁё]$/.test(str)){ 
+			if(/^[\u0410-\u044F\u0401\u0451]$/.test(str)){ 	
 				return true
 			} else {
 				return false;

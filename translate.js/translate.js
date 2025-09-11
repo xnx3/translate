@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.18.20250911',
+	version: '3.18.19.20250911',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -401,6 +401,10 @@ var translate = {
 			if(!translate.listener.isStart){
 				//如果没有启用动态dom监听，那么就要手动触发翻译了
 				translate.execute(); 
+			}else{
+				setTimeout(function(){
+					translate.execute(); //加一个延迟执行，在listener之后出发，用于翻译 attribute 这种的，因为这种改变不会触发listener的翻译
+				},50);
 			}
 
 			//检测是否有iframe中的子页面，如果有，也对子页面下发翻译命令。这个是针对 LayuiAdmin 框架的场景适配，它的主体区域是在 iframe 中的，不能点击切换语言后，只翻译外面的大框，而iframe中的不翻译
@@ -1265,13 +1269,14 @@ var translate = {
 							//console.log('remove:');
 							//console.log(mutation.removedNodes);
 							for(var ri = 0; ri < mutation.removedNodes.length; ri++){
-								console.log('listener --  mutation.type === childList -- delete node ----: ');
+								//console.log('listener --  mutation.type === childList -- delete node ----: ');
 								//console.log(mutation.removedNodes[ri]);
 								translate.node.delete(mutation.removedNodes[ri]); //删除掉被dom给移除的节点，比如执行了 InnerHTML 操作的元素会自动删除
 							}
 						}
 					}else if (mutation.type === 'attributes') {
-						//console.log('The ' + mutation.attributeName + ' attribute was modified.');
+						//console.log(mutation);
+						//console.log('listener attributes change --> ' + mutation.target.nodeName+'['+ mutation.attributeName + '] oldValue :'+mutation.oldValue);
 					}else if(mutation.type === 'characterData'){
 						//内容改变
 						addNodes = [mutation.target];
@@ -2815,7 +2820,7 @@ var translate = {
 		},
 		//从 translate.node.data 中 删除 key 是 node 的
 		delete: function(node){
-			console.log('delete node -- > '+node.nodeValue);
+			//console.log('delete node -- > '+node.nodeValue);
 			translate.node.data.delete(node);
 		},
 		/*
@@ -7801,6 +7806,9 @@ var translate = {
 		translate.to = null;
 		//重新绘制 select 选择语言
 		translate.selectLanguageTag.refreshRender();
+
+		//清除正在进行的 translate.execute() 的执行状态记录
+		translate.state = 0;
 	},
 	/*js translate.reset end*/
 	

@@ -397,7 +397,11 @@ var translate = {
 			location.reload(); //刷新页面
 		}else{
 			//不用刷新，直接翻译
-			translate.execute(); //翻译
+			//translate.execute(); //翻译
+			if(!translate.listener.isStart){
+				//如果没有启用动态dom监听，那么就要手动触发翻译了
+				translate.execute(); 
+			}
 
 			//检测是否有iframe中的子页面，如果有，也对子页面下发翻译命令。这个是针对 LayuiAdmin 框架的场景适配，它的主体区域是在 iframe 中的，不能点击切换语言后，只翻译外面的大框，而iframe中的不翻译
 			const iframes = document.querySelectorAll('iframe');
@@ -1261,7 +1265,9 @@ var translate = {
 							//console.log('remove:');
 							//console.log(mutation.removedNodes);
 							for(var ri = 0; ri < mutation.removedNodes.length; ri++){
-								translate.node.data.delete(mutation.removedNodes[ri]); //删除掉被dom给移除的节点，比如执行了 InnerHTML 操作的元素会自动删除
+								console.log('listener --  mutation.type === childList -- delete node ----: ');
+								//console.log(mutation.removedNodes[ri]);
+								translate.node.delete(mutation.removedNodes[ri]); //删除掉被dom给移除的节点，比如执行了 InnerHTML 操作的元素会自动删除
 							}
 						}
 					}else if (mutation.type === 'attributes') {
@@ -1277,8 +1283,20 @@ var translate = {
 						if(translate.node.get(mutation.target) != null && typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
 							//如果这个node元素，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作
 						}else{
-							//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
-							translate.node.data.delete(mutation.target); 
+							//console.log('listener -- 内容改变，删除掉 node ----，删除前的 translate.node size:'+translate.node.data.size);
+							
+							//console.log(mutation.target.nodeValue);
+							//console.log(mutation);
+
+							if(translate.node.get(mutation.target) != null){
+								if(typeof(translate.node.get(mutation.target).translateResults) != 'undefined' && typeof(translate.node.get(mutation.target).translateResults[mutation.target.nodeValue]) != 'undefined'){
+									// 这个改动是有 translate.js 引起的，那么不做什么改变
+								}else{
+									//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
+									console.log('listener --  mutation.type === characterData -- delete node ----  '+ mutation.target.nodeValue);
+									translate.node.delete(mutation.target); 
+								}
+							}
 						}
 						
 						//console.log(mutation.target.nodeValue)
@@ -2759,11 +2777,18 @@ var translate = {
 
 			key: node
 			value: 这是一个对像
-				其中，key的取值有三种：
-				lastTranslateRenderTime: 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳。
-										 每当触发渲染时这里都会重新赋予一次最新的时间，这里也就是最后一次渲染的时间。 如果还没渲染那这里便是 undefined 或者 null，总之 typeof 不是 number
+				其中，key的取值有这几种：
 				translate_default_value: 如果当前翻译的是元素本身的值或node节点本身的值(nodeValue)，那么这里的key就是固定的 translate_default_value
 				attribute_属性名: 如果当前翻译的是元素的attribute 的某个属性，那么这里就是 attribute_属性名， 比如 a 标签的 title ，那这里便是 attribute_title
+				lastTranslateRenderTime: 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳。
+										 每当触发渲染时这里都会重新赋予一次最新的时间，这里也就是最后一次渲染的时间。 如果还没渲染那这里便是 undefined 或者 null，总之 typeof 不是 number
+				translateResults: array string 文本数组，这里是被 translate.element.nodeAnalyse.set 进行翻译渲染之后，每次针对node进行一次渲染，它都会讲渲染的文本设置进来，不管是node本身还是属性还是什么，都会直接讲其具体结果拿过来。当listener动态监听是，也是根据这个来判定当前是否是有 translate.js 本身导致的node发生了改变
+						{
+							你好，世界:1
+							你是谁:1
+						}
+						它使用是 typeof(translate.node.get(node).translateResults['你好世界']) != 'undefined' 这样使用，至于后面的value为1那纯属是凑的，没任何意义						 
+				
 				
 
 				value值是翻译的这个attribute对象的一些具体数据了
@@ -2772,7 +2797,7 @@ var translate = {
 					originalText: string 翻译前显示的文本，是node节点所有的内容文本，原始的文本，（当前这里仅仅只对元素整体翻译时才会记录这个 - v3.18.14.20250903 增加）	
 					translateTexts: array string 文本数组，这里是被文本翻译接口所翻译的文本。 比如其中某项为 '你好':'hello' ，其中key是翻译前的， value是翻译后的结果， 如果 value 为 null，则代表还未进行翻译拿到翻译结果
 					whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  true:是节点内容整体翻译
-
+					
 		*/
 		data: null,
 		/*
@@ -2781,8 +2806,17 @@ var translate = {
 		get:function(node){
 			return translate.node.data.get(node);
 		},
+		//判断某个node (key) 是否在 translate.node.data 中是否存在，如果存在返回true
+		find:function(node){
+			return translate.node.get(node) != null;
+		},
 		set:function(node, value){
 			translate.node.data.set(node,value);
+		},
+		//从 translate.node.data 中 删除 key 是 node 的
+		delete: function(node){
+			console.log('delete node -- > '+node.nodeValue);
+			translate.node.data.delete(node);
 		},
 		/*
 			获取 translate.node.get(node)[attribute] 这里的 attribute
@@ -2847,7 +2881,7 @@ var translate = {
 
 			// 统一删除无效节点
 			for (var i = 0; i < deleteKeys.length; i++) {
-			    translate.node.data.delete(deleteKeys[i]);
+			    translate.node.delete(deleteKeys[i]);
 			}
 
 		}
@@ -2978,6 +3012,8 @@ var translate = {
 						if(typeof(nodeAttributeValue) != 'undefined'){
 							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
 							var resultShowText = translate.util.textReplace(nodeAttributeValue, originalText, resultText, translate.to);
+							translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 							if(nodename == 'INPUT' && attribute.toLowerCase() == 'value'){
 								//input 的value 对于用户输入的必须用 .value 操作
 								node.value = resultShowText;
@@ -2991,6 +3027,7 @@ var translate = {
 							}
 						}
 
+						/* 20250911 删除
 						//这种 Html Attribute 方式 是 v3.12 版本之前一直使用的方式，速度上要慢于 上面的，为了向前兼容不至于升级出问题，后面可能会优化掉
 						if(node.nodeType === 1){ //是 element 节点
 							var htmlAttributeValue = node.getAttribute(attribute);
@@ -3005,6 +3042,7 @@ var translate = {
 								}
 							}
 						}
+						*/
 					}
 					return result;
 				}
@@ -3051,6 +3089,8 @@ var translate = {
 								//替换渲染
 								if(typeof(originalText) != 'undefined' && originalText.length > 0){
 									var resultShowText = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to);
+									translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 									input_value_node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
 									if(resultShowText.indexOf(resultText) > -1){
 										result['resultText'] = resultShowText;
@@ -3073,6 +3113,8 @@ var translate = {
 						//替换渲染
 						if(typeof(originalText) != 'undefined' && originalText.length > 0){
 							var resultShowText = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to);
+							translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 							node.attributes['placeholder'].nodeValue = resultShowText;  //2025.4.26 变更为此方式
 							if(resultShowText.indexOf(resultText) > -1){
 								result['resultText'] = resultShowText;
@@ -3103,6 +3145,8 @@ var translate = {
 							//替换渲染
 							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 								var resultShowText = translate.util.textReplace(node.content, originalText, resultText, translate.to);
+								translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 								node.content = resultShowText;  //2025.4.26 变更为此方式
 								if(resultShowText.indexOf(resultText) > -1){
 									result['resultText'] = resultShowText;
@@ -3130,6 +3174,8 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						var resultShowText = translate.util.textReplace(node.alt, originalText, resultText, translate.to);
+						translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 						node.alt = resultShowText;  //2025.4.26 变更为此方式
 						if(resultShowText.indexOf(resultText) > -1){
 							result['resultText'] = resultShowText;
@@ -3153,6 +3199,8 @@ var translate = {
 					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 						//console.log(originalText+'|');
 						var resultShowText = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);
+						translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
+
 						//console.log(resultShowText+'|');
 						node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
 						if(resultShowText.indexOf(resultText) > -1){
@@ -3164,7 +3212,24 @@ var translate = {
 					result['text'] = node.nodeValue;
 				}
 				return result;
-			}
+			},
+			/*
+				在 analyse set 设置到dom之前，先将数据同步到 translate.node 中进行记录
+				
+				node: translate.element.nodeAnalyse.analyse中传入的node
+				attribute: translate.element.nodeAnalyse.analyse中传入的attribute
+				resultShowText: translate.element.nodeAnalyse.analyse 进行设置翻译后的文本渲染时，提前计算好这个node显示的所有文本，然后在赋予 dom，这里是计算好的node要整体显示的文本
+			*/	
+			analyseReplaceBefore_DateToTranslateNode:function(node, attribute, resultShowText){
+				if(translate.node.find(node)){
+					if(typeof(translate.node.get(node).translateResults) == 'undefined'){
+						translate.node.get(node).translateResults = {};
+					}
+					translate.node.get(node).translateResults[resultShowText] = 1;
+				}else{
+					console.log('[debug] 数据异常，analyse - set 中发现 translate.node 中的 node 不存在，理论上应该只要被扫描了，被翻译了，到这里就一定会存在的，不存在怎么会扫描到交给去翻译呢');
+				}
+			},
 		},
 		//获取这个node元素的node name ,如果未发现，则返回''空字符串
 		getNodeName:function(node){
@@ -5404,7 +5469,7 @@ var translate = {
 
         */
         textReplace:function(text, translateOriginal, translateResult, language, participles){
-        	//console.log('----text:'+text+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
+        	//console.log('----text:'+text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]')+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
         	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
         	if(text == translateOriginal){
         		return translateResult;
@@ -5496,7 +5561,7 @@ var translate = {
 
 			//最后，进行一次正常替换
 			text = translate.util.textReplace_service(text, translateOriginal, translateResult, language, participles);
-			
+			//console.log(text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]'));
             return text;
         },
         /*

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.19.20250911',
+	version: '3.18.19.20250912',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -9522,7 +9522,52 @@ var translate = {
 		记录打印翻译执行的耗时情况
 	*/
 	time:{
+		// 执行 translate.execute() 的时间相关
+		execute:{
+			//true启用， false不启用，默认是不启用状态，不要直接调用，而是使用 translate.time.execute.start();
+			isUse: false,
+
+			/*
+				key: uuid ，也就是 每次 translate.execute() 都会创建一个uuid
+				value: 执行 translate.execute() 的耗时，分为几部分：
+					all: 总耗时，单位是毫秒，从触发 translate.execute() 到所有的接口请求渲染完毕的耗时
+
+
+			*/
+			data: {},
+
+			/*
+				启动耗时打印
+			*/
+			start:function(){
+				if(translate.time.execute.isUse){
+					//已经启动过了，不需要再启动了
+					console.log('translate.time.execute.start() 已经启动过了，不需要再启动了');
+				}
+
+				translate.time.execute.data.isUse = true;
+
+				//翻译开始
+				translate.lifecycle.execute.start.push(function(uuid, to){
+					if(typeof(translate.time.execute.data[uuid]) == 'undefined'){
+						translate.time.execute.data[uuid] = {};
+					}
+					translate.time.execute.data[uuid].startTime = new Date().getTime();
+				});
+
+				//翻译完成（渲染全部语种都完成）
+				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
+					translate.time.execute.data[uuid].finishTime = new Date().getTime();
+					translate.time.execute.data[uuid].allTime = translate.time.execute.data[uuid].finishTime - translate.time.execute.data[uuid].startTime;
+					console.log('[translate.execute() use time] '+translate.time.execute.data[uuid].allTime+'ms');
+				});
+			},
+			
+		},
+
 		use:false, //true启用， false不启用，默认是不启用状态
+
+
 		printTime: 0, //打印耗时大于这个的，默认是0，也就是全部打印。单位是毫秒。 比如设置为 100 ，则只打印耗时大于等于100毫秒的动作
 
 		/**

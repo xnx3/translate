@@ -388,9 +388,12 @@ var translate = {
 
 		//无刷新切换语言		
 		isReload = false;
-		translate.reset();
+		translate.reset(); //将翻译进行还原
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
+
+		//重新渲染 select 选择语言，因为 translate.reset(); 触发后select最新选择的已经被重置了
+		translate.selectLanguageTag.refreshRender()
 
 
 		if(isReload){

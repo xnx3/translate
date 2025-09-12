@@ -7831,7 +7831,10 @@ var translate = {
 		translate.nodeQueue = {};
 		
 		//清除 time 的记录
-		translate.time.execute.data = {};
+		if(typeof(translate.time.execute.data) != 'undefined'){
+			translate.time.execute.data = {};
+		}
+		
 
 		//清除 translate.listener 
 		if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){

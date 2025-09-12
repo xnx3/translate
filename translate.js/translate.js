@@ -1302,32 +1302,26 @@ var translate = {
 						addNodes.push(mutation.target);
 					}else if(mutation.type === 'characterData'){
 						//内容改变
-						addNodes = [mutation.target];
+						
 						//console.log('-------\n'+(translate.node.get(mutation.target) != null ? translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText:''));
 						//console.log(mutation.target.nodeValue);
 
 						//如果是因为翻译替换而导致的改变，那么忽略这个
 						//if(translate.node.get(mutation.target) != null && translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText === mutation.target.nodeValue){
-						if(translate.node.get(mutation.target) != null && typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
-							//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作
-						}else{
-							//console.log('listener -- 内容改变，删除掉 node ----，删除前的 translate.node size:'+translate.node.data.size);
-							
-							//console.log(mutation.target.nodeValue);
-							//console.log(mutation);
-
-							if(translate.node.get(mutation.target) != null){
-								if(typeof(translate.node.get(mutation.target).translateResults) != 'undefined' && typeof(translate.node.get(mutation.target).translateResults[mutation.target.nodeValue]) != 'undefined'){
-									// 这个改动是有 translate.js 引起的，那么不做什么改变
-								}else{
-									//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
-									console.log('listener --  mutation.type === characterData -- delete node ----  '+ mutation.target.nodeValue);
-									translate.node.delete(mutation.target); 
-								}
+						if(translate.node.get(mutation.target) != null){
+							if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
+								//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+							}else if(typeof(translate.node.get(mutation.target).translateResults) != 'undefined' && typeof(translate.node.get(mutation.target).translateResults[mutation.target.nodeValue]) != 'undefined'){
+								// 这个改动是有 translate.js 引起的，它改变后的文本跟 有 translate 给它赋予的文本完全相同， 那么不做什么改变
+							}else{
+								//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
+								//console.log('listener --  mutation.type === characterData -- delete node ----  '+ mutation.target.nodeValue);
+								//console.log('listener -- 内容改变，删除掉 node ----，删除前的 translate.node size:'+translate.node.data.size);
+								translate.node.delete(mutation.target); 
+								addNodes = [mutation.target]; //将重新触发 translate.execute();
 							}
 						}
 						
-						//console.log(mutation.target.nodeValue)
 						//documents.push.apply(documents, [mutation.target]);
 					}
 
@@ -1395,7 +1389,8 @@ var translate = {
 					//console.log('translateNodeslength: '+translateNodes.length);
 
 					translate.time.log('将监听到的发生变化的元素进行整理,得到'+translateNodes.length+'个元素，对其进行翻译');
-
+					//console.log(translateNodes[0]);
+					
 					translate.execute(translateNodes);
 					//setTimeout(function() {
 					//	translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
@@ -7839,8 +7834,12 @@ var translate = {
 		translate.time.execute.data = {};
 
 		//清除 translate.listener 
-		translate.listener.observer.disconnect();
-		translate.listener.isStart = false; //设置为未启动
+		if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){
+			translate.listener.observer.disconnect();
+		}
+		if(translate.listener.isStart){
+			translate.listener.isStart = false; //设置为未启动	
+		}
 		translate.temp_listenerStartInterval = undefined; //设置为尚未启动
 
 

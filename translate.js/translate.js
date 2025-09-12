@@ -9701,6 +9701,48 @@ var translate = {
 			console.log(functionName+'() '+usetime+' -> '+remark);
 		}
 
+	},
+
+	/*
+		快速接入，在head中引入使用，它集成了 translate.execute() 进去
+		
+		需要提前做的：
+			//需要提前设置本地语种（当前网页的语种）
+			translate.language.setLocal('chinese_simplified'); 
+		
+		建议做的：
+			//设置机器翻译服务通道，相关说明参考 http://translate.zvo.cn/545867.html
+		    translate.service.use('client.edge'); 
+
+	*/
+	quickUse:function(){
+		//网页打开时自动隐藏文字，翻译完成后显示译文 http://translate.zvo.cn/549731.html
+		translate.visual.webPageLoadTranslateBeforeHiddenText(); 
+
+		//启用翻译中的遮罩层 http://translate.zvo.cn/407105.html
+		translate.progress.api.startUITip(); 
+
+	    
+	    //开启页面元素动态监控，js改变的内容也会被翻译，参考文档： http://translate.zvo.cn/4067.html
+	    translate.listener.start(); 
+
+	    //网页ajax请求触发自动翻译 http://translate.zvo.cn/4086.html
+	    translate.request.listener.start();
+	    
+	    //url参数后可以加get方式传递 language 参数的方式控制当前网页以什么语种显示 http://translate.zvo.cn/4075.html
+	    translate.language.setUrlParamControl(); 
+
+	    //本地语种也进行强制翻译 http://translate.zvo.cn/289574.html
+	    translate.language.translateLocal = true;
+
+	    //元素的内容整体翻译能力配置 ，提高翻译的语义 https://translate.zvo.cn/4078.html
+	    translate.whole.enableAll();
+
+	    //dom加载完毕后立即触发翻译
+	    document.addEventListener('DOMContentLoaded', function() {
+	    	translate.execute();//完成翻译初始化，进行翻译
+		});
+
 	}
 
 }

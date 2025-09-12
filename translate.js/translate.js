@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.20.20250912',
+	version: '3.18.21.20250912',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -9741,6 +9741,12 @@ var translate = {
 	    //dom加载完毕后立即触发翻译
 	    document.addEventListener('DOMContentLoaded', function() {
 	    	translate.execute();//完成翻译初始化，进行翻译
+	    	setTimeout(function(){
+	    		translate.execute();//完成翻译初始化，进行翻译
+	    	}, 500);
+	    	setTimeout(function(){
+	    		translate.execute();//完成翻译初始化，进行翻译
+	    	}, 2000);
 		});
 
 	}

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.22.20250913',
+	version: '3.18.23.20250913',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -8037,9 +8037,10 @@ var translate = {
 			.translate_api_in_progress::after {
 			  content: '';
 			  position: absolute;
+			  border-radius: 1rem;
 			  top: 0;
-			  left: 0;
-			  width: 100%;
+			  left: 5%;
+			  width: 90%;
 			  height: 100%;
 			  background: rgba(255, 255, 255, 1); /* 半透明白色遮罩 */
 			  z-index: 2;
@@ -8049,9 +8050,10 @@ var translate = {
 			.translate_api_in_progress::before {
 			  content: '';
 			  position: absolute;
+			  border-radius: 1rem;
 			  top: 50%;
-			  left: 0;
-			  width: 100%;
+			  left: 5%;
+			  width: 90%;
 			  height:100%; /* 细线高度 */
 			  background: linear-gradient(
 			    90deg,
@@ -8226,10 +8228,12 @@ var translate = {
 					    var rectsOneArray = translate.visual.rectsToOneArray(rects);
 
 					    //排序
-					    //var sortRects = translate.visual.coordinateSort(rectsOneArray);
+					    var sortRects = translate.visual.coordinateSort(rectsOneArray);
 					    //console.log(sortRects);
-
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
+					    //console.log(rectsOneArray)
+					    //进行隔行取， 传入 2
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(sortRects, 2);
+						//console.log(rectLineSplit)
 						for(var r = 0; r<rectLineSplit.length; r++){
 						    if(rectLineSplit[r].node.nodeType === 1){
 					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
@@ -8276,12 +8280,15 @@ var translate = {
 								}
 
 
+								
+
 								if(typeof(operationNode.className) != 'undefined' && operationNode.className != null){
-									if(operationNode.className.indexOf('translate_api_in_progress') > -1){
-										operationNode.className = operationNode.className.replace(/translate_api_in_progress/g, '');	
-									}
+									
 									if(operationNode.className.indexOf('translatejs-text-element-hidden') > -1){
 										operationNode.className = operationNode.className.replace(/translatejs-text-element-hidden/g, '');	
+									}
+									if(operationNode.className.indexOf('translate_api_in_progress') > -1){
+										operationNode.className = operationNode.className.replace(/translate_api_in_progress/g, '');	
 									}
 								}
 									
@@ -9424,6 +9431,7 @@ var translate = {
 		hideText:{
 			style:`
 				/* 文本隐藏核心样式 - 仅隐藏文本内容 */
+
 		        html.translatejs-text-hidden p, html.translatejs-text-hidden div, html.translatejs-text-hidden small, 
 		        html.translatejs-text-hidden h1, html.translatejs-text-hidden h2, html.translatejs-text-hidden h3,
 		        html.translatejs-text-hidden h4, html.translatejs-text-hidden h5, html.translatejs-text-hidden h6,
@@ -9521,6 +9529,14 @@ var translate = {
 			if(translate.language.local == '' || translate.language.local != translate.language.getCurrent()){
 				translate.visual.hideText.hide();
 
+				/*
+				// 创建定时器，每10ms执行一次，以保持最顶层 html 标签上的class 不被项目或框架本身自动给覆盖掉
+				//针对 60HZ刷新率，避免人眼视觉上出现屏闪，所以使用 10ms
+				translate.visual.hideText.htmlAppendClassIntervalId = setInterval(function(){
+					document.documentElement.classList.add('translatejs-text-hidden');
+				}, 10);
+				*/
+
 				//设置发起网络请求前，记录发起了几次翻译请求，避免发起了多次，但是第一次执行完了就显示文本了，但是后几次还在翻译中，还是会出现显示原文的情况
 				translate.lifecycle.execute.translateNetworkBefore.push(function(uuid, from, to, texts){
 					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){ 
@@ -9534,12 +9550,13 @@ var translate = {
 							translate.visual.hideText.first_translate_request_number = 0;
 						}
 						translate.visual.hideText.first_translate_request_number++;
-						//console.log('translate.visual.hideText.first_translate_request_number++   from:'+from);
+						//console.log('translate.visual.hideText.first_translate_request_number++   from:'+from+', ++ after number: '+translate.visual.hideText.first_translate_request_number);
 					}
 				});
 
 				//设置翻译完成后，移除隐藏文本的css 的class name
 				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
+					//console.log('renderFinish : '+uuid);
 					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){
 						//为空，那么可能是已经触发过浏览器缓存了，所有翻译的文本在浏览器缓存中都有，就不必再发起网络请求了
 
@@ -9547,12 +9564,18 @@ var translate = {
 					}else{
 						//是发起过网络请求的，要计算请求数，所有的语种都翻译完后才能显示文本
 						if(translate.visual.hideText.first_translate_request_uuid != uuid){
-							//不是同一个uuid的，直接退出
+							//不是同一个uuid的，那也就是并不是第一次翻译了，而这个 webPageLoadTranslateBeforeHiddenText 针对的是页面加载后第一次翻译的避免原文一闪的情况 
 							return;
 						}
 					}
-
-					//console.log('translate.visual.hideText.show()');
+					/*
+					销毁定时器 - 不要删，预留
+					if(typeof(translate.visual.hideText.htmlAppendClassIntervalId) != 'undefined'){
+						clearInterval(translate.visual.hideText.htmlAppendClassIntervalId);
+						console.log("translate.visual.hideText.htmlAppendClassIntervalId 已销毁 : "+translate.visual.hideText.htmlAppendClassIntervalId);
+					}
+					*/
+					
 					translate.visual.hideText.show();
 				});
 			}

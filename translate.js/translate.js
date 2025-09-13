@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.25.20250913',
+	version: '3.18.26.20250913',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -393,7 +393,9 @@ var translate = {
 			}
 
 			//网页打开时自动隐藏文字，翻译完成后显示译文 http://translate.zvo.cn/549731.html
-			translate.visual.webPageLoadTranslateBeforeHiddenText(); 
+			translate.visual.webPageLoadTranslateBeforeHiddenText({
+				inHeadTip: false  //警告要在head中触发的控制台消息提醒，true是如果发现就打印这个提醒。 默认不设置便是true
+			}); 
 		}
 
 
@@ -1253,7 +1255,7 @@ var translate = {
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
 			if(translate.listener.isStart == true){
-				console.log('translate.listener.start() 已经启动了，无需再重复启动监听，增加浏览器负担');
+				//console.log('translate.listener.start() 已经启动了，无需再重复启动监听，增加浏览器负担');
 				return;
 			}
 			translate.listener.isStart = true; //记录已执行过启动方法了
@@ -9533,18 +9535,34 @@ var translate = {
 		webPageLoadTranslateBeforeHiddenText_use: false,
 
 		/**
-		 * 网页加载，且要进行翻译时，翻译之前，隐藏当前网页的文本。
-		 * 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
-		 * 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
-		 * 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
-		 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+			 网页加载，且要进行翻译时，翻译之前，隐藏当前网页的文本。
+			 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
+			 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
+			 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
+			 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
+
+			 config 参数，配置项，默认不传
+			 	{
+					inHeadTip:true, 	//警告要在head中触发的控制台消息提醒，true是如果发现就打印这个提醒。 默认不设置便是true
+			 	}
 		 */
-		webPageLoadTranslateBeforeHiddenText:function(){
+		webPageLoadTranslateBeforeHiddenText:function(config){
+			if(typeof(config) == 'undefined'){
+				config = {};
+			}
+			if(typeof(config.inHeadTip) == 'undefined'){
+				config.inHeadTip = true;
+			}
+			
+			//标记，当前启用整体隐藏文本的能力
 			translate.visual.webPageLoadTranslateBeforeHiddenText_use = true;
+
 			if(typeof(document.body) == 'undefined' || document.body == null){
 				//正常，body还没加载
 			}else{
-				console.log('错误警告： translate.visual.webPageLoadTranslateBeforeHiddenText() 要在 head 标签中触发才能达到最好的效果！');
+				if(config.inHeadTip){
+					console.log('警告： translate.visual.webPageLoadTranslateBeforeHiddenText() 要在 head 标签中触发才能达到最好的效果！');
+				}
 			}
 			if(translate.language.local == ''){
 				console.log('错误警告：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');

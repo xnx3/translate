@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.23.20250913',
+	version: '3.18.24.20250914',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -386,8 +386,18 @@ var translate = {
 		
 		translate.time.log('iframe 完成');
 
-		//无刷新切换语言		
-		isReload = false;
+		//判断当前页面是否需要进行翻译，如果需要，那还要对整个页面内容文本进行隐藏处理
+		if(translate.visual.webPageLoadTranslateBeforeHiddenText_use){
+			//清除 最开始的全部文本隐藏的first记录
+			if(typeof(translate.visual.hideText.first_translate_request_uuid) != 'undefined'){ 
+				//是第一次翻译请求，记录其uuid
+				translate.visual.hideText.first_translate_request_uuid = undefined;
+			}
+
+			//网页打开时自动隐藏文字，翻译完成后显示译文 http://translate.zvo.cn/549731.html
+			translate.visual.webPageLoadTranslateBeforeHiddenText(); 
+		}
+
 		translate.reset(); //将翻译进行还原
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
@@ -395,21 +405,15 @@ var translate = {
 		//重新渲染 select 选择语言，因为 translate.reset(); 触发后select最新选择的已经被重置了
 		translate.selectLanguageTag.refreshRender()
 
-
+		//无刷新切换语言		
+		isReload = false;
 		if(isReload){
 			location.reload(); //刷新页面
 		}else{
 			//不用刷新，直接翻译
-			//translate.execute(); //翻译
-			if(!translate.listener.isStart){
-				//如果没有启用动态dom监听，那么就要手动触发翻译了
-				translate.execute(); 
-			}else{
-				setTimeout(function(){
-					//translate.execute(); //加一个延迟执行，在listener之后出发，用于翻译 attribute 这种的，因为这种改变不会触发listener的翻译
-				},50);
-			}
-
+		
+			translate.execute(); //翻译
+		
 			//检测是否有iframe中的子页面，如果有，也对子页面下发翻译命令。这个是针对 LayuiAdmin 框架的场景适配，它的主体区域是在 iframe 中的，不能点击切换语言后，只翻译外面的大框，而iframe中的不翻译
 			const iframes = document.querySelectorAll('iframe');
 			for (let i = 0; i < iframes.length; i++) {
@@ -7857,6 +7861,7 @@ var translate = {
 
 		//清除正在进行的 translate.execute() 的执行状态记录
 		translate.state = 0;
+
 	},
 	/*js translate.reset end*/
 	
@@ -8037,10 +8042,9 @@ var translate = {
 			.translate_api_in_progress::after {
 			  content: '';
 			  position: absolute;
-			  border-radius: 1rem;
 			  top: 0;
-			  left: 5%;
-			  width: 90%;
+			  left: 0%;
+			  width: 100%;
 			  height: 100%;
 			  background: rgba(255, 255, 255, 1); /* 半透明白色遮罩 */
 			  z-index: 2;
@@ -8050,10 +8054,9 @@ var translate = {
 			.translate_api_in_progress::before {
 			  content: '';
 			  position: absolute;
-			  border-radius: 1rem;
 			  top: 50%;
-			  left: 5%;
-			  width: 90%;
+			  left: 0%;
+			  width: 100%;
 			  height:100%; /* 细线高度 */
 			  background: linear-gradient(
 			    90deg,
@@ -9444,6 +9447,7 @@ var translate = {
 		        html.translatejs-text-hidden input, html.translatejs-text-hidden select, html.translatejs-text-hidden textarea {
 		            color: transparent !important;
 		            text-shadow: none !important;
+					transition: none !important;
 		        }
 
 		        /* 隐藏占位符文字 */
@@ -9509,6 +9513,12 @@ var translate = {
 			}
 		},
 
+		/*
+			这个主要是配合下面的，如果下面的 webPageLoadTranslateBeforeHiddenText 触发，则自动设置此处为true，为启用切换语种或刷新页面后先隐藏原本的文本
+			它只是提供判断使用，不可直接设置操作
+		*/
+		webPageLoadTranslateBeforeHiddenText_use: false,
+
 		/**
 		 * 网页加载，且要进行翻译时，翻译之前，隐藏当前网页的文本。
 		 * 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
@@ -9517,6 +9527,7 @@ var translate = {
 		 * 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
 		 */
 		webPageLoadTranslateBeforeHiddenText:function(){
+			translate.visual.webPageLoadTranslateBeforeHiddenText_use = true;
 			if(typeof(document.body) == 'undefined' || document.body == null){
 				//正常，body还没加载
 			}else{
@@ -9526,7 +9537,9 @@ var translate = {
 				console.log('错误警告：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
 			}
 
-			if(translate.language.local == '' || translate.language.local != translate.language.getCurrent()){
+			if(translate.language.local == '' || translate.language.translateLocal == true || translate.language.local != translate.language.getCurrent()){
+				//如果当前触发翻译，才会出现这个隐藏文本，因为取消隐藏必须要 translate.execute() 触发后才会取消隐藏
+
 				translate.visual.hideText.hide();
 
 				/*

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.24.20250914',
+	version: '3.18.25.20250913',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -401,9 +401,6 @@ var translate = {
 		translate.reset(); //将翻译进行还原
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
-
-		//重新渲染 select 选择语言，因为 translate.reset(); 触发后select最新选择的已经被重置了
-		translate.selectLanguageTag.refreshRender()
 
 		//无刷新切换语言		
 		isReload = false;
@@ -7800,34 +7797,33 @@ var translate = {
 
 		*/
 
+		//清除 translate.listener 
+		if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){
+			translate.listener.observer.disconnect();
+		}
+		if(translate.listener.isStart){
+			translate.listener.isStart = false; //设置为未启动	
+		}
+		translate.temp_listenerStartInterval = undefined; //设置为尚未启动
+		
+
 		/** 使用基于 translate.node 的还原 **/
 		for (let key of translate.node.data.keys()) {
 			if (!translate.node.get(key) == null) {
 	    		continue;
 	    	}
-			//if(!key.isConnected){  text node 没有 isConnected
-			//	console.log(key.nodeValue+' 这个translate.node 中的 node不存在,忽略');
-			//	continue;
-			//}
-
 			for(var attr in translate.node.get(key)){
 				if (!translate.node.get(key).hasOwnProperty(attr)) {
 		    		continue;
 		    	}
-
-				//console.log(attr);
-				//translate.node.get(key)[attr]
 				var analyse = translate.element.nodeAnalyse.get(key,translate.node.get(key)[attr].attribute);
-				//console.log(analyse);
-				//console.log(analyse.text+' ('+translate.node.get(key)[attr].attribute+')\t-->\t'+translate.node.get(key)[attr].originalText);
 				if(typeof(translate.node.get(key)[attr].originalText) != 'string'){
 					continue;
 				}
 				translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key)[attr].originalText, translate.node.get(key)[attr].attribute);
 			}
-			//var analyse = translate.element.nodeAnalyse.get(item.nodes[index].node, '', '', attribute);
-			//translate.element.nodeAnalyse.analyse(key, analyse.text, item.original, attribute);
 		}
+
 
 		//清除 node 中的记录
 		if(translate.node.data != null){
@@ -7842,17 +7838,6 @@ var translate = {
 			translate.time.execute.data = {};
 		}
 		
-
-		//清除 translate.listener 
-		if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){
-			translate.listener.observer.disconnect();
-		}
-		if(translate.listener.isStart){
-			translate.listener.isStart = false; //设置为未启动	
-		}
-		translate.temp_listenerStartInterval = undefined; //设置为尚未启动
-
-
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');
 		translate.to = null;

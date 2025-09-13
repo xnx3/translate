@@ -9565,7 +9565,7 @@ var translate = {
 				}
 			}
 			if(translate.language.local == ''){
-				console.log('错误警告：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
+				console.log('提醒：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置本地语种，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
 			}
 
 			if(translate.language.local == '' || translate.language.translateLocal == true || translate.language.local != translate.language.getCurrent()){

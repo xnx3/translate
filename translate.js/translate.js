@@ -5785,7 +5785,7 @@ var translate = {
 						var split_text = text.substring(index-indexInNewTranslateTexts, index-indexInNewTranslateTexts + length);
 						if(split_text == newTranslateTexts[j]){
 							//说明当前index是取的 newTranslateTexts[j] 这个分词的,那这个就不能替换，要忽略
-							console.log('当前是其他分词，不能直接替换 ： '+newTranslateTexts[j]);
+							//console.log('当前是其他分词，不能直接替换 ： '+newTranslateTexts[j]);
 							findParticiple = true;
 							break;
 						}

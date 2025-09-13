@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.21.20250912',
+	version: '3.18.22.20250913',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -9466,14 +9466,13 @@ var translate = {
 			hide:function(id){
 				const style = document.createElement('style');
 
-				var styleHtml;
 				if(typeof(id) == 'undefined' || id == null || id.length == 0){
 					id = 'translatejs-text-hidden';
 					style.textContent = translate.visual.hideText.style;
 				}else{
 					//有值
 					id = 'translatejs-text-hidden-'+id;
-					style.textContent = translate.visual.hideText.style.replace(/translatejs-text-hidden/g, id);
+					style.textContent = translate.visual.hideText.style.replace(/translatejs-text-hidden/g, id).replace(/\/\*(.*)\*\//g, ' ').replace(/\n/g, ' ');
 				}
 				style.id = id;
 				document.head.appendChild(style);

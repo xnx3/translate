@@ -147,7 +147,6 @@ var translate = {
 				
 		},
 		render:function(){ //v2增加
-			
 			if(translate.selectLanguageTag.alreadyRender){
 				return;
 			}
@@ -192,7 +191,6 @@ var translate = {
 				//无网络环境下，自定义显示语种
 				translate.selectLanguageTag.customUI(translate.request.api.language);
 			}
-			
 		}
 	},
 	
@@ -324,7 +322,7 @@ var translate = {
 	 */
 	changeLanguage:function(languageName){
 		translate.time.log('触发');
-		console.log('changeLanguage -> '+languageName);
+		//console.log('changeLanguage -> '+languageName);
 		//判断使用的是否是v1.x
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
@@ -398,9 +396,16 @@ var translate = {
 			translate.visual.webPageLoadTranslateBeforeHiddenText(); 
 		}
 
-		translate.reset(); //将翻译进行还原
+
+		//将翻译进行还原
+		translate.reset({
+			selectLanguageRefreshRender:false //是否重新渲染select选择语言到原始未翻译前的状态，默认不设置则是true，进行重新渲染
+		}); 
+
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
+		//重新绘制 select 选择语言
+		translate.selectLanguageTag.refreshRender();
 
 		//无刷新切换语言		
 		isReload = false;
@@ -1943,6 +1948,7 @@ var translate = {
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
 				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
+				console.log(docs);
 				translate.waitingExecute.add(docs);
 				return;
 			}
@@ -7734,8 +7740,24 @@ var translate = {
 		}
 	},
 	/*js translate.reset start*/
-	//对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
-	reset:function(){
+	/*
+		对翻译结果进行复原。比如当前网页是简体中文的，被翻译为了英文，执行此方法即可复原为网页本身简体中文的状态，而无需在通过刷新页面来实现
+		config 可不传，则是直接恢复到默认未翻译前的状态。
+			{
+				selectLanguageRefreshRender:true, //是否重新渲染select选择语言到原始未翻译前的状态，默认不设置则是true，进行重新渲染
+				notTranslateTip:true 			  //如果当前未执行过翻译，然后出发的 translate.reset() ，是否在控制台打印友好提示，提示未执行翻译，还原指令忽略， true则是正常打印这个提示， false则是不打印这个提示
+			}
+	*/
+	reset:function(config){
+		if(typeof(config) == 'undefined'){
+			config = {};
+		}
+		if(typeof(config.selectLanguageRefreshRender) == 'undefined'){
+			config.selectLanguageRefreshRender = true;
+		}
+		if(typeof(config.notTranslateTip) == 'undefined'){
+			config.notTranslateTip = true;
+		}
 
 		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
 
@@ -7749,7 +7771,9 @@ var translate = {
 		//console.log(queue);
 
 		if(lastUuid == ''){
-			console.log('提示，你当前还未执行过翻译，所以你无需执行 translate.reset(); 进行还原。');
+			if(config.selectLanguageRefreshRender){
+				console.log('提示，当前还未执行过翻译，所以 translate.reset(); 还原至翻译前的执行指令忽略');	
+			}
 			return;
 		}
 
@@ -7841,8 +7865,12 @@ var translate = {
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');
 		translate.to = null;
+
 		//重新绘制 select 选择语言
-		translate.selectLanguageTag.refreshRender();
+		if(config.selectLanguageRefreshRender){
+			translate.selectLanguageTag.refreshRender();
+		}
+		
 
 		//清除正在进行的 translate.execute() 的执行状态记录
 		translate.state = 0;
@@ -9829,6 +9857,7 @@ var nodeuuid = {
 
 /*js copyright-notice start*/
 console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
+console.log('=======\n\n\n\n 注意，只有你当前用的这个版本，才能看到这个提示，那如果使用中遇到任何异常，可加我微信 xnx3com 帮你做完美适配\n\n\n\n=======');
 /*js copyright-notice end*/
 
 

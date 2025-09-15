@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.28.20250915',
+	version: '3.18.29.20250915',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1895,7 +1895,7 @@ var translate = {
             	}
 
             	for(var i = 0; i < translate.lifecycle.execute.translateNetworkBefore.length; i++){
-            		console.log('translate.lifecycle.execute.translateNetworkBefore[i] 传入参数的数量：'+translate.lifecycle.execute.translateNetworkBefore[i].length);
+            		//console.log('translate.lifecycle.execute.translateNetworkBefore[i] 传入参数的数量：'+translate.lifecycle.execute.translateNetworkBefore[i].length);
             		if(translate.lifecycle.execute.translateNetworkBefore[i].length === 4){
             			//原本的，旧版 20250915 之前的，是string方式传入 uuid, from, to, texts 这四个参数
             			try{
@@ -1979,8 +1979,29 @@ var translate = {
 
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
-				console.log('当前翻译还未完结，新的翻译任务已加入等待翻译队列中，待翻译结束后便会执行当前翻译任务。');
-				console.log(docs);
+				var sliceDoc = docs.slice(0, 2);
+				var sliceDocString = '';
+				for(var di = 0; di < sliceDoc.length; di++){
+					if(sliceDocString.length > 0){
+						sliceDocString = sliceDocString + ', ';
+					}
+					if(sliceDoc[di].nodeType === 1){
+						//元素
+						sliceDocString = sliceDocString + ""+sliceDoc[di].tagName;
+						if(typeof(sliceDoc[di].id) == 'string' && sliceDoc[di].id.length > 0){
+							sliceDocString = sliceDocString + " id="+sliceDoc[di].id;
+						}
+						if(sliceDoc[di].getAttribute('class') != null && typeof(sliceDoc[di].getAttribute('class')) == 'string' && sliceDoc[di].getAttribute('class').length > 0){
+							sliceDocString = sliceDocString + " class="+sliceDoc[di].getAttribute('class');
+						}
+					}else if(sliceDoc[di].nodeType === 3){
+						//node
+						sliceDocString = sliceDocString + sliceDoc[di].nodeValue.replaceAll(/\r?\n/g, '[换行符]');
+					}
+				}
+
+				console.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务 ('+docs.length+')['+sliceDocString+(docs.length > 2 ? ', ...':'')+']');
+				//console.log(docs);
 				translate.waitingExecute.add(docs);
 				return;
 			}
@@ -2254,8 +2275,18 @@ var translate = {
 		
 		//translateTextArray[lang][0]
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
-		var translateTextNodeArray = {}; //要翻译的文本所在的 node ，这些要翻译的文本是在哪些node中， 格式如 { node1:1, node2:1 }  其中的value无任何意义，只是凑上去的 ， 这样key会自动排重
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
+		/*
+			要翻译的文本所在的 node ，这些要翻译的文本是在哪些node中。
+			它是二维的。
+			一维：
+				key: language
+				value: map
+					key: node
+					value: 1		//value无任何意义，只是凑上去的 ， 这样key会自动排重
+
+		*/
+		var translateTextNodeMap = new Map(); 
 		
 
 		/*
@@ -2283,7 +2314,7 @@ var translate = {
 			}
 
 			translateTextArray[lang] = [];
-			translateTextNodeArray[lang] = [];
+			translateTextNodeMap.set(lang, new Map());
 			translateHashArray[lang] = [];
 			
 			let task = new translate.renderTask();
@@ -2423,7 +2454,7 @@ var translate = {
 				//加入待翻译数组
 				translateTextArray[lang].push(translateText);
 				for(var ni = 0; ni<translate.nodeQueue[uuid]['list'][lang][hash].nodes.length; ni++){
-					translateTextNodeArray[lang][translate.nodeQueue[uuid]['list'][lang][hash].nodes[ni].node] = 1;
+					translateTextNodeMap.get(lang).set(translate.nodeQueue[uuid]['list'][lang][hash].nodes[ni].node, 1)
 				}
 				translateHashArray[lang].push(hash); //这里存入的依旧还是用原始hash，未使用自定义术语库前的hash，目的是不破坏 nodeQueue 的 key
 			}
@@ -2683,13 +2714,16 @@ var translate = {
 			translate.listener.execute.renderStartByApiRun(uuid, lang, translate.to); 
 			
 			//console.log(translateTextArray[lang]);
-			//console.log(translateTextNodeArray[lang]);
+			var translateTextNodes = [];
+			for (let key of translate.node.data.keys()) {
+   				translateTextNodes.push(key);
+			}
 			translate.lifecycle.execute.translateNetworkBefore_Trigger({
 				uuid: uuid,
 				lang: lang,
 				to: translate.to,
 				texts: translateTextArray[lang],
-				nodes: Object.keys(translateTextNodeArray[lang])
+				nodes: translateTextNodes
 			}); 
 			
 			/*** 翻译开始 ***/
@@ -3313,7 +3347,8 @@ var translate = {
 					}
 					translate.node.get(node).translateResults[resultShowText] = 1;
 				}else{
-					console.log('[debug] 数据异常，analyse - set 中发现 translate.node 中的 node 不存在，理论上应该只要被扫描了，被翻译了，到这里就一定会存在的，不存在怎么会扫描到交给去翻译呢');
+					//翻译过程中，会有时间差，比如通过文本翻译api请求，这时node元素本身被其他js改变了，导致翻译完成后，原本的node不存在了
+					//console.log('[debug] 数据异常，analyse - set 中发现 translate.node 中的 node 不存在，理论上应该只要被扫描了，被翻译了，到这里就一定会存在的，不存在怎么会扫描到交给去翻译呢');
 				}
 			},
 		},
@@ -8260,67 +8295,20 @@ var translate = {
 		        
 
 				if(translate.progress.api.isTip){
-					translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
+					//translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
+					translate.lifecycle.execute.translateNetworkBefore.push(function(data){
 						var nodes = new Array(); //要改动的元素节点
 
-					    for(var hash in translate.nodeQueue[uuid].list[from]){
-					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
-					    		continue;
-					    	}
-					    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
-					    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
-						    		continue;
-						    	}
-					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
-					    		
-					    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
-					    			continue;
-					    		}
-
-					    		/*
-					    		var nodeParent = node.parentNode;
-						        if(nodeParent == null){
-						        	continue;
-						        }
-						        */
-						        /* 这里先不考虑多隐藏的问题，只要符合的都隐藏，宁愿吧一些不需要隐藏的也会跟着一起隐藏
-								if(nodeParent.childNodes.length != 1){
-									//这个文本节点所在的元素里，不止有这一个文本元素，还有别的文本元素
-									continue;
-								}
-								*/
-
-
-						        nodes.push(node);
-
-
-
-						        /*
-
-						        //判断其在上一层的父级是否已经加了，如果父级加了，那作为子集就不需要在加了，免得出现两个重合的 loading 遮罩
-						        var nodeParentParent = node.parentNode;
-						        if(nodeParentParent != null && typeof(nodeParentParent.className) != 'undefined' && nodeParentParent.className != null && nodeParent.className.indexOf('translate_api_in_progress') > -1){
-						        	//父有了，那么子就不需要再加了
-						        	continue;
-						        }
-						        //判断是否有子元素，判断其两级子元素，是否有加了loading遮罩了
-								translate.progress.api.removeChildClass(nodeParent, 1);
-
-
-								if(typeof(nodeParent.className) == 'undefined' || nodeParent.className == null || nodeParent.className == ''){
-									nodeParent.className = ' translate_api_in_progress';
-								}else{
-									//这个元素本身有class了，那就追加
-									if(nodeParent.className.indexOf('translate_api_in_progress') > -1){	
-										continue;
-									}
-									nodeParent.className = nodeParent.className+' translate_api_in_progress';
-								}
-								*/
-					    	}
-					    }
-
-					    //隐藏所有node的文本
+						//遍历所有node组合到 nodes
+					    for(var r = 0; r<data.nodes.length; r++){
+					    	var node = data.nodes[r];
+				    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
+				    			continue;
+				    		}
+				    		nodes.push(node);
+				    	}	
+				    	
+						//隐藏所有node的文本
 					    for(var r = 0; r<nodes.length; r++){
 							if(nodes[r].nodeType === 1){
 					        	nodes[r].className = nodes[r].className+' translatejs-text-element-hidden';
@@ -8347,10 +8335,8 @@ var translate = {
 					    //排序
 					    var sortRects = translate.visual.coordinateSort(rectsOneArray);
 					    //console.log(sortRects);
-					    //console.log(rectsOneArray)
-					    //进行隔行取， 传入 2
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(sortRects, 2);
-						//console.log(rectLineSplit)
+
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
 						for(var r = 0; r<rectLineSplit.length; r++){
 						    if(rectLineSplit[r].node.nodeType === 1){
 					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
@@ -8371,7 +8357,9 @@ var translate = {
 						}
 						
 					});
+					
 					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
+					//translate.lifecycle.execute.renderFinish.push(function(uuid, to){ 这个是所有的全完成，得用单一的from完成就要立即对完成的from的显示，不然全完成就太慢了
 						for(var hash in translate.nodeQueue[uuid].list[from]){
 					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
 					    		continue;

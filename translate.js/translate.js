@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.29.20250915',
+	version: '3.18.31.20250915',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1704,11 +1704,13 @@ var translate = {
 	/*
 		当前状态，执行状态
 		0 空闲(或者执行翻译完毕)
+		2 translate.execute 触发，立即变为3，然后再执行 translate.execute 的一些初始化自检啥的
 		10 扫描要翻译的node，并读取浏览器缓存的翻译内容进行渲染显示
 		20 浏览器缓存渲染完毕，ajax通过文本翻译接口开始请求，在发起ajax请求前，状态变为20，然后再发起ajax请求
 		至于翻译完毕后进行渲染，这个就不单独记录了，因为如果页面存在不同的语种，不同的语种是按照不同的请求来的，是多个异步同时进行的过程
 	*/
 	state:0,
+
 
 	/*
 		等待翻译队列  v3.12.6 增加
@@ -1798,8 +1800,10 @@ var translate = {
 
 	},
 	
-	//execute() 方法已经被执行过多少次了， 只有execute() 完全执行完，也就是界面渲染完毕后，它才会+1
+	//execute() 方法已经被执行过多少次了， 只有 translate.execute() 完全执行完，也就是界面渲染完毕后，它才会+1
 	executeNumber:0,
+	//translate.execute() 方法已经被触发过多少次了， 只要 translate.execute() 被触发，它就会在触发时立即 +1 (translate.execute() 默认是同一时刻只能执行一次，这个触发是在这个同一时刻执行一次的判定之前进行++ 的，如果这个同一时刻执行一次不通过，还有其他在执行，进入排队执行时，这里也会++ ，当从排队的中顺序排到进行执行时，又会执行++ ) 。 当页面打开第一次触发执行translate.execute()，这里便是 1
+	executeTriggerNumber:0, 
 	
 	lifecycle:{
 
@@ -1878,7 +1882,8 @@ var translate = {
             */
             translateNetworkBefore:[],
             //translateNetworkBefore_Trigger:function(uuid, from, to, texts){
-            translateNetworkBefore_Trigger:function(data, from, to, texts){
+            translateNetworkBefore_Trigger:function(data){
+            	/*
             	if(typeof(data) == 'string'){
             		data = {
             			uuid: data,
@@ -1893,6 +1898,7 @@ var translate = {
             	if(typeof(texts) == 'string'){
             		data.texts = texts;
             	}
+            	*/
 
             	for(var i = 0; i < translate.lifecycle.execute.translateNetworkBefore.length; i++){
             		//console.log('translate.lifecycle.execute.translateNetworkBefore[i] 传入参数的数量：'+translate.lifecycle.execute.translateNetworkBefore[i].length);
@@ -1956,7 +1962,38 @@ var translate = {
                         console.log(e);
                     }
                 }
-            }
+            },
+
+            /*
+                每当 translate.execute() 执行结束、中止、自检不通过跳出 ... 等，都会触发这个。  
+                注意，不管在 translate.execute() 是否自检通过、不管是否进行了翻译、不管文本翻译API接口是否拿到翻译结果，只要 translate.execute 执行完毕或触发了什么自检不通过不再往下执行，都会触发这个。  
+                这个仅仅只是用于 translate.execute() 从上而下执行完跳出时，进行触发的。
+				
+               	{
+					uuid: translate.nodeQueue[uuid] 这里的。 如果当前没有进行正常翻译，比如自检失败不在执行跳出了，那这个将会返回空字符串 ''
+					to:   翻译为什么语种，如果当前没有进行正常翻译，比如自检失败不在执行跳出了，那这个将会返回空字符串 ''
+					state : 状态，用于判断是什么情况执行完的，整数型，取值有：
+						1 当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务
+						3 没有指定翻译目标语言，不翻译
+						5 本地语种跟要翻译的目标语种一样，且没有启用本地语种也强制翻译，那么当前不需要执行翻译，退出
+						16 已经匹配完自定义术语跟离线翻译，但是用户设置了不掉翻译接口进行翻译，不在向后执行通过文本翻译接口进行翻译
+						18 已经匹配完自定义术语跟离线翻译，此时所有要翻译的文本都已经匹配完了，没有在需要通过文本翻译接口进行翻译的了
+						21 进行通过文本翻译API进行调用接口翻译时，某个语种的数据校验失败导致退出。 这个情况理论上应该不会出现，预留这个情况，后续将会剔除这个状态
+						25 已通过文本翻译接口发起所有翻译请求，translate.execute 执行完毕。 （只是发起网络请求，不代表翻译完成，因为这里还没有等着拿到网络请求的响应结果，还处于网络请求的过程中）
+					triggerNumber:	translate.execute() 方法已经被触发过多少次了， 只要 translate.execute() 被触发，它就会在触发时立即 +1 (translate.execute() 默认是同一时刻只能执行一次，这个触发是在这个同一时刻执行一次的判定之前进行++ 的，如果这个同一时刻执行一次不通过，还有其他在执行，进入排队执行时，这里也会++ ，当从排队的中顺序排到进行执行时，又会执行++ ) 。 当页面打开第一次触发执行translate.execute()，这里便是 1
+               	}
+            */
+            finally : [],
+            finally_Trigger:function(data){
+            	//console.log(data)
+            	for(var i = 0; i < translate.lifecycle.execute.finally.length; i++){
+                    try{
+                        translate.lifecycle.execute.finally[i](data);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
 		}
 	},
 
@@ -1967,6 +2004,56 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
+		translate.executeTriggerNumber = translate.executeTriggerNumber + 1;
+		var triggerNumber = translate.executeTriggerNumber; //为了整个 translate.execute 的数据一致性，下面都是使用这个变量
+
+		if(translate.waitingExecute.use){
+			if(translate.state != 0){
+				var sliceDocString = '';
+
+				if(typeof(docs) != 'undefined' && docs != null){
+					var sliceDoc = docs.slice(0, 2);
+				
+					for(var di = 0; di < sliceDoc.length; di++){
+						if(sliceDocString.length > 0){
+							sliceDocString = sliceDocString + ', ';
+						}
+						if(sliceDoc[di].nodeType === 1){
+							//元素
+							sliceDocString = sliceDocString + ""+sliceDoc[di].tagName;
+							if(typeof(sliceDoc[di].id) == 'string' && sliceDoc[di].id.length > 0){
+								sliceDocString = sliceDocString + " id="+sliceDoc[di].id;
+							}
+							if(sliceDoc[di].getAttribute('class') != null && typeof(sliceDoc[di].getAttribute('class')) == 'string' && sliceDoc[di].getAttribute('class').length > 0){
+								sliceDocString = sliceDocString + " class="+sliceDoc[di].getAttribute('class');
+							}
+						}else if(sliceDoc[di].nodeType === 3){
+							//node
+							sliceDocString = sliceDocString + sliceDoc[di].nodeValue.replaceAll(/\r?\n/g, '[换行符]');
+						}
+					}
+					sliceDocString = ' ('+docs.length+')['+sliceDocString+(docs.length > 2 ? ', ...':'')+']';
+				}
+				
+
+				console.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务'+sliceDocString);
+				//console.log(docs);
+				translate.waitingExecute.add(docs);
+
+				//钩子
+				translate.lifecycle.execute.finally_Trigger({
+				    uuid:'',
+				    to:'',
+				    state: 2,
+				    triggerNumber: triggerNumber
+				});
+
+				return;
+			}
+		}
+		
+		
+		translate.state = 2;
 		translate.time.log('触发');
 
 		//初始化
@@ -1977,37 +2064,6 @@ var translate = {
 			translate.language.generateLanguageNameObject();
 		}
 
-		if(translate.waitingExecute.use){
-			if(translate.state != 0){
-				var sliceDoc = docs.slice(0, 2);
-				var sliceDocString = '';
-				for(var di = 0; di < sliceDoc.length; di++){
-					if(sliceDocString.length > 0){
-						sliceDocString = sliceDocString + ', ';
-					}
-					if(sliceDoc[di].nodeType === 1){
-						//元素
-						sliceDocString = sliceDocString + ""+sliceDoc[di].tagName;
-						if(typeof(sliceDoc[di].id) == 'string' && sliceDoc[di].id.length > 0){
-							sliceDocString = sliceDocString + " id="+sliceDoc[di].id;
-						}
-						if(sliceDoc[di].getAttribute('class') != null && typeof(sliceDoc[di].getAttribute('class')) == 'string' && sliceDoc[di].getAttribute('class').length > 0){
-							sliceDocString = sliceDocString + " class="+sliceDoc[di].getAttribute('class');
-						}
-					}else if(sliceDoc[di].nodeType === 3){
-						//node
-						sliceDocString = sliceDocString + sliceDoc[di].nodeValue.replaceAll(/\r?\n/g, '[换行符]');
-					}
-				}
-
-				console.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务 ('+docs.length+')['+sliceDocString+(docs.length > 2 ? ', ...':'')+']');
-				//console.log(docs);
-				translate.waitingExecute.add(docs);
-				return;
-			}
-		}
-		
-		translate.state = 1;
 		//console.log('translate.state = 1');
 		if(typeof(docs) != 'undefined'){
 			//execute传入参数，只有v2版本才支持
@@ -2073,6 +2129,15 @@ var translate = {
 			}else{
 				//没有指定翻译目标语言、又没自动获取用户本国语种，则不翻译
 				translate.state = 0;
+
+				//钩子
+				translate.lifecycle.execute.finally_Trigger({
+				    uuid:'',
+				    to:'',
+				    state: 3,
+				    triggerNumber: triggerNumber
+				});
+
 				return;
 			}
 		}
@@ -2084,6 +2149,15 @@ var translate = {
 
 			}else{
 				translate.state = 0;
+
+				//钩子
+				translate.lifecycle.execute.finally_Trigger({
+				    uuid:'',
+				    to:'',
+				    state: 5,
+				    triggerNumber: triggerNumber
+				});
+
 				return;
 			}
 		}
@@ -2476,6 +2550,15 @@ var translate = {
 			//生命周期触发事件
 			translate.lifecycle.execute.renderFinish_Trigger(uuid, translate.to);
 			translate.executeNumber++;
+
+			//钩子
+			translate.lifecycle.execute.finally_Trigger({
+			    uuid:uuid,
+			    to:translate.to,
+			    state: 16,
+			    triggerNumber: triggerNumber
+			});
+
 			return;
 		}
 
@@ -2616,6 +2699,15 @@ var translate = {
 
 			translate.state = 0;
 			translate.executeNumber++;
+
+			//钩子
+			translate.lifecycle.execute.finally_Trigger({
+			    uuid:uuid,
+			    to:translate.to,
+			    state: 18,
+			    triggerNumber: triggerNumber
+			});
+
 			return;
 		}
 		
@@ -2692,6 +2784,15 @@ var translate = {
 
 				translate.state = 0;
 				translate.executeNumber++;
+
+				//钩子
+				translate.lifecycle.execute.finally_Trigger({
+				    uuid:uuid,
+				    to:translate.to,
+				    state: 21,
+				    triggerNumber: triggerNumber
+				});
+
 				return;
 			}
 
@@ -2715,9 +2816,10 @@ var translate = {
 			
 			//console.log(translateTextArray[lang]);
 			var translateTextNodes = [];
-			for (let key of translate.node.data.keys()) {
+			for (let key of translateTextNodeMap.get(lang).keys()) {
    				translateTextNodes.push(key);
 			}
+			//console.log(translateTextNodes)
 			translate.lifecycle.execute.translateNetworkBefore_Trigger({
 				uuid: uuid,
 				lang: lang,
@@ -2854,6 +2956,14 @@ var translate = {
 			});
 			/*** 翻译end ***/
 		}
+
+		//钩子
+		translate.lifecycle.execute.finally_Trigger({
+		    uuid:uuid,
+		    to:translate.to,
+		    state: 25,
+		    triggerNumber: triggerNumber
+		});
 	},
 	/*translate.execute() end */
 
@@ -8328,12 +8438,16 @@ var translate = {
 					        }
 						}
 
-
-					    var rects = translate.visual.getRects(nodes);
+						var rects = translate.visual.getRects(nodes);
+					    //console.log(rects)
 					    var rectsOneArray = translate.visual.rectsToOneArray(rects);
 
 					    //排序
 					    var sortRects = translate.visual.coordinateSort(rectsOneArray);
+						//console.log(sortRects);
+
+					    //去重
+					    sortRects = translate.visual.filterNodeRepeat(sortRects);
 					    //console.log(sortRects);
 
 						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
@@ -9315,6 +9429,33 @@ var translate = {
 		    });
 		  return sortedRects;
 		},
+		/*
+			对一组坐标进行去重处理，同一个node，只会取从下标0开始往后的第一个
+			@param rects translate.visual.getRects 获取到的坐标数据，经过 translate.visual.rectsToOneArray(rects); 处理后得到的一维数组，可以直接传入，也可以进行 translate.visual.coordinateSort(rectsOneArray); 排序处理后传入
+		*/
+		filterNodeRepeat:function(rects){
+			var map = new Map(); //key是node，value随便
+			//console.log(rects);
+
+			var deleteIndexArray = [];
+			for(var i = 0; i < rects.length; i++){
+				if(map.get(rects[i].node) != null){
+					//要删除
+					deleteIndexArray.push(i);
+					continue;
+				}
+				//加入map
+				map.set(rects[i].node, 1);
+			}
+			//console.log(deleteIndexArray);
+			for(var di = deleteIndexArray.length-1; di > -1; di--){
+				//console.log(deleteIndexArray[di]);
+				rects.splice(deleteIndexArray[di], 1); // 从索引 deleteIndexArray[di] 开始，删除1个元素
+			}
+
+			map = undefined;
+			return rects;
+		},
 		/**
 		 * 查找左右紧邻的矩形对
 		 * @param rects translate.visual.getRects 获取到的坐标数据，转化为 一维数组 后传入
@@ -9625,7 +9766,13 @@ var translate = {
 			 网页加载，且要进行翻译时，翻译之前，隐藏当前网页的文本。
 			 当点击切换语言按钮后，会刷新当前页面，然后再进行翻译。 
 			 这时会出现刷新当前页面后，会先显示原本的文本，然后再翻译为切换为的语种，体验效果有点欠缺。  
+			 
 			 这个得作用就是增强用户视觉的体验效果，在页面初始化加载时，如果判定需要翻译，那么会隐藏所有网页中的文本 。
+			 他会先隐藏网页所有文本，然后再第一次 translate.execute 执行时，在扫描完节点，
+			 	1. 将扫描到的几种语种的文本全部发送网络请求之后，（也就是已经触发了发送网络请求的文本node已经处于隐藏状态）， 才会去掉整个网页文本的隐藏。
+				2. 在第一次 translate.execute 执行渲染完毕后，去掉整个网页文本的隐藏。
+				3. 在 dom
+
 			 这个需要在body标签之前执行，需要在head标签中执行此。也就是加载 translate.js 以及触发此都要放到head标签中
 
 			 config 参数，配置项，默认不传
@@ -9688,7 +9835,7 @@ var translate = {
 
 				//设置翻译完成后，移除隐藏文本的css 的class name
 				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
-					//console.log('renderFinish : '+uuid);
+					console.log('renderFinish : '+uuid);
 					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){
 						//为空，那么可能是已经触发过浏览器缓存了，所有翻译的文本在浏览器缓存中都有，就不必再发起网络请求了
 
@@ -9708,9 +9855,20 @@ var translate = {
 					}
 					*/
 					
-					translate.visual.hideText.show();
+					//translate.visual.hideText.show();
 				});
 			}
+
+			//translate.execute 触发执行结束触发
+			translate.lifecycle.execute.finally.push(function(data){
+			    if(data.triggerNumber < 3){
+			    	//只有在第一次、第二次 触发后才会隐藏文本，这里避免只第一次，是万一第一次出现异常，网页在空白不显示内容了，多触发几次也不会影响多少性能。而且这个是对网页整体进行显示的，只有页面初始化打开的时候才会用到这个相关的隐藏跟显示， 正常网络请求使用的就不是这个了
+					translate.visual.hideText.show();
+					//console.log('隐藏 translate.visual.hideText.show();');
+			    }
+			});
+
+
 		}
 
 		
@@ -9876,7 +10034,6 @@ var translate = {
 		//启用翻译中的遮罩层 http://translate.zvo.cn/407105.html
 		translate.progress.api.startUITip(); 
 
-	    
 	    //开启页面元素动态监控，js改变的内容也会被翻译，参考文档： http://translate.zvo.cn/4067.html
 	    translate.listener.start(); 
 
@@ -9895,6 +10052,7 @@ var translate = {
 	    //dom加载完毕后立即触发翻译
 	    document.addEventListener('DOMContentLoaded', function() {
 	    	translate.execute();//完成翻译初始化，进行翻译
+
 	    	setTimeout(function(){
 	    		translate.execute();//完成翻译初始化，进行翻译
 	    	}, 500);

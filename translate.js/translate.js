@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.26.20250913',
+	version: '3.18.27.20250915',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6474,8 +6474,63 @@ var translate = {
 		        width: width,
 		        height: height
 		    };
-		}
+		},
 		/*js translate.util.getElementPosition end*/
+
+		/*js translate.util.compareStringsIgnoringNumbers start*/
+		/*	
+			比较两个字符串，是否除了数字之外，其他的完全一致。
+			实测 i5 双核 2.4G ，计算1亿次 - 7s
+
+			["abc123def", "abc456def", true],
+	        ["hello7world", "hello8world", true],
+	        ["test123", "test", true],
+	        ["123test", "test", true],
+	        ["abc", "def", false],
+	        ["a1b2c3", "a4b5c", false],
+	        ["", "", true],
+	        ["123", "456", true],
+	        ["你好123世界", "3你好1世界", true],
+	        ["你好123世界", "你好世界4", true],
+		*/
+		compareStringsIgnoringNumbers: function(a, b) {
+		    let i = 0, j = 0;
+		    const lenA = a.length, lenB = b.length;
+		    
+		    while (i < lenA || j < lenB) {
+		        // 跳过a中的数字 (0-9的ASCII码是48-57)
+		        while (i < lenA && a.charCodeAt(i) >= 48 && a.charCodeAt(i) <= 57) {
+		            i++;
+		        }
+		        
+		        // 跳过b中的数字
+		        while (j < lenB && b.charCodeAt(j) >= 48 && b.charCodeAt(j) <= 57) {
+		            j++;
+		        }
+		        
+		        // 检查是否有一个字符串还有非数字字符而另一个已经结束
+		        if ((i < lenA) !== (j < lenB)) {
+		            return false;
+		        }
+		        
+		        // 如果都结束了，返回true
+		        if (i >= lenA && j >= lenB) {
+		            return true;
+		        }
+		        
+		        // 比较当前非数字字符
+		        if (a[i] !== b[j]) {
+		            return false;
+		        }
+		        
+		        i++;
+		        j++;
+		    }
+		    
+		    return true;
+		}
+		/*js translate.util.compareStringsIgnoringNumbers end*/
+
 	},
 	//机器翻译采用哪种翻译服务
 	service:{  

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.27.20250915',
+	version: '3.18.28.20250915',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1866,22 +1866,52 @@ var translate = {
             
             /*
                 每当触发执行 translate.execute() 时，当缓存中未发现，需要请求翻译API进行翻译时，在发送API请求前，触发此
-
-                @param uuid：translate.nodeQueue[uuid] 这里的
-                @param from 来源语种，翻译前的语种
-				@param to 翻译为的语种
-				@param texts 要翻译的文本，它是一个数组形态，是要进行通过API翻译接口进行翻译的文本，格式如 ['你好','世界']
-
+				
+				{
+					uuid: ,			//translate.nodeQueue[uuid] 这里的
+					lang: 			//来源语种，翻译前的语种
+					to: ,			//翻译为的语种
+					texts: ,		//要翻译的文本，它是一个数组形态，是要进行通过API翻译接口进行翻译的文本，格式如 ['你好','世界']
+					nodes: 			//要翻译的文本的node集合，也就是有哪些node中的文本参与了 通过API接口进行翻译文本，这里是这些node。 格式如 [node1, node2, ...]
+				}
 
             */
             translateNetworkBefore:[],
-            translateNetworkBefore_Trigger:function(uuid, from, to, texts){
+            //translateNetworkBefore_Trigger:function(uuid, from, to, texts){
+            translateNetworkBefore_Trigger:function(data, from, to, texts){
+            	if(typeof(data) == 'string'){
+            		data = {
+            			uuid: data,
+            		};
+            	}
+            	if(typeof(from) == 'string'){
+            		data.from = from;
+            	}
+            	if(typeof(to) == 'string'){
+            		data.to = to;
+            	}
+            	if(typeof(texts) == 'string'){
+            		data.texts = texts;
+            	}
+
             	for(var i = 0; i < translate.lifecycle.execute.translateNetworkBefore.length; i++){
-                    try{
-                        translate.lifecycle.execute.translateNetworkBefore[i](uuid,from, to, texts);
-                    }catch(e){
-                        console.log(e);
-                    }
+            		console.log('translate.lifecycle.execute.translateNetworkBefore[i] 传入参数的数量：'+translate.lifecycle.execute.translateNetworkBefore[i].length);
+            		if(translate.lifecycle.execute.translateNetworkBefore[i].length === 4){
+            			//原本的，旧版 20250915 之前的，是string方式传入 uuid, from, to, texts 这四个参数
+            			try{
+	                        translate.lifecycle.execute.translateNetworkBefore[i](data.uuid, data.from, data.to, data.texts);
+	                    }catch(e){
+	                        console.log(e);
+	                    }
+            		}else{
+            			//2025.9.15 之后的新的
+            			try{
+	                        translate.lifecycle.execute.translateNetworkBefore[i](data);
+	                    }catch(e){
+	                        console.log(e);
+	                    }
+            		}
+                    
                 }
             },
 
@@ -2224,6 +2254,7 @@ var translate = {
 		
 		//translateTextArray[lang][0]
 		var translateTextArray = {};	//要翻译的文本的数组，格式如 ["你好","欢迎"]
+		var translateTextNodeArray = {}; //要翻译的文本所在的 node ，这些要翻译的文本是在哪些node中， 格式如 { node1:1, node2:1 }  其中的value无任何意义，只是凑上去的 ， 这样key会自动排重
 		var translateHashArray = {};	//要翻译的文本的hash,跟上面的index是一致的，只不过上面是存要翻译的文本，这个存hash值
 		
 
@@ -2252,6 +2283,7 @@ var translate = {
 			}
 
 			translateTextArray[lang] = [];
+			translateTextNodeArray[lang] = [];
 			translateHashArray[lang] = [];
 			
 			let task = new translate.renderTask();
@@ -2390,6 +2422,9 @@ var translate = {
 				
 				//加入待翻译数组
 				translateTextArray[lang].push(translateText);
+				for(var ni = 0; ni<translate.nodeQueue[uuid]['list'][lang][hash].nodes.length; ni++){
+					translateTextNodeArray[lang][translate.nodeQueue[uuid]['list'][lang][hash].nodes[ni].node] = 1;
+				}
 				translateHashArray[lang].push(hash); //这里存入的依旧还是用原始hash，未使用自定义术语库前的hash，目的是不破坏 nodeQueue 的 key
 			}
 
@@ -2646,7 +2681,16 @@ var translate = {
 
 			//listener
 			translate.listener.execute.renderStartByApiRun(uuid, lang, translate.to); 
-			translate.lifecycle.execute.translateNetworkBefore_Trigger(uuid, lang, translate.to, translateTextArray[lang]); 
+			
+			//console.log(translateTextArray[lang]);
+			//console.log(translateTextNodeArray[lang]);
+			translate.lifecycle.execute.translateNetworkBefore_Trigger({
+				uuid: uuid,
+				lang: lang,
+				to: translate.to,
+				texts: translateTextArray[lang],
+				nodes: Object.keys(translateTextNodeArray[lang])
+			}); 
 			
 			/*** 翻译开始 ***/
 			var url = translate.request.api.translate;
@@ -9637,14 +9681,15 @@ var translate = {
 				*/
 
 				//设置发起网络请求前，记录发起了几次翻译请求，避免发起了多次，但是第一次执行完了就显示文本了，但是后几次还在翻译中，还是会出现显示原文的情况
-				translate.lifecycle.execute.translateNetworkBefore.push(function(uuid, from, to, texts){
+				//translate.lifecycle.execute.translateNetworkBefore.push(function(uuid, from, to, texts){
+				translate.lifecycle.execute.translateNetworkBefore.push(function(data){
 					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){ 
 						//是第一次翻译请求，记录其uuid
-						translate.visual.hideText.first_translate_request_uuid = uuid;
+						translate.visual.hideText.first_translate_request_uuid = data.uuid;
 					}
 
 					//只有第一次通过网络翻译接口请求才会记录uuid
-					if(translate.visual.hideText.first_translate_request_uuid == uuid){
+					if(translate.visual.hideText.first_translate_request_uuid == data.uuid){
 						if(typeof(translate.visual.hideText.first_translate_request_number) == 'undefined'){
 							translate.visual.hideText.first_translate_request_number = 0;
 						}

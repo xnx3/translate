@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.31.20250915',
+	version: '3.18.32.20250915',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -9855,7 +9855,7 @@ var translate = {
 					}
 					*/
 					
-					//translate.visual.hideText.show();
+					translate.visual.hideText.show();
 				});
 			}
 

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.34.20250918',
+	version: '3.18.33.20250918',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -440,12 +440,15 @@ var translate = {
 			}
 		}
 
+		/*
+		放到了 translate.init 中
 		//当用户代码设置里启用了 translate.listener.start() 然后用户加载页面后并没有翻译（这时listener是不启动的只是把listener.use标记为true），然后手动点击翻译按钮翻译为其他语种（这是不会刷新页面），翻译后也要跟着启动监听
 		if(translate.listener.use == true && translate.listener.isStart == false){
 			if(typeof(translate.listener.start) != 'undefined'){
 				translate.listener.addListener();
 			}
 		}
+		*/
 	},
 	
 	/**
@@ -1164,6 +1167,9 @@ var translate = {
 				return;
 			}
 			translate.listener.use = true;
+
+			/*
+			放到了 translate.init 中
 			translate.temp_listenerStartInterval = setInterval(function(){
 				if(document.readyState == 'complete'){
 					//dom加载完成，进行启动
@@ -1189,16 +1195,8 @@ var translate = {
 					translate.listener.addListener();
 				}
 				
-				//执行完过一次，那才能使用
-				//if(translate.listener.isExecuteFinish){ 
-					/*if(translate.listener.isStart){
-						//已开启了
-						return;
-					}*/
-					
-					//console.log('translate.temp_linstenerStartInterval Finish!');
-				//}
 	        }, 300);
+	        */
 	        
 		},
 		/* 
@@ -1259,7 +1257,8 @@ var translate = {
 				return;
 			}
 			translate.listener.isStart = true; //记录已执行过启动方法了
-			
+			//console.log('translate.listener.addListener() ...');
+
 			// 观察器的配置（需要观察什么变动）
 			translate.listener.config = { attributes: true, childList: true, subtree: true, characterData: true, attributeOldValue:true, characterDataOldValue:true };
 			// 当观察到变动时执行的回调函数
@@ -2098,10 +2097,7 @@ var translate = {
 			translate.useVersion = 'v2';
 		}
 		
-		//版本检测
-		try{
-			translate.init();
-		}catch(e){  }
+		
 
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
 		
@@ -7638,6 +7634,10 @@ var translate = {
 			}, null);
 		},
 		listener:{
+			//是否已经启动过 translate.request.listener.addListener() 开始监听了，开始了则是true，默认没开始则是false
+			isStart:false,
+			//用户的代码里是否启用了 translate.request.listener.start() ，true：启用
+			use:false, 
 			minIntervalTime:800, // 两次触发的最小间隔时间，单位是毫秒，这里默认是800毫秒。最小填写时间为 200毫秒
 			lasttime:0,// 最后一次触发执行 translate.execute() 的时间，进行执行的那一刻，而不是执行完。13位时间戳
 			/*
@@ -7700,9 +7700,19 @@ var translate = {
 				这个只需要执行一次即可，如果执行多次，只有第一次会生效
 			*/
 			start:function(){
-				
+				translate.request.listener.use = true;
+			},
+			/*js translate.request.listener.start end*/
+
+			// 当 translate.execute() 触发时，也就是触发了生命周期的 start 时，才会启动这里。这里要在翻译进行后才能触发，不然提前出发会导致跟用户设置的启动时间不相符造成异常
+			addListener:function(){
+				if(translate.request.listener.use == false){
+					//根本就没设置启用，直接推出
+					return;
+				}
+
 				//确保这个方法只会触发一次，不会过多触发
-				if(typeof(translate.request.listener.isStart) != 'undefined'){
+				if(typeof(translate.request.listener.isStart) != 'undefined' && translate.request.listener.isStart == true){
 					return;
 				}else{
 					translate.request.listener.isStart = true;
@@ -7711,12 +7721,13 @@ var translate = {
 				//增加一个没100毫秒检查一次执行任务的线程
 				setInterval(function(){
 					var currentTime = Date.now();
+					//console.log(translate.request.listener.executetime)
 					if(translate.request.listener.executetime > 1 && currentTime > translate.request.listener.executetime+translate.request.listener.delayExecuteTime){
 						translate.request.listener.executetime = 0;
 						translate.request.listener.lasttime = currentTime;
-						if(translate.executeNumber > 0 || translate.state > 0){ //已经执行过了 translate.execute() ，那么才会触发
+						if(translate.executeTriggerNumber > 0){ //已经执行过了 translate.execute() ，那么才会触发
 							try{
-								//console.log('执行翻译 --'+currentTime);
+								//console.log('translate.request.listener.start ... 执行翻译 --'+currentTime);
 								translate.execute();
 							}catch(e){
 								console.log(e);
@@ -7724,6 +7735,7 @@ var translate = {
 						}
 					}
 				}, 100);
+
 				if(typeof(PerformanceObserver) == 'undefined'){
 					console.log('因浏览器版本较低， translate.request.listener.start() 中 PerformanceObserver 对象不存在，浏览器不支持，所以 translate.request.listener.start() 未生效。');
 					return;
@@ -7733,6 +7745,7 @@ var translate = {
 					var translateExecute = false;	//是否需要执行翻译 true 要执行
 				    for(var e = 0; e < list.getEntries().length; e++){
 				    	var entry = list.getEntries()[e];
+				    	//console.log(entry)
 
 				    	if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
 				        	var url = entry.name;
@@ -7760,7 +7773,7 @@ var translate = {
 				        	}
 
 				        	if(ignoreUrl){
-				        		//console.log('忽略：'+url);
+				        		console.log('忽略：'+url);
 								continue;
 				        	}
 				        	if(translate.request.listener.trigger()){
@@ -7812,7 +7825,7 @@ var translate = {
 				}
 
 			}
-			/*js translate.request.listener.start end*/
+			
 		}
 	},
 	//存储，本地缓存
@@ -8143,7 +8156,8 @@ var translate = {
 		if(translate.listener.isStart){
 			translate.listener.isStart = false; //设置为未启动	
 		}
-		translate.temp_listenerStartInterval = undefined; //设置为尚未启动
+		//translate.temp_listenerStartInterval = undefined; //设置为尚未启动
+		translate.init_first_trigger_execute = undefined; //translate.init 的 execute钩子，设置为未初始化状态
 		
 
 		/** 使用基于 translate.node 的还原 **/
@@ -8305,52 +8319,6 @@ var translate = {
 	},
 	*/
 
-	/*js translate.init start*/
-	/*
-		初始化，如版本检测、初始数据加载等。  v2.11.11.20240124 增加
-		会自动在 translate.js 加载后的 200毫秒后 执行，进行初始化。同时也是节点测速
-	*/
-	init:function(){
-		if(typeof(translate.init_execute) != 'undefined'){
-			return;
-		}
-		translate.init_execute = '已进行';
-
-		if(typeof(translate.request.api.init) != 'string' || translate.request.api.init == null || translate.request.api.init.length < 1){
-			return;
-		}
-		try{
-			translate.request.send(
-				translate.request.api.init,
-				{},
-				{},
-				function(data){
-					if (data.result == 0){
-						console.log('translate.js init 初始化异常：'+data.info);
-						return;
-					}else if(data.result == 1){
-						//服务端返回的最新版本
-						var newVersion = translate.util.versionStringToInt(data.version);
-						//当前translate.js的版本
-						var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
-
-						if(newVersion > currentVersion){
-							console.log('Tip : translate.js find new version : '+data.version);
-						}
-					}
-				},
-				'post',
-				true,
-				null,
-				function(data){
-					//console.log('eeerrr');
-				},
-				false
-			);
-		}catch(e){
-		}
-	},
-	/*js translate.init end*/
 
 	/*js translate.progress start*/
 	/*
@@ -9904,7 +9872,7 @@ var translate = {
 
 				//设置翻译完成后，移除隐藏文本的css 的class name
 				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
-					console.log('renderFinish : '+uuid);
+					//console.log('renderFinish : '+uuid);
 					if(typeof(translate.visual.hideText.first_translate_request_uuid) == 'undefined'){
 						//为空，那么可能是已经触发过浏览器缓存了，所有翻译的文本在浏览器缓存中都有，就不必再发起网络请求了
 
@@ -10142,7 +10110,95 @@ var translate = {
 	    	}, 2000);
 		});
 
-	}
+	},
+
+	/*js translate.init start*/
+	/*
+		初始化，如版本检测、初始数据加载、map声明、监听启动 等
+		会自动在 translate.js 加载完自动触发执行
+	*/
+	init:function(){
+		
+		// 确保初始化只进行一次
+		if(typeof(translate.init_execute) != 'undefined'){
+			return;
+		}
+		translate.init_execute = '已进行';
+
+		//初始化一些全局参数
+		if(translate.node.data == null){
+			translate.node.data = new Map();
+		}
+
+		//监听，当第一次触发 translate.execute() 时，执行
+		translate.lifecycle.execute.start.push(function(uuid, to){
+			//只在第一次触发时，才会做一些初始化
+			if(typeof(translate.init_first_trigger_execute) != 'undefined'){
+				return;
+			}
+			translate.init_first_trigger_execute = 1;
+
+
+			//进行判断，DOM是否加载完成了，如果未加载完成就触发了 translate.execute 执行，那么弹出警告提示
+			if(document.readyState == 'loading'){
+				console.log('WARNING : The dom triggered translate.exece() before it was fully loaded, which does not comply with usage standards. The execution of translate.exece() should be done after the DOM is loaded');
+				console.log('警告：DOM 在完全加载之前触发了 translate.execute() ，这不符合使用规范，容易出现异常。你应该检查一下你的代码，translate.execute() 的执行应该在DOM加载完成后');
+			}
+			
+
+			//translate.listener.start() 的触发。
+			if(translate.listener.use == true && translate.listener.isStart == false){
+				if(typeof(translate.listener.start) != 'undefined'){
+					translate.listener.addListener();
+				}
+			}
+
+			//translate.request.lilstener.start() 触发
+			if(translate.request.listener.use == true && translate.request.listener.isStart == false){
+				translate.request.listener.addListener();
+			}
+
+
+		});
+
+		//初始化请求
+		if(typeof(translate.request.api.init) == 'string' && translate.request.api.init != null && translate.request.api.init.length > 0){
+			try{
+				translate.request.send(
+					translate.request.api.init,
+					{},
+					{},
+					function(data){
+						if (data.result == 0){
+							console.log('translate.js init 初始化异常：'+data.info);
+							return;
+						}else if(data.result == 1){
+							//服务端返回的最新版本
+							var newVersion = translate.util.versionStringToInt(data.version);
+							//当前translate.js的版本
+							var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
+
+							if(newVersion > currentVersion){
+								console.log('Tip : translate.js find new version : '+data.version);
+							}
+						}
+					},
+					'post',
+					true,
+					null,
+					function(data){
+						//console.log('eeerrr');
+					},
+					false
+				);
+			}catch(e){
+			}
+		}
+
+
+		
+	},
+	/*js translate.init end*/
 
 }
 /*
@@ -10205,8 +10261,10 @@ console.log('------ translate.js ------\nTwo lines of js html automatic translat
 console.log('=======\n\n\n\n 注意，只有你当前用的这个版本，才能看到这个提示，那如果使用中遇到任何异常，可加我微信 xnx3com 帮你做完美适配\n\n\n\n=======');
 /*js copyright-notice end*/
 
-//一些初始化的
-translate.node.data = new Map();
+//初始化
+try{
+	translate.init();
+}catch(e){  }
 
 /*js amd-cmd-commonjs start*/
 /*兼容 AMD、CMD、CommonJS 规范 - start*/

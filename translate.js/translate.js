@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.32.20250915',
+	version: '3.18.33.20250918',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1771,9 +1771,23 @@ var translate = {
 			@param uuid translate.translateRequest[uuid]中的uuid，也是 translate.nodeQueue 中的uuid
 			@param from 来源语种，翻译前的语种
 			@param to 翻译为的语种
+			@param result 本次网络请求的结果， 1成功， 0失败。  网络不通，翻译结果返回result非1都是记入0
+			@param info 如果result为0，这里是失败信息
 		*/
-		isAllExecuteFinish:function(uuid, from, to){
+		isAllExecuteFinish:function(uuid, from, to, result, info){
+
 			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
+
+			//通过 uuid、from 取得本次翻译相关的 texts、nodes , 触发 translateNetworkAfter_Trigger 钩子
+			translate.lifecycle.execute.translateNetworkAfter_Trigger({
+				uuid: uuid,
+				from: from,
+				to: to,
+				texts: translate.request.data[uuid].list[from].texts,
+				nodes: translate.request.data[uuid].list[from].nodes,
+				result: result,
+				info: info
+			});
 
 			//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 			for(var lang in translate.translateRequest[uuid]){
@@ -1922,25 +1936,29 @@ var translate = {
             },
 
             /*
-				当 translate.execute() 触发网络翻译请求完毕（不管成功还是失败），并将翻译结果渲染到页面完毕后，触发此。
-				@param uuid translate.nodeQueue 的uuid
-				@param from 
-				@param to 当前是执行的翻译为什么语种
-				@param text 网络请求翻译的文本/节点/。。。待定
+				当 translate.execute() 触发网络翻译请求完毕，并将翻译结果渲染到页面完毕后（不管网络翻译请求成功还是失败、还是翻译请求本身返回翻译失败），都触发此。
+				
+				{
+					uuid: ,			//translate.nodeQueue[uuid] 这里的
+					lang: 			//来源语种，翻译前的语种
+					to: ,			//翻译为的语种
+					texts: ,		//要翻译的文本，它是一个数组形态，是要进行通过API翻译接口进行翻译的文本，格式如 ['你好','世界']
+					nodes: ,		//要翻译的文本的node集合，也就是有哪些node中的文本参与了 通过API接口进行翻译文本，这里是这些node。 格式如 [node1, node2, ...]
+					result: 		//执行结果 1成功， 0失败
+				}
             */
-            translateNetworkAfter:[], //已废弃
-            /*
-            
-            translateNetworkAfter_Trigger:function(uuid, to){
+            translateNetworkAfter:[], 
+            translateNetworkAfter_Trigger:function(data){
                 for(var i = 0; i < translate.lifecycle.execute.translateNetworkAfter.length; i++){
                     try{
-                        translate.lifecycle.execute.translateNetworkAfter[i](uuid, to);
+                        translate.lifecycle.execute.translateNetworkAfter[i](data);
                     }catch(e){
                         console.log(e);
                     }
                 }
             },
-            */
+           
+
 
             /*
 				translate.execute() 的翻译渲染完毕触发
@@ -2767,6 +2785,18 @@ var translate = {
 
 		translate.time.log('调用翻译接口进行翻译 - 开始');
 
+		/* 
+			将翻译请求的信息记录到 translate.js 本身中
+			uuid 每次 translate.execute() 触发生成的uuid
+				time: 触发后加入到 data 中的时间,13位时间戳
+
+		*/
+		translate.request.data[uuid] = {
+			time:Date.now(),
+			list:{}
+		};
+
+
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
 			if (!fanyiLangs.hasOwnProperty(lang_index)) {
@@ -2827,6 +2857,14 @@ var translate = {
 				texts: translateTextArray[lang],
 				nodes: translateTextNodes
 			}); 
+
+			//记入请求日志
+			translate.request.data[uuid].list[lang] = {
+				to: translate.to,
+				texts: translateTextArray[lang],
+				nodes: translateTextNodes,
+			};
+
 			
 			/*** 翻译开始 ***/
 			var url = translate.request.api.translate;
@@ -2862,7 +2900,8 @@ var translate = {
 					}else{
 						to = translate.to;
 					}
-					translate.waitingExecute.isAllExecuteFinish(uuid, from, to);
+					translate.waitingExecute.isAllExecuteFinish(uuid, from, to, 0, data.info);
+					
 
 					console.log('=======ERROR START=======');
 					console.log(translateTextArray[data.from]);
@@ -2946,13 +2985,23 @@ var translate = {
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				setTimeout(function(){
-					translate.waitingExecute.isAllExecuteFinish(uuid, data.from, data.to);
-				},10);
+					translate.waitingExecute.isAllExecuteFinish(uuid, data.from, data.to, 1, '');
+				},5);
 			}, function(xhr){
 				translate.translateRequest[uuid][xhr.data.from].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][xhr.data.from].stoptime = Math.floor(Date.now() / 1000);
 				translate.translateRequest[uuid][xhr.data.from].result = 3;
-				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to);
+				var info = '';
+				if(typeof(xhr.status) != 'undefined'){
+					if(xhr.status < 1){
+						info = 'Network connection failed. url: '+xhr.requestURL;
+					}else{
+						info = 'HTTP response code : '+xhr.status+', url: '+xhr.requestURL;
+					}
+				}else{
+					info = 'Network connection failed. url: '+xhr.requestURL;
+				}
+				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to, 0, info);
 			});
 			/*** 翻译end ***/
 		}
@@ -6910,7 +6959,27 @@ var translate = {
 	},
 	//request请求来源于 https://github.com/xnx3/request
 	request:{
-		 
+		/* 
+			将通过翻译接口进行翻译请求(/translate.json)的信息记录到 translate.js 本身中
+			key uuid 每次 translate.execute() 触发生成的uuid
+			value 	
+				time: 触发后加入到 data 中的时间,13位时间戳
+				list: 对象集合，translate.execute() 的触发会发起多次翻译请求，根据识别的语种不同，发起多次网络请求，这里记录的是多次网络请求
+					[
+						'english':{						//当前请求是将什么语种进行翻译，也就是 translate.json 请求中的 from 参数
+							to: chinese_simplified,		//当前请求要翻译为什么语种，也就是 translate.json 请求中的 to 参数
+							texts:['你好', '世界', ...],	//当前请求要进行翻译的具体文本
+							nodes:[node1, node2, ...]	//当前请求要翻译的文本所在的node集合，也就是有哪些node中的文本参与了 通过API接口进行翻译文本
+						},
+						'korean':{
+							...
+						},
+						...
+					]
+
+			后面要将 translate.translateRequest  合并到这里面		
+		*/
+		data:{},
 		//相关API接口方面
 		api:{
 			/**
@@ -7991,7 +8060,7 @@ var translate = {
 		config 可不传，则是直接恢复到默认未翻译前的状态。
 			{
 				selectLanguageRefreshRender:true, //是否重新渲染select选择语言到原始未翻译前的状态，默认不设置则是true，进行重新渲染
-				notTranslateTip:true 			  //如果当前未执行过翻译，然后出发的 translate.reset() ，是否在控制台打印友好提示，提示未执行翻译，还原指令忽略， true则是正常打印这个提示， false则是不打印这个提示
+				notTranslateTip:true 			  //如果当前未执行过翻译，然后触发的 translate.reset() ，是否在控制台打印友好提示，提示未执行翻译，还原指令忽略， true则是正常打印这个提示， false则是不打印这个提示
 			}
 	*/
 	reset:function(config){
@@ -9915,6 +9984,18 @@ var translate = {
 					translate.time.execute.data[uuid].startTime = new Date().getTime();
 				});
 
+				//发起网络请求前
+				translate.lifecycle.execute.translateNetworkBefore.push(function(data){
+				    translate.time.execute.data[data.uuid].translateNetworkBeforeTime = new Date().getTime();
+				});
+				
+				/*
+				//发起网络请求后
+				translate.lifecycle.execute.translateNetworkAfter.push(function(data){
+				    translate.time.execute.data[data.uuid].translateNetworkBeforeTime = new Date().getTime();
+				});
+				*/
+
 				//翻译完成（渲染全部语种都完成）
 				translate.lifecycle.execute.renderFinish.push(function(uuid, to){
 					translate.time.execute.data[uuid].finishTime = new Date().getTime();
@@ -9954,7 +10035,7 @@ var translate = {
 					translate.time.execute.data[uuid].translateTexts = translateTexts;
 
 
-					console.log('[time][translate.execute()] '+translate.time.execute.data[uuid].allTime+'ms , ['+translateLanguages+'] : ('+translateTexts.length+')['+translateTexts.slice(0, 3)+(translateTexts.length > 3 ? ', ...':'')+']');
+					console.log('[time][translate.execute()] '+translate.time.execute.data[uuid].allTime+'ms '+(typeof(translate.time.execute.data[uuid].translateNetworkBeforeTime) != 'undefined'? '(search&cache '+(translate.time.execute.data[uuid].translateNetworkBeforeTime - translate.time.execute.data[uuid].startTime)+'ms)':'')+ (translateTexts.length > 0 ?  (' , ['+translateLanguages+'] : ('+translateTexts.length+')['+translateTexts.slice(0, 3)+(translateTexts.length > 3 ? ', ...':'')+']'):''));
 				});
 			},
 			

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.33.20250918',
+	version: '3.18.34.20250918',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1294,15 +1294,15 @@ var translate = {
 						
 						if(translate.node.get(mutation.target) != null){
 							
-							if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
-								//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+							if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 1000 > Date.now()){
+								//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过1秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
 							}else{
 								//不是 translate.js 触发的改动
 								var nodeAttribute = translate.node.getAttribute(mutation.attributeName);
-								console.log(translate.node.get(mutation.target)[nodeAttribute.key])
+								//console.log(translate.node.get(mutation.target)[nodeAttribute.key])
 								if(typeof(translate.node.get(mutation.target)[nodeAttribute.key]) != 'undefined'){
 									//从翻译历史中删掉，使这个属性还能继续被翻译
-									console.log('delete translate.node.get(mutation.target)[nodeAttribute.key] -> '+mutation.attributeName);
+									//console.log('delete translate.node.get(mutation.target)[nodeAttribute.key] -> '+mutation.attributeName);
 									delete translate.node.get(mutation.target)[nodeAttribute.key];
 								}
 							}
@@ -1316,20 +1316,43 @@ var translate = {
 						//console.log('-------\n'+(translate.node.get(mutation.target) != null ? translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText:''));
 						//console.log(mutation.target.nodeValue);
 
-						//如果是因为翻译替换而导致的改变，那么忽略这个
-						//if(translate.node.get(mutation.target) != null && translate.node.get(mutation.target)[translate.node.getAttribute('').key].resultText === mutation.target.nodeValue){
+						//是否是要加入翻译扫描触发执行，是则是true
+						var addTranslateExecute = false;
+						
 						if(translate.node.get(mutation.target) != null){
-							if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 2000 > Date.now()){
-								//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过2秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
-							}else if(typeof(translate.node.get(mutation.target).translateResults) != 'undefined' && typeof(translate.node.get(mutation.target).translateResults[mutation.target.nodeValue]) != 'undefined'){
-								// 这个改动是有 translate.js 引起的，它改变后的文本跟 有 translate 给它赋予的文本完全相同， 那么不做什么改变
-							}else{
-								//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
-								//console.log('listener --  mutation.type === characterData -- delete node ----  '+ mutation.target.nodeValue);
-								//console.log('listener -- 内容改变，删除掉 node ----，删除前的 translate.node size:'+translate.node.data.size);
-								translate.node.delete(mutation.target); 
-								addNodes = [mutation.target]; //将重新触发 translate.execute();
+							if(typeof(translate.node.get(mutation.target).translate_default_value) != 'undefined' && translate.node.get(mutation.target).translate_default_value.whole == true && typeof(translate.node.get(mutation.target).translate_default_value.resultText) != 'undefined'){
+								if(typeof(translate.node.get(mutation.target).translate_default_value.whole) == 'undefined'){
+									console.log('WARNING : translate.listener.start 监控数据异常，node 数据存在于 translate.node ，但是获取它信息时发现其 whole 参数不存在！请联系我们 http://translate.zvo.cn/4030.html 反馈异常，我们帮你排查适配。异常 node:');
+									console.log(mutation.target);
+								}else{
+									if(translate.node.get(mutation.target).translate_default_value.whole){ //整体翻译
+										//当前的node，上一次翻译是整体翻译的，且都有正常数据，很有可能是 translate.js本身进行翻译才触发的改变，那么直接比对它的内容文本就好了
+										if(translate.node.get(mutation.target).translate_default_value.resultText !== mutation.target.nodeValue){
+											//当前改变后的内容，跟上次翻译后的结果不一样，那说明当前已经发生过改变了，要重新触发翻译
+											addTranslateExecute = true;
+										}else{
+											//值一样，那这次改动是有translate.js 引起的，则无需再触发翻译
+										}
+									}else{ //不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
+										//这就要根据最后翻译时间这个来判定了
+										if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 1000 > Date.now()){
+											//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过1秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+										}else if(typeof(translate.node.get(mutation.target).translateResults) != 'undefined' && typeof(translate.node.get(mutation.target).translateResults[mutation.target.nodeValue]) != 'undefined'){
+											// 这个改动是有 translate.js 引起的，它改变后的文本跟 有 translate 给它赋予的文本完全相同， 那么不做什么改变
+										}else{
+											//非翻译js引起的值的改变，是有用户自己的js触发的改变，需要删除掉显示内容发生变动的 translate.node 节点，删除后才能重新触发翻译，不然它已经有 translate.node....originalText 的值了是不会被翻译的
+											//console.log('listener --  mutation.type === characterData -- delete node ----  '+ mutation.target.nodeValue);
+											//console.log('listener -- 内容改变，删除掉 node ----，删除前的 translate.node size:'+translate.node.data.size);
+											addTranslateExecute = true;
+										}
+									}
+								}
 							}
+						}
+
+						if(addTranslateExecute){ //不是 translate.js 翻译引起的改变，那么
+							translate.node.delete(mutation.target); 
+							addNodes = [mutation.target]; //将重新触发 translate.execute();
 						}
 						
 						//documents.push.apply(documents, [mutation.target]);

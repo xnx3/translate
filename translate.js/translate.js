@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.33.20250918',
+	version: '3.18.34.20250918',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -10205,6 +10205,8 @@ console.log('------ translate.js ------\nTwo lines of js html automatic translat
 console.log('=======\n\n\n\n 注意，只有你当前用的这个版本，才能看到这个提示，那如果使用中遇到任何异常，可加我微信 xnx3com 帮你做完美适配\n\n\n\n=======');
 /*js copyright-notice end*/
 
+//一些初始化的
+translate.node.data = new Map();
 
 /*js amd-cmd-commonjs start*/
 /*兼容 AMD、CMD、CommonJS 规范 - start*/

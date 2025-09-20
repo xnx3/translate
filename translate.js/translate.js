@@ -7018,6 +7018,89 @@ var translate = {
 
 		},
 		/*
+			v3.18.35.20250920 增加
+		
+			hosts: 主机域名数组，数组形式，可传入多个主机，传入格式如 ['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/'] 一定注意最后还有个 /
+					其中数组的第一个将被优先使用，第一个是主的，可靠性要更高的
+		*/
+		setHost:function(hosts){
+			translate.service.use('translate.service');
+
+			if (typeof translate.request.api.host == 'string') {
+				//单个，那么赋予数组形式
+				//translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
+				translate.request.api.host = [hosts];
+			}else{
+				translate.request.api.host = hosts;
+			}
+
+			translate.request.speedDetectionControl.state = 0; //设置为未进行测速
+
+			translate.storage.set('speedDetectionControl_hostQueue', '');
+			translate.request.speedDetectionControl.hostQueue = [];
+			translate.request.speedDetectionControl.checkHostQueue = new Array()
+			//translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, 0)
+
+			//进行对host测速
+			translate.request.speedDetectionControl.checkResponseSpeed();
+
+			// init.json 的请求
+			translate.temp_request_init = undefined;
+			setTimeout(function(){
+				translate.request.initRequest();
+			}, 3000);
+
+		},
+
+		/*
+			发起 init.json 的请求
+			这个应该在translate.execute 未执行完之前就要触发，最好在 setHost() 时、或者刚加载后越早触发越好
+			它触发多次时，只有第一次才会正常执行。
+		*/
+		initRequest:function(){
+			//初始化请求
+			if(typeof(translate.request.api.init) == 'string' && translate.request.api.init != null && translate.request.api.init.length > 0){
+				if(typeof(translate.temp_request_init) == 'undefined'){
+					translate.temp_request_init = 1;
+				}else{
+					//第二次以及之后执行，都直接给返回不允许在执行了
+					return;
+				}
+
+				try{
+					translate.request.send(
+						translate.request.api.init,
+						{},
+						{},
+						function(data){
+							if (data.result == 0){
+								console.log('translate.js init 初始化异常：'+data.info);
+								return;
+							}else if(data.result == 1){
+								//服务端返回的最新版本
+								var newVersion = translate.util.versionStringToInt(data.version);
+								//当前translate.js的版本
+								var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
+
+								if(newVersion > currentVersion){
+									console.log('Tip : translate.js find new version : '+data.version);
+								}
+							}
+						},
+						'post',
+						true,
+						null,
+						function(data){
+							//console.log('eeerrr');
+						},
+						false
+					);
+				}catch(e){
+				}
+			}
+		},
+		
+		/*
 			追加参数，  v3.15.9.20250527 增加
 			所有通过 translate.request.send 进行网络请求的，都会追加上这个参数
 			默认是空，没有任何追加参数。
@@ -7072,6 +7155,16 @@ var translate = {
 			
 		*/
 		speedDetectionControl:{
+			/*
+				当前测速的状态，
+				0 尚未进行
+				1 进行中
+				2 已测速完毕
+
+				这个也是用于判断是否为0，来避免多次发起测速情况
+			 */ 
+			state: 0, 
+
 			/*
 				
 				进行 connect主节点缩减的时间，单位是毫秒.
@@ -7185,8 +7278,12 @@ var translate = {
 				translate.request.speedDetectionControl.hostQueue = translate.request.speedDetectionControl.checkHostQueue;
 			},
 
-			//测试响应速度
+			/*
+				执行测试响应速度动作
+			*/
 			checkResponseSpeed:function(){
+				translate.request.speedDetectionControl.state = 1; //设置为进行测速中
+
 				var headers = {
 					'content-type':'application/x-www-form-urlencoded',
 				};
@@ -7218,6 +7315,9 @@ var translate = {
 							{host:host},
 							{host:host},
 							function(data){
+								//只要其中某个取得响应，都代表测速完成
+								translate.request.speedDetectionControl.state = 2;
+
 								var host = data.info;
 								var map = translate.request.speedDetectionControl.checkHostQueueMap[host];
 								var time = new Date().getTime() - map.start;
@@ -7248,6 +7348,9 @@ var translate = {
 							true,
 							headers,
 							function(data){
+								//只要其中某个取得响应，都代表测速完成
+								translate.request.speedDetectionControl.state = 2;
+
 								//translate.request.speedDetectionControl.checkResponseSpeed_Storage(host, time);
 								var hostUrl = data.requestURL.replace(translate.request.api.connectTest,'');
 								translate.request.speedDetectionControl.checkResponseSpeed_Storage(hostUrl, translate.request.speedDetectionControl.disableTime);
@@ -10087,6 +10190,7 @@ var translate = {
 
 	},
 
+	
 	/*
 		快速接入，在head中引入使用，它集成了 translate.execute() 进去
 		

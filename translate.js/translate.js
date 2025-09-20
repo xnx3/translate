@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.34.20250918',
+	version: '3.18.35.20250918',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2096,13 +2096,8 @@ var translate = {
 		translate.state = 2;
 		translate.time.log('触发');
 
-		//初始化
-		if(translate.node.data == null){
-			translate.node.data = new Map();
-		}
-		if(translate.language.name == null){
-			translate.language.generateLanguageNameObject();
-		}
+		//init.json
+		translate.request.initRequest();
 
 		//console.log('translate.state = 1');
 		if(typeof(docs) != 'undefined'){
@@ -7099,7 +7094,7 @@ var translate = {
 				}
 			}
 		},
-		
+
 		/*
 			追加参数，  v3.15.9.20250527 增加
 			所有通过 translate.request.send 进行网络请求的，都会追加上这个参数
@@ -10256,6 +10251,10 @@ var translate = {
 		if(translate.node.data == null){
 			translate.node.data = new Map();
 		}
+		//语系相关
+		if(translate.language.name == null){
+			translate.language.generateLanguageNameObject();
+		}
 
 		//监听，当第一次触发 translate.execute() 时，执行
 		translate.lifecycle.execute.start.push(function(uuid, to){
@@ -10284,45 +10283,9 @@ var translate = {
 			if(translate.request.listener.use == true && translate.request.listener.isStart == false){
 				translate.request.listener.addListener();
 			}
-
-
 		});
 
-		//初始化请求
-		if(typeof(translate.request.api.init) == 'string' && translate.request.api.init != null && translate.request.api.init.length > 0){
-			try{
-				translate.request.send(
-					translate.request.api.init,
-					{},
-					{},
-					function(data){
-						if (data.result == 0){
-							console.log('translate.js init 初始化异常：'+data.info);
-							return;
-						}else if(data.result == 1){
-							//服务端返回的最新版本
-							var newVersion = translate.util.versionStringToInt(data.version);
-							//当前translate.js的版本
-							var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
-
-							if(newVersion > currentVersion){
-								console.log('Tip : translate.js find new version : '+data.version);
-							}
-						}
-					},
-					'post',
-					true,
-					null,
-					function(data){
-						//console.log('eeerrr');
-					},
-					false
-				);
-			}catch(e){
-			}
-		}
-
-
+		
 		
 	},
 	/*js translate.init end*/

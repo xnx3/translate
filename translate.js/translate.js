@@ -10077,7 +10077,7 @@ var translate = {
 				加入一条翻译记录
 			*/
 			add: function(original, result){
-				console.log(original +' - '+result);
+				//console.log(original +' - '+result);
 				translate.history.translateText.resultMap.set(result, original);
 				translate.history.translateText.originalMap.set(original, result);
 			}

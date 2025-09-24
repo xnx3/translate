@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.35.20250918',
+	version: '3.18.36.20250924',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1666,6 +1666,9 @@ var translate = {
 								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].translateTexts[task.originalText] = task.resultText;
 								//将翻译完成后要显示出的文本进行记录
 								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].resultText = analyseSet.resultText;
+
+								//将其加入 translate.history.translateTexts 
+								translate.history.translateText.add(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].originalText ,analyseSet.resultText);
 							}
 						}else{
 							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
@@ -1674,6 +1677,7 @@ var translate = {
 						
 						//加入 translate.listener.ignoreNode
 						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime, analyseSet.resultText);
+
 
 
 						/*
@@ -3895,20 +3899,26 @@ var translate = {
 		//console.log(textArray);
 
 		// 处理 ignore.regex
-		var temporaryIgnoreTexts;  //仅仅针对当前text文本，通过 translate.ignore.textRegex 所产生的临时不翻译的文本，它并不能作用于其他节点的文本
+		var temporaryIgnoreTexts = [];  //仅仅针对当前text文本，通过 translate.ignore.textRegex 所产生的临时不翻译的文本，它并不能作用于其他节点的文本
 		for (var ri = 0; ri < translate.ignore.textRegex.length; ri++) {
 			var regex = translate.ignore.textRegex[ri];
 			for (var tai = 0; tai < textArray.length; tai++) {
 				var text = textArray[tai];
-				temporaryIgnoreTexts = text.match(regex) || []
+				//temporaryIgnoreTexts = text.match(regex) || []
+				var matches = text.match(regex) || [];
+				temporaryIgnoreTexts = temporaryIgnoreTexts.concat(matches);
 				//translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
 			}
 		}
 		//将当前节点文本的 不翻译文本规则，重新组合到 temporaryIgnoreTextsByRegex
-		if(typeof(temporaryIgnoreTexts) == 'undefined'){
+		if(temporaryIgnoreTexts.length == 0){
 			temporaryIgnoreTexts = translate.ignore.text;
 		}else{
+			//将其加入 translate.history.translateTexts 中
 			temporaryIgnoreTexts.concat(translate.ignore.text);
+			for(var ti = 0; ti<temporaryIgnoreTexts.length; ti ++){
+				translate.history.translateText.add(temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti]);
+			}
 		}
 
 		/**** v3.10.2.20241206 - 增加自定义忽略翻译的文本，忽略翻译的文本不会被翻译 - 当然这样会打乱翻译之后阅读的连贯性 ****/
@@ -4026,6 +4036,9 @@ var translate = {
 			translate.node.get(node)[nodeAttribute.key].translateTexts = {}; //这里全部命中了，所以根本没有走翻译接口的文本
 			//将翻译完成后要显示出的文本进行记录
 			translate.node.get(node)[nodeAttribute.key].resultText = translate.element.nodeAnalyse.get(node).text; //直接获取当前node显示出来的文本作为最后的结果的文本
+
+			//将其加入 translate.history.translateTexts 中
+			translate.history.translateText.add(translate.node.get(node)[nodeAttribute.key].originalText, translate.node.get(node)[nodeAttribute.key].resultText);
 		}
 		
 	},
@@ -10035,6 +10048,42 @@ var translate = {
 
 	},
 	/*js translate.visual end*/
+
+	/*
+		历史， 20250924 增加
+
+	*/
+	history:{
+		/*
+			翻译文本相关，map的初始化在 translate.init() 中进行
+			只有当正常翻译且翻译完成（成功）的，才会记录到这里
+			比如 自定义忽略翻译文字  ‘你好’ ，元素的内容为 ‘你好世界’，它会将   你好、你好世界  这两个都加入进去
+		*/
+		translateText: {
+			/*
+				以翻译结果为 key 的 map
+				value: 
+					original 翻译的原文
+			*/
+			resultMap:null,
+			/*
+				以翻译原文为 key 的 map
+				value: 
+					result 翻译的结果
+			*/
+			originalMap:null,
+
+			/*
+				加入一条翻译记录
+			*/
+			add: function(original, result){
+				console.log(original +' - '+result);
+				translate.history.translateText.resultMap.set(result, original);
+				translate.history.translateText.originalMap.set(original, result);
+			}
+		},
+
+	},
 	
 	/*
 		记录打印翻译执行的耗时情况
@@ -10234,6 +10283,64 @@ var translate = {
 
 	},
 
+	/*js translate.recycle start*/
+	/*
+		自动回收 translate.js 本身记录的相关信息，避免某些页面有循环触发，停留页面过长导致数据持续堆积
+
+		translate.nodeQueue
+		translate.node.data
+		
+	*/
+	recycle: function(){
+		var currentTime = new Date().getTime(); //当前时间
+		//var before_second = 120; 	//要删除往前多少秒的数据
+
+		
+		/*** translate.nodeQueue ****/
+		var nodeQueueDeleteArray = []; //要删除的nodeQueue，其中存储的是 uuid
+		for(var uuid in translate.nodeQueue){
+			if (!translate.nodeQueue.hasOwnProperty(uuid)) {
+	    		continue;
+	    	}
+			var expireTime = translate.nodeQueue[uuid].expireTime;
+			if(expireTime > currentTime){
+				nodeQueueDeleteArray.push(uuid);
+			}	
+		}
+		for(var qi = 0; qi < nodeQueueDeleteArray.length; qi++){
+			delete translate.nodeQueue[nodeQueueDeleteArray[qi]];
+			console.log('delete nodeQueue -> '+nodeQueueDeleteArray[qi]);
+		}
+
+
+		/*** translate.node.data ****/
+		translate.node.refresh();
+
+		/*** translate.time.execute.data ****/
+		var timeExecuteDeleteArray = []; //要删除的，其中存储的是 uuid
+		for(var uuid in translate.time.execute.data){
+			if (!translate.time.execute.data.hasOwnProperty(uuid)) {
+	    		continue;
+	    	}
+	    	if(typeof(translate.time.execute.data[uuid].finishTime) == 'undefined'){
+	    		//还没执行完
+	    		continue;
+	    	}
+			var finishTime = translate.time.execute.data[uuid].finishTime;
+			if(finishTime+120 < currentTime){
+				timeExecuteDeleteArray.push(uuid);
+			}	
+		}
+		for(var ti = 0; ti < timeExecuteDeleteArray.length; ti++){
+			delete translate.time.execute.data[timeExecuteDeleteArray[ti]];
+			console.log('delete translate.time.execute.data -> '+timeExecuteDeleteArray[ti]);
+		}
+		
+
+
+	},
+	/*js translate.recycle end*/
+
 	/*js translate.init start*/
 	/*
 		初始化，如版本检测、初始数据加载、map声明、监听启动 等
@@ -10247,9 +10354,16 @@ var translate = {
 		}
 		translate.init_execute = '已进行';
 
-		//初始化一些全局参数
+		//初始化 translate.node.data
 		if(translate.node.data == null){
 			translate.node.data = new Map();
+		}
+		//初始化 历史
+		if(translate.history.translateText.resultMap == null){
+			translate.history.translateText.resultMap = new Map();
+		}
+		if(translate.history.translateText.originalMap == null){
+			translate.history.translateText.originalMap = new Map();
 		}
 		//语系相关
 		if(translate.language.name == null){
@@ -10264,6 +10378,30 @@ var translate = {
 			}
 			translate.init_first_trigger_execute = 1;
 
+			//将自定义术语加入 translate.history.translateTexts 中
+			//console.log(translate.nomenclature.data);
+			for(var currentLanguage in translate.nomenclature.data){
+				if (!translate.nomenclature.data.hasOwnProperty(currentLanguage)) {
+		    		continue;
+		    	}
+		    	for(var targetLanguage in translate.nomenclature.data[currentLanguage]){
+					if (!translate.nomenclature.data[currentLanguage].hasOwnProperty(targetLanguage)) {
+			    		continue;
+			    	}
+			    	for(var originalText in translate.nomenclature.data[currentLanguage][targetLanguage]){
+						if (!translate.nomenclature.data[currentLanguage][targetLanguage].hasOwnProperty(originalText)) {
+				    		continue;
+				    	}
+				    	translate.history.translateText.add(originalText, translate.nomenclature.data[currentLanguage][targetLanguage][originalText]);
+				    }
+			    }
+		    }
+		   	//将忽略翻译的文本（固定的，非正则）加入 translate.history.translateTexts 中
+		    for(var ignore_i = 0; ignore_i < translate.ignore.text.length; ignore_i++){
+		    	translate.history.translateText.add(translate.ignore.text[ignore_i], translate.ignore.text[ignore_i]);
+		    }
+			
+			
 
 			//进行判断，DOM是否加载完成了，如果未加载完成就触发了 translate.execute 执行，那么弹出警告提示
 			if(document.readyState == 'loading'){
@@ -10285,7 +10423,11 @@ var translate = {
 			}
 		});
 
-		
+		//产生的数据回收，避免一直扩大占用内存
+		if(typeof(translate.recycle) != 'undefined'){
+			// 创建定时器，每1分钟执行一次 translate.recycle 进行清理数据存储
+			setInterval(translate.recycle, 60 * 1000);
+		}
 		
 	},
 	/*js translate.init end*/

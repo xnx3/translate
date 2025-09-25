@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.37.20250925',
+	version: '3.18.38.20250925',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -604,17 +604,22 @@ var translate = {
 	},
 
 	/*
-		判断当前是否需要进行翻译语言切换
+		判定当前是否使用翻译，也就是使用多语言切换能力
 		注意，它里面会触发 translate.language.getLocal() 进行判定，要保证提前设置了本地语种，或在dom加载完（网页内容已渲染完毕，以便能进行本地语种自动识别）后使用此
+		
+		@param to 要以什么语种显示。 如果不传入，则默认赋予 translate.to
 
 		true：是
 		false：否，不需要进行任何翻译
 	*/
-	isTranslate: function(){
-		if(translate.to.length === 0){
+	isTranslate: function(to){
+		if(typeof(to) === 'undefined'){
+			to = translate.to;
+		}
+		if(to.length === 0){
 			return false;
 		}
-		if(translate.to === translate.language.getLocal()){
+		if(to === translate.language.getLocal()){
 			if(translate.language.translateLocal){
 				return true;
 			}else{
@@ -1895,18 +1900,32 @@ var translate = {
                 每当触发执行 translate.execute() 时，会先进行当前是否可以正常进行翻译的判定，比如 当前语种是否就已经是翻译之后的语种了是否没必要翻译了等。（这些初始判定可以理解成它的耗时小于1毫秒，几乎没有耗时）
                 经过初始的判断后，发现允许被翻译，那么在向后执行之前，先触发此。  
                 也就是在进行翻译之前，触发此。 
-				
-                @param uuid：translate.nodeQueue[uuid] 这里的
-				@param to 翻译为的语种
+
+				{
+					uuid: ,			//translate.nodeQueue[uuid] 这里的
+					to: ,			//翻译为的语种
+				}
+               
             */
             start : [],
-            start_Trigger:function(uuid, to){
+            //start_Trigger:function(uuid, to){
+            start_Trigger:function(data){
             	for(var i = 0; i < translate.lifecycle.execute.start.length; i++){
-                    try{
-                        translate.lifecycle.execute.start[i](uuid, to);
-                    }catch(e){
-                        console.log(e);
-                    }
+            		if(translate.lifecycle.execute.translateNetworkBefore[i].length === 2){
+            			//原本的，旧版 20250925 之前的，是string方式传入 uuid, to 这2个参数
+            			try{
+	                        translate.lifecycle.execute.start[i](data.uuid, data.to);
+	                    }catch(e){
+	                        console.log(e);
+	                    }
+            		}else{
+            			try{
+	                        translate.lifecycle.execute.start[i](data);
+	                    }catch(e){
+	                        console.log(e);
+	                    }
+            		}
+                    
                 }
             },
 
@@ -10258,6 +10277,86 @@ var translate = {
 	},
 
 	/*
+		容错
+	*/
+	faultTolerance: {
+
+		// 优化文本节点创建的拦截逻辑
+		// 在对 continew-admin-ui 框架进行适配时，发现有tip鼠标提示场景，而且是出现在table中的，一下就会出来十个，它的渲染跟 translate.listener.start(); 监听有几率会出现一直循环的情况，也就是 translate.listener.start(); 将文本翻译了，然后vue自动给渲染还原，然后 translate.listener.start(); 继续给翻译，造成性能损耗。这里就是处理这种情况的
+		documentCreateTextNode: {
+			/*
+				原本的 document.createTextNode
+				如果不为null，则是已开启，也就是已经触发了 translate.faultTolerance.documentCreateTextNode.enable();
+				如果为null，则是未开启，有两种可能
+						1. 未触发 translate.faultTolerance.documentCreateTextNode.enable();
+						2. 触发了 translate.faultTolerance.documentCreateTextNode.disable();
+			*/
+			originalCreateTextNode: null,
+
+
+			/*
+				启用此容错的能力
+				如果触发此启用，那么会根据用户切换语言及设置，自动进行判定是否介入
+			*/
+			use:function(){
+				translate.lifecycle.changeLanguage.push(function(to){
+					if(translate.isTranslate(to)){
+						//需要触发翻译
+						translate.faultTolerance.documentCreateTextNode.enable();
+						console.log('translate.faultTolerance.documentCreateTextNode enable');
+					}else{
+						//不在翻译，禁用，释放
+						translate.faultTolerance.documentCreateTextNode.disable();
+						console.log('translate.faultTolerance.documentCreateTextNode disable');
+					}
+				});
+			},
+
+			/*
+				启用
+				可多次调用，如果多次调用，第一次启用，之后的都会不做任何处理
+			*/
+			enable: function(){
+
+				//如果已开启，那就不需要再重复启用了
+				if(originalCreateTextNode != null){
+					return;
+				}
+
+
+				originalCreateTextNode = document.createTextNode;
+				document.createTextNode = function(text) {
+					if(translate.executeTriggerNumber > 0){
+						//已经触发过翻译执行了，那么才会启用这个能力
+
+						if(typeof(text) === 'string' && text.length > 0){
+							var textTranslateResult = translate.history.translateText.originalMap.get(text);
+							if(typeof(textTranslateResult) === 'string' && textTranslateResult.length > 0){
+								// 直接更新text变量而不是arguments[0]
+								text = textTranslateResult;
+								console.log('创建文本节点: '+textTranslateResult);
+							}
+						}
+					}
+
+					// 创建文本节点 - 使用[text]数组代替arguments，使代码更明确和现代
+					const textNode = originalCreateTextNode.call(this, text);
+					return textNode;
+				};
+			},
+			/*
+				禁用。不再做任何处理，释放性能
+			*/
+			disable: function(){
+				if(originalCreateTextNode != null){
+					document.createTextNode = originalCreateTextNode;
+					originalCreateTextNode = null;
+				}
+			}
+		}
+	},
+
+	/*
 		快速接入，在head中引入使用，它集成了 translate.execute() 进去
 		
 		需要提前做的：
@@ -10532,7 +10631,9 @@ try{
   } else if (typeof module === 'object' && module.exports) {
     module.exports = factory();
   } else {
-    root['translate'] = factory();
+  	if(typeof(root) != 'undefined'){
+		root['translate'] = factory();
+	}
   }
 })(this, function () {
   return translate;

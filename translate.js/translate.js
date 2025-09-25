@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.38.20250925',
+	version: '3.18.39.20250925',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -10299,6 +10299,7 @@ var translate = {
 				如果触发此启用，那么会根据用户切换语言及设置，自动进行判定是否介入
 			*/
 			use:function(){
+				//当用户点击切换语言时触发
 				translate.lifecycle.changeLanguage.push(function(to){
 					if(translate.isTranslate(to)){
 						//需要触发翻译
@@ -10310,6 +10311,18 @@ var translate = {
 						console.log('translate.faultTolerance.documentCreateTextNode disable');
 					}
 				});
+
+				//当第一次打开页面执行翻译时，触发
+				translate.lifecycle.execute.start.push(function(data){
+				    if(translate.executeNumber === 0){
+				        console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
+				    	if(translate.isTranslate(data.to)){
+				    		console.log('data to -->'+data.to);
+				    		//需要触发翻译
+							translate.faultTolerance.documentCreateTextNode.enable();
+				    	}
+				    }
+				});
 			},
 
 			/*
@@ -10319,12 +10332,12 @@ var translate = {
 			enable: function(){
 
 				//如果已开启，那就不需要再重复启用了
-				if(originalCreateTextNode != null){
+				if(translate.faultTolerance.documentCreateTextNode.originalCreateTextNode != null){
 					return;
 				}
 
 
-				originalCreateTextNode = document.createTextNode;
+				translate.faultTolerance.documentCreateTextNode.originalCreateTextNode = document.createTextNode;
 				document.createTextNode = function(text) {
 					if(translate.executeTriggerNumber > 0){
 						//已经触发过翻译执行了，那么才会启用这个能力
@@ -10340,7 +10353,7 @@ var translate = {
 					}
 
 					// 创建文本节点 - 使用[text]数组代替arguments，使代码更明确和现代
-					const textNode = originalCreateTextNode.call(this, text);
+					const textNode = translate.faultTolerance.documentCreateTextNode.originalCreateTextNode.call(this, text);
 					return textNode;
 				};
 			},
@@ -10348,9 +10361,9 @@ var translate = {
 				禁用。不再做任何处理，释放性能
 			*/
 			disable: function(){
-				if(originalCreateTextNode != null){
-					document.createTextNode = originalCreateTextNode;
-					originalCreateTextNode = null;
+				if(translate.faultTolerance.documentCreateTextNode.originalCreateTextNode != null){
+					document.createTextNode = translate.faultTolerance.documentCreateTextNode.originalCreateTextNode;
+					translate.faultTolerance.documentCreateTextNode.originalCreateTextNode = null;
 				}
 			}
 		}

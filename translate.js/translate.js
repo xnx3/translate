@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.36.20250924',
+	version: '3.18.37.20250925',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -602,6 +602,29 @@ var translate = {
 	refreshCurrentPage:function(){
 		location.reload();
 	},
+
+	/*
+		判断当前是否需要进行翻译语言切换
+		注意，它里面会触发 translate.language.getLocal() 进行判定，要保证提前设置了本地语种，或在dom加载完（网页内容已渲染完毕，以便能进行本地语种自动识别）后使用此
+
+		true：是
+		false：否，不需要进行任何翻译
+	*/
+	isTranslate: function(){
+		if(translate.to.length === 0){
+			return false;
+		}
+		if(translate.to === translate.language.getLocal()){
+			if(translate.language.translateLocal){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			return true;
+		}
+	},
+
 	//自定义翻译术语
 	nomenclature:{
 		/*
@@ -10234,7 +10257,6 @@ var translate = {
 
 	},
 
-	
 	/*
 		快速接入，在head中引入使用，它集成了 translate.execute() 进去
 		

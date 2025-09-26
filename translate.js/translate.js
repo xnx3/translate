@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.42.20250926',
+	version: '3.18.43.20250926',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -10355,7 +10355,7 @@ var translate = {
 								// 直接更新text
 								originalText = text;
 								text = textTranslateResult;
-								console.log('创建文本节点: '+textTranslateResult);
+								//console.log('创建文本节点: '+textTranslateResult);
 								isTrans = true;
 							}
 						}

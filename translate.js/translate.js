@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.40.20250926',
+	version: '3.18.41.20250926',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2246,7 +2246,10 @@ var translate = {
 		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-开始');
 
 		//生命周期-触发翻译进行之前，用户自定义的钩子
-		translate.lifecycle.execute.start_Trigger(uuid, translate.to);
+		translate.lifecycle.execute.start_Trigger({
+			uuid:uuid,
+			to: translate.to
+		});
 		translate.time.log('生命周期-触发翻译进行之前，用户自定义的钩子-完成');
 		
 		translate.time.log('进行图片翻译-开始');
@@ -10476,7 +10479,7 @@ var translate = {
 	    		continue;
 	    	}
 			var expireTime = translate.nodeQueue[uuid].expireTime;
-			if(expireTime > currentTime){
+			if(expireTime+120 < currentTime){
 				nodeQueueDeleteArray.push(uuid);
 			}	
 		}
@@ -10685,8 +10688,6 @@ try{
   } else {
   	if(typeof(root) != 'undefined'){
 		root['translate'] = factory();
-	}else{
-
 	}
   }
 })(this, function () {
@@ -10694,4 +10695,3 @@ try{
 });
 /*兼容 AMD、CMD、CommonJS 规范 - end*/
 /*js amd-cmd-commonjs end*/
-

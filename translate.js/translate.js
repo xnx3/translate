@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.39.20250925',
+	version: '3.18.40.20250926',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1911,7 +1911,7 @@ var translate = {
             //start_Trigger:function(uuid, to){
             start_Trigger:function(data){
             	for(var i = 0; i < translate.lifecycle.execute.start.length; i++){
-            		if(translate.lifecycle.execute.translateNetworkBefore[i].length === 2){
+            		if(translate.lifecycle.execute.start[i].length === 2){
             			//原本的，旧版 20250925 之前的，是string方式传入 uuid, to 这2个参数
             			try{
 	                        translate.lifecycle.execute.start[i](data.uuid, data.to);
@@ -10293,12 +10293,22 @@ var translate = {
 			*/
 			originalCreateTextNode: null,
 
+			/*
+				发生改动操作的文本节点
+				key： node
+				value： 
+			*/
+			node:null,
 
 			/*
 				启用此容错的能力
 				如果触发此启用，那么会根据用户切换语言及设置，自动进行判定是否介入
 			*/
 			use:function(){
+				if(translate.faultTolerance.documentCreateTextNode.node == null){
+					translate.faultTolerance.documentCreateTextNode.node = new Map();
+				}
+
 				//当用户点击切换语言时触发
 				translate.lifecycle.changeLanguage.push(function(to){
 					if(translate.isTranslate(to)){
@@ -10339,21 +10349,50 @@ var translate = {
 
 				translate.faultTolerance.documentCreateTextNode.originalCreateTextNode = document.createTextNode;
 				document.createTextNode = function(text) {
+					var isTrans = false; //是否进行了翻译处理，true是
+					var originalText = null; //原本要创建node的文本，如果 isTrans为true，这里才会赋予
+
 					if(translate.executeTriggerNumber > 0){
 						//已经触发过翻译执行了，那么才会启用这个能力
 
 						if(typeof(text) === 'string' && text.length > 0){
 							var textTranslateResult = translate.history.translateText.originalMap.get(text);
 							if(typeof(textTranslateResult) === 'string' && textTranslateResult.length > 0){
-								// 直接更新text变量而不是arguments[0]
+								// 直接更新text
+								originalText = text;
 								text = textTranslateResult;
 								console.log('创建文本节点: '+textTranslateResult);
+								isTrans = true;
 							}
 						}
 					}
 
 					// 创建文本节点 - 使用[text]数组代替arguments，使代码更明确和现代
 					const textNode = translate.faultTolerance.documentCreateTextNode.originalCreateTextNode.call(this, text);
+					if(isTrans){
+						console.log(textNode);
+						translate.faultTolerance.documentCreateTextNode.node.set(textNode, {
+							originalText: originalText,
+							resultText: text
+						});
+						//将其记录到 translate.node.data
+						translate.node.set(textNode,{
+							translate_default_value:{
+								attribute:"",
+								originalText: originalText,
+								resultText: text,
+								translateTexts: {}, //这里因为直接从缓存中取的，没有走网络接口，所以这里直接空
+								whole: true
+							},
+							translateResults: {
+								[originalText]:1
+							},
+							lastTranslateRenderTime: Date.now()
+						});
+						
+						
+					}
+					
 					return textNode;
 				};
 			},
@@ -10646,6 +10685,8 @@ try{
   } else {
   	if(typeof(root) != 'undefined'){
 		root['translate'] = factory();
+	}else{
+
 	}
   }
 })(this, function () {
@@ -10653,3 +10694,4 @@ try{
 });
 /*兼容 AMD、CMD、CommonJS 规范 - end*/
 /*js amd-cmd-commonjs end*/
+

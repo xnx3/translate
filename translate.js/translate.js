@@ -10308,20 +10308,20 @@ var translate = {
 					if(translate.isTranslate(to)){
 						//需要触发翻译
 						translate.faultTolerance.documentCreateTextNode.enable();
-						console.log('translate.faultTolerance.documentCreateTextNode enable');
+						//console.log('translate.faultTolerance.documentCreateTextNode enable');
 					}else{
 						//不在翻译，禁用，释放
 						translate.faultTolerance.documentCreateTextNode.disable();
-						console.log('translate.faultTolerance.documentCreateTextNode disable');
+						//console.log('translate.faultTolerance.documentCreateTextNode disable');
 					}
 				});
 
 				//当第一次打开页面执行翻译时，触发
 				translate.lifecycle.execute.start.push(function(data){
 				    if(translate.executeNumber === 0){
-				        console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
+				        //console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
 				    	if(translate.isTranslate(data.to)){
-				    		console.log('data to -->'+data.to);
+				    		//console.log('data to -->'+data.to);
 				    		//需要触发翻译
 							translate.faultTolerance.documentCreateTextNode.enable();
 				    	}
@@ -10364,7 +10364,7 @@ var translate = {
 					// 创建文本节点 - 使用[text]数组代替arguments，使代码更明确和现代
 					const textNode = translate.faultTolerance.documentCreateTextNode.originalCreateTextNode.call(this, text);
 					if(isTrans){
-						console.log(textNode);
+						//console.log(textNode);
 						translate.faultTolerance.documentCreateTextNode.node.set(textNode, {
 							originalText: originalText,
 							resultText: text

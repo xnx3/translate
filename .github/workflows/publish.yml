@@ -14,7 +14,9 @@ jobs:
 
       # 发包前把 translate.js/translate.js 文件拷贝到根目录
       - name: Copy translate.js/translate.js to root
-        run: cp translate.js/translate.js index.js
+        run: 
+          cp translate.js/translate.js index.js
+          cp extend/* /
       
       # Setup .npmrc file to publish to npm
       - name: Set up Node.js

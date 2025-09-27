@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.53.20250927',
+	version: '3.18.54.20250927',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -185,6 +185,7 @@ var translate = {
 						return;
 					}
 					//console.log(data.list);
+					translate.request.api.language = data.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
 					translate.selectLanguageTag.customUI(data.list);
 				}, null);
 			}else if(typeof(translate.request.api.language) == 'object'){

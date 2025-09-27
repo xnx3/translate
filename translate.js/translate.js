@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.44.20250926',
+	version: '3.18.46.20250927',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1888,6 +1888,29 @@ var translate = {
 		*/
 		execute:{
 			/*
+                每当触发执行 translate.execute() 时，会直接触发此。  
+                这个触发是指在所有判断之前，也就是只要 触发了 translate.execute() 会立即触发此，然后在进行执行其他的。
+                {
+					to: ,			//翻译为的语种
+					docs: 			//当前触发 translate.execute() 要进行翻译的元素。 
+										比如单纯触发执行 translate.execute() 、translate.request.listener.start()  那么这里 docs 则是 通过 translate.setDocuments(...) 所设置的元素
+										如果是 translate.listener.start(); 监控页面发生变化的元素进行翻译，则这里的docs 则是发生变化的元素
+
+				}
+               	
+            */
+			trigger: [],
+			trigger_Trigger:function(data){
+            	for(var i = 0; i < translate.lifecycle.execute.trigger.length; i++){
+            		try{
+                        translate.lifecycle.execute.trigger[i](data);
+                    }catch(e){
+                        console.log(e);
+                    }
+                }
+            },
+
+			/*
                 每当触发执行 translate.execute() 时，会先进行当前是否可以正常进行翻译的判定，比如 当前语种是否就已经是翻译之后的语种了是否没必要翻译了等。（这些初始判定可以理解成它的耗时小于1毫秒，几乎没有耗时）
                 经过初始的判断后，发现允许被翻译，那么在向后执行之前，先触发此。  
                 也就是在进行翻译之前，触发此。 
@@ -2081,6 +2104,13 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
+		//钩子
+		translate.lifecycle.execute.trigger_Trigger({
+		    to:translate.to,
+		    docs: docs
+		});
+		
+
 		translate.executeTriggerNumber = translate.executeTriggerNumber + 1;
 		var triggerNumber = translate.executeTriggerNumber; //为了整个 translate.execute 的数据一致性，下面都是使用这个变量
 
@@ -2120,7 +2150,7 @@ var translate = {
 				//钩子
 				translate.lifecycle.execute.finally_Trigger({
 				    uuid:'',
-				    to:'',
+				    to:translate.to,
 				    state: 2,
 				    triggerNumber: triggerNumber
 				});
@@ -2202,7 +2232,7 @@ var translate = {
 				//钩子
 				translate.lifecycle.execute.finally_Trigger({
 				    uuid:'',
-				    to:'',
+				    to:translate.to,
 				    state: 3,
 				    triggerNumber: triggerNumber
 				});

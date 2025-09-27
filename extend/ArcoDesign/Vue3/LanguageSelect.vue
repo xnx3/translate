@@ -52,10 +52,8 @@ const LanguageSelectOnChange = (value: string) => {
 };
 
 onMounted(() => {
-  
   //重写渲染语言下拉列表出现时的函数，这里是为了把默认创建的 <div id="translate" 这个给去掉，其他无改变
   translate.selectLanguageTag.render = function(){ //v2增加
-    console.log('translate.selectLanguageTag.render已被渲染，触发来源:', new Error('调用栈追踪').stack);
     if(translate.selectLanguageTag.alreadyRender){
       return;
     }
@@ -74,6 +72,7 @@ onMounted(() => {
           console.log('load language list error : '+data.info);
           return;
         }
+        translate.request.api.language = data.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
         translate.selectLanguageTag.customUI(data.list);
       }, null);
     }else if(typeof(translate.request.api.language) == 'object'){
@@ -82,7 +81,7 @@ onMounted(() => {
     }
 
     //显示切换语言
-    var TranslateJsSelectLanguages = document.getElementsByClassName('TranslateJsSelectLanguage');
+    var TranslateJsSelectLanguages = document.getElementsByClassName('LanguageSelect');
     TranslateJsSelectLanguages[0].style.display = 'block';
   }
 
@@ -119,9 +118,6 @@ onMounted(() => {
       }, 50);
   }
 
-  
-  console.log('1111')
-
   const refreshLanguage = function(){
     //渲染语言下拉列表出现
     window.translate.selectLanguageTag.refreshRender();
@@ -132,7 +128,7 @@ onMounted(() => {
   // 当用户打开页面后，第一次触发 translate.execute() 时，进行触发
   translate.lifecycle.execute.trigger.push(function(data){
       if(translate.executeTriggerNumber === 0){
-          console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
+          //console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
           // 触发语言下拉列表出现
           //渲染语言下拉列表出现
           refreshLanguage();
@@ -140,7 +136,7 @@ onMounted(() => {
   });
 
   //如果已经触发了 translate.execute() 那么直接就渲染
-  console.log(translate.executeTriggerNumber+ ', '+translate.state)
+  //console.log(translate.executeTriggerNumber+ ', '+translate.state)
   if(translate.executeTriggerNumber > 0 || translate.state > 0){
     refreshLanguage();
   }

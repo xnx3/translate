@@ -14,7 +14,7 @@ jobs:
 
       # 发包前把 translate.js/translate.js 文件拷贝到根目录
       - name: Copy translate.js/translate.js to root
-          run: |
+          run: 
             cp translate.js/translate.js index.js
             mkdir -p ArcoDesign
             cp -r extend/ArcoDesign/* ArcoDesign/

@@ -16,6 +16,7 @@ jobs:
       - name: Copy translate.js/translate.js to root
         run: 
           cp translate.js/translate.js index.js
+          mkdir ArcoDesign
           cp -r extend/ArcoDesign/* ArcoDesign/
       
       # Setup .npmrc file to publish to npm

@@ -1,6 +1,6 @@
 {
   "name": "i18n-jsautotranslate",
-  "version": "3.18.44",
+  "version": "3.18.52",
   "description": "Two lines of js realize automatic html translation. No need to change the page, no language configuration file, no API key, SEO friendly!",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
   ],
   "files": [
     "index.js",
-    "extend/ArcoDesign/Vue3/TranslateJsSelectLanguage.vue"
+    "ArcoDesign/Vue3/SelectLanguage.vue"
   ],
   "homepage": "https://github.com/xnx3/translate#readme",
   "bugs": {

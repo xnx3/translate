@@ -24,7 +24,7 @@
 import { ref, onMounted  } from 'vue'; 
 // 需要同时导入Select和Option组件
 import { Select as ASelect, Option as ASelectOption } from '@arco-design/web-vue';
-import translate from 'i18n-jsautotranslate'
+//import translate from 'i18n-jsautotranslate'
 
 // 定义语言选项类型
 interface LanguageOption {

@@ -113,9 +113,10 @@ onMounted(() => {
       languageList.value = allowLanguageList;
 
       //显示上一次切换后的语种
-      setTimeout(function(){
-        language.value = translate.language.getCurrent();
-      }, 50);
+      language.value = translate.language.getCurrent();
+      //setTimeout(function(){
+        //language.value = translate.language.getCurrent();
+      //}, 100);
   }
 
   const refreshLanguage = function(){
@@ -125,16 +126,16 @@ onMounted(() => {
     language.value = translate.language.getCurrent();
   };
 
+
   // 当用户打开页面后，第一次触发 translate.execute() 时，进行触发
   translate.lifecycle.execute.trigger.push(function(data){
-      if(translate.executeTriggerNumber === 0){
+      if(data.executeTriggerNumber === 1){
           //console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
           // 触发语言下拉列表出现
           //渲染语言下拉列表出现
           refreshLanguage();
       }
   });
-
   //如果已经触发了 translate.execute() 那么直接就渲染
   //console.log(translate.executeTriggerNumber+ ', '+translate.state)
   if(translate.executeTriggerNumber > 0 || translate.state > 0){

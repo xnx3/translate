@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.62.20250928',
+	version: '3.18.63.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -24,7 +24,7 @@ var translate = {
 	/*js translate.setUseVersion2 start*/
 	setUseVersion2:function(){
 		translate.useVersion = 'v2';
-		console.log('提示：自 v2.10 之后的版本默认就是使用V2版本（当前版本为:'+translate.version+'）， translate.setUseVersion2() 可以不用再加这一行了。当然加了也无所谓，只是加了跟不加是完全一样的。');
+		translate.log('提示：自 v2.10 之后的版本默认就是使用V2版本（当前版本为:'+translate.version+'）， translate.setUseVersion2() 可以不用再加这一行了。当然加了也无所谓，只是加了跟不加是完全一样的。');
 	},
 	/*js translate.setUseVersion2 end*/
 	/*
@@ -48,6 +48,12 @@ var translate = {
  	 */
 	resourcesUrl:'//res.zvo.cn/translate',
 	/*js translate.resourcesUrl end*/
+
+	/*js translate.log start*/
+	log: function(obj){
+		console.log(obj);
+	},
+	/*js translate.log end*/
 
 	/**
 	 * 默认出现的选择语言的 select 选择框，可以通过这个选择切换语言。
@@ -161,7 +167,7 @@ var translate = {
 			if(document.getElementById(translate.selectLanguageTag.documentId) == null){
 				var findBody = document.getElementsByTagName('body');
 				if(findBody.length == 0){
-					console.log('body tag not find, translate.selectLanguageTag.render() is not show Select Language');
+					translate.log('body tag not find, translate.selectLanguageTag.render() is not show Select Language');
 					return;
 				}
 				var body_trans = findBody[0];
@@ -181,7 +187,7 @@ var translate = {
 				//从接口加载语种
 				translate.request.post(translate.request.api.language, {}, function(data){
 					if(data.result == 0){
-						console.log('load language list error : '+data.info);
+						translate.log('load language list error : '+data.info);
 						return;
 					}
 					//console.log(data.list);
@@ -263,8 +269,8 @@ var translate = {
 	 * 已废弃，v1使用的
 	 */
 	execute_v1:function(){
-		console.log('=====ERROR======');
-		console.log('The v1 version has been discontinued since 2022. Please use the latest V3 version and refer to: http://translate.zvo.cn/41162.html');
+		translate.log('=====ERROR======');
+		translate.log('The v1 version has been discontinued since 2022. Please use the latest V3 version and refer to: http://translate.zvo.cn/41162.html');
 	},
 	/*js translate.execute_v1 end*/
 
@@ -328,7 +334,7 @@ var translate = {
 		var v1 = ',en,de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr,';
 		if(v1.indexOf(','+languageName+',') > -1){
 			//用的是v1.x
-			console.log('您使用的是v1版本的切换语种方式，v1已在2021年就以废弃，请更换为v2，参考文档： http://translate.zvo.cn/41549.html');
+			translate.log('您使用的是v1版本的切换语种方式，v1已在2021年就以废弃，请更换为v2，参考文档： http://translate.zvo.cn/41549.html');
 			translate.check();
 			
 			var googtrans = '/'+translate.localLanguage+'/'+languageName;
@@ -380,7 +386,7 @@ var translate = {
 			}
 		}catch(e){
 			//增加try，避免异常导致无法用
-			console.log(e);
+			translate.log(e);
 		}
 		
 		translate.time.log('iframe 完成');
@@ -436,7 +442,7 @@ var translate = {
 					}
 				}catch(e){
 					//增加try，避免异常,比如跨域，中断导致无法用
-					console.log(e);
+					translate.log(e);
 				}
 			}
 		}
@@ -460,7 +466,7 @@ var translate = {
 	/*js translate.check start*/
 	check:function(){
 		if(window.location.protocol == 'file:'){
-			console.log('\r\n---WARNING----\r\ntranslate.js 主动翻译组件自检异常，当前协议是file协议，翻译组件要在正常的线上http、https协议下才能正常使用翻译功能\r\n------------');
+			translate.log('\r\n---WARNING----\r\ntranslate.js 主动翻译组件自检异常，当前协议是file协议，翻译组件要在正常的线上http、https协议下才能正常使用翻译功能\r\n------------');
 		}
 	},
 	/*js translate.check end*/
@@ -685,10 +691,10 @@ var translate = {
 				//如果from未传入，则自动识别当前页面的语种为from
 				//如果自动识别，也要确保是页面加载完后，免得放到了head里，那肯定啥也识别不出来
 				if(document.body == null){
-					console.log('使用错误！你使用自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但是你当前吧 translate.nomenclature.append 放在了body之前就加载了，body都还没加载出来，翻译区域当前无内容，所以无法识别当前页面的语种。请将 translate.nomenclature.append 放在翻译内容加载完后再执行 （注意，要将 translate.nomenclature.append 放在 translate.execute() 的前面），建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+					translate.log('使用错误！你使用自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但是你当前吧 translate.nomenclature.append 放在了body之前就加载了，body都还没加载出来，翻译区域当前无内容，所以无法识别当前页面的语种。请将 translate.nomenclature.append 放在翻译内容加载完后再执行 （注意，要将 translate.nomenclature.append 放在 translate.execute() 的前面），建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
 				}else{
 					if (document.readyState === 'loading') {
-	   					console.log('使用异常告警：你使用的自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但页面Dom还未加载完毕时就触发了它，如果翻译区域当前无内容或者内容不是完整的，会造成识别当前页面的语种会有异常不准确，你需要仔细确认这个问题。建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
+	   					translate.log('使用异常告警：你使用的自定义术语 translate.nomenclature.append 时，from 未传值，此时 translate.js 会自动识别当前翻译区域的内容是什么语种，但页面Dom还未加载完毕时就触发了它，如果翻译区域当前无内容或者内容不是完整的，会造成识别当前页面的语种会有异常不准确，你需要仔细确认这个问题。建议将 translate.nomenclature.append 放在 </body> 跟 </html> 之间。');
 					}
 				}
 				
@@ -1084,7 +1090,7 @@ var translate = {
 			*/
 			set: async function(hash, originalText, toLanguage, translateText){
 				if(typeof(translate.storage.IndexedDB) == 'undefined'){
-					console.log('ERROR: translate.storage.IndexedDB not find');
+					translate.log('ERROR: translate.storage.IndexedDB not find');
 					return;
 				}
 				var obj = await translate.storage.IndexedDB.get('hash_'+hash);
@@ -1104,11 +1110,11 @@ var translate = {
 			*/
 			export: async function(to){
 				if(typeof(translate.storage.IndexedDB) == 'undefined'){
-					console.log('ERROR: translate.storage.IndexedDB not find');
+					translate.log('ERROR: translate.storage.IndexedDB not find');
 					return;
 				}
 				if(typeof(to) != 'string'){
-					console.log('error : to param not find, example: "english"');
+					translate.log('error : to param not find, example: "english"');
 					return;
 				}
 				var text = 'translate.office.append(\'';
@@ -1514,7 +1520,7 @@ var translate = {
                     try{
                         translate.listener.execute.renderStartByApi[i](uuid, from, to);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             },
@@ -1533,7 +1539,7 @@ var translate = {
                     try{
                     	translate.listener.execute.renderFinishByApi[i](uuid, from, to);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             }
@@ -1693,8 +1699,8 @@ var translate = {
 							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
 							translate.node.get(this.nodes[hash][task_index]).lastTranslateRenderTime = Date.now();
 						}else{
-							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
-							console.log(this.nodes[hash][task_index]);
+							translate.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							translate.log(this.nodes[hash][task_index]);
 						}
 
 						//渲染页面进行翻译显示
@@ -1705,7 +1711,7 @@ var translate = {
 						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
 							if(typeof(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key]) == 'undefined'){
 								//这里不应该的
-								console.log('执行异常，渲染时，node 的 '+(nodeAttribute.attribute.length == 0? 'nodeValue':'attribute : '+nodeAttribute.attribute)+' 未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+								translate.log('执行异常，渲染时，node 的 '+(nodeAttribute.attribute.length == 0? 'nodeValue':'attribute : '+nodeAttribute.attribute)+' 未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
 							}else{
 								//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
 								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].translateTexts[task.originalText] = task.resultText;
@@ -1716,8 +1722,8 @@ var translate = {
 								translate.history.translateText.add(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].originalText ,analyseSet.resultText);
 							}
 						}else{
-							console.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
-							console.log(this.nodes[hash][task_index]);
+							translate.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							translate.log(this.nodes[hash][task_index]);
 						}
 						
 						//加入 translate.listener.ignoreNode
@@ -1824,7 +1830,7 @@ var translate = {
 			if(translate.waitingExecute.queue.length > 0){
 				return translate.waitingExecute.queue.shift();
 			}else{
-				console.log('警告， translate.waitingExecute.get 出现异常，quque已空，但还往外取。');
+				translate.log('警告， translate.waitingExecute.get 出现异常，quque已空，但还往外取。');
 				return null;
 			}
 		},
@@ -1904,7 +1910,7 @@ var translate = {
                 try{
                     translate.lifecycle.changeLanguage[i](to);
                 }catch(e){
-                    console.log(e);
+                    translate.log(e);
                 }
             }
 		},
@@ -1942,7 +1948,7 @@ var translate = {
                         	isNextExecute = false;
                         }
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
                 return isNextExecute;
@@ -1968,13 +1974,13 @@ var translate = {
             			try{
 	                        translate.lifecycle.execute.start[i](data.uuid, data.to);
 	                    }catch(e){
-	                        console.log(e);
+	                        translate.log(e);
 	                    }
             		}else{
             			try{
 	                        translate.lifecycle.execute.start[i](data);
 	                    }catch(e){
-	                        console.log(e);
+	                        translate.log(e);
 	                    }
             		}
                     
@@ -1990,7 +1996,7 @@ var translate = {
                     try{
                         translate.listener.execute.renderStartByApi[i](uuid, from, to);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             },
@@ -2041,14 +2047,14 @@ var translate = {
             			try{
 	                        translate.lifecycle.execute.translateNetworkBefore[i](data.uuid, data.from, data.to, data.texts);
 	                    }catch(e){
-	                        console.log(e);
+	                        translate.log(e);
 	                    }
             		}else{
             			//2025.9.15 之后的新的
             			try{
 	                        translate.lifecycle.execute.translateNetworkBefore[i](data);
 	                    }catch(e){
-	                        console.log(e);
+	                        translate.log(e);
 	                    }
             		}
                     
@@ -2073,7 +2079,7 @@ var translate = {
                     try{
                         translate.lifecycle.execute.translateNetworkAfter[i](data);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             },
@@ -2097,7 +2103,7 @@ var translate = {
                     try{
                         translate.lifecycle.execute.renderFinish[i](uuid, to);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             },
@@ -2128,7 +2134,7 @@ var translate = {
                     try{
                         translate.lifecycle.execute.finally[i](data);
                     }catch(e){
-                        console.log(e);
+                        translate.log(e);
                     }
                 }
             },
@@ -2232,7 +2238,7 @@ var translate = {
 				}
 				
 
-				console.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务'+sliceDocString);
+				translate.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务'+sliceDocString);
 				//console.log(docs);
 				translate.waitingExecute.add(docs);
 
@@ -2267,7 +2273,7 @@ var translate = {
 			//translate.execute_v1();
 			//return;
 			//v2.5.1增加
-			console.log('提示：https://github.com/xnx3/translate 在 v2.5 版本之后，由于谷歌翻译调整，免费翻译通道不再支持，所以v1版本的翻译接口不再被支持，v1全线下架。考虑到v1已不能使用，当前已自动切换到v2版本。如果您使用中发现什么异常，请针对v2版本进行适配。');
+			translate.log('提示：https://github.com/xnx3/translate 在 v2.5 版本之后，由于谷歌翻译调整，免费翻译通道不再支持，所以v1版本的翻译接口不再被支持，v1全线下架。考虑到v1已不能使用，当前已自动切换到v2版本。如果您使用中发现什么异常，请针对v2版本进行适配。');
 			translate.useVersion = 'v2';
 		}
 		
@@ -2296,7 +2302,7 @@ var translate = {
 		try{
 			translate.selectLanguageTag.render();	
 		}catch(e){
-			console.log(e);
+			translate.log(e);
 		}
 		
 		translate.time.log('渲染出选择语言的select窗口-已完成');
@@ -2364,8 +2370,8 @@ var translate = {
 		//console.log(all)
 		
 		if(all.length > 500){
-			console.log('------tip------');
-			console.log('translate.execute( docs ) 传入的docs.length 过大，超过500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前500个元素进行翻译');
+			translate.log('------tip------');
+			translate.log('translate.execute( docs ) 传入的docs.length 过大，超过500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前500个元素进行翻译');
 		}
 
 		//初始化 translate.element.tagAttribute ，主要针对 v3.17.10 版本的适配调整，对 translate.element.tagAttribute  的设置做了改变，做旧版本的适配
@@ -2386,7 +2392,7 @@ var translate = {
 		    	}
 			}  
 		}catch(e){
-			console.log(e);
+			translate.log(e);
 		}
 
 		translate.time.log('开始扫描要翻译区域的元素');
@@ -2417,8 +2423,8 @@ var translate = {
 		if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
 			translate.nodeQueue[uuid] = new Array();
 			translate.nodeQueue[uuid].list = [];
-			console.log('--- translate.js warn tip 警告！！ ---');
-			console.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
+			translate.log('--- translate.js warn tip 警告！！ ---');
+			translate.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
 		}
 		for(var lang in translate.nodeQueue[uuid].list){
 			if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
@@ -2881,7 +2887,7 @@ var translate = {
 				//console.log(lang);
 				//console.log(translate.nodeQueue[uuid]['list'][lang][thhash].nodes);
 				if(typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length) == 'undefined'){
-					console.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\''+lang+'\'][\''+thhash+'\'].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
+					translate.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\''+lang+'\'][\''+thhash+'\'].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
 					continue;
 				}
 		
@@ -2941,9 +2947,9 @@ var translate = {
 			}
 			
 			if(typeof(translateTextArray[lang]) == 'undefined' || translateTextArray[lang].length < 1){
-				console.log('异常,理论上不应该存在, lang:'+lang+', translateTextArray:');
-				console.log(translateTextArray);
-				console.log('你无需担心，这个只是个提示，它并不影响你翻译的正常进行，只是个异常提示而已，它会自动容错处理的，不会影响翻译的使用。');
+				translate.log('异常,理论上不应该存在, lang:'+lang+', translateTextArray:');
+				translate.log(translateTextArray);
+				translate.log('你无需担心，这个只是个提示，它并不影响你翻译的正常进行，只是个异常提示而已，它会自动容错处理的，不会影响翻译的使用。');
 
 				translate.state = 0;
 				translate.executeNumber++;
@@ -3019,7 +3025,7 @@ var translate = {
 						translate.translateRequest[uuid][data.from].executeFinish = 1; //1是执行完毕
 						translate.translateRequest[uuid][data.from].stoptime = Math.floor(Date.now() / 1000);
 					}else{
-						console.log('WARINNG!!! translate.translateRequest[uuid][data.from] is not object');
+						translate.log('WARINNG!!! translate.translateRequest[uuid][data.from] is not object');
 					}
 
 					//为了兼容 v3.14以前的translate.service 版本，做了判断
@@ -3036,17 +3042,17 @@ var translate = {
 					translate.waitingExecute.isAllExecuteFinish(uuid, from, to, 0, data.info);
 					
 
-					console.log('=======ERROR START=======');
-					console.log(translateTextArray[data.from]);
+					translate.log('=======ERROR START=======');
+					translate.log(translateTextArray[data.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
-					console.log('response : '+data.info);
-					console.log('=======ERROR END  =======');
+					translate.log('response : '+data.info);
+					translate.log('=======ERROR END  =======');
 					//translate.temp_executeFinishNumber++; //记录执行完的次数
 					return;
 				}
 				
 				if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
-					console.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
+					translate.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
 					return;
 				}
 
@@ -3086,8 +3092,8 @@ var translate = {
 						originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];
 						//console.log('bef:'+translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']);
 					}catch(e){
-						console.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
-						console.log(e);
+						translate.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
+						translate.log(e);
 						continue;
 					}
 					
@@ -3661,8 +3667,8 @@ var translate = {
 				if(typeof(node.tagName) == 'string' && node.tagName.length > 0){
 					return node.tagName;
 				}else{
-					console.log('warn : get nodeName is null, this node ignore translate. node : ');
-					console.log(node);
+					translate.log('warn : get nodeName is null, this node ignore translate. node : ');
+					translate.log(node);
 					return '';
 				}
 			}
@@ -4422,11 +4428,11 @@ var translate = {
 			if(translate.whole.class.length == 0 && translate.whole.tag.length == 0 && translate.whole.id.length == 0){
 				
 			}else{
-				console.log('您开启了 translate.whole 此次行为避开了浏览器端的文本语种自动识别，而是暴力的直接对某个元素的整个文本进行翻译，很可能会产生非常大的翻译量，请谨慎！有关每日翻译字符的说明，可参考： http://translate.zvo.cn/42557.html ');
+				translate.log('您开启了 translate.whole 此次行为避开了浏览器端的文本语种自动识别，而是暴力的直接对某个元素的整个文本进行翻译，很可能会产生非常大的翻译量，请谨慎！有关每日翻译字符的说明，可参考： http://translate.zvo.cn/42557.html ');
 			}
 
 			if(translate.whole.tag.indexOf('html') > -1){
-				console.log('自检发现您设置了 translate.whole.tag 其中有 html ，这个是不生效的，最大只允许设置到 body ');
+				translate.log('自检发现您设置了 translate.whole.tag 其中有 html ，这个是不生效的，最大只允许设置到 body ');
 			}
 		},
 
@@ -4690,10 +4696,10 @@ var translate = {
 		clearCacheLanguage:function(){
 			if(typeof(translate.language.setUrlParamControl_use) != 'undefined'){
 				if(translate.language.setUrlParamControl_use){
-					console.log('使用提示：')
-					console.log('translate.language.setUrlParamControl(...) 的作用是 可以通过URL传一个语种，来指定当前页面以什么语种显示。 参考文档： http://translate.zvo.cn/4075.html');
-					console.log('translate.language.clearCacheLanguage() 是清除历史翻译语种缓存，也就是清除之前指定翻译为什么语种。 参考文档：http://translate.zvo.cn/4080.html')
-					console.log('如果你执行了 translate.language.setUrlParamControl(...) 那么是要根据url传参来切换语种的，但是后面又出现了 translate.language.clearCacheLanguage() 它会阻止 translate.language.setUrlParamControl(...) 它的设置，即使有url传递翻译为什么语言，也会因为 translate.language.clearCacheLanguage() 给清除掉，使URL传参的语种不起任何作用。')
+					translate.log('使用提示：')
+					translate.log('translate.language.setUrlParamControl(...) 的作用是 可以通过URL传一个语种，来指定当前页面以什么语种显示。 参考文档： http://translate.zvo.cn/4075.html');
+					translate.log('translate.language.clearCacheLanguage() 是清除历史翻译语种缓存，也就是清除之前指定翻译为什么语种。 参考文档：http://translate.zvo.cn/4080.html')
+					translate.log('如果你执行了 translate.language.setUrlParamControl(...) 那么是要根据url传参来切换语种的，但是后面又出现了 translate.language.clearCacheLanguage() 它会阻止 translate.language.setUrlParamControl(...) 它的设置，即使有url传递翻译为什么语言，也会因为 translate.language.clearCacheLanguage() 给清除掉，使URL传参的语种不起任何作用。')
 				}
 			}
 			translate.to = '';
@@ -4995,7 +5001,7 @@ var translate = {
 
 						var romanceSentenceLanguage = translate.language.romanceSentenceAnaly(str);
 						if(romanceSentenceLanguage.length == 0){
-							console.log('语种识别异常，应该是 法语、西班牙语、葡萄牙语、意大利语 中的一种才是，除非是除了这四种语种之外的别的 罗曼语族 中的语种，当前已将 '+ str +'识别为英语。 你可以联系我们求助 https://translate.zvo.cn/4030.html');
+							translate.log('语种识别异常，应该是 法语、西班牙语、葡萄牙语、意大利语 中的一种才是，除非是除了这四种语种之外的别的 罗曼语族 中的语种，当前已将 '+ str +'识别为英语。 你可以联系我们求助 https://translate.zvo.cn/4030.html');
 						}else{
 							data.languageName = romanceSentenceLanguage;
 						}
@@ -5858,9 +5864,9 @@ var translate = {
 		translate.request.post(translate.request.api.ip, {}, function(data){
 			//console.log(data); 
 			if(data.result == 0){
-				console.log('==== ERROR 获取当前用户所在区域异常 ====');
-				console.log(data.info);
-				console.log('==== ERROR END ====');
+				translate.log('==== ERROR 获取当前用户所在区域异常 ====');
+				translate.log(data.info);
+				translate.log('==== ERROR END ====');
 			}else{
 				translate.storage.set('to',data.language);	//设置目标翻译语言
 				translate.to = data.language; //设置目标语言
@@ -6095,7 +6101,7 @@ var translate = {
 	            let replaceResult  = translate.util.replaceFromIndex(text, replaceIndex, replaceOriginalText, replaceResultText);
 
 	            if(replaceResult.replaceEndIndex < 1){
-	            	console.log('translate.util.findParticiple 中已经发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , index:'+indexArray[i]+',  translateOriginal:'+translateOriginal);
+	            	translate.log('translate.util.findParticiple 中已经发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , index:'+indexArray[i]+',  translateOriginal:'+translateOriginal);
 	            }else{
 	            	text = replaceResult.text;
 	            }
@@ -6772,7 +6778,7 @@ var translate = {
 				var tLang = translate.util.browserLanguage[language];
 				if(typeof(tLang) == 'undefined'){
 					//没有在里面
-					console.log('browser default language : '+language +', translate.js current translate channel not support this language ');
+					translate.log('browser default language : '+language +', translate.js current translate channel not support this language ');
 				}else{
 					return tLang;
 				}
@@ -6931,7 +6937,7 @@ var translate = {
 		*/
 		use: function(serviceName){
 			if(typeof(translate.enterprise) != 'undefined' && translate.enterprise.isUse == true){
-				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
+				translate.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\''+serviceName+'\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
 				return;
 			}
 			//console.log('--'+serviceName);
@@ -7055,8 +7061,8 @@ var translate = {
 
 								//进行对前后进行补齐数组
 								if(currentIndex < 0){
-									console.log('------ERROR--------');
-									console.log('翻译内容过多，进行拆分，但拆分判断出现异常，currentIndex：-1 请联系 http://translate.zvo.cn/43006.html 说明');
+									translate.log('------ERROR--------');
+									translate.log('翻译内容过多，进行拆分，但拆分判断出现异常，currentIndex：-1 请联系 http://translate.zvo.cn/43006.html 说明');
 								}
 								//前插入空数组填充
 								for(var addbeforei = 0; addbeforei<currentIndex; addbeforei++){
@@ -7086,8 +7092,8 @@ var translate = {
 					
 
 				}, 'get', true, {'content-type':'application/x-www-form-urlencoded'}, function(xhr){
-					console.log('---------error--------');
-					console.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
+					translate.log('---------error--------');
+					translate.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
 				}, true);
 
 
@@ -7196,7 +7202,7 @@ var translate = {
 						{},
 						function(data){
 							if (data.result == 0){
-								console.log('translate.js init 初始化异常：'+data.info);
+								translate.log('translate.js init 初始化异常：'+data.info);
 								return;
 							}else if(data.result == 1){
 								//服务端返回的最新版本
@@ -7205,7 +7211,7 @@ var translate = {
 								var currentVersion = translate.util.versionStringToInt(translate.version.replace('v',''));
 
 								if(newVersion > currentVersion){
-									console.log('Tip : translate.js find new version : '+data.version);
+									translate.log('Tip : translate.js find new version : '+data.version);
 								}
 							}
 						},
@@ -7481,7 +7487,7 @@ var translate = {
 						);
 					}catch(e){
 						//console.log('e0000');
-						console.log(e);
+						translate.log(e);
 						//time = 300000; //无法连接的，那么赋予 300 秒吧
 					}
 
@@ -7516,7 +7522,7 @@ var translate = {
 					
 				}else{
 					//异常，下标越界了！，固定返回最后一个
-					console.log('异常，下标越界了！index：'+queueIndex);
+					translate.log('异常，下标越界了！index：'+queueIndex);
 					queueIndex = queue.length-1;
 				}
 				//console.log(queueIndex);
@@ -7690,7 +7696,7 @@ var translate = {
 				        		try{
 					        		json = JSON.parse(xhr.responseText);
 					        	}catch(e){
-					        		console.log(e);
+					        		translate.log(e);
 					        	}
 				        	}
 			        	}
@@ -7709,17 +7715,17 @@ var translate = {
 			        			//判断是否是v2版本的翻译，如果是 translate.service 模式并且没有使用企业级翻译，参会提示
 			        			//2024.3月底开始，翻译使用量增加的太快，开源的翻译服务器有点扛不住经常出故障，所以直接把这个提示加到这里
 			        			if(translate.service.name == 'translate.service'){
-			        				console.log('----- translate.js 提示 -----\n翻译服务响应异常，解决这种情况可以有两种方案：\n【方案一】：使用采用最新版本 3.16.0及更高版本，js引用文件为 https://cdn.staticfile.net/translate.js/3.16.0/translate.js 并且使用 client.edge 模式 （增加一行设置代码就好，可参考 https://translate.zvo.cn/4081.html ），这样就不会再出现这种情况了，而且这个方案也是完全免费的。 \n【方案二】：采用企业级稳定翻译通道 ,但是这个相比于 方案一 来说，是有一定的收费的，大概一年600，这个就是专门为了高速及高稳定准备的，而相比于这个方案二，方案一则是全免费的。 因为方案二我们是部署了两个集群，而每个集群又下分了数个网络节点，包含中国大陆、香港、美国、欧洲、 等多个州，充分保障稳定、高效，同样也产生了不少成本，所以才需要付费。更多信息说明可以参考： http://translate.zvo.cn/4087.html \n【方案三】：私有部署你自己的翻译通道，并且启用内存级翻译缓存，毫秒级响应，但是需要依赖一台1核2G服务器，是最推荐的方式。具体参考：https://translate.zvo.cn/391129.html\n-------------');
+			        				translate.log('----- translate.js 提示 -----\n翻译服务响应异常，解决这种情况可以有两种方案：\n【方案一】：使用采用最新版本 3.16.0及更高版本，js引用文件为 https://cdn.staticfile.net/translate.js/3.16.0/translate.js 并且使用 client.edge 模式 （增加一行设置代码就好，可参考 https://translate.zvo.cn/4081.html ），这样就不会再出现这种情况了，而且这个方案也是完全免费的。 \n【方案二】：采用企业级稳定翻译通道 ,但是这个相比于 方案一 来说，是有一定的收费的，大概一年600，这个就是专门为了高速及高稳定准备的，而相比于这个方案二，方案一则是全免费的。 因为方案二我们是部署了两个集群，而每个集群又下分了数个网络节点，包含中国大陆、香港、美国、欧洲、 等多个州，充分保障稳定、高效，同样也产生了不少成本，所以才需要付费。更多信息说明可以参考： http://translate.zvo.cn/4087.html \n【方案三】：私有部署你自己的翻译通道，并且启用内存级翻译缓存，毫秒级响应，但是需要依赖一台1核2G服务器，是最推荐的方式。具体参考：https://translate.zvo.cn/391129.html\n-------------');
 			        			}
 
 			        			//console.log(xhr);
-					        	console.log('------- translate.js service api response error --------');
-					        	console.log('    http code : '+xhr.status);
-					        	console.log('    response : '+xhr.response);
-					        	console.log('    request url : '+url);
-					        	console.log('    request data : '+JSON.stringify(data));
-					        	console.log('    request method : '+method);
-					        	console.log('---------------------- end ----------------------');
+					        	translate.log('------- translate.js service api response error --------');
+					        	translate.log('    http code : '+xhr.status);
+					        	translate.log('    response : '+xhr.response);
+					        	translate.log('    request url : '+url);
+					        	translate.log('    request data : '+JSON.stringify(data));
+					        	translate.log('    request method : '+method);
+					        	translate.log('---------------------- end ----------------------');
 			        		}
 			        		
 			        	}
@@ -7782,7 +7788,7 @@ var translate = {
 				}else if(type == '[object Object]'){
 					//案例三
 					if(typeof(obj.texts) == 'undefined'){
-						console.log('translate.request.translateText 传入的值类型异常，因为你没有传入 obj.texts 要翻译的具体文本！ 请查阅文档： https://translate.zvo.cn/4077.html');	
+						translate.log('translate.request.translateText 传入的值类型异常，因为你没有传入 obj.texts 要翻译的具体文本！ 请查阅文档： https://translate.zvo.cn/4077.html');	
 					}
 					if(typeof(obj.texts) == 'string'){
 						//单个字符串
@@ -7798,7 +7804,7 @@ var translate = {
 						to = obj.to;
 					}
 				}else{
-					console.log('translate.request.translateText 传入的值类型错误，请查阅文档： https://translate.zvo.cn/4077.html');
+					translate.log('translate.request.translateText 传入的值类型错误，请查阅文档： https://translate.zvo.cn/4077.html');
 					return;
 				}
 			}
@@ -7855,12 +7861,12 @@ var translate = {
 				//console.log(resultData); 
 				//console.log(data); 
 				if(resultData.result == 0){
-					console.log('=======ERROR START=======');
-					console.log('from : '+resultData.from);
-					console.log('to : '+resultData.to);
-					console.log('translate text array : '+texts);
-					console.log('response : '+resultData.info);
-					console.log('=======ERROR END  =======');
+					translate.log('=======ERROR START=======');
+					translate.log('from : '+resultData.from);
+					translate.log('to : '+resultData.to);
+					translate.log('translate text array : '+texts);
+					translate.log('response : '+resultData.info);
+					translate.log('=======ERROR END  =======');
 					//return;
 				}
 
@@ -7978,14 +7984,14 @@ var translate = {
 								//console.log('translate.request.listener.start ... 执行翻译 --'+currentTime);
 								translate.execute();
 							}catch(e){
-								console.log(e);
+								translate.log(e);
 							}
 						}
 					}
 				}, 100);
 
 				if(typeof(PerformanceObserver) == 'undefined'){
-					console.log('因浏览器版本较低， translate.request.listener.start() 中 PerformanceObserver 对象不存在，浏览器不支持，所以 translate.request.listener.start() 未生效。');
+					translate.log('因浏览器版本较低， translate.request.listener.start() 中 PerformanceObserver 对象不存在，浏览器不支持，所以 translate.request.listener.start() 未生效。');
 					return;
 				}
 
@@ -8058,7 +8064,7 @@ var translate = {
 				            observer.observe({ entryTypes: ["resource"] });
 				            return;
 				        } catch (e) {
-				            console.log("PerformanceObserver entryTypes 失败，尝试 type 参数");
+				            translate.log("PerformanceObserver entryTypes 失败，尝试 type 参数");
 				        }
 				    }
 				}
@@ -8067,9 +8073,9 @@ var translate = {
 				// 回退到 type 参数
 				try {
 					observer.observe({ type: "resource", buffered: true });
-					console.log("使用 PerformanceObserver type");
+					translate.log("使用 PerformanceObserver type");
 				} catch (e) {
-					console.log("当前浏览器不支持 PerformanceObserver 的任何参数, translate.request.listener.start() 未启动");
+					translate.log("当前浏览器不支持 PerformanceObserver 的任何参数, translate.request.listener.start() 未启动");
 				}
 
 			}
@@ -8348,7 +8354,7 @@ var translate = {
 
 		if(lastUuid == ''){
 			if(config.selectLanguageRefreshRender){
-				console.log('提示，当前还未执行过翻译，所以 translate.reset(); 还原至翻译前的执行指令忽略');	
+				translate.log('提示，当前还未执行过翻译，所以 translate.reset(); 还原至翻译前的执行指令忽略');	
 			}
 			return;
 		}
@@ -8473,7 +8479,7 @@ var translate = {
 			//还有需要进行通过API接口进行翻译的文本，需要调用翻译接口
 			if(typeof(translate.request.api.translate) != 'string' || translate.request.api.translate == null || translate.request.api.translate.length < 1){
 				//用户已经设置了不掉翻译接口进行翻译
-				console.log('已设置了不使用 translate 翻译接口，翻译请求被阻止');
+				translate.log('已设置了不使用 translate 翻译接口，翻译请求被阻止');
 				return;
 			}
 
@@ -8529,7 +8535,7 @@ var translate = {
 			
 			if(translate.service.name == 'client.edge'){
 				translate.service.name = 'translate.service';
-				console.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\'client.edge\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
+				translate.log('您已启用了企业级翻译通道 translate.enterprise.use(); (文档：https://translate.zvo.cn/4087.html) , 所以您设置的 translate.service.use(\'client.edge\'); (文档：https://translate.zvo.cn/4081.html) 将失效不起作用，有企业级翻译通道全部接管。');
 				return;
 			}
 		},
@@ -8845,7 +8851,7 @@ var translate = {
 				try{
 					jsObject =  eval('(' + jsString + ')');
 				}catch(e){
-					console.log(e)
+					translate.log(e)
 					failureFunction(e);	
 					return;
 				}
@@ -9171,8 +9177,8 @@ var translate = {
 			    
 			    // 检查 URL 是否匹配
 			    if(typeof(rule.url) == 'undefined' && rule.url == ''){
-			    	console.log('WARINNG : translate.network.rule find url is null:');
-			    	console.log(rule);
+			    	translate.log('WARINNG : translate.network.rule find url is null:');
+			    	translate.log(rule);
 			    	continue;
 			    }
 			    //console.log(rule);
@@ -9264,8 +9270,8 @@ var translate = {
 	        	//console.log(url);
 	        	//console.log(rule);
 	        	if(typeof(rule.params) == 'undefined' && typeof(rule.params.length) == 'undefined' && rule.params.length < 1){
-	        		console.log('WARINNG: rule not find params , rule : ');
-	        		console.log(rule);
+	        		translate.log('WARINNG: rule not find params , rule : ');
+	        		translate.log(rule);
 	        		rule.params = [];
 	        	}
 	        	
@@ -9284,11 +9290,11 @@ var translate = {
 	                        const translateResultData = await translate.network._translateText(original);
 	                        
 	                        if(typeof(translateResultData) == 'undefined'){
-	                    				console.log('WARINNG: translateResultData is undefined');
+	                    				translate.log('WARINNG: translateResultData is undefined');
 	                    		}else if(typeof(translateResultData.result) == 'undefined'){
-	                    				console.log('WARINNG: translateResultData.result is undefined');
+	                    				translate.log('WARINNG: translateResultData.result is undefined');
 	                    		}else if(translateResultData.result != 1){
-	                    				console.log('WARINNG: translateResultData.result failure : '+translateResultData.info);
+	                    				translate.log('WARINNG: translateResultData.result failure : '+translateResultData.info);
 	                    		}else{
 	                    				params.set(paramName, decodeURIComponent(translateResultData.text[0]));
 	                    		}
@@ -10080,11 +10086,11 @@ var translate = {
 				//正常，body还没加载
 			}else{
 				if(config.inHeadTip){
-					console.log('警告： translate.visual.webPageLoadTranslateBeforeHiddenText() 要在 head 标签中触发才能达到最好的效果！');
+					translate.log('警告： translate.visual.webPageLoadTranslateBeforeHiddenText() 要在 head 标签中触发才能达到最好的效果！');
 				}
 			}
 			if(translate.language.local == ''){
-				console.log('提醒：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置本地语种，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
+				translate.log('提醒：在使用 translate.visual.webPageLoadTranslateBeforeHiddenText() 之前，请先手动设置你的本地语种，参考： http://translate.zvo.cn/4066.html  如果你不设置本地语种，则不管你是否有切换语言，网页打开后都会先短暂的不显示文字');
 			}
 
 			if(translate.language.local == '' || translate.language.translateLocal == true || translate.language.local != translate.language.getCurrent()){
@@ -10223,7 +10229,7 @@ var translate = {
 			start:function(){
 				if(translate.time.execute.isUse){
 					//已经启动过了，不需要再启动了
-					console.log('translate.time.execute.start() 已经启动过了，不需要再启动了');
+					translate.log('translate.time.execute.start() 已经启动过了，不需要再启动了');
 				}
 
 				translate.time.execute.data.isUse = true;
@@ -10287,7 +10293,7 @@ var translate = {
 					translate.time.execute.data[uuid].translateTexts = translateTexts;
 
 
-					console.log('[time][translate.execute()] '+translate.time.execute.data[uuid].allTime+'ms '+(typeof(translate.time.execute.data[uuid].translateNetworkBeforeTime) != 'undefined'? '(search&cache '+(translate.time.execute.data[uuid].translateNetworkBeforeTime - translate.time.execute.data[uuid].startTime)+'ms)':'')+ (translateTexts.length > 0 ?  (' , ['+translateLanguages+'] : ('+translateTexts.length+')['+translateTexts.slice(0, 3)+(translateTexts.length > 3 ? ', ...':'')+']'):''));
+					translate.log('[time][translate.execute()] '+translate.time.execute.data[uuid].allTime+'ms '+(typeof(translate.time.execute.data[uuid].translateNetworkBeforeTime) != 'undefined'? '(search&cache '+(translate.time.execute.data[uuid].translateNetworkBeforeTime - translate.time.execute.data[uuid].startTime)+'ms)':'')+ (translateTexts.length > 0 ?  (' , ['+translateLanguages+'] : ('+translateTexts.length+')['+translateTexts.slice(0, 3)+(translateTexts.length > 3 ? ', ...':'')+']'):''));
 				});
 			},
 			
@@ -10339,11 +10345,11 @@ var translate = {
 				}
 			} catch (e) {
 				// 如果获取调用栈失败，使用原始log方法
-				console.log(e);
+				translate.log(e);
 			}
 
 			functionName = functionName.replace('Object.','translate.');
-			console.log(functionName+'() '+usetime+' -> '+remark);
+			translate.log(functionName+'() '+usetime+' -> '+remark);
 		}
 
 	},
@@ -10650,8 +10656,8 @@ var translate = {
 
 			//进行判断，DOM是否加载完成了，如果未加载完成就触发了 translate.execute 执行，那么弹出警告提示
 			if(document.readyState == 'loading'){
-				console.log('WARNING : The dom triggered translate.exece() before it was fully loaded, which does not comply with usage standards. The execution of translate.exece() should be done after the DOM is loaded');
-				console.log('警告：DOM 在完全加载之前触发了 translate.execute() ，这不符合使用规范，容易出现异常。你应该检查一下你的代码，translate.execute() 的执行应该在DOM加载完成后');
+				translate.log('WARNING : The dom triggered translate.exece() before it was fully loaded, which does not comply with usage standards. The execution of translate.exece() should be done after the DOM is loaded');
+				translate.log('警告：DOM 在完全加载之前触发了 translate.execute() ，这不符合使用规范，容易出现异常。你应该检查一下你的代码，translate.execute() 的执行应该在DOM加载完成后');
 			}
 			
 
@@ -10734,8 +10740,10 @@ var nodeuuid = {
 
 
 /*js copyright-notice start*/
-console.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
-console.log('=======\n\n\n\n 注意，只有你当前用的这个版本，才能看到这个提示，那如果使用中遇到任何异常，可加我微信 xnx3com 帮你做完美适配\n\n\n\n=======');
+//延迟触发，方便拦截自定义
+setTimeout(function(){
+	translate.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
+}, 1000);
 /*js copyright-notice end*/
 
 //初始化

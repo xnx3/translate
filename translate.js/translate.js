@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.61.20250928',
+	version: '3.18.62.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -843,7 +843,15 @@ var translate = {
 
 
 		        //如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费 - 虽然这一步是不会到的，因为在这个方法的入口处就已经经过这个判定了
-		        if(nodeObject != null){
+		        if(nodeObject != null && typeof(nodeObject.node) !== 'undefined' && nodeObject.node !== null){
+
+		        	// 记录此次node的改变是有 translate.js 导致的，避免被dom改变监听给误以为别的引起的
+		        	if(translate.node.get(nodeObject.node) != null){
+		        		translate.node.get(nodeObject.node).lastTranslateRenderTime = Date.now();
+		        	}else{
+		        		//这个如果有 translate.js 内部自主触发，肯定不会没有值的。但是如果手动再其他程序里触发，那这个是会没有值的
+		        	}
+
 		        	if(nomenclatureKey === nomenclatureValue){
 		        		//自定义忽略翻译的文字 ,key 跟 value 相等，便是忽略翻译的
 		        		translate.element.nodeAnalyse.set(nodeObject.node, nomenclatureKey, nomenclatureValue, nodeObject.attribute);
@@ -4092,14 +4100,12 @@ var translate = {
 
 
 		//记录 nodeHistory - 判断text是否已经被拆分了
-		//console.log(textArray);
-		if(textArray.length > 1 || textArray[0] != text){
+		if(textArray.length > 0 && textArray[0] != text){  //主要是后面的是否相等，前面的>0只是避免代码报错
 			translate.node.get(node)[nodeAttribute.key].whole = false; //已经被拆分了，不是整体翻译了
 			//这时，也默认给其赋值操作，将自定义术语匹配后的结果进行赋予
 		}else{
 			translate.node.get(node)[nodeAttribute.key].whole = true; //未拆分，是整体翻译
 		}
-
 		//成功加入到 nodeQueue 的对象。 如果长度为0，那就是还没有加入到 translate.nodeQueue 中，可能全被自定义术语命中了
 		var addQueueObjectArray = [];
 

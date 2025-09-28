@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.60.20250928',
+	version: '3.18.61.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -771,10 +771,21 @@ var translate = {
 		            }
 		 */
 		replace: function(text, nomenclatureKey, nomenclatureValue, nodeObject){
-		    if(text.trim() == nomenclatureValue.trim() || nomenclatureKey.length == 0){
+			/*
+		    if(text.trim() == nomenclatureValue.trim()){
+		    	
+
 
 		        //这里是自定义术语被替换后，重新扫描时扫出来的，那么直接忽略，不做任何处理。因为自定义术语的结果就是最终结果了
 		        return {
+		            texts:[text],
+		            find:false,
+		            resultText:text
+		        }
+		    }
+		    */
+		    if(nomenclatureKey.length == 0){  //上个版本有这个，应该不会有这个情况，但是还是保留了
+		    	return {
 		            texts:[text],
 		            find:false,
 		            resultText:text
@@ -831,10 +842,15 @@ var translate = {
 		        }
 
 
-		        //如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费
-		        if(nodeObject != null && nomenclatureKey != nomenclatureValue){
-		            //console.log(nomenclatureKey+':'+nomenclatureValue);
-		            translate.element.nodeAnalyse.set(nodeObject.node, nomenclatureKey, nomenclatureValue, nodeObject.attribute);
+		        //如果是自定义术语的key等于value，则是属于指定的某些文本不进行翻译的情况，所以这里要单独判断一下，它俩不相等才会去进行替换操作，免得进行性能计算浪费 - 虽然这一步是不会到的，因为在这个方法的入口处就已经经过这个判定了
+		        if(nodeObject != null){
+		        	if(nomenclatureKey === nomenclatureValue){
+		        		//自定义忽略翻译的文字 ,key 跟 value 相等，便是忽略翻译的
+		        		translate.element.nodeAnalyse.set(nodeObject.node, nomenclatureKey, nomenclatureValue, nodeObject.attribute);
+		        	}else{
+		        		//自定义术语的
+		        		translate.element.nodeAnalyse.set(nodeObject.node, nomenclatureKey, nomenclatureValue, nodeObject.attribute);
+		        	}
 		        }
 		        
 		        return {
@@ -873,6 +889,7 @@ var translate = {
 		                           attribute: 要替换的node的attribute名称。如果传入 null,则是直接对 nodeValue 生效
 		                       }
 		 
+
 		  @returns {
 		               find:false,    //是否命中了自定义术语，命中了，则是 true，也代表 textArray 已经不是传入的那个了，已经被处理分割过了
 		               texts:['你','好'],    //针对传入的 textArray 参数，进行术语命中完成后，将命中术语的部分剔除掉，进行分割，所返回的新的textArray . 如果没有命中术语，那么这里是只有一个值，那便是返回传入的text
@@ -4000,6 +4017,7 @@ var translate = {
 				//translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
 			}
 		}
+		
 		//将当前节点文本的 不翻译文本规则，重新组合到 temporaryIgnoreTextsByRegex
 		if(temporaryIgnoreTexts.length == 0){
 			temporaryIgnoreTexts = translate.ignore.text;
@@ -4010,7 +4028,7 @@ var translate = {
 				translate.history.translateText.add(temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti]);
 			}
 		}
-
+		
 		/**** v3.10.2.20241206 - 增加自定义忽略翻译的文本，忽略翻译的文本不会被翻译 - 当然这样会打乱翻译之后阅读的连贯性 ****/
 		for(var ti = 0; ti<temporaryIgnoreTexts.length; ti++){
 			if(temporaryIgnoreTexts[ti].trim().length == 0){
@@ -7997,7 +8015,7 @@ var translate = {
 				        	}
 
 				        	if(ignoreUrl){
-				        		console.log('忽略：'+url);
+				        		//console.log('忽略：'+url);
 								continue;
 				        	}
 				        	if(translate.request.listener.trigger()){

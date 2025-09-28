@@ -127,9 +127,9 @@ onMounted(() => {
   };
 
 
-  // 当用户打开页面后，第一次触发 translate.execute() 时，进行触发
-  translate.lifecycle.execute.trigger.push(function(data){
-      if(data.executeTriggerNumber === 1){
+  // 当用户打开页面后，第一次过了初始化正式进行执行 translate.execute() 时，进行触发
+  translate.lifecycle.execute.start.push(function(data){
+      if(translate.selectLanguageTag.show === true && translate.selectLanguageTag.alreadyRender === false){
           //console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
           // 触发语言下拉列表出现
           //渲染语言下拉列表出现
@@ -137,8 +137,8 @@ onMounted(() => {
       }
   });
   //如果已经触发了 translate.execute() 那么直接就渲染
-  //console.log(translate.executeTriggerNumber+ ', '+translate.state)
-  if(translate.executeTriggerNumber > 0 || translate.state > 0){
+  //console.log(translate.executeNumber+ ', '+translate.state)
+  if(translate.executeNumber > 0 || translate.state > 0){
     refreshLanguage();
   }
 

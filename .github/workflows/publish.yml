@@ -18,6 +18,8 @@ jobs:
           cp translate.js/translate.js index.js
           mkdir -p ArcoDesign
           cp -r extend/ArcoDesign/* ArcoDesign/
+          mkdir -p vue
+          cp -r extend/vue/* vue/
       
       # Setup .npmrc file to publish to npm
       - name: Set up Node.js

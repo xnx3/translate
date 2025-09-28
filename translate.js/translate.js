@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.57.20250928',
+	version: '3.18.58.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4598,7 +4598,7 @@ var translate = {
 		map_data: null, //这是一个map 
 		map: function(){
 			if(translate.language.map_data == null){
-				map_data = translate.language.generateLanguageNameObject();
+				translate.language.map_data = translate.language.generateLanguageNameObject();
 			}
 			return map_data;
 		},
@@ -10530,7 +10530,7 @@ var translate = {
 		}
 		for(var qi = 0; qi < nodeQueueDeleteArray.length; qi++){
 			delete translate.nodeQueue[nodeQueueDeleteArray[qi]];
-			console.log('delete nodeQueue -> '+nodeQueueDeleteArray[qi]);
+			//console.log('delete nodeQueue -> '+nodeQueueDeleteArray[qi]);
 		}
 
 
@@ -10554,7 +10554,7 @@ var translate = {
 		}
 		for(var ti = 0; ti < timeExecuteDeleteArray.length; ti++){
 			delete translate.time.execute.data[timeExecuteDeleteArray[ti]];
-			console.log('delete translate.time.execute.data -> '+timeExecuteDeleteArray[ti]);
+			//console.log('delete translate.time.execute.data -> '+timeExecuteDeleteArray[ti]);
 		}
 		
 

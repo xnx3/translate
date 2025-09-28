@@ -107,6 +107,18 @@
 
         // 检查SSL证书状态
         function checkSslStatus() {
+            // 检查当前页面是否通过HTTPS访问
+            if (window.location.protocol === 'https:') {
+                // 如果是HTTPS访问，直接显示SSL证书已安装
+                document.querySelector('.loading').style.display = 'none';
+                document.getElementById('statusContent').style.display = 'block';
+                document.getElementById('sslStatus').className = 'ssl-status success';
+                document.getElementById('statusTitle').textContent = 'SSL证书已安装';
+                document.getElementById('statusMessage').textContent = '检测到您正在使用HTTPS访问，SSL证书已正确安装并生效。';
+                document.getElementById('installForm').style.display = 'none';
+                return;
+            }
+
             // 显示加载状态
             document.getElementById('sslStatus').className = 'ssl-status';
             document.querySelector('.loading').style.display = 'block';

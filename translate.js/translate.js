@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.55.20250928',
+	version: '3.18.56.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2159,7 +2159,7 @@ var translate = {
 		translate.lifecycle.execute.trigger_Trigger({
 		    to:translate.to,
 		    docs: all,
-		    executeTriggerNumber: triggerNumber
+		    executeTriggerNumber: triggerNumber,
 		    uuid: uuid
 		});
 		

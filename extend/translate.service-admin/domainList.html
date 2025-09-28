@@ -121,17 +121,7 @@
                     if (res.result == 1) {
                         domainListData = res.list;
                         let tableData = res.list || [];
-                        if(res.list.length == 1){
-                            document.getElementById('tongji').style.display='';
-                            document.getElementById('fileCacheHitSize').innerHTML=res.list[0].fileCacheHitSize;
-                            document.getElementById('memoryCacheHitSize').innerHTML=res.list[0].memoryCacheHitSize;
-                            document.getElementById('dayMaxSize').innerHTML=res.list[0].dayMaxSize;
-                            document.getElementById('maxCacheMemorySize').innerHTML=res.list[0].maxCacheMemorySize;
-                            document.getElementById('maxCacheFileSize').innerHTML=res.list[0].maxCacheFileSize;
 
-                        }else{
-                            document.getElementById('tongji').style.display='none';
-                        }
                         return {
                             "res":res,
                             "code": 0,
@@ -140,11 +130,7 @@
                             "data": tableData
                         };
                     } else {
-                        document.getElementById('tongji').style.display='none';
                         //msg.failure(res.info || 'API 请求失败');
-                        if(res.info.indexOf('还未添加网站') > -1){
-                            yindaoStart();
-                        }
                         return {
                             "res":res,
                             "code": 1,
@@ -293,74 +279,6 @@
 <!-- 引导 -->
 <script src="/module/driver.js/driver.min.js"></script>
 <link rel="stylesheet" href="/module/driver.js/driver.min.css">
-<script>
-    /**
-     * 运行引导。如果还没有网站，会出现引导提示，提示添加网站
-     */
-    function yindaoStart(){
-        const driver = new Driver({
-            doneBtnText: '结束指引', // 最终按钮上的文本 Text on the final button
-            closeBtnText: '关闭', // 当前步骤关闭按钮上的文本 Text on the close button for this step
-            nextBtnText: '下一步', //当前步骤下一步按钮上的文本 Next button text for this step
-            prevBtnText: '上一步', // 当前步骤上一步按钮上的文本 Previous button text for this step
-            onReset: function(Element) {
-                //打开添加网站的弹窗
-                showAddDomainDialog();
-            }, // 遮罩将要关闭时调用
-        });
-        //Define the steps for introduction
-        driver.defineSteps([
-            {
-                element: '#addDomainButton',
-                popover: {
-                    title: '通过这里添加网站',
-                    description: '您可以通过此处添加您的网站域名，添加后您的网站就可以使用大模型提供的翻译，并启用三层缓存加速，在此控制台方便查看实时数据信息',
-                    position: 'right'
-                }
-            },
-            {
-                element: '#translatejsUpdate',
-                popover: {
-                    title: '切换翻译通道',
-                    description: '您需要将您原本接入 translate.js 的地方，加一行js代码，来设置翻译通道是走当前的通道。',
-                    position: 'top'
-                }
-            },
-            {
-                element: '#jiaoliu',
-                popover: {
-                    title: '遇到困难求助',
-                    description: '如果您使用过程中遇到困难，可加入QQ群求助、以及关注公众号接收后续最新消息通知',
-                    position: 'top'
-                }
-            }
-        ]);
-        //Start the introduction
-        driver.start();
-    }
 
-</script>
-<div id="tongji" style="display:none;margin-top: 15px;">
-    今日命中文件缓存翻译的字符数： <span id="fileCacheHitSize"></span> <br/>
-    今日命中内存缓存翻译的字符数： <span id="memoryCacheHitSize"></span> <br/>
-    今日通过本翻译服务共翻译的字符数： <span id="dayMaxSize"></span> (已使用/总量) <br/>
-    当前内存缓存中的字符数： <span id="maxCacheMemorySize"></span> (已使用/总量) <br/>
-    当前文件缓存中的字符数： <span id="maxCacheFileSize"></span> (已使用/总量)
-</div>
-<div style="margin-top: 80px;" id="translatejsUpdate">
-    <h2>网站接入的 translate.js 部分改动</h2>
-    <div>
-        您可以先以开源的方式接入 translate.js ，接入完成上线后，将实际访问的域名，录入本系统，以打开您这个域名的白名单。
-        <br/>然后在你原本接入 translate.js 的地方，只需增加一行代码，即可接入有 <b>开源中国GiteeAI & 雷鸣云translate.js</b> 联合打造的大模型翻译通道，提供高速、稳定的使用体验。
-        <br/> 切换本通道时，如果你有设置 translate.service.use('client.edge'); 需要你将其改为 : translate.service.use('giteeAI');
-        <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 如果你没有设置翻译通道，那就直接在 translate.execute(); 的前面增加一行: translate.service.use('giteeAI');
-        <br/>如此，就完成了翻译通道的切换。你可以去你这个域名的页面，切换语言试试效果。第一次可能会有3~7秒的时间会稍慢，大模型翻译速度会稍慢，翻译之后服务端会加入缓存，第二次在切换这个语种时，则享受极速响应！
-        <br/>使用之后，再看这里看看上面的数据，它会实时显示你当前的用量情况
-        <br/>如果你是网络公司服务多个客户，我们建议你 <a href="http://translate.zvo.cn/391129.html" style="text-decoration: underline;" target="_black">私有部署我们这套系统</a>，用量限制、域名多少你自己做主。
-    </div>
-</div>
-<div id="jiaoliu" style="padding-top: 32px; position: fixed; bottom: 50px; width: 100%; padding-right: 80px; text-align: center; font-size: 16px;">
-    <a id="qqGroup" href="https://gitee.com/mail_osc/translate#%E4%BA%A4%E6%B5%81" target="_black">交流QQ群</a> | <span id="weixinhao">请关注微信公众号 wangmarket 以便随时接收最新消息。</span>
-</div>
 </body>
 </html>

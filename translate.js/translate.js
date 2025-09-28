@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.56.20250928',
+	version: '3.18.57.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1913,7 +1913,7 @@ var translate = {
             	for(var i = 0; i < translate.lifecycle.execute.trigger.length; i++){
             		try{
                         var isNext = translate.lifecycle.execute.trigger[i](data);
-                        if(typeof(isNext) === 'boolean' && boolean === false){
+                        if(typeof(isNext) === 'boolean' && isNext === false){
                         	isNextExecute = false;
                         }
                     }catch(e){
@@ -2156,12 +2156,25 @@ var translate = {
 
 
 		//钩子
-		translate.lifecycle.execute.trigger_Trigger({
+		var triggerIsNextExecute = translate.lifecycle.execute.trigger_Trigger({
 		    to:translate.to,
 		    docs: all,
 		    executeTriggerNumber: triggerNumber,
 		    uuid: uuid
 		});
+		if(!triggerIsNextExecute){
+			//终止执行
+			
+			//钩子
+			translate.lifecycle.execute.finally_Trigger({
+			    uuid:uuid,
+			    to:translate.to,
+			    state: 2,
+			    triggerNumber: triggerNumber
+			});
+
+			return;
+		}
 		
 
 
@@ -2202,7 +2215,7 @@ var translate = {
 				translate.lifecycle.execute.finally_Trigger({
 				    uuid:uuid,
 				    to:translate.to,
-				    state: 2,
+				    state: 4,
 				    triggerNumber: triggerNumber
 				});
 
@@ -2276,7 +2289,7 @@ var translate = {
 				translate.lifecycle.execute.finally_Trigger({
 				    uuid:uuid,
 				    to:translate.to,
-				    state: 3,
+				    state: 6,
 				    triggerNumber: triggerNumber
 				});
 
@@ -2296,7 +2309,7 @@ var translate = {
 				translate.lifecycle.execute.finally_Trigger({
 				    uuid:uuid,
 				    to:translate.to,
-				    state: 5,
+				    state: 8,
 				    triggerNumber: triggerNumber
 				});
 

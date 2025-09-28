@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.54.20250927',
+	version: '3.18.55.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1893,22 +1893,34 @@ var translate = {
                 这个触发是指在所有判断之前，也就是只要 触发了 translate.execute() 会立即触发此，然后在进行执行其他的。
                 {
 					to: ,			//翻译为的语种
-					docs: 			//当前触发 translate.execute() 要进行翻译的元素。 
-										比如单纯触发执行 translate.execute() 、translate.request.listener.start()  那么这里 docs 则是 通过 translate.setDocuments(...) 所设置的元素
+					docs: 			//当前触发 translate.execute() 要进行翻译的元素。
+										比如单纯触发执行 translate.execute() 、translate.request.listener.start()  那么这里 docs 则是 通过 translate.setDocuments(...) 所设置的元素。 如果没有使用 translate.setDocuments(...) 设置过，那就是翻译整个html页面。
 										如果是 translate.listener.start(); 监控页面发生变化的元素进行翻译，则这里的docs 则是发生变化的元素
-
+					executeTriggerNumber:  整数型，当前触发 translate.execute() 执行，属于打开页面后第几次执行 translate.execute() ， 它不会经过任何初始化判断，只要触发了 translate.execute() 就会立即+1，即使初始化判断当前不需要翻译、或者当前正在翻译需要排队等待，它依旧也会+1
+					
 				}
                	
+               	注意，它有返回参数，boolean 类型：
+               		true 则是继续执行 translate.execute() 
+               		false 则是不继续执行，直接终止本次的 translate.execute() 也就是后面的 translate.lifecycle.execute.start 都不会执行到，不会触发。
+					如果钩子没有任何返回值，则默认是 true
+
+               		如果本钩子有多个实现，其中某个实现返回 false，它不会阻止其他钩子的执行，其他的钩子实现也都会触发执行。 只不过里面只要其中有一个是返回 false，那么 translate.execute() 都会终止。
             */
 			trigger: [],
 			trigger_Trigger:function(data){
+				var isNextExecute = true; //是否继续向下执行，true则是继续执行，false则是不继续执行。 
             	for(var i = 0; i < translate.lifecycle.execute.trigger.length; i++){
             		try{
-                        translate.lifecycle.execute.trigger[i](data);
+                        var isNext = translate.lifecycle.execute.trigger[i](data);
+                        if(typeof(isNext) === 'boolean' && boolean === false){
+                        	isNextExecute = false;
+                        }
                     }catch(e){
                         console.log(e);
                     }
                 }
+                return isNextExecute;
             },
 
 			/*
@@ -2105,15 +2117,53 @@ var translate = {
 			 如果不传入或者传入null，则是翻译整个网页所有能翻译的元素	
 	 */ 
 	execute:function(docs){
+		translate.executeTriggerNumber = translate.executeTriggerNumber + 1;
+		var triggerNumber = translate.executeTriggerNumber; //为了整个 translate.execute 的数据一致性，下面都是使用这个变量
+
+		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
+		var uuid = translate.util.uuid();
+		translate.time.log('创建uuid:'+uuid);
+
+		//如果页面打开第一次使用，先判断缓存中有没有上次使用的语种，从缓存中取出
+		if(translate.to == null || translate.to == ''){
+			var to_storage = translate.storage.get('to');
+			if(to_storage != null && typeof(to_storage) != 'undefined' && to_storage.length > 0){
+				translate.to = to_storage;
+			}
+		}
+
+		/*
+			进行翻译指定的node操作。优先级为：
+			1. 这个方法已经指定的翻译 nodes
+			2. setDocuments 指定的 
+			3. 整个网页 
+			其实2、3都是通过 getDocuments() 取，在getDocuments() 就对2、3进行了判断
+		*/
+		var all;
+		if(typeof(docs) != 'undefined' && docs != null){
+			if(typeof(docs.length) == 'undefined'){
+				//不是数组，是单个元素
+				all = new Array();
+				all[0] = docs;
+			}else{
+				//是数组，直接赋予
+				all = docs;
+			}
+		}else{
+			//2、3
+			all = translate.getDocuments();
+		}
+
+
 		//钩子
 		translate.lifecycle.execute.trigger_Trigger({
 		    to:translate.to,
-		    docs: docs
+		    docs: all,
+		    executeTriggerNumber: triggerNumber
+		    uuid: uuid
 		});
 		
 
-		translate.executeTriggerNumber = translate.executeTriggerNumber + 1;
-		var triggerNumber = translate.executeTriggerNumber; //为了整个 translate.execute 的数据一致性，下面都是使用这个变量
 
 		if(translate.waitingExecute.use){
 			if(translate.state != 0){
@@ -2150,7 +2200,7 @@ var translate = {
 
 				//钩子
 				translate.lifecycle.execute.finally_Trigger({
-				    uuid:'',
+				    uuid:uuid,
 				    to:translate.to,
 				    state: 2,
 				    triggerNumber: triggerNumber
@@ -2188,9 +2238,7 @@ var translate = {
 		/****** 采用 2.x 版本的翻译，使用自有翻译算法 */
 		
 
-		//每次执行execute，都会生成一个唯一uuid，也可以叫做队列的唯一标识，每一次执行execute都会创建一个独立的翻译执行队列
-		var uuid = translate.util.uuid();
-		translate.time.log('创建uuid:'+uuid);
+		
 		//console.log('=====')
 		//console.log(translate.nodeQueue);
 		
@@ -2203,13 +2251,7 @@ var translate = {
 		//console.log(translate.nodeQueue);
 		//console.log('=====end')
 		
-		//如果页面打开第一次使用，先判断缓存中有没有上次使用的语种，从缓存中取出
-		if(translate.to == null || translate.to == ''){
-			var to_storage = translate.storage.get('to');
-			if(to_storage != null && typeof(to_storage) != 'undefined' && to_storage.length > 0){
-				translate.to = to_storage;
-			}
-		}
+		
 		
 		translate.time.log('渲染出选择语言的select窗口-开始');
 		//渲染select选择语言
@@ -2232,7 +2274,7 @@ var translate = {
 
 				//钩子
 				translate.lifecycle.execute.finally_Trigger({
-				    uuid:'',
+				    uuid:uuid,
 				    to:translate.to,
 				    state: 3,
 				    triggerNumber: triggerNumber
@@ -2252,8 +2294,8 @@ var translate = {
 
 				//钩子
 				translate.lifecycle.execute.finally_Trigger({
-				    uuid:'',
-				    to:'',
+				    uuid:uuid,
+				    to:translate.to,
 				    state: 5,
 				    triggerNumber: triggerNumber
 				});
@@ -2279,39 +2321,7 @@ var translate = {
 		translate.images.execute();
 		translate.time.log('进行图片翻译-完成');
 
-		/*
-			进行翻译指定的node操作。优先级为：
-			1. 这个方法已经指定的翻译 nodes
-			2. setDocuments 指定的 
-			3. 整个网页 
-			其实2、3都是通过 getDocuments() 取，在getDocuments() 就对2、3进行了判断
-		*/
-		var all;
-		if(typeof(docs) != 'undefined' && docs != null){
-			//1. 这个方法已经指定的翻译 nodes
-			
-			/* v3.12.6 注释，转到判断非null
-			if(docs == null){
-				//要翻译的目标区域不存在
-				console.log('translate.execute(...) 中传入的要翻译的目标区域不存在。');
-				translate.state = 0;
-				return;
-			}
-			*/
-			
-			if(typeof(docs.length) == 'undefined'){
-				//不是数组，是单个元素
-				all = new Array();
-				all[0] = docs;
-			}else{
-				//是数组，直接赋予
-				all = docs;
-			}
-			
-		}else{
-			//2、3
-			all = translate.getDocuments();
-		}
+		
 		//console.log('----要翻译的目标元素-----');
 		//console.log(all)
 		

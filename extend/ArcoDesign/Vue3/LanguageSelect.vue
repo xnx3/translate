@@ -52,6 +52,15 @@ const LanguageSelectOnChange = (value: string) => {
 };
 
 onMounted(() => {
+  if(typeof(translate) == 'object' && typeof(translate.vue3) == 'object' && typeof(translate.vue3.isUse) == 'boolean' && translate.vue3.isUse == true){
+    //正常，需要的,需要加载多语言切换Select
+  }else{
+    //不需要显示
+    return;
+  }
+
+  translate.time.log(translate.vue3.isUse);
+
   //重写渲染语言下拉列表出现时的函数，这里是为了把默认创建的 <div id="translate" 这个给去掉，其他无改变
   translate.selectLanguageTag.render = function(){ //v2增加
     if(translate.selectLanguageTag.alreadyRender){
@@ -82,7 +91,9 @@ onMounted(() => {
 
     //显示切换语言
     var TranslateJsSelectLanguages = document.getElementsByClassName('LanguageSelect');
-    TranslateJsSelectLanguages[0].style.display = 'block';
+    for(var li = 0; li<TranslateJsSelectLanguages.length; li++){
+      TranslateJsSelectLanguages[li].style.display = 'block';
+    }
   }
 
   //languageList 便是当前支持的能切换的语种，你可以 console.log(languageList); 打印出来看看
@@ -114,34 +125,12 @@ onMounted(() => {
 
       //显示上一次切换后的语种
       language.value = translate.language.getCurrent();
-      //setTimeout(function(){
-        //language.value = translate.language.getCurrent();
-      //}, 100);
   }
 
-  const refreshLanguage = function(){
-    //渲染语言下拉列表出现
-    window.translate.selectLanguageTag.refreshRender();
-    //显示上一次切换后的语种
-    language.value = translate.language.getCurrent();
-  };
-
-
-  // 当用户打开页面后，第一次过了初始化正式进行执行 translate.execute() 时，进行触发
-  translate.lifecycle.execute.start.push(function(data){
-      if(translate.selectLanguageTag.show === true && translate.selectLanguageTag.alreadyRender === false){
-          //console.log('这是打开页面后，第一次触发 translate.execute() ，因为translate.executeNumber 记录的是translate.execute() 执行完的次数。');
-          // 触发语言下拉列表出现
-          //渲染语言下拉列表出现
-          refreshLanguage();
-      }
-  });
-  //如果已经触发了 translate.execute() 那么直接就渲染
-  //console.log(translate.executeNumber+ ', '+translate.state)
-  if(translate.executeNumber > 0 || translate.state > 0){
-    refreshLanguage();
-  }
-
+  //渲染语言下拉列表出现
+  translate.selectLanguageTag.refreshRender();
+  //显示上一次切换后的语种
+  //language.value = translate.language.getCurrent();
 });
 
 

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.63.20250928',
+	version: '3.18.64.20250928',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1856,12 +1856,14 @@ var translate = {
 			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
 
 			//通过 uuid、from 取得本次翻译相关的 texts、nodes , 触发 translateNetworkAfter_Trigger 钩子
+			//获取请求日志
+			var requestData = translate.request.data[uuid].list[from][to];
 			translate.lifecycle.execute.translateNetworkAfter_Trigger({
 				uuid: uuid,
 				from: from,
 				to: to,
-				texts: translate.request.data[uuid].list[from].texts,
-				nodes: translate.request.data[uuid].list[from].nodes,
+				texts: requestData.texts,
+				nodes: requestData.nodes,
 				result: result,
 				info: info
 			});
@@ -2928,6 +2930,11 @@ var translate = {
 			将翻译请求的信息记录到 translate.js 本身中
 			uuid 每次 translate.execute() 触发生成的uuid
 				time: 触发后加入到 data 中的时间,13位时间戳
+				list: 记录当前uuid下发起的网络请求
+					from: 从什么语种进行的翻译，如： chinese_simplified 
+						to: 翻译为什么语种，如 ： english
+							nodes: 当前网络请求有哪些node节点，值为 [node1, node2, ...]
+							texts: 当前网络请求有哪些文本进行翻译，值为 [text1, text2, ...]
 
 		*/
 		translate.request.data[uuid] = {
@@ -2998,8 +3005,10 @@ var translate = {
 			}); 
 
 			//记入请求日志
-			translate.request.data[uuid].list[lang] = {
-				to: translate.to,
+			if(typeof(translate.request.data[uuid].list[lang]) === 'undefined'){
+				translate.request.data[uuid].list[lang] = {};
+			}
+			translate.request.data[uuid].list[lang][translate.to] = {
 				texts: translateTextArray[lang],
 				nodes: translateTextNodes,
 			};
@@ -3892,6 +3901,56 @@ var translate = {
 			*/
 
 		},
+		/*
+			将node转为element输出。
+				如果node是文本元素，则转化为这个文本元素所在的element元素
+				如果node是属性，则转化为这个属性所在的element元素
+				如果node本身就是元素标签，那就还是这样返回。
+			
+			
+			nodes: node数组，传入如 [node1,node2, ...] 它里面可能包含 node.nodeType 1\2\3 等值
+
+			返回这些node转化为所在元素后的数组，返回如 [element1, element2, ...]
+			注意的是
+				1. 输出的一定是 element 元素，也就是 node.nodeType 一定等于1
+				2. 输出的元素数组不一定等于传入的nodes数组，也就是他们的数量跟下标并不是对应相等的
+			
+		*/
+		nodeToElement: function(nodes){
+			var elements = new Array(); //要改动的元素
+
+			//遍历所有node组合到 nodes. 这个不单纯只是遍历组合，它会判断如果是文本节点，则取它的父级元素。它组合的结果是元素的集合
+		    for(var r = 0; r<nodes.length; r++){
+		    	var node = nodes[r];
+	    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
+	    			continue;
+	    		}
+	    		if(node.nodeType === 2){
+	    			//是属性节点，可能是input、textarea 的 placeholder ，获取它的父元素
+	    			var nodeParentElement = node.ownerElement;
+			        if(nodeParentElement == null){
+			        	continue;
+			        }
+			        elements.push(nodeParentElement);
+	    		}else if(node.nodeType === 3){
+	    			//是文本节点
+	    			var nodeParentElement = node.parentNode;
+	    			if(nodeParentElement == null){
+			        	continue;
+			        }
+			        elements.push(nodeParentElement);
+	    		}else if(node.nodeType === 1){
+	    			//元素节点了，直接加入
+	    			elements.push(node);
+	    		}else{
+	    			//1\2\3 都不是，这不应该是 translate.js 中应该出现的
+	    			translate.log('translate.element.nodeToElement 中，发现传入的node.nodeType 类型有异常，理论上不应该存在， node.nodeType:'+node.nodeType);
+	    			translate.log(node);
+	    		}
+	    	}	
+
+	    	return elements;
+		}
 	},
 
 	
@@ -8677,7 +8736,7 @@ var translate = {
 				if(typeof(translatejsTextElementHidden) == 'undefined' || translatejsTextElementHidden == null){
 					const style = document.createElement('style');
 			        // 设置 style 元素的文本内容为要添加的 CSS 规则
-			       	style.textContent = ' .translatejs-text-element-hidden{color: transparent !important; text-shadow: none !important;}';
+			       	style.textContent = ' .translatejs-text-element-hidden, .translatejs-text-element-hidden[type="text"]::placeholder{color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important;} ';
 			        style.id = 'translatejs-text-element-hidden';
 			        // 将 style 元素插入到 head 元素中
 			        document.head.appendChild(style);
@@ -8698,38 +8757,16 @@ var translate = {
 				if(translate.progress.api.isTip){
 					//translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					translate.lifecycle.execute.translateNetworkBefore.push(function(data){
-						var nodes = new Array(); //要改动的元素节点
-
-						//遍历所有node组合到 nodes
-					    for(var r = 0; r<data.nodes.length; r++){
-					    	var node = data.nodes[r];
-				    		if(typeof(node) == 'undefined' || typeof(node.parentNode) == 'undefined'){
-				    			continue;
-				    		}
-				    		nodes.push(node);
-				    	}	
+						//取出当前变动的node，对应的元素
+						var elements = translate.element.nodeToElement(data.nodes);
+						//console.log(elements)
 				    	
 						//隐藏所有node的文本
-					    for(var r = 0; r<nodes.length; r++){
-							if(nodes[r].nodeType === 1){
-					        	nodes[r].className = nodes[r].className+' translatejs-text-element-hidden';
-					        }else{
-					        	//不是元素，那么就取父级了  -- 这里即使翻译的属性，也要进行，比如 value 的 placeholder
-					        	var nodeParent = nodes[r].parentNode;
-						        if(nodeParent == null){
-						        	continue;
-						        }
-						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translatejs-text-element-hidden') > -1){
-					        		//父有了，那么子就不需要再加了
-						        	continue;
-						        }else{
-						        	//没有，添加
-						        	nodeParent.className = nodeParent.className+' translatejs-text-element-hidden';
-						        }
-					        }
+					    for(var r = 0; r<elements.length; r++){
+							elements[r].className = elements[r].className+' translatejs-text-element-hidden';
 						}
 
-						var rects = translate.visual.getRects(nodes);
+						var rects = translate.visual.getRects(elements);
 					    //console.log(rects)
 					    var rectsOneArray = translate.visual.rectsToOneArray(rects);
 
@@ -8743,70 +8780,29 @@ var translate = {
 
 						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
 						for(var r = 0; r<rectLineSplit.length; r++){
-						    if(rectLineSplit[r].node.nodeType === 1){
-					        	rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';
-					        }else{
-					        	//不是元素，那么就取父级了
-					        	var nodeParent = rectLineSplit[r].node.parentNode;
-						        if(nodeParent == null){
-						        	continue;
-						        }
-						        if(typeof(nodeParent.className) != 'undefined' && nodeParent.className != null && nodeParent.className.indexOf('translate_api_in_progress') > -1){
-					        		//父有了，那么子就不需要再加了
-						        	continue;
-						        }else{
-						        	//没有，添加
-						        	nodeParent.className = nodeParent.className+' translate_api_in_progress';
-						        }
-					        }
+					    	if(typeof(rectLineSplit[r].node.className) === 'string' && rectLineSplit[r].node.className.indexOf('translate_api_in_progress') > -1){
+					    		//已经存在了，就不继续加了
+					    	}else{
+					    		rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';	
+					    	}
 						}
-						
 					});
 					
-					translate.listener.execute.renderFinishByApi.push(function(uuid, from, to){
-					//translate.lifecycle.execute.renderFinish.push(function(uuid, to){ 这个是所有的全完成，得用单一的from完成就要立即对完成的from的显示，不然全完成就太慢了
-						for(var hash in translate.nodeQueue[uuid].list[from]){
-					    	if (!translate.nodeQueue[uuid].list[from].hasOwnProperty(hash)) {
-					    		continue;
-					    	}
-
-					    	for(var nodeindex in translate.nodeQueue[uuid].list[from][hash].nodes){
-					    		if (!translate.nodeQueue[uuid].list[from][hash].nodes.hasOwnProperty(nodeindex)) {
-						    		continue;
-						    	}
-
-					    		var node = translate.nodeQueue[uuid].list[from][hash].nodes[nodeindex].node;
-					    		
-					    		var operationNode;
-								if(node.nodeType === 1){
-									//是元素
-									operationNode = node;
-								}else{
-									//节点，如 #text
-									operationNode = node.parentNode;
-							        if(operationNode == null){
-							        	continue;
-							        }
+					translate.lifecycle.execute.translateNetworkAfter.push(function(data){
+						//取出当前变动的node，对应的元素
+						var elements = translate.element.nodeToElement(data.nodes);
+				    	
+				    	for(var r = 0; r<elements.length; r++){
+				    		if(typeof(elements[r].className) === 'string'){
+				    			if(elements[r].className.indexOf('translatejs-text-element-hidden') > -1){
+				    				//elements[r].className = elements[r].className.replace(/translatejs-text-element-hidden/g, '');
+				    			}
+				    			if(elements[r].className.indexOf('translate_api_in_progress') > -1){
+									//elements[r].className = elements[r].className.replace(/translate_api_in_progress/g, '');	
 								}
-
-
-								
-
-								if(typeof(operationNode.className) != 'undefined' && operationNode.className != null){
-									
-									if(operationNode.className.indexOf('translatejs-text-element-hidden') > -1){
-										operationNode.className = operationNode.className.replace(/translatejs-text-element-hidden/g, '');	
-									}
-									if(operationNode.className.indexOf('translate_api_in_progress') > -1){
-										operationNode.className = operationNode.className.replace(/translate_api_in_progress/g, '');	
-									}
-								}
-									
-
-								//nodeParent.className = parentClassName.replace(/translate_api_in_progress/g, '');
-								
-					    	}
-					    }
+				    		}
+				    	}
+						
 						
 					});
 

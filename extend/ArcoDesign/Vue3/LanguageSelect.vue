@@ -6,7 +6,7 @@
       value-key="id"
       @change="LanguageSelectOnChange"
       popup-class="ignore"
-      placeholder="请选择语言"
+      placeholder="please select language"
     >
       <!-- 语言选项列表（使用Select的子组件Option） -->
       <a-select-option

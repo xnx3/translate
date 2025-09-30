@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.64.20250928',
+	version: '3.18.66.20250930',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -518,6 +518,12 @@ var translate = {
 			if(ele == null || typeof(ele) == 'undefined'){
 				return false;
 			}
+			if(ele.nodeType === 2){ //是属性，将其转为元素判断，因为当前忽略配置，是针对元素配置的
+				ele = ele.ownerElement;
+			}else if(ele.nodeType === 3){
+				//文本节点，转为元素
+				ele = ele.parentNode;
+			}
 
 			var parentNode = ele;
 			var maxnumber = 100;	//最大循环次数，避免死循环
@@ -765,8 +771,7 @@ var translate = {
 		 *                  如果传入 null，则不进行任何替换操作
 		 *                  如果传入具体的值，则是： 
 		 *                      {
-		 *                          node: node节点
-		 *                          attribute: 要替换的node的attribute名称。如果传入 null,则是直接对 nodeValue 生效
+		 *                          node: node节点 ，要改动的文字所在的node节点。 如果改动的文字比如是 div 的title中，那么这里传入的node应该是 title 的node，而不是 div 的node
 		 *                      }
 		 *
 		 * @returns {
@@ -899,8 +904,7 @@ var translate = {
 		                   如果传入 null，则不进行任何替换操作
 		                   如果传入具体的值，则是： 
 		                       {
-		                           node: node节点
-		                           attribute: 要替换的node的attribute名称。如果传入 null,则是直接对 nodeValue 生效
+		                           node: node节点 ，要改动的文字所在的node节点。 如果改动的文字比如是 div 的title中，那么这里传入的node应该是 title 的node，而不是 div 的node
 		                       }
 		 
 
@@ -1309,6 +1313,54 @@ var translate = {
 			//console.log('refresh ignore finish: '+Object.keys(translate.listener.ignoreNode).length);
 		},
 
+		/*
+			用于监听发生改变的这个 node 是否有正常需要翻译的内容、以及是否是非translate.js触发的需要被翻译。
+			注意，传入进行判断的node中的文本必须是 node.nodeValue ，也就是这个必须是 node.nodeType == 2(某个元素的属性，比如 input 的 placeholder) 或 3(文本节点)， 这样他们才会有正常的 node.nodeValue，而且文本也存在于 node.nodeValue 中
+			比如 div title="你好" ，要对 title 的 你好 这个值进行判定，传入的node必须是 title 的 node，而非 div 的 node
+			它主要是为了给 translate.listener.addListener 中的动态监听node改变所服务的
+
+			@param node 要判断的这个是否需要触发翻译的node
+			@return boolean true：需要触发 translate.execute(node) 进行翻译
+		*/
+		nodeValueChangeNeedTranslate: function(node){
+			//是否是要加入翻译扫描触发执行，是则是true
+			var addTranslateExecute = true;
+
+			/*
+				不会进入翻译的情况 - 
+					1. 认为是有 translate.js 本身翻译导致的改变，不进行翻译
+						取 translate.node.data 中的数据，当改变的node节点在其中找到了对应的数据后，进行判定
+							1. 是整体翻译，且当前node改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件
+							2. 不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力，那就要根据最后翻译时间这个来判定了。如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒
+					2. 其他的情况如果后续发现有遗漏，再加入，当前没有这种考虑
+				*/	
+			if(translate.node.get(node) != null){
+				if(typeof(translate.node.get(node).whole) !== 'undefined' && translate.node.get(node).whole == true){
+					//整体翻译
+					if(typeof(translate.node.get(node).resultText) !== 'undefined' && translate.node.get(node).resultText === node.nodeValue){
+						//当前改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件，是有translate.js 本身翻译导致的，不进行翻译
+						addTranslateExecute = false;
+					}
+				}else{
+					//不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
+					//这就要根据最后翻译时间这个来判定了
+					if(typeof(translate.node.get(node).lastTranslateRenderTime) == 'number' && translate.node.get(node).lastTranslateRenderTime + 500 > Date.now()){
+						//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+						addTranslateExecute = false;
+					}
+				}
+			}
+
+			//如果新的里面没有非空白字符的值，那也不再触发翻译
+			if(addTranslateExecute === true){
+				if(node.nodeValue.trim().length === 0){
+					addTranslateExecute = false;
+				}
+			}
+
+			return addTranslateExecute;
+		},
+
 
 		//增加监听，开始监听。这个不要直接调用，需要使用上面的 start() 开启
 		addListener:function(){
@@ -1345,61 +1397,47 @@ var translate = {
 							}
 						}
 					}else if (mutation.type === 'attributes') {
-						//console.log(mutation);
-						if(mutation.attributeName === 'class'){
-							//如果是class，不做任何改变，直接跳出
+						if(mutation.attributeName === 'class' || mutation.attributeName === 'style'){
+							//如果是class/ style 这种常见的，不做任何改变，直接跳出
 							continue;
 						}
-						//console.log('listener attributes change --> ' + mutation.target.nodeName+'['+ mutation.attributeName + '] oldValue :'+mutation.oldValue);
 						
-						if(translate.node.get(mutation.target) != null){
-							
-							if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 1000 > Date.now()){
-								//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过1秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+						/*
+							这里要判断一些允许翻译的属性
+							input 的 placeholder 属性 ,直接判断 placeholder 就行了，也就 input、textarea 有这个属性
+							img 的 alt 属性
+							所有标签的 title 属性
+						*/
+						 
+						if(mutation.attributeName === 'placeholder' || mutation.attributeName === 'alt' || mutation.attributeName === 'title'){
+							//允许翻译
+						}else{
+							//判断是否是 translate.element.tagAttribute 自定义翻译属性的
+							var divTagAttribute = translate.element.tagAttribute[mutation.target.nodeName.toLowerCase()];
+							if(typeof(divTagAttribute) !== 'undefined' && divTagAttribute.attribute.indexOf(mutation.attributeName) > -1 && divTagAttribute.condition(mutation.target)){
+								//是自定义翻译这个属性的，以及判定是否达到翻译条件
+								//条件满足，允许翻译
 							}else{
-								//不是 translate.js 触发的改动
-								var nodeAttribute = translate.node.getAttribute(mutation.attributeName);
-								//console.log(translate.node.get(mutation.target)[nodeAttribute.key])
-								if(typeof(translate.node.get(mutation.target)[nodeAttribute.key]) != 'undefined'){
-									//从翻译历史中删掉，使这个属性还能继续被翻译
-									//console.log('delete translate.node.get(mutation.target)[nodeAttribute.key] -> '+mutation.attributeName);
-									delete translate.node.get(mutation.target)[nodeAttribute.key];
-								}
+								//条件不满足，不在翻译的属性范围
+								continue;
 							}
 						}
 
-						//最后，将这个属性加入待翻译
-						addNodes.push(mutation.target);
+						//这里出现的 mutation.target 是定位到了元素上面，而不是变化的这个 attributes 属性上，需要用 mutation.attributeName 获取到这个属性的node
+						var node = mutation.target.getAttributeNode(mutation.attributeName);
+						
+						//是否是要加入翻译扫描触发执行，是则是true
+						var addTranslateExecute = translate.listener.nodeValueChangeNeedTranslate(node);
+						if(addTranslateExecute){ //不是 translate.js 翻译引起的改变，那么
+							//console.log('listener attributes change ' + mutation.target.nodeName+'['+ mutation.attributeName + '] '+mutation.oldValue+' --> '+node.nodeValue);
+							translate.node.delete(node); 
+							addNodes = [node]; //将这个属性转为的node加入待翻译
+						}
 					}else if(mutation.type === 'characterData'){
 						//内容改变
 						
 						//是否是要加入翻译扫描触发执行，是则是true
-						var addTranslateExecute = true;
-
-						/*
-							不会进入翻译的情况 - 
-								1. 认为是有 translate.js 本身翻译导致的改变，不进行翻译
-									取 translate.node.data 中的数据，当改变的node节点在其中找到了对应的数据后，进行判定
-										1. 是整体翻译，且当前node改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件
-										2. 不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力，那就要根据最后翻译时间这个来判定了。如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒
-								2. 其他的情况如果后续发现有遗漏，再加入，当前没有这种考虑
-							*/	
-						if(translate.node.get(mutation.target) != null && typeof(translate.node.get(mutation.target).translate_default_value) != 'undefined'){
-							if(typeof(translate.node.get(mutation.target).translate_default_value.whole) != 'undefined' && translate.node.get(mutation.target).translate_default_value.whole == true){
-								//整体翻译
-								if(typeof(translate.node.get(mutation.target).translate_default_value.resultText) != 'undefined' && translate.node.get(mutation.target).translate_default_value.resultText === mutation.target.nodeValue){
-									//当前改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件，是有translate.js 本身翻译导致的，不进行翻译
-									addTranslateExecute = false;
-								}
-							}else{
-								//不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
-								//这就要根据最后翻译时间这个来判定了
-								if(typeof(translate.node.get(mutation.target).lastTranslateRenderTime) == 'number' && translate.node.get(mutation.target).lastTranslateRenderTime + 500 > Date.now()){
-									//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
-									addTranslateExecute = false;
-								}
-							}
-						}
+						var addTranslateExecute = translate.listener.nodeValueChangeNeedTranslate(mutation.target);
 
 						if(addTranslateExecute){ //不是 translate.js 翻译引起的改变，那么
 							translate.node.delete(mutation.target); 
@@ -1428,10 +1466,8 @@ var translate = {
 					}
 	          	}
 			    
-				//console.log(documents.length);
 				if(documents.length > 0){
 					//有变动，需要看看是否需要翻译，延迟10毫秒执行
-					
 					translate.time.log('监听到元素发生变化,'+documents.length+'个元素');
 
 					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
@@ -1473,7 +1509,7 @@ var translate = {
 					//console.log('translateNodeslength: '+translateNodes.length);
 
 					translate.time.log('将监听到的发生变化的元素进行整理,得到'+translateNodes.length+'个元素，对其进行翻译');
-					//console.log(translateNodes[0]);
+					//console.log(translateNodes);
 					
 					translate.execute(translateNodes);
 					//setTimeout(function() {
@@ -1694,12 +1730,25 @@ var translate = {
 
 
 						// translate.node 记录
-						var nodeAttribute = translate.node.getAttribute(task['attribute']);
-						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
-							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
-							translate.node.get(this.nodes[hash][task_index]).lastTranslateRenderTime = Date.now();
+						
+						var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
+						var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
+						if(typeof(task['attribute']) === 'string' && task['attribute'].length > 0){
+							//当前渲染任务是针对的元素的某个属性，这是要取出这个元素的具体属性，作为一个目的 node 来进行加入 translate.node 
+							//是操作的元素的某个属性
+							translateNode = this.nodes[hash][node_index].getAttributeNode(task['attribute']);
+							translateNode_attribute = task['attribute'];
 						}else{
-							translate.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
+							//操作的就是node本身
+							translateNode = this.nodes[hash][node_index];
+						}
+						//console.log(translateNode)
+						//var nodeAttribute = translate.node.getAttribute(task['attribute']);
+						if(translate.node.data.get(translateNode) != null){
+							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
+							translate.node.get(translateNode).lastTranslateRenderTime = Date.now();
+						}else{
+							translate.log('执行异常，渲染时，node 未在 translate.node 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+translateNode);
 							translate.log(this.nodes[hash][task_index]);
 						}
 
@@ -1708,22 +1757,14 @@ var translate = {
 						var analyseSet = translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
 						//console.log(analyseSet);
 
-						if(translate.node.data.get(this.nodes[hash][task_index]) != null){
-							if(typeof(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key]) == 'undefined'){
-								//这里不应该的
-								translate.log('执行异常，渲染时，node 的 '+(nodeAttribute.attribute.length == 0? 'nodeValue':'attribute : '+nodeAttribute.attribute)+' 未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
-							}else{
-								//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
-								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].translateTexts[task.originalText] = task.resultText;
-								//将翻译完成后要显示出的文本进行记录
-								translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].resultText = analyseSet.resultText;
+						if(translate.node.data.get(translateNode) != null){
+							//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
+							translate.node.get(translateNode).translateTexts[task.originalText] = task.resultText;
+							//将翻译完成后要显示出的文本进行记录
+							translate.node.get(translateNode).resultText = analyseSet.resultText;
 
-								//将其加入 translate.history.translateTexts 
-								translate.history.translateText.add(translate.node.get(this.nodes[hash][task_index])[nodeAttribute.key].originalText ,analyseSet.resultText);
-							}
-						}else{
-							translate.log('执行异常，渲染时，node未在 nodeHistory 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+this.nodes[hash][task_index]);
-							translate.log(this.nodes[hash][task_index]);
+							//将其加入 translate.history.translateTexts 
+							translate.history.translateText.add(translate.node.get(translateNode).originalText ,analyseSet.resultText);
 						}
 						
 						//加入 translate.listener.ignoreNode
@@ -2231,8 +2272,8 @@ var translate = {
 							if(sliceDoc[di].getAttribute('class') != null && typeof(sliceDoc[di].getAttribute('class')) == 'string' && sliceDoc[di].getAttribute('class').length > 0){
 								sliceDocString = sliceDocString + " class="+sliceDoc[di].getAttribute('class');
 							}
-						}else if(sliceDoc[di].nodeType === 3){
-							//node
+						}else if(sliceDoc[di].nodeType === 2 || sliceDoc[di].nodeType === 3){
+							//2属性 或 3文本节点
 							sliceDocString = sliceDocString + sliceDoc[di].nodeValue.replaceAll(/\r?\n/g, '[换行符]');
 						}
 					}
@@ -2241,7 +2282,6 @@ var translate = {
 				
 
 				translate.log('当前翻译未完结，新翻译任务已加入等待翻译队列，待上个翻译任务结束后便会执行当前翻译任务'+sliceDocString);
-				//console.log(docs);
 				translate.waitingExecute.add(docs);
 
 				//钩子
@@ -3202,7 +3242,7 @@ var translate = {
 			将已扫描的节点进行记录，这里是只要进行扫描到了，也就是在加入 translate.nodeQueue 时就也要加入到这里。
 			这是一个map，为了兼容es5，这里设置为null，在 translate.execute 中在进行初始化
 
-			key: node
+			key: node ,进行翻译的文本的node， 如果是 div 的 title属性进行的翻译，那这个node是定位在 title 上的node，而不是 div 这个依附的元素
 			value: 这是一个对像
 				其中，key的取值有这几种：
 				translate_default_value: 如果当前翻译的是元素本身的值或node节点本身的值(nodeValue)，那么这里的key就是固定的 translate_default_value
@@ -3255,7 +3295,7 @@ var translate = {
 				key: translate.node 中 translate.node.get(node)[attribute] 所使用的 attribute 的字符串，如 attribute_title 、translate_default_value
 				attribute: 这里是attribute具体的内容，比如 key 是 attribute_title 那么这里就是 title , key 是 translate_default_value 这里就是 '' 空字符串
 			}
-		 */
+		 
 		getAttribute:function(attribute){
 			var history_attribute;
 			if(typeof(attribute) != 'undefined' && attribute.length > 0){
@@ -3271,6 +3311,7 @@ var translate = {
 				attribute:attribute
 			}
 		},
+		*/
 		/*
 			刷新 translate.node.data 中的数据，剔除过时的（node已经不存在于dom的）
 		*/
@@ -3368,6 +3409,147 @@ var translate = {
 			*/
 			get:function(node, attribute){
 				return translate.element.nodeAnalyse.analyse(node,'','', attribute);
+			},
+			/*
+				同上，只不过这个是扫描 element/node 下的所有可翻译的子节点（下层节点），返回数组形态。
+				这里面的数组，已经经过判断， text 必然是有不为空的值的。
+				所以它的返回值，有可能是一个空的数组
+
+				[
+					{
+						node: 当前扫描出的node （传入的node、或下层node）
+						attribute: 是否是下层属性，比如 alt、placeholder , 如果是传入的node本身，不是任何下层属性，则这里是空白字符串 ''
+						text: 可进行翻译的文本，也就是当前数组中 node 的值的文本
+					},
+					...
+				]
+			*/
+			gets:function(node){
+				var resultArray = [];
+
+				var nodename = translate.element.getNodeName(node).toUpperCase();
+				switch (nodename) {
+				  case 'META': 	//meta标签，如是关键词、描述等
+				    var nodeAttributeName = node.name.toLowerCase();  //取meta 标签的name 属性
+					var nodeAttributePropertyOri = node.getAttribute('property'); //取 property的值
+					var nodeAttributeProperty = '';
+					if(typeof(nodeAttributePropertyOri) === 'string' && nodeAttributePropertyOri.length > 0){
+						nodeAttributeProperty = nodeAttributePropertyOri.toLowerCase();
+					}
+
+					if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description' || nodeAttributeName == 'sharetitle' || nodeAttributeProperty == 'og:title' || nodeAttributeProperty == 'og:description' || nodeAttributeProperty == 'og:site_name' || nodeAttributeProperty == 'og:novel:latest_chapter_name'){
+						if(typeof(node.content) === 'string' && node.content.trim().length > 0){
+							resultArray.push({
+								text: node.content,
+								attribute: 'content',
+								node: node.getAttributeNode('content')
+							});
+						}
+					}
+				    break;
+				  case 'IMG':
+				    if(typeof(node.alt) === 'string' && node.alt.trim().length > 0){
+						resultArray.push({
+							text: node.alt,
+							attribute: 'alt',
+							node: node.getAttributeNode('alt')
+						});
+					}
+				    break;
+				  case 'INPUT':  
+				  	/*
+						input，要对以下情况进行翻译
+							placeholder
+							type=button、submit 的情况下的 value 
+				  	*/
+
+				  	//针对 type=button、submit 的情况下的 value 
+				  	if(typeof(node.attributes.type) !== 'undefined' && node.attributes.type !== null &&  typeof(node.attributes.type.nodeValue) === 'string' && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
+						//取它的value
+						var input_value_node = node.attributes.value;
+						if(typeof(input_value_node) !== 'undefined' && input_value_node !== null && typeof(input_value_node.nodeValue) === 'string' && input_value_node.nodeValue.trim().length > 0){
+							resultArray.push({
+								text: input_value_node.nodeValue,
+								attribute: 'value',
+								node: input_value_node
+							});
+						}
+					}
+
+					//针对 placeholder
+					if(typeof(node.attributes['placeholder']) !== 'undefined' && typeof(node.attributes['placeholder'].nodeValue) === 'string' && node.attributes['placeholder'].nodeValue.trim().length > 0){
+						resultArray.push({
+							text: node.attributes['placeholder'].nodeValue,
+							attribute: 'placeholder',
+							node: node.attributes['placeholder']
+						});
+					}
+					break;
+				  case 'TEXTAREA':	
+				  	//针对 placeholder
+					if(typeof(node.attributes['placeholder']) !== 'undefined' && typeof(node.attributes['placeholder'].nodeValue) === 'string' && node.attributes['placeholder'].nodeValue.trim().length > 0){
+						resultArray.push({
+							text: node.attributes['placeholder'].nodeValue,
+							attribute: 'placeholder',
+							node: node.attributes['placeholder']
+						});
+					}
+					break;
+				}
+
+				//判断是否是 translate.element.tagAttribute 自定义翻译属性的
+				var divTagAttribute = translate.element.tagAttribute[nodename.toLowerCase()];
+				if(typeof(divTagAttribute) !== 'undefined'){
+					//有这个标签的自定义翻译某个属性
+					for(var ai = 0; ai<node.attributes.length; ai++){
+						var arrtibuteNodeName = translate.element.getNodeName(node.attributes[ai]).toLowerCase();
+						if(divTagAttribute.attribute.indexOf(arrtibuteNodeName) > -1 && divTagAttribute.condition(node)){
+							//包含这个属性，且自定义判断条件满足，允许翻译
+							//判定一下是否已经加入过了，如果没有加入过，才会加入。这里主要是针对input 标签进行判断，比如 input type="submit" 的，value值如果也被用户自定义翻译，那上面的value就已经加上了，不需要在加了
+							var isAlreadyAdd = false; //true已经加入过了
+							for(var ri = 0; ri < resultArray.length; ri++){
+								if(resultArray[ri].node === node.attributes[ai]){
+									//相同，则不在加入了
+									isAlreadyAdd = true;
+								}
+							}
+							if(!isAlreadyAdd){
+								resultArray.push({
+									text: node.attributes[ai].nodeValue,
+									attribute: arrtibuteNodeName,
+									node: node.attributes[ai]
+								});
+							}
+						}
+					}
+				}else{
+					//条件不满足，不在翻译的属性范围
+				}
+
+
+				//所有元素都要判定的属性 - title 属性
+				if(typeof(node['title']) === 'string' && node['title'].trim().length > 0){
+					var titleNode = node.getAttributeNode('title');
+					resultArray.push({
+						text: titleNode.nodeValue,
+						attribute: 'title',
+						node: titleNode
+					});
+				}
+
+
+				//最后判定 node 本身
+				if(typeof(node.nodeValue) === 'string' && node.nodeValue.trim().length > 0){
+			  		//返回传入的node本身
+				    resultArray.push({
+						text: node.nodeValue,
+						attribute: '',
+						node: node
+					});
+			  	}
+
+				
+				return resultArray;
 			},
 			/*
 				进行翻译之后的渲染显示
@@ -3476,6 +3658,7 @@ var translate = {
 
 				//正常的node ，typeof 都是 object
 
+				/* 这里是通用方法，不应该有限制
 				//console.log(typeof(node)+node);
 				if(nodename == '#text'){
 					//如果是普通文本，判断一下上层是否是包含在textarea标签中
@@ -3489,7 +3672,7 @@ var translate = {
 						}
 					}
 				}
-
+				*/
 
 
 				//console.log(nodename)
@@ -3648,11 +3831,23 @@ var translate = {
 				resultShowText: translate.element.nodeAnalyse.analyse 进行设置翻译后的文本渲染时，提前计算好这个node显示的所有文本，然后在赋予 dom，这里是计算好的node要整体显示的文本
 			*/	
 			analyseReplaceBefore_DateToTranslateNode:function(node, attribute, resultShowText){
-				if(translate.node.find(node)){
-					if(typeof(translate.node.get(node).translateResults) == 'undefined'){
-						translate.node.get(node).translateResults = {};
+				var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
+				var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
+
+				if(typeof(attribute) === 'string' && attribute.length > 0){
+					//是操作的元素的某个属性
+					translateNode = node.getAttributeNode(attribute);
+					translateNode_attribute = attribute;
+				}else{
+					//操作的就是node本身
+					translateNode = node;
+				}
+
+				if(translate.node.find(translateNode)){
+					if(typeof(translate.node.get(translateNode).translateResults) == 'undefined'){
+						translate.node.get(translateNode).translateResults = {};
 					}
-					translate.node.get(node).translateResults[resultShowText] = 1;
+					translate.node.get(translateNode).translateResults[resultShowText] = 1;
 				}else{
 					//翻译过程中，会有时间差，比如通过文本翻译api请求，这时node元素本身被其他js改变了，导致翻译完成后，原本的node不存在了
 					//console.log('[debug] 数据异常，analyse - set 中发现 translate.node 中的 node 不存在，理论上应该只要被扫描了，被翻译了，到这里就一定会存在的，不存在怎么会扫描到交给去翻译呢');
@@ -3699,7 +3894,7 @@ var translate = {
 
 			//console.log('---'+typeof(node)+', ');
 			//判断是否是有title属性，title属性也要翻译
-			if(typeof(node) == 'object' && typeof(node['title']) == 'string' && node['title'].length > 0){
+			if(typeof(node) == 'object' && typeof(node['title']) == 'string' && node['title'].trim().length > 0){
 				//将title加入翻译队列
 				//console.log('---'+node.title+'\t'+node.tagName);
 				//console.log(node)
@@ -3708,7 +3903,8 @@ var translate = {
 				//判断当前元素是否在ignore忽略的tag、id、class name中
 				if(!translate.ignore.isIgnore(node)){
 					//不在忽略的里面，才会加入翻译
-					translate.addNodeToQueue(uuid, node, node['title'], 'title');
+					//translate.addNodeToQueue(uuid, node, node['title'], 'title');
+					translate.addNodeToQueue(uuid, node.getAttributeNode('title'), node['title'], '');
 				}
 			}
 
@@ -3762,7 +3958,7 @@ var translate = {
 					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加					
 					if(!translate.ignore.isIgnore(node)){
 						//加入翻译
-						translate.addNodeToQueue(uuid, node, attributeValue, attributeName);
+						translate.addNodeToQueue(uuid, node.getAttributeNode(attributeName), attributeValue, '');
 					}
 				}
 			}
@@ -3785,22 +3981,16 @@ var translate = {
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
-			if(node.parentNode == null){
-				return;
+			if(node.nodeType === 2){  //是属性node，比如 div 的 title 属性的 node
+				if(node.ownerElement == null){
+					return;
+				}
+			}else{		//是元素了
+				if(node.parentNode == null){
+					return;
+				}	
 			}
-
-			//console.log('-----parent')
-			var parentNodeName = translate.element.getNodeName(node.parentNode);
-			//node.parentNode.nodeName;
-			if(parentNodeName == ''){
-				return;
-			}
-			if(translate.ignore.tag.indexOf(parentNodeName.toLowerCase()) > -1){
-				//忽略tag
-				//console.log('忽略tag：'+parentNodeName);
-				return;
-			}
-	
+			
 			/****** 判断忽略的class ******/
 			/*
 			这段理论上不需要了，因为在  translate.ignore.isIgnore 判断了
@@ -3834,13 +4024,21 @@ var translate = {
 				return;
 			}
 
-			//node分析
+			//node分析，分析这个node的所有可翻译属性（包含自定义翻译属性 translate.element.tagAttribute ）
+			var nodeAnalyChild = translate.element.nodeAnalyse.gets(node);
+			//console.log(nodeAnalyChild);
+			for(var nci = 0; nci < nodeAnalyChild.length; nci++){
+				translate.addNodeToQueue(uuid, nodeAnalyChild[nci].node, nodeAnalyChild[nci].text, '');
+			}
+			/*
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);
 			if(nodeAnaly['text'].length > 0){
 				//有要翻译的目标内容，加入翻译队列
-				//console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
-				translate.addNodeToQueue(uuid, nodeAnaly['node'], nodeAnaly['text']);
+				console.log(nodeAnaly)
+				console.log('addNodeToQueue -- '+nodeAnaly['node']+', text:' + nodeAnaly['text']);
+				translate.addNodeToQueue(uuid, nodeAnaly['node'], nodeAnaly['text'], '');
 			}
+			*/
 			
 			//console.log(nodeAnaly);
 			/*
@@ -4016,27 +4214,34 @@ var translate = {
 
 
 		/***** 记录这个node 到 translate.node.data，这也是node进入 translate.node.data 记录的第一入口 *****/
-		if(translate.node.get(node) == null){
-			translate.node.set(node, {});
+		var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
+		var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
+		if(typeof(attribute) === 'string' && attribute.length > 0){
+			//是操作的元素的某个属性
+			translateNode = node.getAttributeNode(attribute);
+			translateNode_attribute = attribute;
+		}else{
+			//操作的就是node本身
+			translateNode = node;
 		}
-		
-		
-		var nodeAttribute = translate.node.getAttribute(attribute);
+		if(translate.node.get(translateNode) == null){
+			translate.node.set(translateNode, {});
+		}
+
+		//var nodeAttribute = translate.node.getAttribute(attribute);
 		//console.log(text+'-----:');
 		//console.log(nodeAttribute);
-		if(typeof(translate.node.get(node)[nodeAttribute.key]) == 'undefined'){
-			translate.node.get(node)[nodeAttribute.key] = {};
-			//console.log(typeof(translate.node.get(node)[nodeAttribute.key]));
-		}
-		translate.node.get(node)[nodeAttribute.key].attribute = nodeAttribute.attribute;
-		if(typeof(translate.node.get(node)[nodeAttribute.key].originalText) == 'string'){
+		//if(typeof(translate.node.get(translateNode)[nodeAttribute.key]) == 'undefined'){
+		//	translate.node.get(node)[nodeAttribute.key] = {};
+		//}
+		translate.node.get(translateNode).attribute = translateNode_attribute;
+		if(typeof(translate.node.get(translateNode).originalText) === 'string'){
 			//这个节点有过记录原始显示的文本了，那么不再对其进行后续的扫描，除非它有被触发过动态监听元素改变， --- 至于它有被触发过动态监听元素改变--后续想怎么判定
 			//console.log(translate.node.get(node)[nodeAttribute.key].originalText+'\t又过了，不在翻译');
 			return;
 		}else{
 			//没有过，是第一次，那么赋予值
-			translate.node.get(node)[nodeAttribute.key].originalText = text;
-			//console.log(translate.node.get(node));
+			translate.node.get(translateNode).originalText = text;
 		}
 		//console.log(translate.node.get(node)[nodeAttribute.key]);
 		/*
@@ -4066,11 +4271,10 @@ var translate = {
 			return;
 		}
 		*/
-		if(typeof(translate.node.get(node)[nodeAttribute.key].translateTexts) == 'undefined'){
-			translate.node.get(node)[nodeAttribute.key].translateTexts = {};
+		if(typeof(translate.node.get(translateNode).translateTexts) === 'undefined'){
+			translate.node.get(translateNode).translateTexts = {};
 		}
 		/***** 自检完毕，准备进行翻译了 *****/
-
 
 
 		//原本传入的text会被切割为多个小块
@@ -4112,8 +4316,8 @@ var translate = {
 			
 			//console.log(textArray);
 			textArray = translate.nomenclature.dispose(textArray, temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti], {
-				node:node,
-				attribute:attribute
+				node:translateNode,
+				attribute:''
 			}).texts;
 			//console.log(textArray);
 		}
@@ -4141,8 +4345,8 @@ var translate = {
 				//console.log('----translate.nomenclature.dispose---');
 				//console.log(textArray);
 				var nomenclatureDispose = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
-					node:node,
-					attribute:attribute
+					node:translateNode,
+					attribute:''
 				});
 				
 				textArray = nomenclatureDispose.texts;
@@ -4166,10 +4370,10 @@ var translate = {
 
 		//记录 nodeHistory - 判断text是否已经被拆分了
 		if(textArray.length > 0 && textArray[0] != text){  //主要是后面的是否相等，前面的>0只是避免代码报错
-			translate.node.get(node)[nodeAttribute.key].whole = false; //已经被拆分了，不是整体翻译了
+			translate.node.get(translateNode).whole = false; //已经被拆分了，不是整体翻译了
 			//这时，也默认给其赋值操作，将自定义术语匹配后的结果进行赋予
 		}else{
-			translate.node.get(node)[nodeAttribute.key].whole = true; //未拆分，是整体翻译
+			translate.node.get(translateNode).whole = true; //未拆分，是整体翻译
 		}
 		//成功加入到 nodeQueue 的对象。 如果长度为0，那就是还没有加入到 translate.nodeQueue 中，可能全被自定义术语命中了
 		var addQueueObjectArray = [];
@@ -4210,14 +4414,14 @@ var translate = {
 			// translate.node 记录
 			
 			// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
-			translate.node.get(node).lastTranslateRenderTime = Date.now();
+			translate.node.get(translateNode).lastTranslateRenderTime = Date.now();
 			//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
-			translate.node.get(node)[nodeAttribute.key].translateTexts = {}; //这里全部命中了，所以根本没有走翻译接口的文本
+			translate.node.get(translateNode).translateTexts = {}; //这里全部命中了，所以根本没有走翻译接口的文本
 			//将翻译完成后要显示出的文本进行记录
-			translate.node.get(node)[nodeAttribute.key].resultText = translate.element.nodeAnalyse.get(node).text; //直接获取当前node显示出来的文本作为最后的结果的文本
+			translate.node.get(translateNode).resultText = translate.element.nodeAnalyse.get(node, attribute).text; //直接获取当前node显示出来的文本作为最后的结果的文本
 
 			//将其加入 translate.history.translateTexts 中
-			translate.history.translateText.add(translate.node.get(node)[nodeAttribute.key].originalText, translate.node.get(node)[nodeAttribute.key].resultText);
+			translate.history.translateText.add(translate.node.get(translateNode).originalText, translate.node.get(translateNode).resultText);
 		}
 		
 	},
@@ -8400,24 +8604,7 @@ var translate = {
 			config.notTranslateTip = true;
 		}
 
-		var currentLanguage = translate.language.getCurrent(); //获取当前翻译至的语种
-
-		var lastUuid = ''; //最后一次的uuid
-		for(var queue in translate.nodeQueue){
-			if (!translate.nodeQueue.hasOwnProperty(queue)) {
-	    		continue;
-	    	}
-	    	lastUuid = queue;
-		}
-		//console.log(queue);
-
-		if(lastUuid == ''){
-			if(config.selectLanguageRefreshRender){
-				translate.log('提示，当前还未执行过翻译，所以 translate.reset(); 还原至翻译前的执行指令忽略');	
-			}
-			return;
-		}
-
+		
 		/*
 		for(var lang in translate.nodeQueue[lastUuid].list){
 			if (!translate.nodeQueue[lastUuid].list.hasOwnProperty(lang)) {
@@ -8478,16 +8665,20 @@ var translate = {
 			if (!translate.node.get(key) == null) {
 	    		continue;
 	    	}
-			for(var attr in translate.node.get(key)){
-				if (!translate.node.get(key).hasOwnProperty(attr)) {
-		    		continue;
-		    	}
-				var analyse = translate.element.nodeAnalyse.get(key,translate.node.get(key)[attr].attribute);
-				if(typeof(translate.node.get(key)[attr].originalText) != 'string'){
+			//for(var attr in translate.node.get(key)){
+				//if (!translate.node.get(key).hasOwnProperty(attr)) {
+		    	//	continue;
+		    	//}
+
+				//var analyse = translate.element.nodeAnalyse.get(key,translate.node.get(key).attribute);
+	    		if(typeof(translate.node.get(key).originalText) !== 'string'){
 					continue;
 				}
-				translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key)[attr].originalText, translate.node.get(key)[attr].attribute);
-			}
+				//translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key).originalText, translate.node.get(key).attribute);
+				
+				//标注此次改动是有 translate.js 导致的 -- 这里就不用标记了，因为先已经移除了 translate.listener.observer 监听，所以不会再监听到还原的操作了
+				key.nodeValue = translate.node.get(key).originalText;
+			//}
 		}
 
 
@@ -8507,6 +8698,15 @@ var translate = {
 		//清除设置storage中的翻译至的语种
 		translate.storage.set('to', '');
 		translate.to = null;
+
+		//清除文本翻译记录
+		if(translate.history.translateText.originalMap !== null){
+			translate.history.translateText.originalMap.clear();
+		}
+		if(translate.history.translateText.resultMap !== null){
+			translate.history.translateText.resultMap.clear();
+		}
+		
 
 		//重新绘制 select 选择语言
 		if(config.selectLanguageRefreshRender){
@@ -8795,10 +8995,10 @@ var translate = {
 				    	for(var r = 0; r<elements.length; r++){
 				    		if(typeof(elements[r].className) === 'string'){
 				    			if(elements[r].className.indexOf('translatejs-text-element-hidden') > -1){
-				    				//elements[r].className = elements[r].className.replace(/translatejs-text-element-hidden/g, '');
+				    				elements[r].className = elements[r].className.replace(/translatejs-text-element-hidden/g, '');
 				    			}
 				    			if(elements[r].className.indexOf('translate_api_in_progress') > -1){
-									//elements[r].className = elements[r].className.replace(/translate_api_in_progress/g, '');	
+									elements[r].className = elements[r].className.replace(/translate_api_in_progress/g, '');	
 								}
 				    		}
 				    	}
@@ -10451,13 +10651,11 @@ var translate = {
 						});
 						//将其记录到 translate.node.data
 						translate.node.set(textNode,{
-							translate_default_value:{
-								attribute:"",
-								originalText: originalText,
-								resultText: text,
-								translateTexts: {}, //这里因为直接从缓存中取的，没有走网络接口，所以这里直接空
-								whole: true
-							},
+							attribute:"",
+							originalText: originalText,
+							resultText: text,
+							translateTexts: {}, //这里因为直接从缓存中取的，没有走网络接口，所以这里直接空
+							whole: true,
 							translateResults: {
 								[originalText]:1
 							},

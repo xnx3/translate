@@ -63,14 +63,15 @@ button{
 <div>
 	<h2>说明</h2>
 	1. 它支持对 layui i18n 的语种配置文件进行整体翻译。<br/>
-	2. 它有开源中国提供qwen3大模型算力支持，有<a href="https://gitee.com/mail_osc/translate" class="ignore">translate.js</a>提供翻译能力支持，免费开放给layui用户使用。 <br/>
-	3. 它对以下字符不会进行翻译：
+	2. 它有 <a href="https://ai.gitee.com/" target="_black">开源中国GiteeAI</a> 提供大模型算力支持，有 <a href="https://gitee.com/mail_osc/translate" class="ignore" target="_black">translate.js</a> 提供翻译能力支持，免费开放给layui用户使用。 <br/>
+  3. 如果你使用中有异常、出错等，可反馈至 <a href="https://gitee.com/mail_osc/translate/issues" target="_black">https://gitee.com/mail_osc/translate/issues</a> <br/>
+	4. 它对以下字符不会进行翻译：
 	<div id="not_translate"></div>
 </div>
 
 <script>
 //设置不被翻译的文本
-translate.ignore.text.push('layui\.i18n\.\$t');
+translate.ignore.text.push('layui.i18n.$t');
 translate.ignore.text.push('{format}');
 translate.ignore.text.push('{name}');
 translate.ignore.text.push('{length}');

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.68.20251010',
+	version: '3.18.70.20251010',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1121,7 +1121,7 @@ var translate = {
 					translate.log('error : to param not find, example: "english"');
 					return;
 				}
-				var text = 'translate.office.append(\'';
+				var text = 'translate.office.append(\''+to+'\',`';
 				
 				var data = await translate.storage.IndexedDB.list('hash_*');
 				for(var i in data){
@@ -2413,7 +2413,7 @@ var translate = {
 		
 		if(all.length > 500){
 			translate.log('------tip------');
-			translate.log('translate.execute( docs ) 传入的docs.length 过大，超过500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前500个元素进行翻译');
+			translate.log('translate.execute( docs ) 传入的docs.length 过大，超过1500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前1500个元素进行翻译');
 		}
 
 		//初始化 translate.element.tagAttribute ，主要针对 v3.17.10 版本的适配调整，对 translate.element.tagAttribute  的设置做了改变，做旧版本的适配
@@ -2439,7 +2439,7 @@ var translate = {
 
 		translate.time.log('开始扫描要翻译区域的元素');
 		//检索目标内的node元素
-		for(var i = 0; i< all.length & i < 500; i++){
+		for(var i = 0; i< all.length & i < 1500; i++){
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}

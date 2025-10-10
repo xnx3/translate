@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.66.20250930',
+	version: '3.18.68.20251010',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -9315,20 +9315,99 @@ var translate = {
 
 			obj: js对象
 			formatSupplementaryCharLength: 对这个js对象进行格式化自动补充字符的长度，比如 2、 4
+
+			2025.10.10 优化传入参数
+			obj:{
+				jsObject: 原本的obj参数， 也就是js对象
+				formatSupplementaryCharLength: 对这个js对象进行格式化自动补充字符的长度，比如 2、 4 ,默认不设置则是4
+				functionBodyHandle: 针对值是function函数类型时，可以自定义对函数体的源码进行处理，它是传入 function 类型的，比如：
+						functionBodyHandle: function(functionBody){
+							functionBody = functionBody+'123';
+							return functionBody;
+						}
+						传入值是函数体的string类型的源码内容
+						返回值是修改过后最新的函数体的string类型的源码内容
+						这是 2025.10.10 新增参数，应对layui的 i18n 全自动翻译函数体中的字符串文本
+			}
 		*/
 		objToString:function(obj, formatSupplementaryCharLength){
+			if(typeof(obj) === 'object'){
+				if(typeof(obj.jsObject) === 'object'){
+					//是 2025.10.10 以后的新版本
+				}else{
+					//是 2025.10.10 以前的旧版本
+					var newObj = {
+						jsObject: obj
+					}
+					obj = newObj;
+				}
+			}else{
+				obj = {};
+			}
+			if(typeof(formatSupplementaryCharLength) === 'number'){
+				obj.formatSupplementaryCharLength = formatSupplementaryCharLength;
+			}
+			//未设置，就赋予默认值4
+			if(typeof(obj.formatSupplementaryCharLength) !== 'number'){
+				obj.formatSupplementaryCharLength = 4; 
+			}
+
 			// 自定义replacer函数，将函数转换为字符串
-			const jsonStr = JSON.stringify(obj, (key, value) => {
+			let jsonStr = JSON.stringify(obj.jsObject, (key, value) => {
 			  if (typeof value === 'function') {
 			    // 将函数转换为其源代码字符串
-			    return value.toString();
+			    var funcString = value.toString();
+			    if(typeof(funcString) === 'string' && funcString.length > 0){
+			    	funcString = funcString.replace(/\n/g, '___TRANSLATEJS_LINE_BREAK___');	
+			    }
+			    return funcString;
+			  }else{
+			  	return value;
 			  }
-			  return value;
-			}, formatSupplementaryCharLength);
 
-			// 将转义的\n替换为实际的换行符
-			const formattedStr = jsonStr.replace(/\\n/g, '\n');
-			return formattedStr;
+	          return result;
+			}, obj.formatSupplementaryCharLength);
+
+
+			//对 function 的函数体进行处理
+			// 将转义的\n替换为实际的换行符 -- 20251009 优化，去掉换行符替换，layui 工具中发现这样会将原本文本中的换行符替换掉，而是调整为仅仅针对function方法进行针对替换
+			// 逐行判断，判断其中哪一行的value是function，要将function的字符串格式变为function函数格式
+			if(jsonStr.indexOf('___TRANSLATEJS_LINE_BREAK___') > -1){
+				const lines = jsonStr.split('\n');
+			    for(var li = 0; li<lines.length; li++){
+			    	// 检查当前行是否包含特定标记
+			        if (lines[li].includes('___TRANSLATEJS_LINE_BREAK___')) {
+			        	lines[li] = lines[li].replace(/___TRANSLATEJS_LINE_BREAK___/g, '\n'); //将其替换为原本的换行符
+
+			            // 查找值部分（假设格式是 "key": "function..."）
+			            const valueMatch = lines[li].match(/"[^"]+":\s*"([^"]+)"/);
+			            if (valueMatch && valueMatch[1]) {
+			                // 替换换行标记为实际换行
+			                let functionStr = valueMatch[1].replace(/___TRANSLATEJS_LINE_BREAK___/g, '\n');
+			                
+			                // 将函数字符串转换为实际函数
+			                try {
+			                    // 使用Function构造函数创建函数更安全一些
+			                    const functionParts = functionStr.match(/function\s*([^\(]*)\(([^)]*)\)\s*\{([\s\S]*)\}/);
+			                    
+			                    if (functionParts) {
+			                        var [, name, params, body] = functionParts;
+			                        if(typeof(obj.functionBodyHandle) === 'function'){
+			                        	body = obj.functionBodyHandle(body);
+			                        }
+			                        // 替换原行中的字符串为函数表达式
+			                        lines[li] = lines[li].replace(`"${valueMatch[1]}"`, `function${name}(${params}){${body}}`);
+			                    }
+			                } catch (e) {
+			                    console.error('转换函数时出错:', e);
+			                }
+			            }
+			        }
+			    }
+			 	jsonStr = lines.join('\n');   
+			}
+		    
+			return jsonStr;
 		}
 	},
 	/*js dispose end*/
@@ -10937,7 +11016,7 @@ var nodeuuid = {
 //延迟触发，方便拦截自定义
 setTimeout(function(){
 	translate.log('------ translate.js ------\nTwo lines of js html automatic translation, page without change, no language configuration file, no API Key, SEO friendly! Open warehouse : https://github.com/xnx3/translate \n两行js实现html全自动翻译。 无需改动页面、无语言配置文件、无API Key、对SEO友好！完全开源，代码仓库：https://gitee.com/mail_osc/translate');
-}, 1000);
+}, 3000);
 /*js copyright-notice end*/
 
 //初始化

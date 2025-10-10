@@ -13,8 +13,7 @@
 它提供在线使用的方式，网址：  
 http://doc.zvo.cn/translate/extend/layui-i18n-object-translate/index.html
 
-## 演示
-它的使用如以下视频所示：
+![](./preview.png)
 
 
 ## 说明

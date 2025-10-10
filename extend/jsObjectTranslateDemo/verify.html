@@ -1,0 +1,129 @@
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style type="text/css">
+  	textarea{
+  		width:100%;
+  		height: 200px;
+  	}
+
+  </style>
+</head>
+<body>
+<script src="../../translate.js/translate.js"></script>
+<!-- <script src="https://cdn.staticfile.net/translate.js/3.15.1/translate.min.js"></script> -->
+
+<textarea id="t1">
+{
+  "hello":"你好",
+  "word": [
+      "世界",
+      "大海",
+      "你好"
+  ],
+  "key不会被翻译":"我是value会被翻译的"
+}
+</textarea>	
+
+
+<textarea id="t2">
+{
+  custom: {
+    switchLanguage: '切换语言',
+    readme: {
+      hello: '你好',
+    },
+    form: {
+      required: '验证必填项',
+      phone: '验证手机号',
+      email: '验证邮箱'
+    }
+  }
+}
+</textarea>	
+
+
+
+
+<label>翻译源：</label>
+<input type="text" id="host" name="host" value="https://giteeai.zvo.cn/" style="width:300px" />
+<br/>
+
+翻译为：
+<span id="translate"></span>
+<br/>
+
+<button onclick="trans();">将js对象（或数组等）中的值翻译为英文</button>
+
+
+<script>
+
+/**** 设置language.json 加载 ****/
+//先设置默认语种，如果没有默认是英语
+if(typeof(translate.storage.get('to')) == 'undefined' || translate.storage.get('to') == null || translate.storage.get('to') == ''){
+	translate.storage.set('to','english');
+}
+translate.request.speedDetectionControl.setCurrentHost('https://giteeai.zvo.cn/');
+//重写select切换语言点切换后触发动作 - 参考文档 https://translate.zvo.cn/4056.html
+translate.selectLanguageTag.selectOnChange = function(event){
+    var language = event.target.value;
+    translate.storage.set('to',language);	//设置目标翻译语言
+    //console.log('new language: '+language);
+    //trans(language);
+};
+//渲染加载出select切换语言选择框
+translate.selectLanguageTag.render();
+
+function trans(){
+
+	/**清除原本翻译接口，设置自定义的 翻译源 **/
+	translate.request.speedDetectionControl.setCurrentHost(document.getElementById('host').value);
+
+
+	/**进行翻译操作 **/
+	fanyi('t1');
+	fanyi('t2');	
+
+}
+
+function fanyi(id){
+	translate.js.transString(document.getElementById(id).value,document.getElementById('translateSelectLanguage').value, function(obj){
+			// 自定义replacer函数，将函数转换为字符串
+			const jsonStr = JSON.stringify(obj, (key, value) => {
+			  if (typeof value === 'function') {
+			    // 将函数转换为其源代码字符串
+			    return value.toString();
+			  }
+			  return value;
+			}, 4);
+			console.log(jsonStr);
+		document.getElementById(id).value = jsonStr;
+	}, function(failureInfo){
+		document.getElementById(id).value = '失败，失败原因：'+failureInfo;
+	});
+}
+
+</script>
+
+
+<div>
+	<h2>说明</h2>
+	它支持对js对象中的值进行翻译。<br/>
+	它非常适合对传统的i18n的语言配置文件进行翻译。<br/>
+	<b>翻译源</b> 这一项的意思是有什么来提供翻译。demo里默认是有智谱AI的大模型来提供的翻译能力。你也可以<a href="https://translate.zvo.cn/391129.html" target="_black">指定有别的来进行翻译</a>，比如DeepSeek、小牛翻译、谷歌翻译等等  <br/>
+
+</div>
+
+<div style="text-align:center; width: 100%;font-size: 18px; padding-top:2rem;">
+	开源地址及使用方式参考： <a href="https://gitee.com/mail_osc/translate" class="ignore">https://gitee.com/mail_osc/translate</a>
+</div>
+<style>
+.title{
+	font-size:24px;
+	padding-top:15px;
+	padding-bottom:10px;
+}
+</style>
+</body>
+</html>

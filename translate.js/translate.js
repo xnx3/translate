@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.70.20251010',
+	version: '3.18.71.20251010',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -73,6 +73,11 @@ var translate = {
 		*/
 		languages:'',
 		alreadyRender:false, //当前是否已渲染过了 true为是 v2.2增加
+
+		changeLanguageBeforeLoadOfflineFile: function(path){
+
+		},
+
 		selectOnChange:function(event){
 			var language = event.target.value;
 			translate.changeLanguage(language);
@@ -950,7 +955,22 @@ var translate = {
 		},
 	},
 
+	//已转为 offline ，这个是对旧版做兼容
 	office:{
+		export:function(){
+			console.log('请使用最新版本的 translate.offline.export , 而不是 translate.office.export');
+		},
+		showPanel:function(){
+			console.log('请使用最新版本的 translate.offline.showPanel , 而不是 translate.office.export');
+		},
+		append:function(to, properties){
+			translate.offline.append(to, properties);
+		},
+		fullExtract:{
+			isUse:false
+		}
+	},
+	offline:{
 		/*
 			网页上翻译之后，自动导出当前页面的术语库
 			
@@ -996,7 +1016,7 @@ var translate = {
 
 			if(text.length > 0){
 				//有内容
-				text = 'translate.office.append(\''+translate.language.getCurrent()+'\',`'+text+'\n`);';
+				text = 'translate.offline.append(\''+translate.language.getCurrent()+'\',`'+text+'\n`);';
 				//console.log(text);
 				translate.util.loadMsgJs();
 				msg.popups({
@@ -1021,7 +1041,7 @@ var translate = {
 			//导出按钮
 			let button = document.createElement('button');
 			button.onclick = function() {
-			  translate.office.export();
+			  translate.offline.export();
 			};
 			button.innerHTML = '导出配置信息';
 			button.setAttribute('style', 'margin-left: 72px; margin-top: 30px; margin-bottom: 20px; font-size: 25px; background-color: blue; padding: 15px; padding-top: 3px; padding-bottom: 3px; border-radius: 3px;');
@@ -1084,7 +1104,7 @@ var translate = {
 		
 		//全部提取能力（整站的离线翻译数据提取）
 		fullExtract:{
-			/*js translate.office.fullExtract.set start*/
+			/*js translate.offline.fullExtract.set start*/
 			/*
 				将翻译的结果加入
 				hash: 翻译前的文本的hash
@@ -1106,9 +1126,9 @@ var translate = {
 				obj[toLanguage] = translateText;
 				await translate.storage.IndexedDB.set('hash_'+hash, obj);
 			},
-			/*js translate.office.fullExtract.set end*/
+			/*js translate.offline.fullExtract.set end*/
 
-			/*js translate.office.fullExtract.export start*/
+			/*js translate.offline.fullExtract.export start*/
 			/*
 				将存储的数据导出为 txt 文件下载下来
 			*/
@@ -1121,7 +1141,7 @@ var translate = {
 					translate.log('error : to param not find, example: "english"');
 					return;
 				}
-				var text = 'translate.office.append(\''+to+'\',`';
+				var text = 'translate.offline.append(\''+to+'\',`';
 				
 				var data = await translate.storage.IndexedDB.list('hash_*');
 				for(var i in data){
@@ -1141,7 +1161,7 @@ var translate = {
 				link.click();
 				URL.revokeObjectURL(url);
 			},
-			/*js translate.office.fullExtract.export end*/
+			/*js translate.offline.fullExtract.export end*/
 
 			/*
 				是否启用全部提取的能力
@@ -3162,8 +3182,8 @@ var translate = {
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
 					translate.storage.set('hash_'+data.to+'_'+cacheHash,text);
 					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
-					if(translate.office.fullExtract.isUse){
-						translate.office.fullExtract.set(hash, originalWord, data.to, text);
+					if(translate.offline.fullExtract.isUse){
+						translate.offline.fullExtract.set(hash, originalWord, data.to, text);
 					}
 				}
 				task.execute(); //执行渲染任务
@@ -8138,8 +8158,8 @@ var translate = {
 					var hash = translate.util.hash(apiTranslateText[i]);
 					translate.storage.set('hash_'+to+'_'+hash, resultData.text[i]);
 					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
-					if(translate.office.fullExtract.isUse){
-						translate.office.fullExtract.set(hash, apiTranslateText[i], data.to, resultData.text[i]);
+					if(translate.offline.fullExtract.isUse){
+						translate.offline.fullExtract.set(hash, apiTranslateText[i], data.to, resultData.text[i]);
 					}
 
 					//进行组合数据到 translateResultArray

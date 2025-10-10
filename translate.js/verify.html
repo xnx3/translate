@@ -1,0 +1,177 @@
+
+<html>
+<head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <script src="./translate.js"></script>
+</head>
+<body>
+
+
+<h1>验证 translate.js 中的各个计算方法是否有误，用于发版之前验证，避免改错出现bug。如果检查到有误的某项，就会自动弹出alert提示</h1>
+
+<div id="result"></div>
+
+<script>
+// 提前预留检测的方法以及数据
+var verify = [
+	{
+		function:"translate.util.findParticiple",
+		remark:"寻找的文本出现在分词中，要保持分词的完整性，语义一致性，分词本身即使被寻找也不能作为结果，要剔除分词命中的下标",
+		code:"JSON.stringify(translate.util.findParticiple('你好，你是谁，你你好，你在哪', '你', ['你好','你是谁','从哪里来','你'])) === '[7,11]'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"替换文本后面有标点符号，替换后需要跟前面的标点符号加空格、以及对后面的标点符号进行转半角处理",
+		code:"translate.util.textReplace('你好，世界', '你好', 'Hello', 'english') === 'Hello, 世界'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"替换文本前面有标点符号，替换后需要跟前面的标点符号加空格、以及对前面的标点符号进行转半角处理",
+		code:"translate.util.textReplace('你好，世界', '世界', 'World', 'english') === '你好, World'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"针对替换的文本在分词中的某个词使用，要保持分词的完整性，语义一致性，分词本身决不能拆分",
+		code:"translate.util.textReplace('你好，我好，他也好', '好', 'Good', 'english',['我好','大家好']) === '你 Good, 我好，他也 Good'"
+	},
+
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 第一个字符没标点符号，最后一个字符有半角标点符号",
+		code:"translate.util.textReplace('你好，世界。', '好,', 'hao,', 'english') === '你 hao, 世界。'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 第一个字符没标点符号，最后一个字符有半角标点符号",
+		code:"translate.util.textReplace('你好，世界。', '世界.', 'World.', 'english') === '你好, World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 第一个字符没标点符号，最后一个字符有全角标点符号",
+		code:"translate.util.textReplace('你好，世界。', '世界。', 'World.', 'english') === '你好, World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号全角，第二个标点符号全角",
+		code:"translate.util.textReplace('你好，世界。', '，世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号全角",
+		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号全角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好，世界。', '，世界.', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号全角，第二个标点符号全角",
+		code:"translate.util.textReplace('你好,世界.', '，世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号半角，第二个标点符号全角",
+		code:"translate.util.textReplace('你好,世界.', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号全角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好,世界.', '，世界.', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号半角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好,世界.', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.util.textReplace",
+		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号半角，第二个标点符号半角",
+		code:"translate.util.textReplace('你好,世界.', ',世界。', ', World.', 'english') === '你好 , World.'"
+	},
+	{
+		function:"translate.nomenclature.dispose",
+		remark:"测试传入一个字符串",
+		code:"translate.nomenclature.dispose('你好我好她也好','好','hao', null).resultText[0] === '你hao我hao她也hao'"
+	},
+	{
+		function:"translate.nomenclature.dispose",
+		remark:"测试传入一个字符串数组",
+		code:`JSON.stringify(translate.nomenclature.dispose(['你好我好她也好','萨达好收到好SS'],'好','hao', null)) === '{"find":true,"texts":["你","我","她也","萨达","收到","SS"],"resultText":["你hao我hao她也hao","萨达hao收到haoSS"]}'`
+	},
+	{
+		function:"translate.nomenclature.dispose",
+		remark:"测试传入一个字符串数组 - 源文本 跟 自定义忽略翻译文本完全一致",
+		code:`JSON.stringify(translate.nomenclature.dispose('ContiNew Admin', 'ContiNew Admin', 'ContiNew Admin', null)) === '{"find":true,"texts":[],"resultText":["ContiNew Admin"]}'`
+	},
+
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度相等 - 中间数字",
+		code:`translate.util.compareStringsIgnoringNumbers("abc123def", "abc456def") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度相等 - 中间数字",
+		code:`translate.util.compareStringsIgnoringNumbers("hello7world", "hello8world") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度不等 - 最后数字",
+		code:`translate.util.compareStringsIgnoringNumbers("test123", "test") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度相等 - 无数字 - 不同内容",
+		code:`translate.util.compareStringsIgnoringNumbers("abc", "def") == false`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度不等 - 中间间隔数字 - 不同内容",
+		code:`translate.util.compareStringsIgnoringNumbers("a1b2c3", "a4b5c") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 空字符串",
+		code:`translate.util.compareStringsIgnoringNumbers("", "") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度不等 - 数字位置随机",
+		code:`translate.util.compareStringsIgnoringNumbers("你好123世界", "3你好1世界") == true`
+	},
+	{
+		function:"translate.util.compareStringsIgnoringNumbers",
+		remark:"比较字符串除了数字外是否完全一致 - 长度不等 - 数字位置随机",
+		code:`translate.util.compareStringsIgnoringNumbers("你好123世界", "你好世界4") == true`
+	}
+];
+
+for(var i = 0; i < verify.length; i++){
+	var result = eval(verify[i].code);
+	document.getElementById('result').innerHTML = document.getElementById('result').innerHTML+'<br/>'+verify[i].function+'\t --> '+ result+'\t\t'+verify[i].remark;
+	if(result == false){
+		alert('自检发现错误，方法 '+verify[i].function+' , 执行代码： '+verify[i].code);
+	}
+}
+
+document.getElementById('result').innerHTML = document.getElementById('result').innerHTML+'<br/><h3>Verify Finish</h3>';
+
+
+</script>
+
+</body>
+</html>

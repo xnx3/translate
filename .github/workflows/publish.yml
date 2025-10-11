@@ -20,6 +20,8 @@ jobs:
           cp -r extend/ArcoDesign/* ArcoDesign/
           mkdir -p vue
           cp -r extend/vue/* vue/
+          mkdir -p naiveUI
+          cp -r extend/naiveUI/* naiveUI/
       
       # Setup .npmrc file to publish to npm
       - name: Set up Node.js

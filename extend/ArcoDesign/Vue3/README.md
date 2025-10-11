@@ -6,6 +6,7 @@ http://translate.zvo.cn/4041.html
 ## 页面上出现语言切换的Select下拉切换菜单
 
 #### 效果
+见下图右上角的多语言切换  
 ![](./resource/preview.png)
 
 #### 代码

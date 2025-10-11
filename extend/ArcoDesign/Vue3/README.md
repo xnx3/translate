@@ -12,7 +12,7 @@ http://translate.zvo.cn/4041.html
 #### 代码
 
 比如要在 index.vue 页面上显示切换语言的 select 下拉菜单，那么 index.vue 页面中，要进行的操作：  
-先在 index.vue 中，加入一行导入 ArcoDesign 的多语言切换Select 
+先在 index.vue 中，加入一行导入此UI框架的多语言切换Select 
 ````import LanguageSelect from 'i18n-jsautotranslate/ArcoDesign/Vue3/LanguageSelect.vue';````  
 然后在要显示select菜单的位置，直接加入  
 ````<LanguageSelect/>````  

@@ -5,11 +5,11 @@ http://translate.zvo.cn/4041.html
 
 ## 页面上出现语言切换的Select下拉切换菜单
 
-#### 效果
+### 效果
 见下图右上角的多语言切换  
 ![](./resource/preview.png)
 
-#### 代码
+### 代码
 
 比如要在 index.vue 页面上显示切换语言的 select 下拉菜单，那么 index.vue 页面中，要进行的操作：  
 先在 index.vue 中，加入一行导入此UI框架的多语言切换Select 

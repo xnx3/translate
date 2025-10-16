@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.73.20251011',
+	version: '3.18.74.20251011',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -7249,10 +7249,8 @@ var translate = {
 		//客户端方式的edge提供机器翻译服务
 		edge:{
 			api:{ //edge浏览器的翻译功能
-				auth:'https://edge.microsoft.com/translate/auth', //auth授权拉取
-				translate:'https://api.cognitive.microsofttranslator.com/translate?from={from}&to={to}&api-version=3.0&includeSentenceLength=true' //翻译接口
+				translate:'https://edge.microsoft.com/translate/translatetext?from={from}&to={to}&isEnterpriseClient=false' //翻译接口
 			},
-
 			language:{
 
 				json:[{"id":"ukrainian","name":"Україна","serviceId":"uk"},{"id":"norwegian","name":"Norge","serviceId":"no"},{"id":"welsh","name":"Iaith Weleg","serviceId":"cy"},{"id":"dutch","name":"nederlands","serviceId":"nl"},{"id":"japanese","name":"日本語","serviceId":"ja"},{"id":"filipino","name":"Pilipino","serviceId":"fil"},{"id":"english","name":"English","serviceId":"en"},{"id":"lao","name":"ກະຣຸນາ","serviceId":"lo"},{"id":"telugu","name":"తెలుగుName","serviceId":"te"},{"id":"romanian","name":"Română","serviceId":"ro"},{"id":"nepali","name":"नेपालीName","serviceId":"ne"},{"id":"french","name":"Français","serviceId":"fr"},{"id":"haitian_creole","name":"Kreyòl ayisyen","serviceId":"ht"},{"id":"czech","name":"český","serviceId":"cs"},{"id":"swedish","name":"Svenska","serviceId":"sv"},{"id":"russian","name":"Русский язык","serviceId":"ru"},{"id":"malagasy","name":"Malagasy","serviceId":"mg"},{"id":"burmese","name":"ဗာရမ်","serviceId":"my"},{"id":"pashto","name":"پښتوName","serviceId":"ps"},{"id":"thai","name":"คนไทย","serviceId":"th"},{"id":"armenian","name":"Արմենյան","serviceId":"hy"},{"id":"chinese_simplified","name":"简体中文","serviceId":"zh-CHS"},{"id":"persian","name":"Persian","serviceId":"fa"},{"id":"chinese_traditional","name":"繁體中文","serviceId":"zh-CHT"},{"id":"kurdish","name":"Kurdî","serviceId":"ku"},{"id":"turkish","name":"Türkçe","serviceId":"tr"},{"id":"hindi","name":"हिन्दी","serviceId":"hi"},{"id":"bulgarian","name":"български","serviceId":"bg"},{"id":"malay","name":"Malay","serviceId":"ms"},{"id":"swahili","name":"Kiswahili","serviceId":"sw"},{"id":"oriya","name":"ଓଡିଆ","serviceId":"or"},{"id":"icelandic","name":"ÍslandName","serviceId":"is"},{"id":"irish","name":"Íris","serviceId":"ga"},{"id":"khmer","name":"ភាសា​ខ្មែរName","serviceId":"km"},{"id":"gujarati","name":"ગુજરાતી","serviceId":"gu"},{"id":"slovak","name":"Slovenská","serviceId":"sk"},{"id":"kannada","name":"ಕನ್ನಡ್Name","serviceId":"kn"},{"id":"hebrew","name":"היברית","serviceId":"he"},{"id":"hungarian","name":"magyar","serviceId":"hu"},{"id":"marathi","name":"मराठीName","serviceId":"mr"},{"id":"tamil","name":"தாமில்","serviceId":"ta"},{"id":"estonian","name":"eesti keel","serviceId":"et"},{"id":"malayalam","name":"മലമാലം","serviceId":"ml"},{"id":"inuktitut","name":"ᐃᓄᒃᑎᑐᑦ","serviceId":"iu"},{"id":"arabic","name":"بالعربية","serviceId":"ar"},{"id":"deutsch","name":"Deutsch","serviceId":"de"},{"id":"slovene","name":"slovenščina","serviceId":"sl"},{"id":"bengali","name":"বেঙ্গালী","serviceId":"bn"},{"id":"urdu","name":"اوردو","serviceId":"ur"},{"id":"azerbaijani","name":"azerbaijani","serviceId":"az"},{"id":"portuguese","name":"português","serviceId":"pt"},{"id":"samoan","name":"lifiava","serviceId":"sm"},{"id":"afrikaans","name":"afrikaans","serviceId":"af"},{"id":"tongan","name":"汤加语","serviceId":"to"},{"id":"greek","name":"ελληνικά","serviceId":"el"},{"id":"indonesian","name":"IndonesiaName","serviceId":"id"},{"id":"spanish","name":"Español","serviceId":"es"},{"id":"danish","name":"dansk","serviceId":"da"},{"id":"amharic","name":"amharic","serviceId":"am"},{"id":"punjabi","name":"ਪੰਜਾਬੀName","serviceId":"pa"},{"id":"albanian","name":"albanian","serviceId":"sq"},{"id":"lithuanian","name":"Lietuva","serviceId":"lt"},{"id":"italian","name":"italiano","serviceId":"it"},{"id":"vietnamese","name":"Tiếng Việt","serviceId":"vi"},{"id":"korean","name":"한국어","serviceId":"ko"},{"id":"maltese","name":"Malti","serviceId":"mt"},{"id":"finnish","name":"suomi","serviceId":"fi"},{"id":"catalan","name":"català","serviceId":"ca"},{"id":"croatian","name":"hrvatski","serviceId":"hr"},{"id":"bosnian","name":"bosnian","serviceId":"bs-Latn"},{"id":"polish","name":"Polski","serviceId":"pl"},{"id":"latvian","name":"latviešu","serviceId":"lv"},{"id":"maori","name":"Maori","serviceId":"mi"}],
@@ -7282,104 +7280,101 @@ var translate = {
 			translate:function(path, data, func, abnormalFunc){
 				var textArray = JSON.parse(decodeURIComponent(data.text));
 				let translateTextArray = translate.util.split(textArray, 40000, 900);
-				
-				translate.request.send(translate.service.edge.api.auth, {},{}, function(auth){
-					var appendXhrData = {
-						"from":data.from+'',
-						"to":data.to,
-						"text":data.text
-					};
-					var from = data.from;
-					if(from != 'auto'){
-						if(from == 'romance'){
-							//这里额外加了一个罗曼语族(romance)会自动认为是法语(fr)
-							from = 'fr';
-						}else{
-							from = translate.service.edge.language.getMap()[data.from];
-						}
+
+
+				var appendXhrData = {
+					"from":data.from+'',
+					"to":data.to,
+					"text":data.text
+				};
+				var from = data.from;
+				if(from != 'auto'){
+					if(from == 'romance'){
+						//这里额外加了一个罗曼语族(romance)会自动认为是法语(fr)
+						from = 'fr';
+					}else{
+						from = translate.service.edge.language.getMap()[data.from];
 					}
-					
-					var to = translate.service.edge.language.getMap()[data.to];
-					var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
+				}
+				
+				var to = translate.service.edge.language.getMap()[data.to];
+				var transUrl = translate.service.edge.api.translate.replace('{from}',from).replace('{to}',to);
 
-					//如果翻译量大，要拆分成多次翻译请求
-					for(var tai = 0; tai<translateTextArray.length; tai++){
-						var json = [];
-						for(var i = 0; i<translateTextArray[tai].length; i++){
-							json.push({"Text":translateTextArray[tai][i]});
+				//如果翻译量大，要拆分成多次翻译请求
+				for(var tai = 0; tai<translateTextArray.length; tai++){
+					/*
+					var json = [];
+					for(var i = 0; i<translateTextArray[tai].length; i++){
+						json.push({"Text":translateTextArray[tai][i]});
+					}
+					*/
+
+					translate.request.send(transUrl, JSON.stringify(translateTextArray[tai]), appendXhrData, function(result){
+						var d = {};
+						d.info = 'SUCCESS';
+						d.result = 1;
+						d.from = data.from;
+						d.to = data.to;
+						d.text = [];
+						for(var t = 0; t < result.length; t++){
+							d.text.push(result[t].translations[0].text);
 						}
-
-						translate.request.send(transUrl, JSON.stringify(json), appendXhrData, function(result){
-							var d = {};
-							d.info = 'SUCCESS';
-							d.result = 1;
-							d.from = data.from;
-							d.to = data.to;
-							d.text = [];
-							for(var t = 0; t < result.length; t++){
-								d.text.push(result[t].translations[0].text);
-							}
-							
-
-							//判断当前翻译是否又被拆分过，比如一次超过5万字符的话就要拆分成多次请求了
-							if(translateTextArray.length > 1){
-								//这一次翻译呗拆分了多次请求，那么要进行补全数组，使数组个数能一致
-
-								/*
-
-									注意这里根据数组的长度来判断当前属于第几个数组，
-									有几率会是拆分的数组，其中有两组的长度是一样的，
-									这样的话是有问题的，只不过几率很小，就先这样了
-									但终归还是留了个坑 -- 记录
-
-								*/
-
-								var currentIndex = -1;	//当前翻译请求属于被拆分的第几个的数组下标，从0开始的
-								for(var cri = 0; cri < translateTextArray.length; cri++){
-									if(translateTextArray[cri].length - d.text.length == 0){
-										currentIndex = cri;
-										break;
-									}
-								}
-
-								//进行对前后进行补齐数组
-								if(currentIndex < 0){
-									translate.log('------ERROR--------');
-									translate.log('翻译内容过多，进行拆分，但拆分判断出现异常，currentIndex：-1 请联系 http://translate.zvo.cn/43006.html 说明');
-								}
-								//前插入空数组填充
-								for(var addbeforei = 0; addbeforei<currentIndex; addbeforei++){
-									var beforeItemArrayLength = translateTextArray[addbeforei].length;
-									//console.log('beforeItemArrayLength:'+beforeItemArrayLength);
-									for(var bi = 0; bi < beforeItemArrayLength; bi++){
-										d.text.unshift(null);
-									}
-								}
-								//后插入空数组填充
-								for(var addafteri = translateTextArray.length-1; addafteri>currentIndex; addafteri--){
-									var afterItemArrayLength = translateTextArray[addafteri].length;
-									for(var bi = 0; bi < afterItemArrayLength; bi++){
-										d.text.push(null);
-									}
-								}
-								
-							}
-							
-							func(d);
-						}, 'post', true, {'Authorization':'Bearer '+auth, 'Content-Type':'application/json'}, abnormalFunc, true);
 						
 
-					}
-					//console.log('translateResultArray')
-					//console.log(translateResultArray);
+						//判断当前翻译是否又被拆分过，比如一次超过5万字符的话就要拆分成多次请求了
+						if(translateTextArray.length > 1){
+							//这一次翻译呗拆分了多次请求，那么要进行补全数组，使数组个数能一致
+
+							/*
+
+								注意这里根据数组的长度来判断当前属于第几个数组，
+								有几率会是拆分的数组，其中有两组的长度是一样的，
+								这样的话是有问题的，只不过几率很小，就先这样了
+								但终归还是留了个坑 -- 记录
+
+							*/
+
+							var currentIndex = -1;	//当前翻译请求属于被拆分的第几个的数组下标，从0开始的
+							for(var cri = 0; cri < translateTextArray.length; cri++){
+								if(translateTextArray[cri].length - d.text.length == 0){
+									currentIndex = cri;
+									break;
+								}
+							}
+
+							//进行对前后进行补齐数组
+							if(currentIndex < 0){
+								translate.log('------ERROR--------');
+								translate.log('翻译内容过多，进行拆分，但拆分判断出现异常，currentIndex：-1 请联系 http://translate.zvo.cn/43006.html 说明');
+							}
+							//前插入空数组填充
+							for(var addbeforei = 0; addbeforei<currentIndex; addbeforei++){
+								var beforeItemArrayLength = translateTextArray[addbeforei].length;
+								//console.log('beforeItemArrayLength:'+beforeItemArrayLength);
+								for(var bi = 0; bi < beforeItemArrayLength; bi++){
+									d.text.unshift(null);
+								}
+							}
+							//后插入空数组填充
+							for(var addafteri = translateTextArray.length-1; addafteri>currentIndex; addafteri--){
+								var afterItemArrayLength = translateTextArray[addafteri].length;
+								for(var bi = 0; bi < afterItemArrayLength; bi++){
+									d.text.push(null);
+								}
+							}
+							
+						}
+						
+						func(d);
+					}, 'post', true, {
+						'Content-Type':'application/json'
+					}, abnormalFunc, true);
 					
 
-				}, 'get', true, {'content-type':'application/x-www-form-urlencoded'}, function(xhr){
-					translate.log('---------error--------');
-					translate.log('edge translate service error, http code : '+xhr.status + ', response text : '+xhr.responseText);
-				}, true);
+				}
 
 
+				
 				
 
 				
@@ -7923,7 +7918,6 @@ var translate = {
 					params = params + index + '=' + data[index];
 				}
 			}
-			
 			if(url.indexOf('https://') == 0 || url.indexOf('http://') == 0){
 				//采用的url绝对路径
 			}else{
@@ -8302,13 +8296,12 @@ var translate = {
 				        		}
 				        	}
 				        	//client.edge 判断   translate.service.edge可能会被精简translate.js定制时给直接干掉，所以提前加个判断
-				        	if(typeof(translate.service.edge) != 'undefined' && url.indexOf(translate.service.edge.api.auth) > -1){
-				        		ignoreUrl = true;
+				        	if(typeof(translate.service.edge) != 'undefined'){
+				        		if(url.indexOf('edge.microsoft.com/translate/translatetext') > -1){
+					        		ignoreUrl = true;
+					        	}
 				        	}
-				        	if(url.indexOf('.microsofttranslator.com/translate') > -1){
-				        		ignoreUrl = true;
-				        	}
-
+				        	
 				        	if(ignoreUrl){
 				        		//console.log('忽略：'+url);
 								continue;

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.74.20251011',
+	version: '3.18.75.20251011',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -97,6 +97,61 @@ var translate = {
 
 			translate.selectLanguageTag.render();
 		},
+		/*
+			自定义语种 translate.selectLanguageTag.languages 的处理，进行按顺序筛选出来
+	
+			@param languageList 当前支持的所有语种列表，传入格式如：
+			[
+				{id: 'english', name: 'English', serviceId: 'en'}, 
+				{id: 'korean', name: '한국어', serviceId: 'ko'},
+				...
+			]
+
+			返回值是将当前翻译通道所支持的语种进行按顺序筛选完后的结果返回。
+			比如 
+			translate.selectLanguageTag.languages = 'english,chinese_simplified,korean';
+			那么这里返回的便是
+
+			[
+				{id: 'english', name: 'English', serviceId: 'en'}, 
+				{id: 'chinese_simplified', name: '简体中文', serviceId: 'zh-CHS'},
+				{id: 'korean', name: '한국어', serviceId: 'ko'}
+			]
+	
+			如果 translate.selectLanguageTag.languages 未设置，那么这里将返回当前支持的所有语种
+		*/
+		customLanguagesHandle:function(languageList){
+			if(translate.selectLanguageTag.languages.length > 0){
+				//设置了自定义显示的语言，需要重新根据自定义的语言进行过滤，同时顺序也要保持跟它一致
+
+				//都转小写判断
+				var divLanguages = translate.selectLanguageTag.languages.toLowerCase();
+				var divArray = divLanguages.split(',');
+				
+				//将支持的语种 languageList 转化为 map 形态
+				if(typeof(translate.selectLanguageTag.supportLanguageMap) == 'undefined'){
+					translate.selectLanguageTag.supportLanguageMap = new Map();
+					for(var si = 0; si<languageList.length; si++){
+						if(typeof(languageList[si]) != 'undefined' && typeof(languageList[si].id)){
+							translate.selectLanguageTag.supportLanguageMap.set(languageList[si].id, languageList[si]);
+						}
+					}
+					//console.log(translate.selectLanguageTag.supportLanguageMap)
+				}
+
+
+				//重新组合要显示的语种
+				var newLangs = [];
+				for(var i = 0; i<divArray.length; i++){
+					if(divArray[i].length > 0 && translate.selectLanguageTag.supportLanguageMap.get(divArray[i]) != null){
+						newLangs.push(translate.selectLanguageTag.supportLanguageMap.get(divArray[i]));
+					}
+				}
+				return newLangs;
+			}
+
+			return languageList;
+		},
 
 		/*
 			自定义切换语言的样式渲染 v3.2.4 增加
@@ -111,24 +166,13 @@ var translate = {
 			selectLanguage.id = translate.selectLanguageTag.documentId+'SelectLanguage';
 			selectLanguage.className = translate.selectLanguageTag.documentId+'SelectLanguage';
 			var to = translate.language.getCurrent();
+
+
 			for(var i = 0; i<languageList.length; i++){
 				var option = document.createElement("option"); 
 			    option.setAttribute("value",languageList[i].id);
 
-			    //判断 selectLanguageTag.languages 中允许使用哪些
-
-				if(translate.selectLanguageTag.languages.length > 0){
-					//设置了自定义显示的语言
-
-					//都转小写判断
-					var langs_indexof = (','+translate.selectLanguageTag.languages+',').toLowerCase();
-					//console.log(langs_indexof)
-					if(langs_indexof.indexOf(','+languageList[i].id.toLowerCase()+',') < 0){
-						//没发现，那不显示这个语种，调出
-						continue
-					}
-				}
-
+			    
 				/*判断默认要选中哪个语言*/
 
 			    if(to != null && typeof(to) != 'undefined' && to.length > 0){
@@ -197,11 +241,11 @@ var translate = {
 					}
 					//console.log(data.list);
 					translate.request.api.language = data.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
-					translate.selectLanguageTag.customUI(data.list);
+					translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(data.list));
 				}, null);
 			}else if(typeof(translate.request.api.language) == 'object'){
 				//无网络环境下，自定义显示语种
-				translate.selectLanguageTag.customUI(translate.request.api.language);
+				translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(translate.request.api.language));
 			}
 		}
 	},

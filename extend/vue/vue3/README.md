@@ -1,4 +1,4 @@
-VUE3 中 使用 translate.j
+VUE3 中 使用 translate.js
 
 ## [修改] package.json 文件 
 dependencies 中增加
@@ -38,7 +38,7 @@ app.mount('#app');
 * ArcoDesign - [Github](https://github.com/xnx3/translate/tree/master/extend/ArcoDesign/Vue3) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/ArcoDesign/Vue3)
 * naiveUI - [Github](https://github.com/xnx3/translate/tree/master/extend/naiveUI) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/naiveUI)
   
-如果你使用的别的UI框架，可以 [联系我](4030.html) 沟通，目前正在增加其他主流UI框架的，没准你要的就恰好有了，或者直接针对你当前使用的进行新适配。  
+如果你使用的别的UI框架，可以 [联系我](http://translate.zvo.cn/4030.html) 沟通，目前正在增加其他主流UI框架的，没准你要的就恰好有了，或者直接针对你当前使用的进行新适配。  
 
 
 ## 注意

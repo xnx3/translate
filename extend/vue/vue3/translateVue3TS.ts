@@ -1,6 +1,16 @@
 import { nextTick } from 'vue';
 import translate from 'i18n-jsautotranslate'
 
+/* 这里不打印 translate.js 的声明 */
+var originalTrasnalteLog = translate.log;
+  translate.log = function(obj){
+  if(typeof(obj) === 'string' && obj.indexOf('- translate.js -') !== -1){
+    //不显示 translate.js 的说明
+  }else{
+    originalTrasnalteLog(obj);
+  }
+}
+
 //vue3框架的一些单独设置
 translate.vue3 = {
   /*

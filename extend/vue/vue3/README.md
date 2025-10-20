@@ -3,7 +3,7 @@ VUE3 中 使用 translate.js
 ## [修改] package.json 文件 
 dependencies 中增加
 ````
-"i18n-jsautotranslate": "^3.18.73",
+"i18n-jsautotranslate": "^3.18.76",
 ````
 
 ## [新增] translate.js (或ts) 文件
@@ -34,7 +34,11 @@ app.mount('#app');
 ````
 
 ## 页面上出现语言切换的Select下拉切换菜单
-这里，我们针对部分UI框架，进行了适配，你可以直接快速使用
+
+文档参见： [Github文档](https://github.com/xnx3/translate/tree/master/extend/vue/vue3/LanguageSelect.md) | [Gitee文档](https://gitee.com/mail_osc/translate/tree/master/extend/vue/vue3/LanguageSelect.md)  
+  
+
+另外，我们针对部分UI框架，进行了适配，你可以直接快速使用
 * ArcoDesign - [Github](https://github.com/xnx3/translate/tree/master/extend/ArcoDesign/Vue3) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/ArcoDesign/Vue3)
 * naiveUI - [Github](https://github.com/xnx3/translate/tree/master/extend/naiveUI) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/naiveUI)
   

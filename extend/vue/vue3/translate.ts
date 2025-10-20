@@ -15,14 +15,6 @@ translate.vue3.config = function(app){
     //translate.time.use = true;
     //window.translate.time.printTime = 100;
 
-    var originalTrasnalteLog = translate.log;
-    translate.log = function(obj){
-      if(typeof(obj) === 'string' && obj.indexOf('- translate.js -') !== -1){
-        //不显示 translate.js 的说明
-      }else{
-        originalTrasnalteLog(obj);
-      }
-    }
     
     // 针对翻译动作的性能监控 https://translate.zvo.cn/549733.html
     translate.time.execute.start(); 

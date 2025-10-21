@@ -8,10 +8,8 @@ http://translate.zvo.cn/4041.html
 ### 效果
 见下图右上角的多语言切换  
 ![](./resource/preview.png)  
-这个多语言切换的 Select 很原始，你可以对它使用CSS进行美化、或自定义其html显示方式。具体可参考以下文档。  
-另外如果你用其他UI框架，也可以直接进行使用：  
-* ArcoDesign - [Github](https://github.com/xnx3/translate/tree/master/extend/ArcoDesign/Vue3) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/ArcoDesign/Vue3)
-* naiveUI - [Github](https://github.com/xnx3/translate/tree/master/extend/naiveUI) | [Gitee](https://gitee.com/mail_osc/translate/tree/master/extend/naiveUI)
+这个多语言切换的 Select 很原始，你可以对它使用CSS进行美化、或自定义其html显示方式。具体可参考本文档后面的css美化及自定义html。  
+另外如果你用其他UI框架，如 ArcoDesign、 naiveUI ... 等等，也可以直接进行引入对应UI框架的切换语言模块进行使用。[具体可点此查看](./README.md)
 
 ### 代码
 

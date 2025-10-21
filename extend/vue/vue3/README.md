@@ -40,7 +40,7 @@ app.mount('#app');
 
 另外，我们针对部分UI框架，进行了适配，你可以直接快速使用
 *  [ArcoDesign](../../ArcoDesign/Vue3/README.md)
-*  [naiveUI](../../extend/naiveUI/README.md)
+*  [naiveUI](../../naiveUI/README.md)
   
 如果你使用的别的UI框架，可以 [联系我](http://translate.zvo.cn/4030.html) 沟通，目前正在增加其他主流UI框架的，没准你要的就恰好有了，或者直接针对你当前使用的进行新适配。  
 

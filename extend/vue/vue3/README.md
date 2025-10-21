@@ -5,7 +5,7 @@ dependencies 中增加
 ````
 "i18n-jsautotranslate": "^3.18.77",
 ````
-然后执行 
+然后执行 ````npm install```` (或 ````yarn install```` 或 ````pnpm install```` 等等)
 
 ## 第二步：增加 translate.js (或ts) 文件
 比如，在你项目的 utils 目录（或其他什么目录都行）下，新增 translate.js (或.ts 只是后缀自己改一下就行) 文件。  

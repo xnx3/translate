@@ -15,7 +15,9 @@
   "files": [
     "index.js",
     "ArcoDesign/Vue3/LanguageSelect.vue",
-    "vue/**",
+    "vue/vue3/LanguageSelect.vue",
+    "vue/vue3/translateVue3TS.ts",
+    "vue/vue3/translate.ts",
     "naiveUI/LanguageSelect.vue"
   ],
   "homepage": "https://github.com/xnx3/translate#readme",

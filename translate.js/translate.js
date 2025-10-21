@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.78.20251021',
+	version: '3.18.79.20251021',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1651,12 +1651,15 @@ var translate = {
 		constructor(){
 			/*
 			 * 任务列表
-			 * 一维数组 [hash] = tasks;  tasks 是多个task的数组集合
-			 * 二维数组 [task,task,...]，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
-			 * 三维数组 task['originalText'] 、 task['resultText'] 存放要替换的字符串
-			 		   task['attribute'] 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
+			 * map
+			 * key: node
+			 * value: [task,task,...]  是多个task的数组集合，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
+			 * 				每个 task:  
+			 					task['originalText'] 
+			 					task['resultText'] 存放要替换的字符串
+			 					task['attribute'] 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
 			 */
-			this.taskQueue = [];
+			this.taskQueue = new Map();
 			
 			/*
 			 * 要进行翻译的node元素，
@@ -1674,13 +1677,14 @@ var translate = {
 		 * attribute: 要替换的是哪个属性，比如 a标签的title属性，这里便是传入title。如果不是替换属性，这里不用传入，或者传入null
 		 */
 		add(node, originalText, resultText, attribute){
+			//console.log('renderTask.add : originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute+', node:');
+			//console.log(node);
 			var nodeAnaly = translate.element.nodeAnalyse.get(node, attribute); //node解析
 			//var hash = translate.util.hash(translate.element.getTextByNode(node)); 	//node中内容的hash
 			var hash = translate.util.hash(nodeAnaly['text']);
 			//console.log('--------------'+hash);
 			//console.log(nodeAnaly);
-			//console.log(node);
-			//console.log('originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute);
+
 			/****** 加入翻译的元素队列  */
 			if(typeof(this.nodes[hash]) == 'undefined'){
 				this.nodes[hash] = new Array();
@@ -1689,7 +1693,8 @@ var translate = {
 			//console.log(node)
 			
 			/****** 加入翻译的任务队列  */
-			var tasks = this.taskQueue[hash];
+			//var tasks = this.taskQueue[hash];
+			var tasks = this.taskQueue.get(node);
 			if(tasks == null || typeof(tasks) == 'undefined'){
 				//console.log(node.nodeValue);
 				tasks = new Array(); //任务列表，存放多个 task，每个task是一个替换。这里的数组是同一个nodeValue的多个task替换
@@ -1720,18 +1725,19 @@ var translate = {
 
 			//console.log(task);
 			tasks.push(task);
-			this.taskQueue[hash] = tasks;
+			//this.taskQueue[hash] = tasks;
+			this.taskQueue.set(node, tasks);
 			/****** 加入翻译的任务队列 end  */
 		}
 		//进行替换渲染任务，对页面进行渲染替换翻译
 		execute(){
 			//先对tasks任务队列的替换词进行排序，将同一个node的替换词有大到小排列，避免先替换了小的，大的替换时找不到
-			for(var hash in this.taskQueue){
-				if (!this.taskQueue.hasOwnProperty(hash)) {
+			//for(var hash in this.taskQueue){
+			for (let node of this.taskQueue.keys()) {
+				var tasks = this.taskQueue.get(node);
+				if (tasks == null) {
 		    		continue;
 		    	}
-
-				var tasks = this.taskQueue[hash];
 				if(typeof(tasks) == 'function'){
 					//进行异常的预处理调出
 					continue;
@@ -1740,7 +1746,8 @@ var translate = {
 				//进行排序,将原字符串长的放前面，避免造成有部分不翻译的情况（bug是先翻译了短的，导致长的被打断而无法进行适配）
 				tasks.sort((a, b) => b.originalText.length - a.originalText.length);
 				
-				this.taskQueue[hash] = tasks;
+				//this.taskQueue[hash] = tasks;
+				this.taskQueue.set(node, tasks);
 			}
 			
 			//console.log('===========task=========');
@@ -1757,10 +1764,21 @@ var translate = {
 		    		continue;
 		    	}
 		    	
-				var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
+				//var tasks = this.taskQueue[hash]; //取出当前node元素对应的替换任务
 				//var tagName = this.nodes[hash][0].nodeName; //以下节点的tag name
 				//console.log(tasks);
 				for(var node_index = 0; node_index < this.nodes[hash].length; node_index++){
+					//当前翻译的node
+					var node = this.nodes[hash][node_index];
+
+					//取出当前node元素对应的替换任务
+					var tasks = this.taskQueue.get(node);
+					//console.log(tasks);
+					if (tasks == null) {
+						translate.log('WARNING : renderTask.execute 中，this.taskQueue.get(node) == null ，理论上要进行替换任务，就应该会有内容的，数据在理论上出现异常');
+			    		continue;
+			    	}
+
 					//对这个node元素进行替换翻译字符
 					for(var task_index=0; task_index<tasks.length; task_index++){
 						var task = tasks[task_index];
@@ -1826,8 +1844,9 @@ var translate = {
 						}
 
 						//渲染页面进行翻译显示
-						//console.log(task.originalText+' ('+task['attribute']+') --> ' + task.resultText);
-						var analyseSet = translate.element.nodeAnalyse.set(this.nodes[hash][task_index], task.originalText, task.resultText, task['attribute']);
+						//console.log(task.originalText+' ('+task['attribute']+') --> ' + task.resultText+', node:');
+						//console.log(node);
+						var analyseSet = translate.element.nodeAnalyse.set(node, task.originalText, task.resultText, task['attribute']);
 						//console.log(analyseSet);
 
 						if(translate.node.data.get(translateNode) != null){

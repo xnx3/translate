@@ -3,7 +3,7 @@ VUE3 中 使用 translate.js
 ## [修改] package.json 文件 
 dependencies 中增加
 ````
-"i18n-jsautotranslate": "^3.18.76",
+"i18n-jsautotranslate": "^3.18.77",
 ````
 
 ## [新增] translate.js (或ts) 文件

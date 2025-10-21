@@ -1,18 +1,19 @@
 VUE3 中 使用 translate.js
 
-## [修改] package.json 文件 
+## 第一步：修改 package.json 文件 
 dependencies 中增加
 ````
 "i18n-jsautotranslate": "^3.18.77",
 ````
+然后执行 
 
-## [新增] translate.js (或ts) 文件
+## 第二步：增加 translate.js (或ts) 文件
 比如，在你项目的 utils 目录（或其他什么目录都行）下，新增 translate.js (或.ts 只是后缀自己改一下就行) 文件。  
 此文件源码：  [Github](https://raw.githubusercontent.com/xnx3/translate/refs/heads/master/extend/vue/vue3/translate.ts) | [Gitee](https://gitee.com/mail_osc/translate/blob/master/extend/vue/vue3/translate.ts)  
 这个文件也是你当前项目对翻译进行各种自定义微调所在。  
 有什么要设置的，比如设置使用你私有部署的翻译服务器提供翻译服务、设置哪些文字不进行翻译、设置自定义术语 ……等等
 
-## [修改] main.js (或ts) 文件
+## 第三步：修改 main.js (或ts) 文件
 首先导入 上一步新建的文件，也就是新增一行 import : 
 ````
 import {translateJsVueUseModel} from './utils/translate' // 多语言切换, 导入translate插件
@@ -33,7 +34,7 @@ app.use(translateJsVueUseModel);   //注释掉，即可停用多语言切换能�
 app.mount('#app');
 ````
 
-## 页面上出现语言切换的Select下拉切换菜单
+## 第四步：在页面上出现Select下拉切换语言菜单
 
 文档参见： [./LanguageSelect.md](./LanguageSelect.md)
   

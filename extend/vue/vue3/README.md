@@ -45,6 +45,8 @@ app.mount('#app');
   
 如果你使用的别的UI框架，可以 [联系我](http://translate.zvo.cn/4030.html) 沟通，目前正在增加其他主流UI框架的，没准你要的就恰好有了，或者直接针对你当前使用的进行新适配。  
 
+## 第五步：DEMO参考示例
+参见： [demo/README.md](./demo/README.md)
 
 ## 注意
 比如你vue页面中有个按钮，点击后触发切换为某种语言，正常使用是 `translate.changeLanguage('english');`  而在vue代码中如果提示 `translate 不存在` ，那么你触发时前面额外加个windows.即可 ： `window.translate.changeLanguage('english');`

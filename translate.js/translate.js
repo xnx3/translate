@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.77.20251020',
+	version: '3.18.78.20251021',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1795,13 +1795,22 @@ var translate = {
 
 						// translate.node 记录
 						
-						var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
+						var translateNode = null; //当前操作的，要记录入 translate.node 中的，进行翻译的node
 						var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
 						if(typeof(task['attribute']) === 'string' && task['attribute'].length > 0){
 							//当前渲染任务是针对的元素的某个属性，这是要取出这个元素的具体属性，作为一个目的 node 来进行加入 translate.node 
-							//是操作的元素的某个属性
-							translateNode = this.nodes[hash][node_index].getAttributeNode(task['attribute']);
-							translateNode_attribute = task['attribute'];
+							//是操作的元素的某个属性,这时要判断 是否是 input、textarea 的value属性
+							if(task['attribute'] === 'value'){
+								var nodeNameLowerCase = translate.element.getNodeName(this.nodes[hash][node_index]).toLowerCase();
+								if((nodeNameLowerCase === 'input' || nodeNameLowerCase === 'textarea')){
+									translateNode = this.nodes[hash][node_index];
+									translateNode_attribute = 'value';
+								}
+							}
+							if(translateNode === null){
+								translateNode = this.nodes[hash][node_index].getAttributeNode(task['attribute']);
+								translateNode_attribute = task['attribute'];
+							}
 						}else{
 							//操作的就是node本身
 							translateNode = this.nodes[hash][node_index];
@@ -3307,6 +3316,7 @@ var translate = {
 			这是一个map，为了兼容es5，这里设置为null，在 translate.execute 中在进行初始化
 
 			key: node ,进行翻译的文本的node， 如果是 div 的 title属性进行的翻译，那这个node是定位在 title 上的node，而不是 div 这个依附的元素
+					注意，如果是对 input、textarea 的value进行翻译，而 value是通过js赋予的，那么这个value属性的值并不是一个单独的node，所以是为空的，此时要记录的node便是  input、textarea 这个node本身。
 			value: 这是一个对像
 				其中，key的取值有这几种：
 				translate_default_value: 如果当前翻译的是元素本身的值或node节点本身的值(nodeValue)，那么这里的key就是固定的 translate_default_value
@@ -3628,6 +3638,7 @@ var translate = {
 
 				参数：
 					node 当前翻译的node元素
+						注意，如果是对 input、textarea 的value进行翻译，而 value是通过js赋予的，那么这个value属性的值并不是一个单独的node，所以是为空的，此时要记录的node便是  input、textarea 这个node本身。
 					originalText 翻译之前的内容文本
 					resultText 翻译之后的内容文本
 					attribute 存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
@@ -3649,6 +3660,7 @@ var translate = {
 					返回结果是一个数组。其中：
 						['text']:要进行翻译的text内容文本
 						['node']:要进行翻译的目标node
+									注意，如果是对 input、textarea 的value进行翻译，而 value是通过js赋予的，那么这个value属性的值并不是一个单独的node，所以是为空的，此时要记录的node便是  input、textarea 这个node本身。
 				2. 传入 node、originalText、 resultText
 					则是进行翻译之后的渲染显示
 
@@ -3657,7 +3669,8 @@ var translate = {
 				返回结果是一个数组，其中：
 					resultText: 翻译完成之后的text内容文本。 当使用 translate.element.nodeAnalyse.set 时才会有这个参数返回。 注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
 					text : 要进行翻译的text内容文本，当使用 translate.element.nodeAnalyse.get 时才会有这个参数的返回
-					node: 进行翻译的目标node
+					node: 要进行翻译的目标node
+							注意，如果是对 input、textarea 的value进行翻译，而 value是通过js赋予的，那么这个value属性的值并不是一个单独的node，所以是为空的，此时要记录的node便是  input、textarea 这个node本身。
 			*/
 			analyse:function(node, originalText, resultText, attribute){
 				var result = new Array(); //返回的结果
@@ -3665,13 +3678,15 @@ var translate = {
 				result['text'] = '';
 
 				var nodename = translate.element.getNodeName(node);
-
+				//console.log('nodeAnalyse.analyse: NodeName:'+nodename+', originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute+', node:');
+				//console.log(node)
+				
 				if(attribute != null && typeof(attribute) == 'string' && attribute.length > 0){
 					//这个node有属性，替换的是node的属性，而不是nodeValue
 
 					var nodeAttributeValue; //这个 attribute 属性的值
-					if(nodename == 'INPUT' && attribute.toLowerCase() == 'value'){
-						//如果是input 的value属性，那么要直接获取，而非通过 attribute ，不然用户自己输入的通过 attribute 是获取不到的 -- catl 赵阳 提出
+					if((nodename === 'INPUT' || nodename === 'TEXTAREA') && attribute.toLowerCase() == 'value'){
+						//如果是input\textarea 的value属性，那么要直接获取，而非通过 attribute ，不然用户自己输入的通过 attribute 是获取不到的 -- catl 赵阳 提出
 						
 						nodeAttributeValue = node.value;
 					}else{
@@ -3687,7 +3702,7 @@ var translate = {
 							var resultShowText = translate.util.textReplace(nodeAttributeValue, originalText, resultText, translate.to);
 							translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
-							if(nodename == 'INPUT' && attribute.toLowerCase() == 'value'){
+							if((nodename === 'INPUT' || nodename === 'TEXTAREA') && attribute.toLowerCase() == 'value'){
 								//input 的value 对于用户输入的必须用 .value 操作
 								node.value = resultShowText;
 							}else{
@@ -3719,6 +3734,8 @@ var translate = {
 					}
 					return result;
 				}
+
+				
 
 				//正常的node ，typeof 都是 object
 
@@ -3895,13 +3912,25 @@ var translate = {
 				resultShowText: translate.element.nodeAnalyse.analyse 进行设置翻译后的文本渲染时，提前计算好这个node显示的所有文本，然后在赋予 dom，这里是计算好的node要整体显示的文本
 			*/	
 			analyseReplaceBefore_DateToTranslateNode:function(node, attribute, resultShowText){
-				var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
+				//console.log('analyseReplaceBefore_DateToTranslateNode: attribute:'+attribute+', resultShowText:'+resultShowText+', node:');
+				//console.log(node);
+
+				var translateNode = null; //当前操作的，要记录入 translate.node 中的，进行翻译的node
 				var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
 
 				if(typeof(attribute) === 'string' && attribute.length > 0){
-					//是操作的元素的某个属性
-					translateNode = node.getAttributeNode(attribute);
-					translateNode_attribute = attribute;
+					//是操作的元素的某个属性,这时要判断 是否是 input、textarea 的value属性
+					if(attribute !== null && attribute === 'value'){
+						var nodeNameLowerCase = translate.element.getNodeName(node).toLowerCase();
+						if((nodeNameLowerCase === 'input' || nodeNameLowerCase === 'textarea')){
+							translateNode = node;
+							translateNode_attribute = 'value';
+						}
+					}
+					if(translateNode === null){
+						translateNode = node.getAttributeNode(attribute);
+						translateNode_attribute = attribute;
+					}
 				}else{
 					//操作的就是node本身
 					translateNode = node;
@@ -3941,7 +3970,10 @@ var translate = {
 				}
 			}
 		},
-		//向下遍历node
+		/*
+			向下遍历node
+			其中如果使用了自定义 textarea 、input 的 value 属性，则认为是 node 本身进行挂钩，而非其 value 值（value值并不是个node）
+		*/
 		whileNodes:function(uuid, node){
 			if(node == null || typeof(node) == 'undefined'){
 				return;
@@ -3977,6 +4009,7 @@ var translate = {
 			if(typeof(translate.element.tagAttribute[nodeNameLowerCase]) != 'undefined'){
 				//console.log('find:'+nodeNameLowerCase);
 				//console.log(translate.element.tagAttribute[nodeNameLowerCase]);
+				//console.log(translate.element.tagAttribute[nodeNameLowerCase].attribute);
 
 				for(var attributeName_index in translate.element.tagAttribute[nodeNameLowerCase].attribute){
 					if (!translate.element.tagAttribute[nodeNameLowerCase].attribute.hasOwnProperty(attributeName_index)) {
@@ -3990,11 +4023,13 @@ var translate = {
 					//console.log(attributeName);
 					//console.log(node.getAttribute(attributeName));
 
-
-					if(nodeNameLowerCase == 'input' && attributeName.toLowerCase() == 'value'){
+					//是否是 input、 textarea 的 value ，如果是 则是 true
+					var isInputValue = false;
+					if((nodeNameLowerCase === 'input' || nodeNameLowerCase === 'textarea') && attributeName.toLowerCase() == 'value'){
 						//如果是input 的value属性，那么要直接获取，而非通过 attribute ，不然用户自己输入的通过 attribute 是获取不到的 - catl 赵阳 提出
 						attributeValue = node.value;
 						DOMPropOrHTMLAttr = 'DOMProperty';
+						isInputValue = true;
 					}else{
 						/*
 						 * 默认是 HtmlAtrribute 也就是 HTML特性。取值有两个:
@@ -4019,10 +4054,10 @@ var translate = {
 					//	//这个tag标签没有这个 attribute，忽略
 					//	continue
 					//}
-					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加					
+					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加	
 					if(!translate.ignore.isIgnore(node)){
 						//加入翻译
-						translate.addNodeToQueue(uuid, node.getAttributeNode(attributeName), attributeValue, '');
+						translate.addNodeToQueue(uuid, isInputValue? node:node.getAttributeNode(attributeName), attributeValue, isInputValue? 'value':'');
 					}
 				}
 			}
@@ -4226,9 +4261,12 @@ var translate = {
 	 * text 当前要翻译的目标文本
 	 * attribute 是否是元素的某个属性。比如 a标签中的title属性， a.title 再以node参数传入时是string类型的，本身并不是node类型，所以就要传入这个 attribute=title 来代表这是a标签的title属性。同样第二个参数node传入的也不能是a.title，而是传入a这个node元素
 	 			如果不穿或者传入 '' 空字符串，则代表不是 attribute 属性，而是nodeValue 本身
+	 			注意， textarea、input 标签的 value 属性的特殊性，如果 node 是textarea、input ，那么value时这个 attribute 要传递 'value' 进来的
 	 */
 	addNodeToQueue:function(uuid, node, text, attribute){
-		//console.log(text)
+		//console.log('addNodeToQueue - params: uuid:'+uuid+', text:'+text+', attribute:'+attribute+', node:');
+		//console.log(node);
+		
 		if(node == null || text == null || text.length == 0){
 			return;
 		}
@@ -4236,10 +4274,10 @@ var translate = {
 
 		//console.log('find tag ignore : '+node.nodeValue+', '+node.nodeName+", "+node.nodeType+", "+node.tagName);
 		//console.log('addNodeToQueue into -- node:'+node+', text:'+text+', attribute:'+attribute);
-		var nodename = translate.element.getNodeName(node);
+		var nodename = translate.element.getNodeName(node).toLowerCase();
 		
 		//判断如果是被 <!--  --> 注释的区域，不进行翻译
-		if(nodename.toLowerCase() == '#comment'){
+		if(nodename == '#comment'){
 			return;
 		}
 		//console.log('\t\t'+text);
@@ -4281,9 +4319,14 @@ var translate = {
 		var translateNode; //当前操作的，要记录入 translate.node 中的，进行翻译的node
 		var translateNode_attribute = ''; //当前操作的是node中的哪个attribute，如果没有是node本身则是空字符串
 		if(typeof(attribute) === 'string' && attribute.length > 0){
-			//是操作的元素的某个属性
-			translateNode = node.getAttributeNode(attribute);
-			translateNode_attribute = attribute;
+			//是操作的元素的某个属性,这时要判断 是否是 input、textarea 的value属性
+			if((nodename === 'input' || nodename === 'textarea') && attribute !== null && attribute === 'value'){
+				translateNode = node;
+				translateNode_attribute = 'value';
+			}else{
+				translateNode = node.getAttributeNode(attribute);
+				translateNode_attribute = attribute;
+			}
 		}else{
 			//操作的就是node本身
 			translateNode = node;
@@ -8734,7 +8777,20 @@ var translate = {
 				//translate.element.nodeAnalyse.analyse(key, analyse.text, translate.node.get(key).originalText, translate.node.get(key).attribute);
 				
 				//标注此次改动是有 translate.js 导致的 -- 这里就不用标记了，因为先已经移除了 translate.listener.observer 监听，所以不会再监听到还原的操作了
-				key.nodeValue = translate.node.get(key).originalText;
+				
+				//是否是 input、 textarea 的 value ，如果是 则是 true
+				var isInputValue = false;
+				if(typeof(translate.node.get(key).attribute) === 'string' && translate.node.get(key).attribute === 'value'){
+					//可能是input\textarea 的value
+					var nodename = translate.element.getNodeName(key).toLowerCase();
+					if(nodename === 'input' || nodename === 'textarea'){
+						key.value = translate.node.get(key).originalText;
+						isInputValue = true;
+					}
+				}	
+				if(!isInputValue){
+					key.nodeValue = translate.node.get(key).originalText;
+				}
 			//}
 		}
 

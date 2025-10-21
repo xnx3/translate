@@ -49,4 +49,4 @@ app.mount('#app');
 参见： [demo/README.md](./demo/README.md)
 
 ## 注意
-比如你vue页面中有个按钮，点击后触发切换为某种语言，正常使用是 `translate.changeLanguage('english');`  而在vue代码中如果提示 `translate 不存在` ，那么你触发时前面额外加个windows.即可 ： `window.translate.changeLanguage('english');`
+比如你vue页面中有个按钮，点击后触发切换为某种语言，正常使用是 `translate.changeLanguage('english');`  而在vue代码中如果提示 `translate not find` ，那么你触发时前面额外加个windows.即可 ： `window.translate.changeLanguage('english');`

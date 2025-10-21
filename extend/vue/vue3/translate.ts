@@ -1,4 +1,5 @@
-import {translateJsVueUseModel, translate} from './translateVue3TS' // 导入 translate 的 VUE3 的 ts 插件
+import {translateJsVueUseModel, translate} from 'i18n-jsautotranslate/vue/vue3/translateVue3TS.ts';  // 导入 translate 的 VUE3 的 ts 插件
+
 
 /*
     

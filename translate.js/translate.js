@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.79.20251021',
+	version: '3.18.80.20251021',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -4443,7 +4443,7 @@ var translate = {
 			//console.log(textArray);
 			textArray = translate.nomenclature.dispose(textArray, temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti], {
 				node:translateNode,
-				attribute:''
+				attribute:translateNode_attribute
 			}).texts;
 			//console.log(textArray);
 		}
@@ -4472,7 +4472,7 @@ var translate = {
 				//console.log(textArray);
 				var nomenclatureDispose = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
 					node:translateNode,
-					attribute:''
+					attribute:translateNode_attribute
 				});
 				
 				textArray = nomenclatureDispose.texts;

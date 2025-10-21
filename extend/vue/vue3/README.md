@@ -9,7 +9,7 @@ dependencies 中增加
 
 ## 第二步：增加 translate.js (或ts) 文件
 比如，在你项目的 utils 目录（或其他什么目录都行）下，新增 translate.js (或.ts 只是后缀自己改一下就行) 文件。  
-此文件源码：  [Github](https://raw.githubusercontent.com/xnx3/translate/refs/heads/master/extend/vue/vue3/translate.ts) | [Gitee](https://gitee.com/mail_osc/translate/blob/master/extend/vue/vue3/translate.ts)  
+[此文件源码点此查看](./translate.ts)  
 这个文件也是你当前项目对翻译进行各种自定义微调所在。  
 有什么要设置的，比如设置使用你私有部署的翻译服务器提供翻译服务、设置哪些文字不进行翻译、设置自定义术语 ……等等
 

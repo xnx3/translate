@@ -1,5 +1,9 @@
 /.project
 /.settings/
 
+package-lock.json
+pnpm-lock.yaml
+
 # dist
-/index.js
+extend/vant/vue3/demo/node_modules/*
+

@@ -1,13 +1,15 @@
+<script setup>
+import Welcome from './view/Welcome.vue'
+</script>
+
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+  <Welcome/>
 </template>
 
 <style>
-body {
-  font-size: 16px;
-  background-color: #f8f8f8;
-  -webkit-font-smoothing: antialiased;
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  text-align: center;
+  margin-top: 60px;
 }
 </style>

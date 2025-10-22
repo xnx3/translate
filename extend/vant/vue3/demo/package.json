@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "vant": "^4.0.0",
-    "vue": "^3.2.37"
+    "vue": "^3.2.37",
+    "i18n-jsautotranslate": "^3.18.77"
   },
   "devDependencies": {
     "@types/node": "^18.7.1",

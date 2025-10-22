@@ -1,8 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import 'vant/es/toast/style'
-import router from './router'
+import {translateJsVueUseModel} from './utils/translate.ts' // 多语言切换, 导入translate插件
 
 const app = createApp(App)
-app.use(router)
+app.use(translateJsVueUseModel);   //注释掉，即可停用多语言切换能力
 app.mount('#app')

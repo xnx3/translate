@@ -4,6 +4,12 @@
 package-lock.json
 pnpm-lock.yaml
 
+.DS_Store
+.classpath
+.project
+.settings
+
+
 # dist
 extend/vant/vue3/demo/node_modules/*
 

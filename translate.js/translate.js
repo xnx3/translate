@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.80.20251021',
+	version: '3.18.82.20251023',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1478,6 +1478,7 @@ var translate = {
 						}else{
 							//判断是否是 translate.element.tagAttribute 自定义翻译属性的
 							var divTagAttribute = translate.element.tagAttribute[mutation.target.nodeName.toLowerCase()];
+							//console.log('divTagAttribute:'+divTagAttribute);
 							if(typeof(divTagAttribute) !== 'undefined' && divTagAttribute.attribute.indexOf(mutation.attributeName) > -1 && divTagAttribute.condition(mutation.target)){
 								//是自定义翻译这个属性的，以及判定是否达到翻译条件
 								//条件满足，允许翻译
@@ -7338,7 +7339,7 @@ var translate = {
 
 					if(serviceName.toLowerCase() == 'giteeai'){
 						//设定翻译接口为GiteeAI的
-						translate.request.api.host=['https://giteeai.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn:1000/','https://api.translate.zvo.cn:1000/'];
+						translate.request.api.host=['https://giteeai.zvo.cn/','https://deutsch.enterprise.api.translate.zvo.cn:1000/','https://api.translate.zvo.cn:1000/', 'https://america.api.translate.zvo.cn:1000/'];
 						return;
 					}
 					if(serviceName.toLowerCase() == 'siliconflow'){
@@ -10109,6 +10110,50 @@ var translate = {
 		    */
 		    
 		    return filtered;
+		},
+		/*
+			对排重并按照top排序后的 rect 坐标进行空间的重叠处理（按高度进行判定，避免一行出现两个）
+			它可以紧紧挨着，但不允许出现重叠情况
+
+			@param rects 一维的矩形信息数组（包含node和坐标信息），也就是 translate.visual.filterNodeRepeat(sortRects); 去重后取得的信息。
+						注意，它必须要经过这几步处理才行：
+							var sortRects = translate.visual.coordinateSort(rectsOneArray); //排序
+						    sortRects = translate.visual.filterNodeRepeat(sortRects); //去重
+			@return 返回排除重叠的坐标数组。
+
+		*/
+		rectsSpaceEliminateOverlap: function(rects){
+			for(var i = rects.length-1; i > -1; i--){
+				//是第一个，那么就不需要再向上判定了
+				if(i == 0){
+					continue;
+				}
+				
+				//如果上一个坐标的底部大于当前坐标的顶部，那么高度就已经产生重叠了，将排除当前元素，移除当前元素
+				if(rects[i-1].bottom > rects[i].top){
+					//console.log('---移除第'+i);
+					//console.log(rects[i]);
+					rects.splice(i, 1);
+				}
+			}
+
+			/*
+			//检查
+			for(var i = rects.length-1; i > -1; i--){
+				//是第一个，那么就不需要再向上判定了
+				if(i == 0){
+					continue;
+				}
+				
+				//如果上一个坐标的底部大于当前坐标的顶部，那么高度就已经产生重叠了，将排除当前元素，移除当前元素
+				if(rects[i-1].bottom > rects[i].top){
+					console.log('---发现漏掉的，第'+i);
+					console.log(rects[i]);
+				}
+			}
+			*/
+
+			return rects;
 		},
 		/*
 			对一组坐标进行排序

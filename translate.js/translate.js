@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.82.20251023',
+	version: '3.18.83.20251024',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -234,14 +234,14 @@ var translate = {
 			//从服务器加载支持的语言库
 			if(typeof(translate.request.api.language) == 'string' && translate.request.api.language.length > 0){
 				//从接口加载语种
-				translate.request.post(translate.request.api.language, {}, function(data){
-					if(data.result == 0){
-						translate.log('load language list error : '+data.info);
+				translate.request.post(translate.request.api.language, {}, function(responseData, requestData){
+					if(responseData.result == 0){
+						translate.log('load language list error : '+responseData.info);
 						return;
 					}
 					//console.log(data.list);
-					translate.request.api.language = data.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
-					translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(data.list));
+					translate.request.api.language = responseData.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
+					translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(responseData.list));
 				}, null);
 			}else if(typeof(translate.request.api.language) == 'object'){
 				//无网络环境下，自定义显示语种
@@ -3156,38 +3156,38 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
-			translate.request.post(url, data, function(data){
+			translate.request.post(url, data, function(responseData, requestData){
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
 
 				//针对 giteeai 增加了账户余额、账户是否激活的拍的判定，所以增加了 401 这个参数，凡是账户异常的，参数值是 401~499 之间。所以只要不是1都是失败
-				if(data.result != 1){
-					if(typeof(translate.translateRequest[uuid]) == 'object' && typeof(translate.translateRequest[uuid][data.from]) == 'object'){
-						translate.translateRequest[uuid][data.from]['result'] = 2;
-						translate.translateRequest[uuid][data.from].executeFinish = 1; //1是执行完毕
-						translate.translateRequest[uuid][data.from].stoptime = Math.floor(Date.now() / 1000);
+				if(responseData.result != 1){
+					if(typeof(translate.translateRequest[uuid]) == 'object' && typeof(translate.translateRequest[uuid][requestData.from]) == 'object'){
+						translate.translateRequest[uuid][requestData.from]['result'] = 2;
+						translate.translateRequest[uuid][requestData.from].executeFinish = 1; //1是执行完毕
+						translate.translateRequest[uuid][requestData.from].stoptime = Math.floor(Date.now() / 1000);
 					}else{
-						translate.log('WARINNG!!! translate.translateRequest[uuid][data.from] is not object');
+						translate.log('WARINNG!!! translate.translateRequest[uuid][requestData.from] is not object');
 					}
 
 					//为了兼容 v3.14以前的translate.service 版本，做了判断
 					var from = '';
-					if(typeof(data.from) != 'undefined' && data.from != null){
-						from = data.from;
+					if(typeof(requestData.from) != 'undefined' && requestData.from != null){
+						from = requestData.from;
 					}
 					var to = '';
-					if(typeof(data.to) != 'undefined' && data.to != null){
-						to = data.to;
+					if(typeof(requestData.to) != 'undefined' && requestData.to != null){
+						to = requestData.to;
 					}else{
 						to = translate.to;
 					}
-					translate.waitingExecute.isAllExecuteFinish(uuid, from, to, 0, data.info);
+					translate.waitingExecute.isAllExecuteFinish(uuid, from, to, 0, responseData.info);
 					
 
 					translate.log('=======ERROR START=======');
-					translate.log(translateTextArray[data.from]);
+					translate.log(translateTextArray[requestData.from]);
 					//console.log(encodeURIComponent(JSON.stringify(translateTextArray[data.from])));
-					translate.log('response : '+data.info);
+					translate.log('response : '+responseData.info);
 					translate.log('=======ERROR END  =======');
 					//translate.temp_executeFinishNumber++; //记录执行完的次数
 					return;
@@ -3204,11 +3204,11 @@ var translate = {
 				//console.log('response:'+uuid);
 				let task = new translate.renderTask();
 				//遍历 translateHashArray
-				for(var i=0; i<translateHashArray[data.from].length; i++){
+				for(var i=0; i<translateHashArray[responseData.from].length; i++){
 					//翻译前的语种，如 english
-					var lang = data.from;	
+					var lang = responseData.from;	
 					//翻译后的内容
-					var text = data.text[i];	
+					var text = responseData.text[i];	
 					//如果text为null，那么这个可能是一次翻译字数太多，为了保持数组长度，拼上的null
 					if(text == null){
 						continue;
@@ -3216,14 +3216,14 @@ var translate = {
 
 					// v3.0.3 添加，避免像是 JavaScript 被错误翻译为 “JavaScript的” ，然后出现了多个句子中都出现了Javascript时，会出现翻译后文本重复的问题
 					// 这里就是验证一下，翻译后的文本，是否会完全包含翻以前的文本，如果包含了，那么强制将翻译后的文本赋予翻译前的原始文本（也就是不被翻译）
-					if(text.toLowerCase().indexOf(translateTextArray[data.from][i].toLowerCase()) > -1){
+					if(text.toLowerCase().indexOf(translateTextArray[responseData.from][i].toLowerCase()) > -1){
 						//发现了，那么强制赋予翻以前内容
-						text = translateTextArray[data.from][i];
+						text = translateTextArray[responseData.from][i];
 					}
 
 
 					//翻译前的hash对应下标
-					var hash = translateHashArray[data.from][i];	
+					var hash = translateHashArray[responseData.from][i];	
 					var cacheHash = translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'];
 
 
@@ -3253,10 +3253,10 @@ var translate = {
 					*/
 					
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
-					translate.storage.set('hash_'+data.to+'_'+cacheHash,text);
+					translate.storage.set('hash_'+responseData.to+'_'+cacheHash,text);
 					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
 					if(translate.offline.fullExtract.isUse){
-						translate.offline.fullExtract.set(hash, originalWord, data.to, text);
+						translate.offline.fullExtract.set(hash, originalWord, responseData.to, text);
 					}
 				}
 				task.execute(); //执行渲染任务
@@ -3266,7 +3266,7 @@ var translate = {
 				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
 				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
 				setTimeout(function(){
-					translate.waitingExecute.isAllExecuteFinish(uuid, data.from, data.to, 1, '');
+					translate.waitingExecute.isAllExecuteFinish(uuid, responseData.from, responseData.to, 1, '');
 				},5);
 			}, function(xhr){
 				translate.translateRequest[uuid][xhr.data.from].executeFinish = 1; //1是执行完毕
@@ -6251,16 +6251,16 @@ var translate = {
 		}
 
 		//如果用户浏览器没读到默认语言，或者默认语言没有对应到translate.js支持的语种，那么在采用ip识别的方式
-		translate.request.post(translate.request.api.ip, {}, function(data){
-			//console.log(data); 
-			if(data.result == 0){
+		translate.request.post(translate.request.api.ip, {}, function(responseData, requestData){
+			//console.log(responseData); 
+			if(responseData.result != 1){
 				translate.log('==== ERROR 获取当前用户所在区域异常 ====');
 				translate.log(data.info);
 				translate.log('==== ERROR END ====');
 			}else{
-				translate.storage.set('to',data.language);	//设置目标翻译语言
-				translate.to = data.language; //设置目标语言
-				translate.selectLanguageTag
+				translate.storage.set('to',responseData.language);	//设置目标翻译语言
+				translate.to = responseData.language; //设置目标语言
+				//translate.selectLanguageTag
 				translate.execute(); //执行翻译
 			}
 		}, null);
@@ -7932,7 +7932,11 @@ var translate = {
 		 * 			to: "chinese_traditional
 		 * 		}
 		 * 		
-		 * @param func 请求完成的回调，传入如 function(data){ console.log(data); }
+		 * @param func 请求完成的回调，也就是只要响应码是 200 ，则会触发这个方法。 传入如 function(responseData, requestData){ console.log(responseData); }
+		 * 				其中的参数：
+		 * 					responseData 响应的数据
+		 * 					requestData post请求所携带的数据
+		 * 				注意，是响应数据是第一个参数，请求数据是第二个参数。 以向前兼容
 		 * @param abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}  另外这里的 xhr 会额外有个参数  xhr.requestURL 返回当前请求失败的url
 		 */
 		post:function(path, data, func, abnormalFunc){
@@ -7976,7 +7980,10 @@ var translate = {
 		 * url 请求的url或者path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * data 请求的数据，如 {"author":"管雷鸣",'site':'www.guanleiming.com'} 
 		 * appendXhrData 附加到 xhr.data 中的对象数据，传入比如  {"from":"english","to":"japanese"} ，他会直接赋予 xhr.data
-		 * func 请求完成的回调，传入如 function(data){}
+		 * func 请求完成的回调，也就是只要响应码是 200 ，则会触发这个方法。 传入如 function(requestData, responseData){ console.log(responseData); }
+		 * 				其中的参数：
+		 * 					requestData post请求所携带的数据
+		 * 					responseData 响应的数据
 		 * method 请求方式，可传入 post、get
 		 * isAsynchronize 是否是异步请求， 传入 true 是异步请求，传入false 是同步请求。 如果传入false，则本方法返回xhr
 		 * headers 设置请求的header，传入如 {'content-type':'application/x-www-form-urlencoded'};
@@ -8085,10 +8092,10 @@ var translate = {
 				        	}
 			        	}
 			        	
-			        	if(json == null){
+			        	if(json === null){
 			        		func(xhr.responseText);
 			        	}else{
-			        		func(json);
+			        		func(json, xhr.data);
 			        	}
 			        }else{
 			        	if(showErrorLog){
@@ -8241,34 +8248,34 @@ var translate = {
 				text:encodeURIComponent(JSON.stringify(apiTranslateText))
 			};
 			//console.log(apiTranslateText);
-			translate.request.post(url, data, function(resultData){
-				//console.log(resultData); 
+			translate.request.post(url, data, function(responseData, requestData){
+				//console.log(responseData); 
 				//console.log(data); 
-				if(resultData.result == 0){
+				if(responseData.result != 1){
 					translate.log('=======ERROR START=======');
-					translate.log('from : '+resultData.from);
-					translate.log('to : '+resultData.to);
+					translate.log('from : '+requestData.from);
+					translate.log('to : '+requestData.to);
 					translate.log('translate text array : '+texts);
-					translate.log('response : '+resultData.info);
+					translate.log('response error info: '+responseData.info);
 					translate.log('=======ERROR END  =======');
 					//return;
 				}
 
-				for(var i = 0; i < resultData.text.length; i++){
+				for(var i = 0; i < responseData.text.length; i++){
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
 					var hash = translate.util.hash(apiTranslateText[i]);
-					translate.storage.set('hash_'+to+'_'+hash, resultData.text[i]);
+					translate.storage.set('hash_'+to+'_'+hash, responseData.text[i]);
 					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
 					if(translate.offline.fullExtract.isUse){
-						translate.offline.fullExtract.set(hash, apiTranslateText[i], data.to, resultData.text[i]);
+						translate.offline.fullExtract.set(hash, apiTranslateText[i], data.to, responseData.text[i]);
 					}
 
 					//进行组合数据到 translateResultArray
-					translateResultArray[apiTranslateArray[hash]] = resultData.text[i];
+					translateResultArray[apiTranslateArray[hash]] = responseData.text[i];
 				}
-				resultData.text = translateResultArray;			
+				responseData.text = translateResultArray;			
 
-				func(resultData);
+				func(responseData);
 			}, null);
 		},
 		listener:{
@@ -8882,10 +8889,13 @@ var translate = {
 				to:translate.to,
 				text:encodeURIComponent(JSON.stringify([translateText]))
 			};
-			translate.request.post(url, data, function(data) {
-				if (data.result == 0) return;
+			translate.request.post(url, data, function(responseData, requestData) {
+				if (responseData.result != 1){
+					translate.log('translate.selectionTranslate network response error : '+responseData.info);
+					return;
+				};
 				let curTooltipEle = document.querySelector('#translateTooltip')
-				curTooltipEle.innerText = data.text[0];
+				curTooltipEle.innerText = responseData.text[0];
 				curTooltipEle.style.top =selectionY+20+"px";
 				curTooltipEle.style.left = selectionX+50+"px" ;
 				curTooltipEle.style.display = "";
@@ -9090,6 +9100,8 @@ var translate = {
 				if(translate.progress.api.isTip){
 					//translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					translate.lifecycle.execute.translateNetworkBefore.push(function(data){
+						//var startTime = new Date().getTime();
+
 						//取出当前变动的node，对应的元素
 						var elements = translate.element.nodeToElement(data.nodes);
 						//console.log(elements)
@@ -9108,10 +9120,15 @@ var translate = {
 						//console.log(sortRects);
 
 					    //去重
-					    sortRects = translate.visual.filterNodeRepeat(sortRects);
-					    //console.log(sortRects);
+					    var repeatRects = translate.visual.filterNodeRepeat(sortRects);
+					    //console.log(repeatRects);
 
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(rectsOneArray, 2);
+					    //去除空间重叠
+					    var spaceEORects = translate.visual.rectsSpaceEliminateOverlap(repeatRects);
+					    //console.log(spaceEORects);
+					    //console.log('计算耗时：'+(new Date().getTime() - startTime));
+
+						var rectLineSplit = translate.visual.filterRectsByLineInterval(spaceEORects, 2);
 						for(var r = 0; r<rectLineSplit.length; r++){
 					    	if(typeof(rectLineSplit[r].node.className) === 'string' && rectLineSplit[r].node.className.indexOf('translate_api_in_progress') > -1){
 					    		//已经存在了，就不继续加了
@@ -9119,6 +9136,7 @@ var translate = {
 					    		rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';	
 					    	}
 						}
+						//console.log('计算+渲染耗时：'+(new Date().getTime() - startTime));
 					});
 					
 					translate.lifecycle.execute.translateNetworkAfter.push(function(data){

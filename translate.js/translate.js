@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.83.20251024',
+	version: '3.18.84.20251024',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -10191,13 +10191,15 @@ var translate = {
 		  return sortedRects;
 		},
 		/*
-			对一组坐标进行去重处理，同一个node，只会取从下标0开始往后的第一个
+			对一组坐标进行处理，过滤
+			1. 同一个node，只会取从下标0开始往后的第一个，对 node 进行排重
+			2. 对 rects 中的坐标进行计算大小，计算出当前的平均数（面积），然后移除小于平均数5倍的 rects 元素。 比如平均面积是 10， 则具体的rect面积小于 2 的则删掉
+
 			@param rects translate.visual.getRects 获取到的坐标数据，经过 translate.visual.rectsToOneArray(rects); 处理后得到的一维数组，可以直接传入，也可以进行 translate.visual.coordinateSort(rectsOneArray); 排序处理后传入
 		*/
 		filterNodeRepeat:function(rects){
 			var map = new Map(); //key是node，value随便
-			//console.log(rects);
-
+			
 			var deleteIndexArray = [];
 			for(var i = 0; i < rects.length; i++){
 				if(map.get(rects[i].node) != null){
@@ -10213,8 +10215,32 @@ var translate = {
 				//console.log(deleteIndexArray[di]);
 				rects.splice(deleteIndexArray[di], 1); // 从索引 deleteIndexArray[di] 开始，删除1个元素
 			}
-
 			map = undefined;
+
+
+			// 计算面积
+			var areaSizeArray = []; //其中下标跟 rects 一一对应，这里存的是面积大小
+			for(var i = 0; i < rects.length; i++){
+				areaSizeArray[i] = rects[i].height * rects[i].width;
+			}
+			// 1. 计算面积总和
+			const sum = areaSizeArray.reduce((acc, val) => acc + val, 0);
+			// 2. 计算平均值
+			const avg = sum / areaSizeArray.length;
+			// 3. 计算阈值（平均值的20%）
+			const threshold = avg * 0.2;
+			// 4. 收集需要删除的下标
+			const indicesToRemove = [];
+			for (let i = 0; i < areaSizeArray.length; i++) {
+			  if (areaSizeArray[i] < threshold) {
+			    indicesToRemove.push(i);
+			  }
+			}
+			//5. 移除面积极小的rects元素
+			for(var di = indicesToRemove.length-1; di > -1; di--){
+				rects.splice(indicesToRemove[di], 1);
+			}
+
 			return rects;
 		},
 		/**

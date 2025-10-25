@@ -9072,7 +9072,21 @@ var translate = {
 				node.className = node.className.replace(/translate_api_in_progress/g, '');
 			},
 			
-			startUITip:function(){
+			/*
+				config: 可设置的一些参数
+					{
+						maskLayerMinWidth:10.0 	//当翻译时，需要请求网络，此时翻译的文本上会出现遮罩层显示一个进行中的动画，这个动画出现在的元素，最小宽度是多少。如果不设置，默认是10，也就是10像素，也就是当元素大于等于10像素时，才会在上面显示这个进行中的动画。而小于10像素宽度的元素，则是空白一片什么也不显示。 它支持设置float类型的值
+					}
+
+				
+			*/
+			startUITip:function(config){
+				if(typeof(config) === 'undefined'){
+					config = {};
+				}
+				if(typeof(config.maskLayerMinWidth) !== 'number'){
+					config.maskLayerMinWidth = 10;
+				}
 				
 				//创建隐藏文字的 style
 				var translatejsTextElementHidden = document.getElementById('translatejs-text-element-hidden');
@@ -9100,7 +9114,7 @@ var translate = {
 				if(translate.progress.api.isTip){
 					//translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					translate.lifecycle.execute.translateNetworkBefore.push(function(data){
-						//var startTime = new Date().getTime();
+						var startTime = new Date().getTime();
 
 						//取出当前变动的node，对应的元素
 						var elements = translate.element.nodeToElement(data.nodes);
@@ -9119,22 +9133,40 @@ var translate = {
 					    var sortRects = translate.visual.coordinateSort(rectsOneArray);
 						//console.log(sortRects);
 
-					    //去重
-					    var repeatRects = translate.visual.filterNodeRepeat(sortRects);
-					    //console.log(repeatRects);
+					    //过滤，比如过滤掉宽度非常小的，不然显示出来会很丑
+						// 1. 收集需要删除的下标
+						const indicesToRemove = [];
+						for (let i = 0; i < sortRects.length; i++) {
+						  if (sortRects[i].width < config.maskLayerMinWidth) {
+						    indicesToRemove.push(i);
+						  }
+						}
+						// 2. 移除宽度极小的rects元素
+						for(var di = indicesToRemove.length-1; di > -1; di--){
+							//console.log(sortRects[indicesToRemove[di]]);
+							sortRects.splice(indicesToRemove[di], 1);
+						}
 
 					    //去除空间重叠
-					    var spaceEORects = translate.visual.rectsSpaceEliminateOverlap(repeatRects);
-					    //console.log(spaceEORects);
+					    var spaceEORects = translate.visual.rectsSpaceEliminateOverlap(sortRects);
 					    //console.log('计算耗时：'+(new Date().getTime() - startTime));
 
-						var rectLineSplit = translate.visual.filterRectsByLineInterval(spaceEORects, 2);
+						//var rectLineSplit = translate.visual.filterRectsByLineInterval(spaceEORects.rects, 1);
+						var rectLineSplit = spaceEORects.rects;
+						//var rectLineSplit = sortRects;
 						for(var r = 0; r<rectLineSplit.length; r++){
-					    	if(typeof(rectLineSplit[r].node.className) === 'string' && rectLineSplit[r].node.className.indexOf('translate_api_in_progress') > -1){
-					    		//已经存在了，就不继续加了
-					    	}else{
-					    		rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';	
-					    	}
+							//判断这个元素的父级是否已经添加了，可能存在检测到多个本地语种，然后中文转英语后，又出现了日语转英语。 这里避免第二次日语转英语时，跟第一次中文转英语重复，导致出现样式过渡动画的重叠
+							var parentNode = rectLineSplit[r].node.parentNode;
+							if(typeof(parentNode) !== 'undefined' && typeof(parentNode.className) === 'string' && parentNode.className.indexOf('translate_api_in_progress') > -1){
+								//上级已经有了，那么就不需要再加动画了
+							}else{
+								//上级没有加，那么这个才能考虑加
+								if(typeof(rectLineSplit[r].node.className) === 'string' && rectLineSplit[r].node.className.indexOf('translate_api_in_progress') > -1){
+						    		//已经存在了，就不继续加了
+						    	}else{
+						    		rectLineSplit[r].node.className = rectLineSplit[r].node.className+' translate_api_in_progress';	
+						    	}
+							}
 						}
 						//console.log('计算+渲染耗时：'+(new Date().getTime() - startTime));
 					});
@@ -10130,49 +10162,153 @@ var translate = {
 		    return filtered;
 		},
 		/*
-			对排重并按照top排序后的 rect 坐标进行空间的重叠处理（按高度进行判定，避免一行出现两个）
-			它可以紧紧挨着，但不允许出现重叠情况
+			对传入的 rects 进行重叠识别排除，将重叠的、且面积小的删掉。
+			说明：
+				 * - 认为“重叠”必须在水平和垂直两个方向均严格交叉，交叉的位置比如水平或垂直产生了2个像素或超过2个像素的重叠，也就是面积上实际上已经重叠了。
+				 *   所以如果两个矩形仅在边界上相接（例如 a.bottom === b.top 或 a.right === b.left）则不视为重叠，甚至稍微重叠不超过2像素也不视为重叠， 不会删除任何一方。
+				 * - 决定保留哪一个：保留面积更大的矩形；若面积相等，则保留在排序中先出现的那个（确定性）。
+				 * - 性能优化：先按 left 升序排序，比较时只与那些 left < current.right 的后续矩形比较（剪枝）。
+				 * - 不做原地 splice（避免 O(n^2) 的移动开销），而是用布尔标记 removed[]，最后重建结果数组。
 
-			@param rects 一维的矩形信息数组（包含node和坐标信息），也就是 translate.visual.filterNodeRepeat(sortRects); 去重后取得的信息。
-						注意，它必须要经过这几步处理才行：
-							var sortRects = translate.visual.coordinateSort(rectsOneArray); //排序
-						    sortRects = translate.visual.filterNodeRepeat(sortRects); //去重
+			@param rects 一维的矩形信息数组（包含node和坐标信息），比如 translate.visual.coordinateSort(rects); 排序后取得的信息。
+						输入: rects: [{left, top, right, bottom}, ...]
 			@return 返回排除重叠的坐标数组。
+					{ 
+						rects: 保留的不互相覆盖的矩形数组, 
+						removes: rects中被移除的矩形数组 
+					}
 
 		*/
-		rectsSpaceEliminateOverlap: function(rects){
-			for(var i = rects.length-1; i > -1; i--){
-				//是第一个，那么就不需要再向上判定了
-				if(i == 0){
+		rectsSpaceEliminateOverlap: function (inputRects) {
+			if (!Array.isArray(inputRects) || inputRects.length === 0){
+				return { rects: [], removes: [] };
+			}
+
+			const pixelThreshold = 2;
+			const EPS = 1e-6;
+
+			const areaOf = r =>
+			Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
+
+			const intersectionWH = (a, b) => ({
+				w: Math.min(a.right, b.right) - Math.max(a.left, b.left),
+				h: Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+			});
+
+			const rectsWithIndex = inputRects.map((r, idx) => {
+				let { left, top, right, bottom } = r;
+				if (right < left){
+					[left, right] = [right, left];
+				}
+				if (bottom < top){
+					[top, bottom] = [bottom, top]
+				};
+				return { r: { left, top, right, bottom }, idx };
+			});
+
+			rectsWithIndex.sort((A, B) => {
+				if (Math.abs(A.r.left - B.r.left) > EPS){
+					return A.r.left - B.r.left;
+				}
+				if (Math.abs(A.r.top - B.r.top) > EPS){
+					return A.r.top - B.r.top;
+				}
+				if (Math.abs(A.r.right - B.r.right) > EPS){
+					return A.r.right - B.r.right;
+				}
+				return A.r.bottom - B.r.bottom;
+			});
+
+			const n = rectsWithIndex.length;
+			const removed = new Array(n).fill(false);
+			const areas = rectsWithIndex.map(x => areaOf(x.r));
+
+			for (let i = 0; i < n; i++) {
+				if (removed[i]) {
 					continue;
 				}
-				
-				//如果上一个坐标的底部大于当前坐标的顶部，那么高度就已经产生重叠了，将排除当前元素，移除当前元素
-				if(rects[i-1].bottom > rects[i].top){
-					//console.log('---移除第'+i);
-					//console.log(rects[i]);
-					rects.splice(i, 1);
+				const Ai = rectsWithIndex[i].r;
+				const Ai_area = areas[i];
+
+				for (let j = i + 1; j < n; j++) {
+					if (removed[j]) {
+						continue;
+					}
+					const Bj = rectsWithIndex[j].r;
+
+					// ---- 优先检测包含（几何方式，带阈值）
+					const A_contains_B =
+						Ai.left <= Bj.left + pixelThreshold &&
+						Ai.top <= Bj.top + pixelThreshold &&
+						Ai.right >= Bj.right - pixelThreshold &&
+						Ai.bottom >= Bj.bottom - pixelThreshold;
+
+					const B_contains_A =
+						Bj.left <= Ai.left + pixelThreshold &&
+						Bj.top <= Ai.top + pixelThreshold &&
+						Bj.right >= Ai.right - pixelThreshold &&
+						Bj.bottom >= Ai.bottom - pixelThreshold;
+
+					if (A_contains_B || B_contains_A) {
+						if (A_contains_B && !B_contains_A) {
+							removed[j] = true;
+							continue;
+						}
+						if (B_contains_A && !A_contains_B) {
+							removed[i] = true;
+							break;
+						}
+						// 双包含（几乎重合）按面积或顺序
+						const Bj_area = areas[j];
+						if (Ai_area >= Bj_area){
+							removed[j] = true;
+						}else {
+							removed[i] = true;
+							break;
+						}
+					}
+
+					// ---- 剪枝 ----
+					if (Bj.left >= Ai.right - EPS){
+						break;
+					}
+
+					// ---- 检查普通重叠 ----
+					const { w, h } = intersectionWH(Ai, Bj);
+					if (w <= pixelThreshold || h <= pixelThreshold){
+						continue
+					};
+
+					const Bj_area = areas[j];
+					if (Ai_area > Bj_area){
+						 removed[j] = true;
+					}else if (Bj_area > Ai_area) {
+						removed[i] = true;
+						break;
+					} else {
+						removed[j] = true;
+					}
 				}
 			}
 
-			/*
-			//检查
-			for(var i = rects.length-1; i > -1; i--){
-				//是第一个，那么就不需要再向上判定了
-				if(i == 0){
-					continue;
-				}
-				
-				//如果上一个坐标的底部大于当前坐标的顶部，那么高度就已经产生重叠了，将排除当前元素，移除当前元素
-				if(rects[i-1].bottom > rects[i].top){
-					console.log('---发现漏掉的，第'+i);
-					console.log(rects[i]);
+			const keeps = [], removes = [];
+			const sortedToOrig = rectsWithIndex.map(x => x.idx);
+			const origToSorted = new Map();
+			for (let p = 0; p < n; p++){
+				origToSorted.set(sortedToOrig[p], p);
+			}
+			for (let origIdx = 0; origIdx < inputRects.length; origIdx++) {
+				const pos = origToSorted.get(origIdx);
+				if (pos === undefined || !removed[pos]) {
+					keeps.push(inputRects[origIdx]);
+				}else{
+					removes.push(inputRects[origIdx]);
 				}
 			}
-			*/
 
-			return rects;
+			return { rects: keeps, removes };
 		},
+
 		/*
 			对一组坐标进行排序
 			按开始坐标从左到右、从上到下排序
@@ -10190,59 +10326,7 @@ var translate = {
 		    });
 		  return sortedRects;
 		},
-		/*
-			对一组坐标进行处理，过滤
-			1. 同一个node，只会取从下标0开始往后的第一个，对 node 进行排重
-			2. 对 rects 中的坐标进行计算大小，计算出当前的平均数（面积），然后移除小于平均数5倍的 rects 元素。 比如平均面积是 10， 则具体的rect面积小于 2 的则删掉
-
-			@param rects translate.visual.getRects 获取到的坐标数据，经过 translate.visual.rectsToOneArray(rects); 处理后得到的一维数组，可以直接传入，也可以进行 translate.visual.coordinateSort(rectsOneArray); 排序处理后传入
-		*/
-		filterNodeRepeat:function(rects){
-			var map = new Map(); //key是node，value随便
-			
-			var deleteIndexArray = [];
-			for(var i = 0; i < rects.length; i++){
-				if(map.get(rects[i].node) != null){
-					//要删除
-					deleteIndexArray.push(i);
-					continue;
-				}
-				//加入map
-				map.set(rects[i].node, 1);
-			}
-			//console.log(deleteIndexArray);
-			for(var di = deleteIndexArray.length-1; di > -1; di--){
-				//console.log(deleteIndexArray[di]);
-				rects.splice(deleteIndexArray[di], 1); // 从索引 deleteIndexArray[di] 开始，删除1个元素
-			}
-			map = undefined;
-
-
-			// 计算面积
-			var areaSizeArray = []; //其中下标跟 rects 一一对应，这里存的是面积大小
-			for(var i = 0; i < rects.length; i++){
-				areaSizeArray[i] = rects[i].height * rects[i].width;
-			}
-			// 1. 计算面积总和
-			const sum = areaSizeArray.reduce((acc, val) => acc + val, 0);
-			// 2. 计算平均值
-			const avg = sum / areaSizeArray.length;
-			// 3. 计算阈值（平均值的20%）
-			const threshold = avg * 0.2;
-			// 4. 收集需要删除的下标
-			const indicesToRemove = [];
-			for (let i = 0; i < areaSizeArray.length; i++) {
-			  if (areaSizeArray[i] < threshold) {
-			    indicesToRemove.push(i);
-			  }
-			}
-			//5. 移除面积极小的rects元素
-			for(var di = indicesToRemove.length-1; di > -1; di--){
-				rects.splice(indicesToRemove[di], 1);
-			}
-
-			return rects;
-		},
+		
 		/**
 		 * 查找左右紧邻的矩形对
 		 * @param rects translate.visual.getRects 获取到的坐标数据，转化为 一维数组 后传入

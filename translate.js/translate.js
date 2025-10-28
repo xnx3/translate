@@ -427,7 +427,7 @@ var translate = {
 			if(window.self !== window.top){
 				if(typeof(window.parent.translate) == 'object' && typeof(window.parent.translate.version) == 'string'){
 					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-					if(window.parent.translate.language.getCurrent() != languageName){
+					if(window.parent.translate.to !== languageName){
 						//如果父页面当前的语种不是需要翻译的语种，对其进行翻译
 						window.parent.translate.changeLanguage(languageName);
 					}
@@ -486,7 +486,8 @@ var translate = {
 						if(iframeWindow.translate.to != languageName){
 							iframeWindow.translate.to = languageName;
 							iframeWindow.translate.storage.set('to',languageName);	//设置目标翻译语言
-							iframeWindow.translate.execute();
+							//iframeWindow.translate.execute();
+							iframeWindow.translate.changeLanguage(languageName);
 						}
 					}
 				}catch(e){

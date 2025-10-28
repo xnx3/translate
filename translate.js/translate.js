@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.84.20251024',
+	version: '3.18.85.20251028',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -6292,11 +6292,16 @@ var translate = {
         */
         textReplace:function(text, translateOriginal, translateResult, language, participles){
         	//console.log('----text:'+text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]')+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
+        	
         	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
         	if(text == translateOriginal){
         		return translateResult;
         	}
         	
+        	//文字之间需要空格，也就是半角标点符号，像是英语，法语， 则是true
+        	var requireSpace = translate.language.wordBlankConnector(language);
+
+        	//如果要替换的文本只是原文本中的一部分，那么就需要进行处理了
         	var findText = translateOriginal;
 
         	/**** 判断 findText 的开始字符跟结束字符是否包含着 特殊符号 ，：。 因为在 translate.util.textReplace 替换时，会根据当前语种，自动将前后有句号等符号时进行中英的符号转换，此时如果 findText 传入的带有句号的，比如 “你好，” 而实际上text的内容是已经被替换过，就会导致 “你好，” 找不到，而 “你好,” 能找到 ****/
@@ -6305,86 +6310,66 @@ var translate = {
 			
 			//取第一个字符
 			var findTextFirstChar = findText.charAt(0);
+			//取最后一个字符
 			var findTextLastChar = findText.charAt(findText.length-1);
 
+			/*
+			 * translateOriginal 生成的用于替换的变种，可能是多个，比如  “你好，世界。” 中的  "，世界" 在翻译为英文情况时，会出现这几种变种：
+			 * , 世界。
+			 * , 世界. 
+			 * ，世界。
+			 * ，世界. 
+			 * 根据不同的中英文，标点符号后面是否跟空格也不同
+			 */
+			var originalArray = [];
+			originalArray.push(translateOriginal); //首先把当前的加入进去
 
-			if(punctuationMarks_fullWidth.indexOf(findTextFirstChar) > -1){
-				//第一个字符发现了全角符号，将其替换为半角
+			//翻译替换为半角标点符号，如英语
+			if(requireSpace){
 
-				var newFindText = punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextFirstChar)]+findText.substring(1, findText.length);
-				//console.log('\t第一个字符发现了全角符号，将其替换为半角 - > '+newFindText);
-				//先进针对第一个字符的半角后替换处理
-				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
-
-				if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
-					//最后一个字符发现了全角符号，将其替换为半角
-
-					//第一个字符不转换情况下在进行替换
-					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
-
-					//第一个字符转换后再进行替换
-					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
-					//console.log('\tlast - 全角变半角 - > '+newFindText);
-					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+				//第一个发现全角字符， 转为半角处理
+				if(punctuationMarks_fullWidth.indexOf(findTextFirstChar) > -1){
+					var processFirstCharText = punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextFirstChar)]+' '+findText.substring(1, findText.length);
+					originalArray.push(processFirstCharText);
 					
-				}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
-					//最后一个字符发现了半角符号，将其替换为全角
-
-					//第一个字符不转换情况下在进行替换
-					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
-
-					//第一个字符转换后再进行替换
-					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
-					//console.log('\tlast - 半角变全角 - > '+newFindText);
-					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
-					text = translate.util.textReplace_service(text, findText, translateResult, language, participles); //第一个字符不转换情况下在进行替换
+					//第一个处理后，寻找最后一个全角字符转为半角处理
+					if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+						originalArray.push(processFirstCharText.substring(0, processFirstCharText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]);
+					}
 				}
 
-			}else if(punctuationMarks_halfWidth.indexOf(findTextFirstChar) > -1){
-				//第一个字符发现了半角符号，将其替换为全角
-
-				var newFindText = punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextFirstChar)]+findText.substring(1, findText.length);
-				//console.log('\t第一个字符发现了半角符号，将其替换为全角 - > '+newFindText);
-				//先进针对第一个字符的全角后替换处理
-				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
-
+				//将最后一个全角字符转为半角处理
 				if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
-					//最后一个字符发现了全角符号，将其替换为半角
-
-					//第一个字符不转换情况下在进行替换
-					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
-
-					//第一个字符转换后再进行替换
-					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
-					//console.log('\tlast - 全角变半角 - > '+newFindText);
-					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
-				}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
-					//最后一个字符发现了半角符号，将其替换为全角
-					
-					//第一个字符不转换情况下在进行替换
-					text = translate.util.textReplace_service(text, findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)], translateResult, language, participles); 
-
-					//第一个字符转换后再进行替换
-					newFindText = newFindText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
-					//console.log('\tlast - 半角变全角 - > '+newFindText);
-					text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);
+					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]);
 				}
-			}else if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
-				//第一个字符不是那几种标点符号，最后一个字符发现了全角符号，将其替换为半角
-				var newFindText = findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)];
-				//console.log('第一个字符不是标点符号 - 最后一个字符是全角标点符号 - 全角变半角 - > '+newFindText);
-				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);				
-			}else if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
-				//第一个字符不是那几种标点符号，最后一个字符发现了半角符号，将其替换为全角
-				var newFindText = findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)];
-				//console.log('第一个字符不是标点符号 - 最后一个字符是半角标点符号 - 半角变全角 - > '+newFindText);
-				text = translate.util.textReplace_service(text, newFindText, translateResult, language, participles);				
+			}else{
+				//翻译替换为全角标点符号，如中文
+
+				//第一个发现半字符， 转为全角处理。这里不用跟上面似的追加去除空格的，因为 textReplace_service 只为了阅读方便追加空格，并没有做去空格处理。 
+				if(punctuationMarks_halfWidth.indexOf(findTextFirstChar) > -1){
+					var processLastCharText = punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextFirstChar)]+' '+findText.substring(1, findText.length);
+					originalArray.push(processLastCharText);
+
+					//第一个处理后，寻找最后一个半角字符转为全角处理
+					if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+						originalArray.push(processLastCharText.substring(0, processLastCharText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
+					}
+				}
+
+				//将最后一个全角字符转为半角处理
+				if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
+				}
 			}
+			//console.log(originalArray);
 
-			//最后，进行一次正常替换
-			text = translate.util.textReplace_service(text, translateOriginal, translateResult, language, participles);
-			//console.log(text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]'));
-            return text;
+			for(var i = 0; i < originalArray.length; i++){
+				if(text.indexOf(originalArray[i]) > -1){
+					text = translate.util.textReplace_service(text, originalArray[i], translateResult, language, participles);
+				}
+			}
+			
+			return text;
         },
         /*
             它服务于上面的 textReplace，不需要直接使用这个

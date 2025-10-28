@@ -39,12 +39,12 @@ var verify = [
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 第一个字符没标点符号，最后一个字符有半角标点符号",
-		code:"translate.util.textReplace('你好，世界。', '好,', 'hao,', 'english') === '你 hao, 世界。'"
+		code:"translate.util.textReplace('你好，世界。', '好，', 'hao,', 'english') === '你 hao, 世界。'"
 	},
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 第一个字符没标点符号，最后一个字符有半角标点符号",
-		code:"translate.util.textReplace('你好，世界。', '世界.', 'World.', 'english') === '你好, World.'"
+		code:"translate.util.textReplace('你好，世界.', '世界。', 'World.', 'english') === '你好, World.'"
 	},
 	{
 		function:"translate.util.textReplace",
@@ -59,38 +59,24 @@ var verify = [
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号全角",
-		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
+		code:"translate.util.textReplace('你好, 世界。', '，世界。', ', World.', 'english') === '你好 , World.'"
 	},
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号全角，第二个标点符号半角",
-		code:"translate.util.textReplace('你好，世界。', '，世界.', ', World.', 'english') === '你好 , World.'"
+		code:"translate.util.textReplace('你好，世界.', '，世界。', ', World.', 'english') === '你好 , World.'"
 	},
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号半角",
-		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
+		code:"translate.util.textReplace('你好, 世界.', '，世界。', ', World.', 'english') === '你好 , World.'"
 	},
-	{
-		function:"translate.util.textReplace",
-		remark:"测试标点符号的半角全角宽泛适配 - 源文本是全角，第一个标点符号半角，第二个标点符号半角",
-		code:"translate.util.textReplace('你好，世界。', ',世界。', ', World.', 'english') === '你好 , World.'"
-	},
+	
 
-	{
-		function:"translate.util.textReplace",
-		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号全角，第二个标点符号全角",
-		code:"translate.util.textReplace('你好,世界.', '，世界。', ', World.', 'english') === '你好 , World.'"
-	},
 	{
 		function:"translate.util.textReplace",
 		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号半角，第二个标点符号全角",
 		code:"translate.util.textReplace('你好,世界.', ',世界。', ', World.', 'english') === '你好 , World.'"
-	},
-	{
-		function:"translate.util.textReplace",
-		remark:"测试标点符号的半角全角宽泛适配 - 源文本是半角，第一个标点符号全角，第二个标点符号半角",
-		code:"translate.util.textReplace('你好,世界.', '，世界.', ', World.', 'english') === '你好 , World.'"
 	},
 	{
 		function:"translate.util.textReplace",

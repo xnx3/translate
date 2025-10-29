@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.86.20251029',
+	version: '3.18.87.20251029',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -10330,8 +10330,11 @@ var translate = {
 		 * @returns {Array<{before: Object, after: Object}>} - 左右紧邻的矩形对数组
 		 */
 		afterAdjacent:function(rects){
+		  //进行从左到右-从上到下进行排序
 		  var sortedRects = translate.visual.coordinateSort(rects);
+
 		  const adjacentPairs = [];
+		  //按行分组的矩形
 		  const lineGroups = translate.visual.groupRectsByLine(sortedRects);
 		  
 		  // 检查每行中的所有紧邻元素对
@@ -10521,7 +10524,11 @@ var translate = {
 				if (!translate.nodeQueue[uuid].list.hasOwnProperty(from)) {
 					continue;
 				}
-				if(from.length < 1){
+				//空的，也就是有数字标点符号等这一类，也要加入，因为也要算入视觉间隔中去，比如 我有9个，其中的9如果不算的话，翻译后 my have9ge 就没有间隔了
+				//if(from.length < 1){
+				//	continue;
+				//}
+				if(typeof(translate.nodeQueue[uuid].list[from]) === 'undefined'){
 					continue;
 				}
 				for(var hash in translate.nodeQueue[uuid].list[from]){

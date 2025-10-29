@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.85.20251028',
+	version: '3.18.86.20251029',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1400,8 +1400,10 @@ var translate = {
 					2. 其他的情况如果后续发现有遗漏，再加入，当前没有这种考虑
 				*/	
 			if(translate.node.get(node) != null){
-				if(typeof(translate.node.get(node).whole) !== 'undefined' && translate.node.get(node).whole == true){
+				//console.log(translate.node.get(node));
+				if(typeof(translate.node.get(node).whole) !== 'undefined' && translate.node.get(node).whole === true){
 					//整体翻译
+					//console.log(node.nodeValue)
 					if(typeof(translate.node.get(node).resultText) !== 'undefined' && translate.node.get(node).resultText === node.nodeValue){
 						//当前改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件，是有translate.js 本身翻译导致的，不进行翻译
 						addTranslateExecute = false;
@@ -1508,6 +1510,8 @@ var translate = {
 						if(addTranslateExecute){ //不是 translate.js 翻译引起的改变，那么
 							translate.node.delete(mutation.target); 
 							addNodes = [mutation.target]; //将重新触发 translate.execute();
+							//console.log('listener - mutation.type === \'characterData\' , node: ');
+							//console.log(mutation.target)
 						}
 						
 						//documents.push.apply(documents, [mutation.target]);
@@ -4358,7 +4362,7 @@ var translate = {
 
 		//var nodeAttribute = translate.node.getAttribute(attribute);
 		//console.log(text+'-----:');
-		//console.log(nodeAttribute);
+		//console.log(translate.node.get(translateNode));
 		//if(typeof(translate.node.get(translateNode)[nodeAttribute.key]) == 'undefined'){
 		//	translate.node.get(node)[nodeAttribute.key] = {};
 		//}
@@ -4371,7 +4375,8 @@ var translate = {
 			//没有过，是第一次，那么赋予值
 			translate.node.get(translateNode).originalText = text;
 		}
-		//console.log(translate.node.get(node)[nodeAttribute.key]);
+		//console.log(translateNode);
+		//console.log(translate.node.get(translateNode));
 		/*
 		if(typeof(translate.node.get(node).translateTexts) != 'undefined'){ 
 			//这个node之前已经被扫描过了，那么判断一下上次扫描的文本跟当前获取到的文本是否一致，如果一致，那就没必要进行翻译了
@@ -4531,6 +4536,7 @@ var translate = {
 			*/
 
 			var newAddQueueArray = translate.addNodeToQueueAnalysis(uuid, node, textArray[tai], attribute);
+			//console.log(newAddQueueArray)
 			Array.prototype.push.apply(addQueueObjectArray, newAddQueueArray);
 		}
 		
@@ -4574,6 +4580,8 @@ var translate = {
 	*/
 	addNodeToQueueAnalysis:function(uuid, node, text, attribute){
 		//获取当前是什么语种
+		//console.log('uuid:'+uuid+', text:'+text+', attribute:'+attribute+'node:');
+		//console.log(node);
 		//var langs = translate.language.get(text);
 		var textRecognition = translate.language.recognition(text);
 		var langs = textRecognition.languageArray;
@@ -4722,6 +4730,9 @@ var translate = {
 
 	*/
 	addNodeQueueItem:function(uuid, node, word, attribute, lang, beforeText, afterText){
+		//console.log('uuid:'+uuid+', word:'+word+', attribute:'+attribute+', lang:'+lang+', beforeText:'+beforeText+', afterText:'+afterText+', node:');
+		//console.log(node);
+
 		//创建二维数组， key为语种，如 english
 		if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
 			translate.nodeQueue[uuid]['list'][lang] = new Array();
@@ -10474,11 +10485,26 @@ var translate = {
 			nodesToAddSpace.forEach(node => {
 			// 确保只修改文本内容，不影响HTML结构
 			if (node.nodeType === Node.TEXT_NODE) {
+				//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
+				if(translate.node.get(node) !== null){
+					if(typeof(translate.node.get(node).resultText) === 'string'){
+						translate.node.get(node).resultText = translate.node.get(node).resultText + '\u00A0';
+						translate.node.get(node).lastTranslateRenderTime = Date.now();
+					}
+				}
 				node.textContent = node.textContent + '\u00A0';
+				//console.log(translate.node.get(node))
 			} else if (node.nodeType === Node.ELEMENT_NODE) {
 				// 如果是元素节点，修改其最后一个子节点（假设是文本节点）
 				const lastChild = node.lastChild;
 				if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+					//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
+					if(translate.node.get(lastChild) !== null){
+						if(typeof(translate.node.get(lastChild).resultText) === 'string'){
+							translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
+							translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
+						}
+					}
 					lastChild.textContent = lastChild.textContent + '\u00A0';
 				}
 			}

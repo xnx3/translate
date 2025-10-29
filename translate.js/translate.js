@@ -8133,10 +8133,16 @@ var translate = {
 				function: 翻译完毕后的处理函数。传入如 function(data){ console.log(data); }
 						  注意，返回的data.result 为 1，则是翻译成功。  为0则是出错，可通过data.info 得到错误原因。 更详细说明参考： http://api.zvo.cn/translate/service/20230807/translate.json.html
 
+				abnormalFunc: 翻译失败后的处理函数。传入如 function(xhr){ console.log(xhr); }
+						  注意，这里的 xhr 是 XMLHttpRequest 对象，可以通过 xhr.status 获取响应状态码，通过 xhr.responseText 获取响应内容。
+
 			使用案例一： 
 			translate.request.translateText('你好，我是翻译的内容', function(data){
 				//打印翻译结果
 				console.log(data);
+			}, function(xhr){
+				//打印翻译失败后的信息
+				console.log(xhr);
 			});
 			
 			使用案例二：
@@ -8144,6 +8150,9 @@ var translate = {
 			translate.request.translateText(texts, function(data){
 				//打印翻译结果
 				console.log(data);
+			}, function(xhr){
+				//打印翻译失败后的信息
+				console.log(xhr);
 			});
 
 			使用案例三：
@@ -8155,9 +8164,12 @@ var translate = {
 			translate.request.translateText(obj, function(data){
 				//打印翻译结果
 				console.log(data);
+			}, function(xhr){
+				//打印翻译失败后的信息
+				console.log(xhr);
 			});
 		*/
-		translateText:function(obj, func){
+		translateText:function(obj, func, abnormalFunc){
 			var texts = new Array();
 			var from = translate.language.getLocal();
 			var to = translate.language.getCurrent();
@@ -8273,7 +8285,11 @@ var translate = {
 				responseData.text = translateResultArray;			
 
 				func(responseData);
-			}, null);
+			}, (function(xhr){
+				if(abnormalFunc && typeof(abnormalFunc) == 'function'){
+					abnormalFunc(xhr);
+				}
+			}));
 		},
 		listener:{
 			//是否已经启动过 translate.request.listener.addListener() 开始监听了，开始了则是true，默认没开始则是false

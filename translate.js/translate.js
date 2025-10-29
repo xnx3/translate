@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.87.20251029',
+	version: '3.18.88.20251029',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -3360,6 +3360,7 @@ var translate = {
 				value值是翻译的这个attribute对象的一些具体数据了
 					attribute 这个翻译的node对象是否是翻译的其中的某个attribute属性，如果是，那么这里便是长度大于0， 如果是元素或节点本身(nodeValue)，那么这里就是空字符串，注意，是空字符串 ''
 					resultText: string 翻译完成后，当前node节点的内容文本，注意，是node节点整体所有的内容文本（是已经翻译渲染过的）
+									注意，翻译失败或者本身是特殊字符比如数字，不需要被翻译，是没有这个属性的
 					originalText: string 翻译前显示的文本，是node节点所有的内容文本，原始的文本，（当前这里仅仅只对元素整体翻译时才会记录这个 - v3.18.14.20250903 增加）	
 					translateTexts: array string 文本数组，这里是被文本翻译接口所翻译的文本。 比如其中某项为 '你好':'hello' ，其中key是翻译前的， value是翻译后的结果， 如果 value 为 null，则代表还未进行翻译拿到翻译结果
 					whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  true:是节点内容整体翻译
@@ -10488,27 +10489,41 @@ var translate = {
 			nodesToAddSpace.forEach(node => {
 			// 确保只修改文本内容，不影响HTML结构
 			if (node.nodeType === Node.TEXT_NODE) {
-				//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
-				if(translate.node.get(node) !== null){
-					if(typeof(translate.node.get(node).resultText) === 'string'){
+				
+				//判断它的最后一个字符是否是空格，如果不是空格，才有必要加空格符
+				if(node.textContent.length === 0 || node.textContent.substring(node.textContent.length -1, node.textContent.length) !== '\u00A0'){
+
+					//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
+					if(translate.node.get(node) !== null){
+						if(typeof(translate.node.get(node).resultText) !== 'string'){
+							//没有resultText这个属性，如果翻译失败或者本身是特殊字符比如数字，不需要被翻译，是没有这个属性的，那这里默认赋予 originalText 给他，以做记录，免得被listener监听
+							translate.node.get(node).resultText = translate.node.get(node).originalText;
+						}
+						
 						translate.node.get(node).resultText = translate.node.get(node).resultText + '\u00A0';
 						translate.node.get(node).lastTranslateRenderTime = Date.now();
 					}
+
+					//console.log(node.textContent+'-->'+node.textContent.substring(node.textContent.length -1, node.textContent.length));
+					node.textContent = node.textContent + '\u00A0';
 				}
-				node.textContent = node.textContent + '\u00A0';
+				
 				//console.log(translate.node.get(node))
 			} else if (node.nodeType === Node.ELEMENT_NODE) {
 				// 如果是元素节点，修改其最后一个子节点（假设是文本节点）
 				const lastChild = node.lastChild;
 				if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-					//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
-					if(translate.node.get(lastChild) !== null){
-						if(typeof(translate.node.get(lastChild).resultText) === 'string'){
-							translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
-							translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
+					//判断它的最后一个字符是否是空格，如果不是空格，才有必要加空格符
+					if(lastChild.textContent.length === 0 || lastChild.textContent.substring(lastChild.textContent.length -1, lastChild.textContent.length) !== '\u00A0'){
+						//找到它对应的 translate.node.data 的数据，先将其进行改动 - 目的是 listener 监听改动知道这是translate.js自己改的 - 以及 让 translate.node 的数据对应起来
+						if(translate.node.get(lastChild) !== null){
+							if(typeof(translate.node.get(lastChild).resultText) === 'string'){
+								translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
+								translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
+							}
 						}
+						lastChild.textContent = lastChild.textContent + '\u00A0';
 					}
-					lastChild.textContent = lastChild.textContent + '\u00A0';
 				}
 			}
 			});

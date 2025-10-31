@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.88.20251029',
+	version: '3.18.89.20251031',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -492,6 +492,9 @@ var translate = {
 					}
 				}catch(e){
 					//增加try，避免异常,比如跨域，中断导致无法用
+					if(typeof(iframe.src) === 'string'){
+						translate.log('change sub page iframe exception , iframe src : '+iframe.src);
+					}
 					translate.log(e);
 				}
 			}

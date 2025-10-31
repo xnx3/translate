@@ -65,6 +65,9 @@ layui.use(['translate'], function(){
 
 ````
 
+## 重点支持
+注意，我们将重点支持layui的适配，如果你是layui项目，使用后遇到任何异常，都可[喊我](https://translate.zvo.cn/4030.html) ，我来给你做配合，让你能完美使用！
+
 ## 更多扩展用法及其他说明，请参考主项目 
 
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  

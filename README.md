@@ -123,7 +123,7 @@ translate.execute();//完成翻译初始化，进行翻译
 
 
 # 扩展分支
-translate.js 衍生了一系列的扩展项目。 translate.js 专注于网页的多语言切换，而其他的扩展分支，则在其他各个不同的领域，继续发光发热。
+translate.js 衍生了一系列扩展能力，在其他各个不同的领域，默默对当前的现状进行着改变。
 
 
 ### 分支：浏览器翻译插件
@@ -135,9 +135,10 @@ translate.js 衍生了一系列的扩展项目。 translate.js 专注于网页�
 [详细说明](http://translate.zvo.cn/4022.html) | [Demo](http://doc.zvo.cn/tcdn/api/doc.html)
 
 ### 分支：翻译服务私有部署
-可以对提供后端文本翻译API的服务进行私有部署，跟开源中国GiteeAI联合定制，采用GiteeAI大模型算力作为支撑，部署后按照提示步骤自助完成大模型的配置接入，提供高效稳定、翻译质量高的翻译能力支持。（当然你也可以在无网络环境进行部署，接入自己私有化的大模型，比如qwen、seed-x、gemma、glm、deepseek 等，它将各种大模型、传统文本翻译转化为统一的文本翻译API输出）。  
-私有化部署后，可开启内存缓存能力，来极大提高翻译速度！  
-还可以通过管理的后台，对译文的结果进行自定义修改，来人工校对翻译结果，使其更精准。  
+1. 提供文本翻译API，可为 translate.js 提供翻译接口支持。  
+2. 可使用在线大模型 [GiteeAI](https://ai.gitee.com/?source=translate.js) 、或内网私有部署大模型(qwen3、glm、deepseek、
+Hunyuan-MT ...) 转为统一的文本翻译API输出。  
+3. 内置内存加速、多线程加速、鉴权、译文调整、统计 ...等多项能力。  
 [开放的文本翻译API](http://api.zvo.cn/translate/service/20250814/translate.json.html) | [linux上私有部署](http://translate.zvo.cn/391129.html)
 
 ### 分支：源站翻译及域名分发

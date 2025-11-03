@@ -143,7 +143,7 @@ Hunyuan-MT ...) 转为统一的文本翻译API输出。
 
 ### 分支：源站翻译及域名分发
 将您现有的网站，翻译成全新的小语种网站，小语种网站可以分别绑定域名并支持搜索引擎收录和排名。而您的源站无需任何改动。也就是你可以将你朋友的网站，翻译为小语种网站，绑定上自己的域名，提供对外访问。而你无需向你朋友取得任何的如账号等相关权限  
-[更多介绍及视频说明](https://translate.zvo.cn/236896.html) | [某个网站的Demo](http://http.qiye1.wang.market.zvo.cn/index.html)
+[更多介绍及视频说明](https://translate.zvo.cn/236896.html) | [私有部署](http://translate.zvo.cn/236899.html) | [某个网站的Demo](http://http.qiye1.wang.market.zvo.cn/index.html)
 
 ### 分支：文本翻译大模型
 [https://huggingface.co/xnx3/translate100](https://huggingface.co/xnx3/translate100) 是一个用于翻译任务的 seq-to-seq 架构、基于 Transformer 的神经机器翻译模型，由m2m100(12B)经过蒸馏(small100)及各种处理后，得到的可以完全适配 translate.js 的一键部署应用。  

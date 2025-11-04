@@ -1,6 +1,13 @@
-# 在uniapp中使用translate.js
+在 uniapp 中使用translate.js
 
-在uniapp中使用translate.js主要引用了2个组件：
+## 使用
+使用参考： [在 vue3 中使用 translate.js](../vue/vue3/) 可以完全按照vue3的使用方式来进行使用。  
+
+uniapp 打包发布 APP 后也是可以完美使用的，但是如果发布微信小程序，微信小程序里是不能用这个翻译的，这个需要知晓。(主要是微信生态主要是国内生态，没那么多多语言切换需求就没适配。如果你出资赞助适配，也是可以的)  
+另外uniapp如果要打包app，打包app后翻译如果不能正常用，可以参考下面步骤进行调整 ，里面也有APP的相关demo示例以供参考
+  
+
+在 uniapp 中使用translate.js主要引用了2个组件：
 
 - translate.vue
 - switch-language.vue
@@ -19,6 +26,7 @@
 1. 切换语言组件，使用了renderjs来实现语言切换。
 2. 可自行调整样式。
 ![pictureTwo](resource/pictureFour.png)
+
 ## 注意事项
 
 1. 不支持微信小程序。

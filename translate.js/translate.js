@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.89.20251031',
+	version: '3.18.91.20251106',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1052,10 +1052,16 @@ var translate = {
 							if (!translate.nodeQueue[uuid].list[lang].hasOwnProperty(hash)) {
 					    		continue;
 					    	}
-							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
-							//console.log(translate.nodeQueue[uuid].list[lang][hash].original);
-							text = text + '\n' + translate.nodeQueue[uuid].list[lang][hash].original + '='+translate.storage.get('hash_'+translate.language.getCurrent()+'_'+hash);
+					    	
+					    	var result = translate.storage.get('hash_'+translate.language.getCurrent()+'_'+hash);
+							//如果翻译结果不存在，可能是同语种本身就没有翻译，忽略就好了 （因为有个本地语种也强制翻译的能力，所以同语种也放行，在这里进行一次结果判断，免得遗漏同语种也翻译的情况）
+							if(typeof(result) === 'undefined' || result === null || result.length === 0){
+								continue;
+							}
 							
+							//将配置中出现的换行替换为 \n 这个符号
+							var lineText = translate.nodeQueue[uuid].list[lang][hash].original + '='+result;
+							text = text + '\n' + (lineText.replace(/\n/g, '{\\\\n}'));
 						}
 					//}
 				}
@@ -1082,6 +1088,8 @@ var translate = {
 		},
 		//显示导出面板
 		showPanel:function(){
+			translate.recycle = function(){}; //重写垃圾回收，弃用
+
 			let panel = document.createElement('div');
 			panel.setAttribute('id', 'translate_export');
 			panel.setAttribute('class','ignore');
@@ -1097,7 +1105,7 @@ var translate = {
 
 			//说明文字
 			let textdiv = document.createElement('div');
-			textdiv.innerHTML = '1. 首先将当前语种切换为你要翻译的语种<br/>2. 点击导出按钮，将翻译的配置信息导出<br/>3. 将导出的配置信息粘贴到代码中，即可完成<br/><a href="asd" target="_black" style="color: aliceblue;">点此进行查阅详细使用说明</a>';
+			textdiv.innerHTML = '1. 首先将当前语种切换为你要翻译的语种<br/>2. 点击导出按钮，将翻译的配置信息导出<br/>3. 将导出的配置信息粘贴到代码中，即可完成<br/><a href="http://translate.zvo.cn/4076.html" target="_black" style="color: aliceblue; text-decoration: underline;">点此进行查阅详细使用说明</a>';
 			textdiv.setAttribute('style','font-size: 14px; padding: 12px;');
 
 			panel.appendChild(textdiv);			
@@ -1124,12 +1132,52 @@ var translate = {
 			//按行拆分
 			var line = properties.split('\n');
 			//console.log(line)
+
+			//计算前10行，判定当前配置文件的行开头缩进方式
+			var lmap = new Map();
+			for(var line_index = 0; line_index < line.length && line_index < 10; line_index++){
+				const match = line[line_index].match(/^[ \t]+/);
+  				var suojin = match ? match[0] : '0'; //0便是没有空白符缩进
+  				var sum = 1; //累加次数
+				if(typeof(lmap.get(suojin)) !== 'undefined'){
+					sum = sum+lmap.get(suojin);
+				}
+				lmap.set(suojin, sum);
+			}
+
+			// 核心逻辑：遍历Map找到次数最多的key
+			let maxCount = 0; // 记录最大次数（初始为0，次数至少为1，不影响）
+			let maxKey = null; // 记录次数最多的key
+
+			// 方式1：for...of遍历Map.entries()（推荐，直观）
+			for (const [key, count] of lmap.entries()) {
+			    if (count > maxCount) {
+			        maxCount = count; // 更新最大次数
+			        maxKey = key;     // 更新对应key
+			    }
+			}
+			//console.log(lmap);
+			//console.log(maxKey+' -> '+maxCount);
+			lmap = null;
+
 			for(var line_index = 0; line_index < line.length; line_index++){
-				var item = line[line_index].trim();
+				var item = line[line_index];
+				//有缩进，那就需要把行开始的缩进去掉
+				if(maxKey !== '0'){ 
+					if(line[line_index].startsWith(maxKey)){
+						var item = line[line_index].slice(maxKey.length);
+					}else{
+						//异常提示告警
+						if(line[line_index].trim().length > 0){
+							translate.log('WAINING : translate.offline.append 异常，发现某行的配置项缩进异常，这行的缩进应该跟其他行的缩进保持一致！异常的这行配置项为：\n'+item);
+						}
+					}
+				}
 				if(item.length < 1){
 					//空行，忽略
 					continue;
 				}
+				item = item.replace(/\{\\n\}/g, '\n');
 				var kvs = item.split('=');
 				//console.log(kvs)
 				if(kvs.length != 2){
@@ -1196,8 +1244,16 @@ var translate = {
 					if (!data.hasOwnProperty(i)) {
 			    		continue;
 			    	}
-					var originalText = data[i].value.originalText.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
-					text = text + '\n' + originalText + '='+data[i].value.english.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+					//var originalText = data[i].value.originalText.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+					//text = text + '\n' + originalText + '='+data[i].value.english.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+
+			    	//如果翻译结果不存在，可能是同语种本身就没有翻译，忽略就好了 （因为有个本地语种也强制翻译的能力，所以同语种也放行，在这里进行一次结果判断，免得遗漏同语种也翻译的情况）
+					if(typeof(data[i].value) === 'undefined' || typeof(data[i].value[to]) === 'undefined' || data[i].value[to] === null || data[i].value[to].trim().length === 0){
+						continue;
+					}
+
+					var lineText = data[i].value.originalText+'='+data[i].value[to];
+					text = text + '\n' + (lineText.replace(/\n/g, '{\\\\n}'));
 				}
 				text = text + '\n`);'
 
@@ -8564,7 +8620,7 @@ var translate = {
 			/*
 				列出针对key进行模糊匹配的所有键值对
 				使用方式：
-					const users = await translate.storage.indexedDB.list("*us*r*");
+					const users = await translate.storage.IndexedDB.list("*us*r*");
 					其中传入的key可以模糊搜索，其中的 * 标识另个或多个
 			*/
 			list: async function (key = '') {

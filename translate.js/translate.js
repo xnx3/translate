@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.91.20251106',
+	version: '3.18.92.20251108',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1348,6 +1348,90 @@ var translate = {
 		//用户的代码里是否启用了 translate.listener.start() ，true：启用
 		//当用户加载页面后，但是未启用翻译时，为了降低性能，监听是不会启动的，但是用户手动点击翻译后，也要把监听启动起来，所以就加了这个参数，来表示当前是否在代码里启用了监听，以便当触发翻译时，监听也跟着触发
 		use:false, 
+
+		//针对 input 的 value 监听情况, 它无法用dom监控，针对像是 vant 框架，要用 input 的 value 进行作为内容显示的，就要采用这种方式来监听变动并翻译了
+        input:{
+			/*
+				原生value属性描述符
+                如果为null，则是还没对input的value进行监听。
+                如果已进行监听，会把原本的 value 改变的 set ... 赋予这里。
+			*/
+			originalValueDescriptor : null,
+
+			/*
+				启动对 input value 变动的监听及翻译
+			*/
+			start:function(){
+				if(translate.listener.input.originalValueDescriptor !== null){
+					console.log('已启动过了，无需在启动');
+					return;
+				}
+
+				// 1. 保存原生value属性描述符
+				translate.listener.input.originalValueDescriptor = Object.getOwnPropertyDescriptor(
+					HTMLInputElement.prototype,
+					'value'
+				);
+
+				// 2. 重写HTMLInputElement原型的value setter（影响所有input）
+				Object.defineProperty(HTMLInputElement.prototype, 'value', {
+					...translate.listener.input.originalValueDescriptor,
+					set(newValue) {
+						const oldValue = this.value; // this指向当前被修改的input
+
+						// 执行原生赋值
+						translate.listener.input.originalValueDescriptor.set.call(this, newValue);
+
+						// 值变化时触发逻辑
+						if (newValue !== oldValue) {
+							//console.log(`JS修改了input值：`);
+							//console.log(`  旧值=${oldValue} → 新值=${newValue}`);
+							//console.log(this)
+
+							//如果有 translate.node 历史，要根据历史判定一下，如果当前不是translate.js 导致的改变，那就是其他js触发的，那么将其删掉，这样才能触发它重新翻译
+							if(translate.node.find(this)){
+								var nodeData = translate.node.get(this);
+								
+								if(typeof(nodeData.lastTranslateRenderTime) === 'number' && Date.now() - nodeData.lastTranslateRenderTime < 100){
+									//小于100毫秒，这是 translate.js 引起的改动，不需要任何处理
+								}else{
+									//不是 translate.js 引起的，那么需要进行翻译
+									//删掉当前的记录，以便能正常扫描加入翻译
+									translate.node.delete(this);
+								}
+
+							}
+							translate.execute([this]);
+						}
+					}
+				});
+
+			},
+
+			/*
+				当启动对input value监听时，如果切换回源语种了且本地语种并不强制翻译，那么就不需要再翻译了，还原回来，避免性能浪费。 
+				也就是相当于对 translate.listener.input.start() 触发后的还原
+			*/
+			reset: function(){
+				if(translate.listener.input.originalValueDescriptor === null){
+					return;
+				}
+
+				// 1. 还原HTMLInputElement原型的原生value属性描述符
+			    Object.defineProperty(
+			        HTMLInputElement.prototype,
+			        'value',
+			        translate.listener.input.originalValueDescriptor
+			    );
+
+			    // 2. 重置标记为未监听状态，允许后续重新启动监听
+			    translate.listener.input.originalValueDescriptor = null;
+			}
+
+          
+        },
+
+
 		//translate.listener.start();	//开启html页面变化的监控，对变化部分会进行自动翻译。注意，这里变化区域，是指使用 translate.setDocuments(...) 设置的区域。如果未设置，那么为监控整个网页的变化
 		start:function(){
 			if(typeof(translate.temp_listenerStartInterval) != 'undefined'){
@@ -1387,6 +1471,25 @@ var translate = {
 	        */
 	        
 		},
+		/*
+			对 dom 动态监听进行还原操作，还原到未监听时的状态，进行还原
+		*/
+		reset: function(){
+
+			//清除 translate.listener 
+			if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){
+				translate.listener.observer.disconnect();
+			}
+
+			//设置为未启动	
+			if(translate.listener.isStart){
+				translate.listener.isStart = false; 
+			}
+
+			//还原 input value 监听
+			translate.listener.input.reset();
+		},
+
 		/* 
 			key: nodeid node的唯一标识，格式如 HTML1_BODY1_DIV2_#text1  ，它是使用 nodeuuid.uuid(node) 获得的
 					注意，document.getElementById 获得的并不是，需要这样获得 document.getElementById('xx').childNodes[0]  因为它是要给监听dom改动那里用的，监听到的改动的是里面具体的node
@@ -1656,6 +1759,14 @@ var translate = {
 					translate.listener.observer.observe(doc, translate.listener.config);
 				}
 			}
+
+			
+			//如果要对 input 的value进行翻译，那么还要监听 input 的 value 的值
+			if(typeof(translate.element.tagAttribute['input']) === 'object' && translate.element.tagAttribute['input'].attribute.indexOf('value') > -1){
+				translate.listener.input.start();
+			}
+
+
 		},
 		/*
 			每当执行完一次渲染任务（翻译）时会触发此。注意页面一次翻译会触发多个渲染任务。普通情况下，一次页面的翻译可能会触发两三次渲染任务。
@@ -1900,13 +2011,23 @@ var translate = {
 						}
 						//console.log(translateNode)
 						//var nodeAttribute = translate.node.getAttribute(task['attribute']);
-						if(translate.node.data.get(translateNode) != null){
-							// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
-							translate.node.get(translateNode).lastTranslateRenderTime = Date.now();
-						}else{
+						if(typeof(translate.node.data.get(translateNode)) === 'undefined' || translate.node.data.get(translateNode) === null){
 							translate.log('执行异常，渲染时，node 未在 translate.node 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+translateNode);
 							translate.log(this.nodes[hash][task_index]);
+
+							var getNodeText = translate.element.nodeAnalyse.get(node, task['attribute']);
+							translate.node.set(translateNode, {
+								attribute: translateNode_attribute,
+								originalText: getNodeText.text,
+								whole: true,
+								translateTexts: {}
+							});
+							translate.node.setModified(translateNode, 'create:translate.renderTask.execute');
 						}
+
+						// 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳
+						translate.node.get(translateNode).lastTranslateRenderTime = Date.now();
+
 
 						//渲染页面进行翻译显示
 						//console.log(task.originalText+' ('+task['attribute']+') --> ' + task.resultText+', node:');
@@ -2547,6 +2668,27 @@ var translate = {
 			}
 		}
 		
+		//初始化 translate.element.tagAttribute ，主要针对 v3.17.10 版本的适配调整，对 translate.element.tagAttribute  的设置做了改变，做旧版本的适配
+		try{
+			for(var te_tag in translate.element.tagAttribute){
+				if (!translate.element.tagAttribute.hasOwnProperty(te_tag)) {
+		    		continue;
+		    	}
+		    	if(translate.element.tagAttribute[te_tag] instanceof Array){
+		    		//是 v3.17.10 之前版本的设置方式，要进行对旧版本的适配
+		    		var tArray = translate.element.tagAttribute[te_tag];
+		    		translate.element.tagAttribute[te_tag] = {
+		    			attribute: tArray,
+		    			condition: function(element){
+							return true;
+						}
+		    		}
+		    	}
+			}  
+		}catch(e){
+			translate.log(e);
+		}
+
 
 		/********** 翻译进行 */
 		
@@ -2573,26 +2715,7 @@ var translate = {
 			translate.log('translate.execute( docs ) 传入的docs.length 过大，超过1500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前1500个元素进行翻译');
 		}
 
-		//初始化 translate.element.tagAttribute ，主要针对 v3.17.10 版本的适配调整，对 translate.element.tagAttribute  的设置做了改变，做旧版本的适配
-		try{
-			for(var te_tag in translate.element.tagAttribute){
-				if (!translate.element.tagAttribute.hasOwnProperty(te_tag)) {
-		    		continue;
-		    	}
-		    	if(translate.element.tagAttribute[te_tag] instanceof Array){
-		    		//是 v3.17.10 之前版本的设置方式，要进行对旧版本的适配
-		    		var tArray = translate.element.tagAttribute[te_tag];
-		    		translate.element.tagAttribute[te_tag] = {
-		    			attribute: tArray,
-		    			condition: function(element){
-							return true;
-						}
-		    		}
-		    	}
-			}  
-		}catch(e){
-			translate.log(e);
-		}
+		
 
 		translate.time.log('开始扫描要翻译区域的元素');
 		//检索目标内的node元素
@@ -3405,8 +3528,18 @@ var translate = {
 				其中，key的取值有这几种：
 				translate_default_value: 如果当前翻译的是元素本身的值或node节点本身的值(nodeValue)，那么这里的key就是固定的 translate_default_value
 				attribute_属性名: 如果当前翻译的是元素的attribute 的某个属性，那么这里就是 attribute_属性名， 比如 a 标签的 title ，那这里便是 attribute_title
+				modified: 被改动的动作，比如创建、值发生改动，都会记录到这里，它没有什么实际作用，仅仅只是为了方便开发调试使用。 
+						这是一个数组格式，其值如：
+						[
+							'create:translate.faultTolerance.documentCreateTextNode.enable',
+							'update:translate.execute'
+						]
+						创建便是 create 开头，数据修改（追加属性、属性值修改、删除属性等）便是 update 开头，后面跟着的是操作它是在哪个方法里
+						越早操作，下标越小，也就是 [0] 是最开始创建的，然后每次修改都会push进一个数据进去
+
 				lastTranslateRenderTime: 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳。
 										 每当触发渲染时这里都会重新赋予一次最新的时间，这里也就是最后一次渲染的时间。 如果还没渲染那这里便是 undefined 或者 null，总之 typeof 不是 number
+										 另外这个时间是渲染的前一刻赋予的，赋予后立即进行的DOM渲染
 				translateResults: array string 文本数组，这里是被 translate.element.nodeAnalyse.set 进行翻译渲染之后，每次针对node进行一次渲染，它都会讲渲染的文本设置进来，不管是node本身还是属性还是什么，都会直接讲其具体结果拿过来。当listener动态监听是，也是根据这个来判定当前是否是有 translate.js 本身导致的node发生了改变
 						{
 							你好，世界:1
@@ -3438,6 +3571,21 @@ var translate = {
 		},
 		set:function(node, value){
 			translate.node.data.set(node,value);
+		},
+		/*
+			向 translate.node 的元素中，追加属性 modified 的数组内容
+		*/
+		setModified:function(node, text){
+			if(typeof(translate.node.data.get(node)) === 'undefined' || translate.node.data.get(node) === null){
+				translate.log('translate.node.setModified exception: node not find in translate.node,  node:');
+				translate.log(node);
+				return;
+			}
+
+			if(typeof(translate.node.data.get(node).modified) === 'undefined'){
+				translate.node.data.get(node).modified = [];
+			}
+			translate.node.data.get(node).modified.push(text);
 		},
 		//从 translate.node.data 中 删除 key 是 node 的
 		delete: function(node){
@@ -8850,12 +8998,8 @@ var translate = {
 		*/
 
 		//清除 translate.listener 
-		if(typeof(translate.listener.observer) != 'undefined' && translate.listener.observer != null){
-			translate.listener.observer.disconnect();
-		}
-		if(translate.listener.isStart){
-			translate.listener.isStart = false; //设置为未启动	
-		}
+		translate.listener.reset();
+
 		//translate.temp_listenerStartInterval = undefined; //设置为尚未启动
 		translate.init_first_trigger_execute = undefined; //translate.init 的 execute钩子，设置为未初始化状态
 		

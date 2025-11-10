@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.92.20251108',
+	version: '3.18.93.20251110',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1613,7 +1613,13 @@ var translate = {
 					if (mutation.type === 'childList') {
 						if(mutation.addedNodes.length > 0){
 							//多了组件
-							addNodes = mutation.addedNodes;
+							for(var ani = 0; ani < mutation.addedNodes.length; ani++){
+								var addNodeName = translate.element.getNodeName(mutation.addedNodes[ani]).toLowerCase();
+								if(addNodeName.length > 0 && translate.ignore.tag.indexOf(addNodeName) == -1){
+									addNodes.push(mutation.addedNodes[ani]);
+								}
+							}
+							//addNodes = mutation.addedNodes;
 							//documents.push.apply(documents, mutation.addedNodes);
 						}
 						if(mutation.removedNodes.length > 0){

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.94.20251111',
+	version: '3.18.95.20251111',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -2232,7 +2232,7 @@ var translate = {
 	executeTriggerNumber:0, 
 	
 	lifecycle:{
-		
+
 		/*
 		 * 切换语言 
 		 */
@@ -2767,16 +2767,15 @@ var translate = {
 		//console.log('----要翻译的目标元素-----');
 		//console.log(all)
 		
-		if(all.length > 500){
+		if(all.length > 1500){
 			translate.log('------tip------');
-			translate.log('translate.execute( docs ) 传入的docs.length 过大，超过1500，这很不正常，当前 docs.length : '+all.length+' ,如果你感觉真的没问题，请联系作者 http://translate.zvo.cn/43006.html 说明情况，根据你的情况进行分析。 当前只取前1500个元素进行翻译');
+			translate.log('警告 translate.execute( docs ) 传入的docs.length 过大，超过1500，这不正常，当前 docs.length : '+all.length+' , 它依旧会正常进行执行，但会有性能损耗。 这个情况很可能是你用的某些框架，没有等dom渲染完就执行了translate.execute() ，同时启用了dom变动监听，导致监听到页面加载大量的DOM渲染； 另外也有可能你本身页面就是列表页或者什么原因就是有大量的动态元素获取后渲染，如果是这种情况，这是正常的。');
 		}
 
-		
 
 		translate.time.log('开始扫描要翻译区域的元素');
 		//检索目标内的node元素
-		for(var i = 0; i< all.length & i < 1500; i++){
+		for(var i = 0; i< all.length & i < 15000; i++){
 			var node = all[i];
 			translate.element.whileNodes(uuid, node);	
 		}

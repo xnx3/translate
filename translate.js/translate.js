@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.93.20251110',
+	version: '3.18.94.20251111',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -401,7 +401,9 @@ var translate = {
 			return;
 		}
 		
-		translate.lifecycle.changeLanguage_Trigger(languageName);
+		translate.lifecycle.changeLanguage.trigger_Trigger({
+			to:languageName
+		});
 
 		
 		//用的是v2.x或更高
@@ -419,27 +421,6 @@ var translate = {
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
 		
-		/*
-			1. 先触发父级，免得当前刷新了，导致父级不执行翻译了
-		*/
-		//检测当前是否处于iframe中，如果当前是在iframe中，有父级页面，也要触发父级进行翻译
-		try{
-			if(window.self !== window.top){
-				if(typeof(window.parent.translate) == 'object' && typeof(window.parent.translate.version) == 'string'){
-					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-					if(window.parent.translate.to !== languageName){
-						//如果父页面当前的语种不是需要翻译的语种，对其进行翻译
-						window.parent.translate.changeLanguage(languageName);
-					}
-				}
-			}
-		}catch(e){
-			//增加try，避免异常导致无法用
-			translate.log(e);
-		}
-		
-		translate.time.log('iframe 完成');
-
 		//判断当前页面是否需要进行翻译，如果需要，那还要对整个页面内容文本进行隐藏处理
 		if(translate.visual.webPageLoadTranslateBeforeHiddenText_use){
 			//清除 最开始的全部文本隐藏的first记录
@@ -460,8 +441,35 @@ var translate = {
 			selectLanguageRefreshRender:false //是否重新渲染select选择语言到原始未翻译前的状态，默认不设置则是true，进行重新渲染
 		}); 
 
+
+		/*
+			先触发父级，免得当前刷新了，导致父级不执行翻译了
+		*/
+		//检测当前是否处于iframe中，如果当前是在iframe中，有父级页面，也要触发父级进行翻译
+		try{
+			if(window.self !== window.top){
+				if(typeof(window.parent.translate) == 'object' && typeof(window.parent.translate.version) == 'string'){
+					//iframe页面中存在 translate,那么也控制iframe中的进行翻译
+					if(window.parent.translate.to !== languageName){
+						//如果父页面当前的语种不是需要翻译的语种，对其进行翻译
+						window.parent.translate.changeLanguage(languageName);
+					}
+				}
+			}
+		}catch(e){
+			//增加try，避免异常导致无法用
+			translate.log(e);
+		}
+		
+		translate.time.log('父级 iframe 触发changeLanguage完成');
+
 		translate.to = languageName;
 		translate.storage.set('to',languageName);	//设置目标翻译语言
+
+		translate.lifecycle.changeLanguage.resetAfter_Trigger({
+			to: languageName
+		});
+
 		//重新绘制 select 选择语言
 		translate.selectLanguageTag.refreshRender();
 
@@ -2224,22 +2232,65 @@ var translate = {
 	executeTriggerNumber:0, 
 	
 	lifecycle:{
-
+		
 		/*
-			当执行 translate.changeLanguage() 后立即触发此。
-			也就是当用户点击切换语言时，立即触发，然后再进行切换语言
+		 * 切换语言 
+		 */
+		changeLanguage:{
 
-			@param to 翻译为的语种
-		*/
-		changeLanguage:[],
-		changeLanguage_Trigger: function(to){
-			for(var i = 0; i < translate.lifecycle.changeLanguage.length; i++){
-                try{
-                    translate.lifecycle.changeLanguage[i](to);
-                }catch(e){
-                    translate.log(e);
+			/*
+				当触发 translate.changeLanguage(...) 时，会立即先触发此，再去执行 translate.changeLanguage(...) 的处理
+			*/
+			trigger:[],
+			trigger_Trigger:function(data){
+				for(var i = 0; i < translate.lifecycle.changeLanguage.trigger.length; i++){
+	                try{
+	                    translate.lifecycle.changeLanguage.trigger[i](data);
+	                }catch(e){
+	                    translate.log(e);
+	                }
+	            }
+
+	            //兼容旧版本的
+	            for(var i = 0; i < translate.lifecycle.changeLanguage.old_trigger_array.length; i++){
+	                try{
+	                    translate.lifecycle.changeLanguage.old_trigger_array[i](data.to);
+	                }catch(e){
+	                    translate.log(e);
+	                }
+	            }
+			},
+			/*
+				下面这两个是兼容以前版本的
+			*/
+			//通过 push 加入的，只会加入到 old_trigger_array 中，传入参数是 to，也就是 string格式
+			old_trigger_array:[],
+			push: function(func){
+				translate.log('提示， translate.lifecycle.changeLanguage.push 方式已过时，但依旧生效，可正常使用。 最新的方式，文档参考 http://translate.zvo.cn/540189.html ');
+				translate.lifecycle.changeLanguage.trigger.push(func);
+				translate.lifecycle.changeLanguage.old_trigger_array.push(func);
+			},
+
+
+
+			/*
+				在触发 translate.reset() 之后、 执行切换语言动作之前，进行触发
+				{
+					to: 			//翻译为的语种
+				}
+			*/
+			resetAfter:[],
+			resetAfter_Trigger:function(data){
+				var isNextExecute = true; //是否继续向下执行，true则是继续执行，false则是不继续执行。 
+            	for(var i = 0; i < translate.lifecycle.changeLanguage.resetAfter.length; i++){
+            		try{
+                        translate.lifecycle.changeLanguage.resetAfter[i](data);
+                    }catch(e){
+                        translate.log(e);
+                    }
                 }
-            }
+            },
+
 		},
 
 		/*

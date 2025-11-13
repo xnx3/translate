@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.95.20251111',
+	version: '3.18.96.20251113',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -541,31 +541,7 @@ var translate = {
 	//使用 setAutoDiscriminateLocalLanguage 进行设置
 	autoDiscriminateLocalLanguage:false,
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
-	/*
-		v2.11.5增加
-		正在进行翻译的节点，会记录到此处。
-		这里是最底的节点了，不会再有下级了。这也就是翻译的最终节点，也就是 translate.element.findNode() 发现的节点
-		也就是扫描到要进行翻译的节点，在翻译前，加入到这里，在这个节点翻译结束后，将这里面记录的节点删掉。
-		
-		格式如 
-			[
-				{
-					node: node节点的对象
-					number: 2 (当前正在翻译进行中的次数，比如一个节点有中英文混合的文本，那么中文、英文 会同时进行两次翻译，也就是最后要进行两次替换，会导致这个node产生两次改动。每次便是+1、-1)
-				},
-				{
-					......
-				}
-			]
-
-		生命周期：
-		
-		translate.execute() 执行后，会扫描要翻译的字符，扫描完成后首先会判断缓存中是否有，是否会命中缓存，如果缓存中有，那么在加入 task.add 之前就会将这个进行记录 ++ 
-		在浏览器缓存没有命中后，则会通过网络api请求进行翻译，此时在发起网络请求前，会进行记录 ++
-		当使用 translate.listener.start() 后，网页中动态渲染的部分会触发监听，触发监听后首先会判断这个节点是否存在于这里面正在被翻译，如果存在里面，那么忽略， 如果不存在里面，那么再进行 translate.execute(变动的节点) 进行翻译 （当然执行这个翻译后，自然也就又把它加入到此处进行记录 ++）
-		【唯一的减去操作】 在task.execute() 中，翻译完成并且渲染到页面执行完成后，会触发延迟50毫秒后将这个翻译的节点从这里减去
-	*/
-	inProgressNodes:[], 
+	
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'link', 'pre', 'code'],
@@ -1570,20 +1546,27 @@ var translate = {
 					2. 其他的情况如果后续发现有遗漏，再加入，当前没有这种考虑
 				*/	
 			if(translate.node.get(node) != null){
-				//console.log(translate.node.get(node));
-				if(typeof(translate.node.get(node).whole) !== 'undefined' && translate.node.get(node).whole === true){
-					//整体翻译
-					//console.log(node.nodeValue)
-					if(typeof(translate.node.get(node).resultText) !== 'undefined' && translate.node.get(node).resultText === node.nodeValue){
-						//当前改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件，是有translate.js 本身翻译导致的，不进行翻译
-						addTranslateExecute = false;
-					}
-				}else{
-					//不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
-					//这就要根据最后翻译时间这个来判定了
-					if(typeof(translate.node.get(node).lastTranslateRenderTime) == 'number' && translate.node.get(node).lastTranslateRenderTime + 500 > Date.now()){
-						//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
-						addTranslateExecute = false;
+				//根据现实结果来判断是否是有translate.js 本身翻译导致的dom改变
+				if(typeof(translate.node.get(node).translateResults) !== 'undefined' && typeof(translate.node.get(node).translateResults[node.nodeValue]) === 'number'){
+					//是translate.js翻译导致的dom文字改变
+					addTranslateExecute = false;
+				}
+				
+				if(addTranslateExecute === true){
+					if(typeof(translate.node.get(node).whole) !== 'undefined' && translate.node.get(node).whole === true){
+						//整体翻译
+						if(typeof(translate.node.get(node).resultText) !== 'undefined' && translate.node.get(node).resultText === node.nodeValue){
+							//当前改变后的内容，跟上次翻译后的结果一样，那说明当前node改变事件，是有translate.js 本身翻译导致的，不进行翻译
+							addTranslateExecute = false;
+						}
+					}else{
+						//不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
+
+						//这就要根据最后翻译时间这个来判定了 -- 这个计划要剔除，因为本身在 translate.node.get(node).translateResults 已经判定了，这个属于重复判定。 这个先留一段时间
+						if(typeof(translate.node.get(node).lastTranslateRenderTime) === 'number' && translate.node.get(node).lastTranslateRenderTime + 100 > Date.now()){
+							//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
+							addTranslateExecute = false;
+						}
 					}
 				}
 			}
@@ -1718,23 +1701,10 @@ var translate = {
 
 					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
 					var translateNodes = [];
-					//console.log(translate.inProgressNodes.length);
 					for(let node of documents){
 						//console.log('---type:'+node.nodeType);
 
-						var find = false;
-						for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-							if(translate.inProgressNodes[ini].node.isSameNode(node)){
-								//有记录了，那么忽略这个node，这个node是因为翻译才导致的变动
-								//console.log('发现相同');
-								find = true;
-								break;
-							}
-						}
-						if(find){
-							continue;
-						}
-
+						
 						//console.log(node);
 						let nodeid = nodeuuid.uuid(node);
 						if(typeof(translate.listener.ignoreNode[nodeid]) != 'undefined'){
@@ -1977,29 +1947,6 @@ var translate = {
 							continue;
 						}
 						
-						//翻译完毕后，再将这个翻译的目标node从 inPro....Nodes 中去掉
-						var ipnode = this.nodes[hash][task_index];
-						//console.log('int-----++'+ipnode.nodeValue);
-						setTimeout(function(ipnode){
-							//console.log('int-----'+ipnode.nodeValue);
-							for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-								if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
-									//console.log('in progress --');
-									//console.log(ipnode);
-									//有记录了，那么出现次数 +1
-									translate.inProgressNodes[ini].number = translate.inProgressNodes[ini].number - 1;
-									//console.log("inProgressNodes -- number: "+translate.inProgressNodes[ini].number+', text:'+ipnode.nodeValue);
-									if(translate.inProgressNodes[ini].number < 1){
-										translate.inProgressNodes.splice(ini,1);	
-										//console.log("inProgressNodes -- 减去node length: "+translate.inProgressNodes.length+', text:'+ipnode.nodeValue);
-									}
-
-									break;
-								}
-							}
-							
-						}, 50, ipnode);
-
 
 						// translate.node 记录
 						
@@ -2957,29 +2904,7 @@ var translate = {
 						//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
 
 
-						//加入 translate.inProgressNodes
-						//取得这个翻译的node
-						var ipnode = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'];
-
-						//判断这个node是否已经在 inProgressNodes 记录了
-						var isFind = false;
-						for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-							if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
-								//有记录了，那么出现次数 +1
-								translate.inProgressNodes[ini].number++;
-								isFind = true;
-							}
-						}
-						//未发现，那么还要将这个node加入进去
-						if(!isFind){
-							//console.log('cache - find - add -- lang:'+lang+', hash:'+hash+' node_index:'+node_index);
-							//console.log(ipnode.nodeValue);
-							translate.inProgressNodes.push({node: ipnode, number:1});
-						}
-
-						//console.log(translate.inProgressNodes);
-						//加入 translate.inProgressNodes -- 结束
-
+						
 						//翻译结果的文本，包含了before  、 after 了
 						var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
 						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
@@ -3246,57 +3171,7 @@ var translate = {
 			return;
 		}
 		
-		//加入 translate.inProgressNodes -- start
-		for(var lang in translateHashArray){
-			if (!translateHashArray.hasOwnProperty(lang)) {
-	    		continue;
-	    	}
-			if(typeof(translateHashArray[lang]) == 'undefined'){
-				continue;
-			}
-			if(translateHashArray[lang].length < 1){
-				continue;
-			}
-			for(var hai = 0; hai<translateHashArray[lang].length; hai++){
-				var thhash = translateHashArray[lang][hai];
-				//取得这个翻译的node
-				//var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
-				//console.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\'chinese_simplified\'][\''+thhash+'\']');
-				//console.log(lang);
-				//console.log(translate.nodeQueue[uuid]['list'][lang][thhash].nodes);
-				if(typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length) == 'undefined'){
-					translate.log('translate.nodeQueue[\''+uuid+'\'][\'list\'][\''+lang+'\'][\''+thhash+'\'].nodes.length is null ，理论上不应该存在，进行异常报出，但不影响使用，已容错。');
-					continue;
-				}
 		
-				for(var ipni = 0; ipni < translate.nodeQueue[uuid]['list'][lang][thhash].nodes.length; ipni++){
-					//取得这个翻译的node
-					var ipnode = translate.nodeQueue[uuid]['list'][lang][thhash].nodes[ipni].node;
-
-					//判断这个node是否已经在 inProgressNodes 记录了
-					var isFind = false;
-					for(var ini = 0; ini < translate.inProgressNodes.length; ini++){
-						if(translate.inProgressNodes[ini].node.isSameNode(ipnode)){
-							//有记录了，那么出现次数 +1
-							//console.log('net request ++');
-							//console.log(ipnode);
-							translate.inProgressNodes[ini].number++;
-							isFind = true;
-						}
-					}
-					//未发现，那么还要将这个node加入进去
-					if(!isFind){
-						//console.log('net request add');
-						//console.log(ipnode);
-						translate.inProgressNodes.push({node: ipnode, number:1});
-					}
-
-				}
-
-			}
-		}
-		//加入 translate.inProgressNodes -- end
-	
 		//状态
 		translate.state = 20;
 
@@ -3596,22 +3471,30 @@ var translate = {
 				lastTranslateRenderTime: 记录当前有 translate.js 所触发翻译之后渲染到dom界面显示的时间，13位时间戳。
 										 每当触发渲染时这里都会重新赋予一次最新的时间，这里也就是最后一次渲染的时间。 如果还没渲染那这里便是 undefined 或者 null，总之 typeof 不是 number
 										 另外这个时间是渲染的前一刻赋予的，赋予后立即进行的DOM渲染
-				translateResults: array string 文本数组，这里是被 translate.element.nodeAnalyse.set 进行翻译渲染之后，每次针对node进行一次渲染，它都会讲渲染的文本设置进来，不管是node本身还是属性还是什么，都会直接讲其具体结果拿过来。当listener动态监听是，也是根据这个来判定当前是否是有 translate.js 本身导致的node发生了改变
+				
+				translateResults: array string 文本数组，这里是被 translate.element.nodeAnalyse.set 进行翻译渲染之后，每次针对node进行一次渲染，它都会讲渲染的文本（注意是翻译之后的文本，而不是原文）设置进来，不管是node本身还是属性还是什么，都会直接讲其具体结果拿过来。
+						注意，翻译完毕进行渲染时，是先将要显示的文本（翻译后的文本）拿来赋予到这里，然后在执行 dom渲染（触发listener）  
+						当listener动态监听时，也是根据这个来判定当前是否是有 translate.js 本身导致的node发生了改变
 						{
 							你好，世界:1
 							你是谁:1
 						}
-						它使用是 typeof(translate.node.get(node).translateResults['你好世界']) != 'undefined' 这样使用，至于后面的value为1那纯属是凑的，没任何意义						 
+						它使用是 typeof(translate.node.get(node).translateResults['你好世界']) === 'number' 这样使用，至于后面的value为1那纯属是凑的，没任何意义						 
 				
 				
+				attribute 这个翻译的node对象是否是翻译的其中的某个attribute属性，如果是，那么这里便是长度大于0， 如果是元素或节点本身(nodeValue)，那么这里就是空字符串，注意，是空字符串 ''
+						另外这个字段，当前应该仅仅只是针对 input、textarea 的 value 属性有用，也就是它的值要么是空字符串，要么是 'value'， 因为像是 input value 的属性是不属于dom的，必须 input.value 这样才能点出来
 
-				value值是翻译的这个attribute对象的一些具体数据了
-					attribute 这个翻译的node对象是否是翻译的其中的某个attribute属性，如果是，那么这里便是长度大于0， 如果是元素或节点本身(nodeValue)，那么这里就是空字符串，注意，是空字符串 ''
-					resultText: string 翻译完成后，当前node节点的内容文本，注意，是node节点整体所有的内容文本（是已经翻译渲染过的）
+				resultText: string 翻译完成后，当前node节点的内容文本，注意，是node节点整体所有的内容文本（是已经翻译渲染过的）
 									注意，翻译失败或者本身是特殊字符比如数字，不需要被翻译，是没有这个属性的
-					originalText: string 翻译前显示的文本，是node节点所有的内容文本，原始的文本，（当前这里仅仅只对元素整体翻译时才会记录这个 - v3.18.14.20250903 增加）	
-					translateTexts: array string 文本数组，这里是被文本翻译接口所翻译的文本。 比如其中某项为 '你好':'hello' ，其中key是翻译前的， value是翻译后的结果， 如果 value 为 null，则代表还未进行翻译拿到翻译结果
-					whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  true:是节点内容整体翻译
+				originalText: string 翻译前显示的文本，是node节点所有的内容文本，原始的文本，（当前这里仅仅只对元素整体翻译时才会记录这个 - v3.18.14.20250903 增加）	
+				
+				translateTexts: array string 文本数组，这里是被文本翻译接口所翻译的文本。 
+						比如其中某项为 '你好':'hello' ，其中key是翻译前的， value是翻译后的结果， 如果 value 为 null，则代表还未进行翻译拿到翻译结果
+				
+				whole: boolean 当前是否是整体进行翻译的，比如当前即使是设置的整体翻译，但是这个node命中了自定义术语，被术语分割了，那当前翻译也不是整体翻译的。 
+						这个属性在扫描完节点，进行请求翻译接口或命中本地缓存之前，就要被设置。  
+						true:是节点内容整体翻译
 					
 		*/
 		data: null,
@@ -4226,10 +4109,11 @@ var translate = {
 				}
 
 				if(translate.node.find(translateNode)){
-					if(typeof(translate.node.get(translateNode).translateResults) == 'undefined'){
+					if(typeof(translate.node.get(translateNode).translateResults) === 'undefined'){
 						translate.node.get(translateNode).translateResults = {};
 					}
 					translate.node.get(translateNode).translateResults[resultShowText] = 1;
+					translate.node.get(translateNode).resultText = resultShowText;
 				}else{
 					//翻译过程中，会有时间差，比如通过文本翻译api请求，这时node元素本身被其他js改变了，导致翻译完成后，原本的node不存在了
 					//console.log('[debug] 数据异常，analyse - set 中发现 translate.node 中的 node 不存在，理论上应该只要被扫描了，被翻译了，到这里就一定会存在的，不存在怎么会扫描到交给去翻译呢');
@@ -10774,8 +10658,13 @@ var translate = {
 							//没有resultText这个属性，如果翻译失败或者本身是特殊字符比如数字，不需要被翻译，是没有这个属性的，那这里默认赋予 originalText 给他，以做记录，免得被listener监听
 							translate.node.get(node).resultText = translate.node.get(node).originalText;
 						}
-						
 						translate.node.get(node).resultText = translate.node.get(node).resultText + '\u00A0';
+
+						if(typeof(translate.node.get(node).translateResults) === 'undefined'){
+							translate.node.get(node).translateResults = {};
+						}
+						translate.node.get(translateNode).translateResults[translate.node.get(node).resultText] = 1;
+
 						translate.node.get(node).lastTranslateRenderTime = Date.now();
 					}
 
@@ -10794,6 +10683,7 @@ var translate = {
 						if(translate.node.get(lastChild) !== null){
 							if(typeof(translate.node.get(lastChild).resultText) === 'string'){
 								translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
+								translate.node.get(translateNode).translateResults[translate.node.get(node).resultText] = 1;
 								translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
 							}
 						}

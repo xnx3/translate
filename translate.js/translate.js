@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.96.20251113',
+	version: '3.18.97.20251113',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -1473,57 +1473,7 @@ var translate = {
 			//还原 input value 监听
 			translate.listener.input.reset();
 		},
-
-		/* 
-			key: nodeid node的唯一标识，格式如 HTML1_BODY1_DIV2_#text1  ，它是使用 nodeuuid.uuid(node) 获得的
-					注意，document.getElementById 获得的并不是，需要这样获得 document.getElementById('xx').childNodes[0]  因为它是要给监听dom改动那里用的，监听到的改动的是里面具体的node
-			value:13位时间戳
-		*/
-		ignoreNode:[],
-		/*
-			通过 translate.execute() 触发的翻译，来使node发生的改动，这种改动加入到 ignoreNode 的过期时间是多少。 
-			单位是毫秒
-		*/
-		translateExecuteNodeIgnoreExpireTime:1000,
-		/*
-		  	增加一个被listener忽略的节点
-		  	这里通常是用于被 translate.js 本身翻译更改的节点、以及像是 Layui 被翻译后触发了渲染改动了dom ， 这几种场景都是翻译本身自己触发的，是不需要再被listener触发，不然就形成死循环了
-		  	node 是哪个节点被listener扫描到改动后忽略。
-		  		可传入 node、也可以传入node的uuid字符串
-		  	expireTime 过期时间，也就是执行当前方法将 node 加入后，过多长时间失效，这里是毫秒，比如传入 500 则这个node在当前时间往后的500毫秒内，如果被listener监听到改动，是直接被忽略的，不会触发任何翻译操作
-			showResultText 实际显示出来的文本，翻译之后显示出来的文本。如果翻译过程中其他js改动了这个文本内容，导致未能翻译，则 analyse.set 的 resultText 会返回 空字符串设置到这里
-		 */
-		addIgnore:function(node, expireTime, showResultText){
-			let nodeid = '';
-			if(typeof(node) == 'string'){
-				nodeid = node;
-			}else{
-				nodeid = nodeuuid.uuid(node);
-			}
-
-			translate.listener.ignoreNode[nodeid] = {
-				addtime:Date.now()+expireTime,
-				text:showResultText
-			};
-
-			//translate.listener.renderTaskFinish();
-		},
-		/*
-			刷新 ignoreNode 中的元素，也就是查找其中 expireTime 过期的，删掉
-		*/
-		refreshIgnoreNode:function(){
-			//console.log('refresh ignore ,current: '+Object.keys(translate.listener.ignoreNode).length);
-			var currentTime = Date.now();
-			for (const node in translate.listener.ignoreNode) {
-				if(translate.listener.ignoreNode[node].addtime < currentTime){
-					//console.log('delete : ');
-					//console.log(node);
-					delete translate.listener.ignoreNode[node];
-				}
-			}
-			//console.log('refresh ignore finish: '+Object.keys(translate.listener.ignoreNode).length);
-		},
-
+		
 		/*
 			用于监听发生改变的这个 node 是否有正常需要翻译的内容、以及是否是非translate.js触发的需要被翻译。
 			注意，传入进行判断的node中的文本必须是 node.nodeValue ，也就是这个必须是 node.nodeType == 2(某个元素的属性，比如 input 的 placeholder) 或 3(文本节点)， 这样他们才会有正常的 node.nodeValue，而且文本也存在于 node.nodeValue 中
@@ -1563,7 +1513,7 @@ var translate = {
 						//不是整体翻译，可能是触发自定义术语、或直接没启用整体翻译能力
 
 						//这就要根据最后翻译时间这个来判定了 -- 这个计划要剔除，因为本身在 translate.node.get(node).translateResults 已经判定了，这个属于重复判定。 这个先留一段时间
-						if(typeof(translate.node.get(node).lastTranslateRenderTime) === 'number' && translate.node.get(node).lastTranslateRenderTime + 100 > Date.now()){
+						if(typeof(translate.node.get(node).lastTranslateRenderTime) === 'number' && translate.node.get(node).lastTranslateRenderTime + 30 > Date.now()){
 							//如果这个node元素，已经被翻译过了，最后一次翻译渲染时间，距离当前时间不超过500毫秒，那认为这个元素动态改变，是有translate.js 本身引起的，将不做任何动作	
 							addTranslateExecute = false;
 						}
@@ -1695,42 +1645,10 @@ var translate = {
 					}
 	          	}
 			    
-				if(documents.length > 0){
+			    if(documents.length > 0){
 					//有变动，需要看看是否需要翻译，延迟10毫秒执行
 					translate.time.log('监听到元素发生变化,'+documents.length+'个元素');
-
-					//判断是否属于在正在翻译的节点，重新组合出新的要翻译的node集合
-					var translateNodes = [];
-					for(let node of documents){
-						//console.log('---type:'+node.nodeType);
-
-						
-						//console.log(node);
-						let nodeid = nodeuuid.uuid(node);
-						if(typeof(translate.listener.ignoreNode[nodeid]) != 'undefined'){
-							if(translate.listener.ignoreNode[nodeid].addtime > Date.now() && typeof(node.nodeValue) == 'string' && node.nodeValue == translate.listener.ignoreNode[nodeid].text){
-								//console.log('node 未过忽略期，listener扫描后忽略：'+nodeid);
-								continue;
-							}
-						}
-
-						//不相同，才追加到新的 translateNodes
-						translateNodes.push(node);
-						//console.log('listener ++ '+node.nodeValue);
-						//console.log(node);
-					}
-					if(translateNodes.length < 1){
-						return;
-					}
-					//console.log('translateNodeslength: '+translateNodes.length);
-
-					translate.time.log('将监听到的发生变化的元素进行整理,得到'+translateNodes.length+'个元素，对其进行翻译');
-					//console.log(translateNodes);
-					
-					translate.execute(translateNodes);
-					//setTimeout(function() {
-					//	translate.execute(translateNodes); //指定要翻译的元素的集合,可传入一个或多个元素。如果不设置，默认翻译整个网页
-					//}, 10); //这个要比 task.execute() 中的 settimeout 延迟执行删除 translate.inpr.....nodes 的时间要小，目的是前一个发生变动后，记入 inpr...nodes 然后翻译完成后节点发生变化又触发了listener，此时 inpr....nodes 还有，那么这个变化将不做处理，然后 inp.....nodes 再删除这个标记
+					translate.execute(documents);					
 				}
 			};
 			// 创建一个观察器实例并传入回调函数
@@ -1915,9 +1833,7 @@ var translate = {
 			//console.log(this.nodes);
 			//console.log('===========task======end===');
 
-			//进行翻译前，先刷新一下 dom监听的忽略node，将过期的node剔除，降低listener的压力
-			translate.listener.refreshIgnoreNode();
-
+			
 			//对nodeQueue进行翻译
 			for(var hash in this.nodes){
 				if (!this.nodes.hasOwnProperty(hash)) {
@@ -1973,8 +1889,8 @@ var translate = {
 						//console.log(translateNode)
 						//var nodeAttribute = translate.node.getAttribute(task['attribute']);
 						if(typeof(translate.node.data.get(translateNode)) === 'undefined' || translate.node.data.get(translateNode) === null){
-							translate.log('执行异常，渲染时，node 未在 translate.node 中找到, 这个理论上是不应该存在的，当前异常已被容错。 node：'+translateNode);
-							translate.log(this.nodes[hash][task_index]);
+							translate.log('执行异常，渲染时，node 未在 translate.node 中找到, 这个很有可能是点击过快，上一个翻译任务还在网络请求中，又点击了别的地方导致内容又被改变。当前异常已被容错。 node：');
+							translate.log(translateNode);
 
 							var getNodeText = translate.element.nodeAnalyse.get(node, task['attribute']);
 							translate.node.set(translateNode, {
@@ -2006,11 +1922,7 @@ var translate = {
 							translate.history.translateText.add(translate.node.get(translateNode).originalText ,analyseSet.resultText);
 						}
 						
-						//加入 translate.listener.ignoreNode
-						translate.listener.addIgnore(this.nodes[hash][task_index], translate.listener.translateExecuteNodeIgnoreExpireTime, analyseSet.resultText);
-
-
-
+						
 						/*
 						//var tagName = translate.element.getTagNameByNode(this.nodes[hash][task_index]);//节点的tag name
 						//console.log(tagName)
@@ -10663,7 +10575,7 @@ var translate = {
 						if(typeof(translate.node.get(node).translateResults) === 'undefined'){
 							translate.node.get(node).translateResults = {};
 						}
-						translate.node.get(translateNode).translateResults[translate.node.get(node).resultText] = 1;
+						translate.node.get(node).translateResults[translate.node.get(node).resultText] = 1;
 
 						translate.node.get(node).lastTranslateRenderTime = Date.now();
 					}
@@ -10683,7 +10595,7 @@ var translate = {
 						if(translate.node.get(lastChild) !== null){
 							if(typeof(translate.node.get(lastChild).resultText) === 'string'){
 								translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
-								translate.node.get(translateNode).translateResults[translate.node.get(node).resultText] = 1;
+								translate.node.get(lastChild).translateResults[translate.node.get(node).resultText] = 1;
 								translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
 							}
 						}

@@ -4,10 +4,95 @@
   <title>支持的语种</title>
 </head>
 <body>
-
-loading...
-
-
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f6f8;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            background-color: transparent;
+            border: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #343a40;
+            color: #fff;
+            font-weight: 500;
+            text-align: left;
+            padding: 12px 15px;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            border-right: 1px solid #4b545c;
+        }
+        th:last-child {
+            border-right: none;
+        }
+        td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+        }
+        td:last-child {
+            border-right: none;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .check-mark {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+            display: block;
+        }
+        .lang-id {
+            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            color: #d63384;
+            font-weight: bold;
+        }
+    </style>
+    <div class="container">
+        <h2>支持的语种列表</h2>
+        <div id="loading">数据加载中...</div>
+        <div style="display:none;" id="tableDiv">
+            <table id="langTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th>语种标识 (ID)</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 
 <!-- 绘制语种支持表 -->
@@ -38,4 +123,93 @@ var language = {
 
 </script>
 
+<script>
+    // 等待页面加载完成，确保 language 变量已定义
+    window.addEventListener('load', function() {
+        initTable();
+    });
+
+    function initTable() {
+        if (typeof language === 'undefined') {
+            document.getElementById('loading').innerHTML = '错误：无法加载语种数据';
+            return;
+        }
+
+        var channels = Object.keys(language);
+        var allLangIds = new Set();
+        var langNames = {}; // 存储 id -> name 的映射
+
+        // 收集所有语言 ID
+        channels.forEach(function(channel) {
+            var channelData = language[channel];
+            if (channelData && channelData.data && channelData.data.list) {
+                channelData.data.list.forEach(function(item) {
+                    allLangIds.add(item.id);
+                    if (item.name) {
+                        langNames[item.id] = item.name;
+                    }
+                });
+            }
+        });
+
+        var sortedLangIds = Array.from(allLangIds).sort();
+
+        // 渲染表头
+        var headerRow = document.getElementById('headerRow');
+        channels.forEach(function(channel) {
+            var th = document.createElement('th');
+            th.textContent = channel;
+            headerRow.appendChild(th);
+        });
+
+        // 渲染表格内容
+        var tableBody = document.getElementById('tableBody');
+        sortedLangIds.forEach(function(langId) {
+            var tr = document.createElement('tr');
+            
+            // ID 列
+            var tdId = document.createElement('td');
+            var idSpan = document.createElement('span');
+            idSpan.className = 'lang-id';
+            idSpan.textContent = langId;
+            tdId.appendChild(idSpan);
+            
+            // 加上name提示
+            if (langNames[langId]) {
+                tdId.title = langNames[langId];
+            }
+            
+            tr.appendChild(tdId);
+
+            // 各通道支持情况列
+            channels.forEach(function(channel) {
+                var td = document.createElement('td');
+                var isSupported = false;
+                
+                var channelData = language[channel];
+                if (channelData && channelData.data && channelData.data.list) {
+                    // 查找该通道是否包含此 ID
+                    var found = channelData.data.list.find(function(item) {
+                        return item.id === langId;
+                    });
+                    if (found) isSupported = true;
+                }
+
+                if (isSupported) {
+                    var check = document.createElement('span');
+                    check.className = 'check-mark';
+                    check.innerHTML = '&#10003;'; // 对勾符号
+                    td.appendChild(check);
+                }
+                
+                tr.appendChild(td);
+            });
+
+            tableBody.appendChild(tr);
+        });
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('tableDiv').style.display = 'block';
+    }
+</script>
 </html>

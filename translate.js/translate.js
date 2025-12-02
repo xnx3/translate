@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.97.20251113',
+	version: '3.18.98.20251202',
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -587,7 +587,7 @@ var translate = {
 				
 
 				//判断class name
-				if(parentNode.className != null){
+				if(parentNode.className !== null && typeof(parentNode.className) === 'string'){
 					var classNames = parentNode.className;
 					if(classNames == null || typeof(classNames) != 'string'){
 						continue;
@@ -4944,7 +4944,7 @@ var translate = {
 				
 
 				//判断class name
-				if(parentNode.className != null){
+				if(parentNode.className !== null && typeof(parentNode.className) === 'string'){
 					var classNames = parentNode.className;
 					if(classNames == null || typeof(classNames) != 'string'){
 						continue;

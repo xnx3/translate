@@ -97,6 +97,12 @@
 
 <!-- 绘制语种支持表 -->
 <script type="text/javascript">
+//简体中文的方式对应的语种id
+var chineseLanguageName = {
+    chinese_simplified:'简体中文',
+    chinese_traditional:'繁体中文',
+    english:'英语'
+};
 var language = {
 	'默认的开源免费通道':{
 		description:'translate.js中默认集成的开源免费的翻译通道。注意，这个通道因为使用的太多，可能会有偶尔的不稳定情况，但大部分情况下都是很稳定的，普通网站使用是没问题的。它的缺点是因为用的太多，所以每个接入的网站有个每日翻译的上限是一百万字符的上限，避免被恶意利用影响稳定。它绝大多数网站都是足够用的，如果你不够用，可以考虑切换到 client.edge 通道，它也是免费的',
@@ -171,7 +177,7 @@ var language = {
             var tdId = document.createElement('td');
             var idSpan = document.createElement('span');
             idSpan.className = 'lang-id';
-            idSpan.textContent = langId;
+            idSpan.textContent = langId+chineseLanguageName[langId];
             tdId.appendChild(idSpan);
             
             // 加上name提示

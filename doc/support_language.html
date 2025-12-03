@@ -162,9 +162,24 @@ var language = {
 
         // 渲染表头
         var headerRow = document.getElementById('headerRow');
+        
+        // 添加“语种”列表头
+        var thName = document.createElement('th');
+        thName.textContent = '语种';
+        // 插入到第一个子元素之前（即“语种标识 (ID)”之前）
+        headerRow.insertBefore(thName, headerRow.firstChild);
+
         channels.forEach(function(channel) {
             var th = document.createElement('th');
-            th.textContent = channel;
+            
+            // 计算该通道支持的语种数量
+            var count = 0;
+            var channelData = language[channel];
+            if (channelData && channelData.data && channelData.data.list) {
+                count = channelData.data.list.length;
+            }
+            
+            th.textContent = channel + " (" + count + "种)";
             headerRow.appendChild(th);
         });
 
@@ -173,11 +188,21 @@ var language = {
         sortedLangIds.forEach(function(langId) {
             var tr = document.createElement('tr');
             
+            // 语种中文名称列
+            var tdName = document.createElement('td');
+            var nameSpan = document.createElement('span');
+            // 只显示匹配到的中文名称，没有匹配到则留空
+            var zhName = chineseLanguageName[langId] || '';
+            nameSpan.textContent = zhName;
+            nameSpan.style.fontWeight = 'bold';
+            tdName.appendChild(nameSpan);
+            tr.appendChild(tdName);
+
             // ID 列
             var tdId = document.createElement('td');
             var idSpan = document.createElement('span');
             idSpan.className = 'lang-id';
-            idSpan.textContent = langId+chineseLanguageName[langId];
+            idSpan.textContent = langId;
             tdId.appendChild(idSpan);
             
             // 加上name提示

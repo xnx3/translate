@@ -14,14 +14,19 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.99.20251205',
+	version: '3.18.100.20251205',
 
-
-	Config: class{
-		data = {
+	/*
+		用于当前整个 translate.js 配置参数（整形、布尔值、字符串等参数，不包括function参数） 的导出及导入。
+		v3.18.99.20251205 增加，主要用于自动注入iframe中的页面实现翻译而作。
+		主要用到里面的 get、set 方法。
+	*/
+	config:{
+		//这是一个 Bean 类，避免传统json方式再有写错某个参数
+		data: class{
 			//只翻译指定的元素 https://translate.zvo.cn/4063.html  translate.setDocuments(documents);  对应的数据 translate.documents
-			documents:[],
-			language:{
+			documents = [];
+			language = {
 				//设定是否自动出现 select 切换语言， https://translate.zvo.cn/4056.html
 				select:{
 					// 对应的数据 translate.selectLanguageTag.show
@@ -46,16 +51,16 @@ var translate = {
 				},
 				//本地语种也进行强制翻译 https://translate.zvo.cn/289574.html 对应的数据 translate.language.translateLocal
 				translateLocal: false
-			},
+			};
 			//对网页中图片进行翻译 https://translate.zvo.cn/4055.html  translate.images.add(...)  对应的数据 translate.images.queues
-			images:[],
+			images = [];
 			//自定义翻译术语 https://translate.zvo.cn/4070.html translate.nomenclature.append(from, to, properties);  对应的数据  translate.nomenclature.data
-			nomenclature:[],
-			listener:{
+			nomenclature = [];
+			listener = {
 				//监控页面动态渲染的文本进行自动翻译 https://translate.zvo.cn/4067.html translate.listener.start(); 如果为true，则是启用。 对应 translate.listener.use 的值
 				use:false,
-			},
-			ignore:{
+			};
+			ignore = {
 				// 翻译时忽略指定的文字不翻译 https://translate.zvo.cn/283381.html  translate.ignore.text.push('你好');  对应的数据 translate.ignore.text
 				text:[],
 				//通过正则的方式忽略某些文字不翻译 https://translate.zvo.cn/283381.html translate.ignore.setTextRegexs([/请求/g, /[u4a01-u4a05]+/g]);  对应的数据 translate.ignore.textRegex
@@ -67,11 +72,11 @@ var translate = {
 				//翻译时忽略指定的tag标签 https://translate.zvo.cn/4060.html translate.ignore.tag.push('span');  对应的数据 translate.ignore.tag
 				tag:[],
 
-			},
+			};
 			//设置使用的翻译服务 translate.service.use  https://translate.zvo.cn/4081.html  translate.service.use('client.edge');   对应的数据  translate.service.name , 默认则是 translate.service
-			service:'translate.service',
+			service = 'translate.service';
 			//元素的内容整体翻译能力配置  https://translate.zvo.cn/4078.html
-			whole:{
+			whole = {
 				//是否开启对整个html页面的整体翻译，也就是整个页面上所有存在的能被翻译的全部会采用整体翻译的方式。默认是 false不开启		对应的数据 translate.whole.isEnableAll
 				enableAll:false,
 				/*
@@ -82,13 +87,13 @@ var translate = {
 				class:[],
 				tag:[],
 				id:[],
-			},
+			};
 			//鼠标划词翻译 https://translate.zvo.cn/4072.html
-			selectionTranslate:{
+			selectionTranslate = {
 				//是否启用，默认是false，不启用。如果启用，则是 translate.selectionTranslate.start();   对应的数据  translate.selectionTranslate.use
 				use:false
-			},
-			request:{
+			};
+			request = {
 				api:{
 					// 指定翻译服务接口 https://translate.zvo.cn/4068.html   translate.request.setHost(['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/']);
 					// 这里数据同步的是 translate.request.api.host
@@ -117,89 +122,93 @@ var translate = {
 				appendHeaders: {},
 				// 翻译排队执行  https://translate.zvo.cn/479742.html  对应的数据 translate.waitingExecute.use
 				waitingExecute: true,
-			},
-			element:{
+			};
+			element = {
 				//增加对指定标签的属性进行翻译  https://translate.zvo.cn/231504.html  translate.element.tagAttribute
 				//当前忽略 condition 的function 参数
 				tagAttribute: {}
-			},
+			};
 			//翻译中的遮罩层 https://translate.zvo.cn/407105.html
-			progress:{
+			progress = {
 				api:{
 					//启用翻译中的遮罩层， 默认不使用，translate.progress.api.startUITip(); 可以设置为启用，对应的数据 translate.progress.api.use
 					use: false,
 				},
 				// 对应 translate.progress.style 的数据
 				style:'',
-			},
+			};
 			//网络请求数据拦截并翻译  https://translate.zvo.cn/479724.html
-			network:{
+			network = {
 				// 对应的数据 translate.network.rules
 				rules:[],
 				// 对应的数据 translate.network.isUse
 				use: false
-			},
-			visual:{
+			};
+			visual = {
 				//网页打开时自动隐藏文字，翻译完成后显示译文 https://translate.zvo.cn/549731.html 对应的数据 translate.visual.webPageLoadTranslateBeforeHiddenText_use
 				webPageLoadTranslateBeforeHiddenText: {
 					use: false,
 				}
-			}
-		};
+			};
+		},
 
-		//获取当前 translate.js 所设置的数据
-		get(){
-			this.data.documents = translate.documents;
-			this.data.language.select.show = translate.selectLanguageTag.show;
-			this.data.language.select.languages = translate.selectLanguageTag.languages;
-			this.data.language.local = translate.language.local;
-			this.data.language.defaultTo = translate.language.defaultTo;
-			this.data.language.autoDiscriminateLocalLanguage = translate.autoDiscriminateLocalLanguage;
-			this.data.language.range = translate.language.translateLanguagesRange;
-			this.data.language.urlParamControl.use = translate.language.setUrlParamControl_use;
-			this.data.language.urlParamControl.name = translate.language.setUrlParamControl_name;
-			this.data.language.translateLocal = translate.language.translateLocal;
-			this.data.images = translate.images.queues;
-			this.data.nomenclature = translate.images.queues;
-			this.data.listener.use = translate.listener.use;
-			this.data.ignore.text = translate.ignore.text;
-			this.data.ignore.textRegex = translate.ignore.textRegex;
-			this.data.ignore.id = translate.ignore.id;
-			this.data.ignore.class = translate.ignore.class;
-			this.data.service = translate.service.name;
-			this.data.whole.enableAll = translate.whole.isEnableAll;
-			this.data.whole.class = translate.whole.class;
-			this.data.whole.tag = translate.whole.tag;
-			this.data.whole.id = translate.whole.id;
-			this.data.selectionTranslate.use = translate.selectionTranslate.use;
-			this.data.request.api.host = translate.request.api.host;
-			this.data.request.api.language = translate.request.api.language;
-			this.data.request.api.translate = translate.request.api.translate;
-			this.data.request.api.ip = translate.request.api.ip;
-			this.data.request.api.connectTest = translate.request.api.connectTest;
-			this.data.request.api.init = translate.request.api.init;
-			this.data.request.listener.use = translate.request.listener.use;
-			this.data.request.listener.delayExecuteTime = translate.request.listener.delayExecuteTime;
-			this.data.request.listener.minIntervalTime = translate.request.listener.minIntervalTime;
-			this.data.request.appendParams = translate.request.appendParams;
-			this.data.request.appendHeaders = translate.request.appendHeaders;
-			this.data.request.waitingExecute = translate.waitingExecute.use;
-			this.data.element.tagAttribute = translate.element.tagAttribute;
-			this.data.progress.api.use = translate.progress.api.use;
-			this.data.progress.style = translate.progress.style;
-			this.data.network.rules = translate.network.rules;
-			this.data.network.use = translate.network.isUse;
-			this.data.visual.webPageLoadTranslateBeforeHiddenText.use = translate.visual.webPageLoadTranslateBeforeHiddenText_use;
+
+		//获取当前 translate.js 所设置的数据 （排除设置的 function）
+		get: function(){
+
+			var data = new translate.config.data();
+
+			data.documents = translate.documents;
+			data.language.select.show = translate.selectLanguageTag.show;
+			data.language.select.languages = translate.selectLanguageTag.languages;
+			data.language.local = translate.language.local;
+			data.language.defaultTo = translate.language.defaultTo;
+			data.language.autoDiscriminateLocalLanguage = translate.autoDiscriminateLocalLanguage;
+			data.language.range = translate.language.translateLanguagesRange;
+			data.language.urlParamControl.use = translate.language.setUrlParamControl_use;
+			data.language.urlParamControl.name = translate.language.setUrlParamControl_name;
+			data.language.translateLocal = translate.language.translateLocal;
+			data.images = translate.images.queues;
+			data.nomenclature = translate.images.queues;
+			data.listener.use = translate.listener.use;
+			data.ignore.text = translate.ignore.text;
+			data.ignore.textRegex = translate.ignore.textRegex;
+			data.ignore.id = translate.ignore.id;
+			data.ignore.class = translate.ignore.class;
+			data.service = translate.service.name;
+			data.whole.enableAll = translate.whole.isEnableAll;
+			data.whole.class = translate.whole.class;
+			data.whole.tag = translate.whole.tag;
+			data.whole.id = translate.whole.id;
+			data.selectionTranslate.use = translate.selectionTranslate.use;
+			data.request.api.host = translate.request.api.host;
+			data.request.api.language = translate.request.api.language;
+			data.request.api.translate = translate.request.api.translate;
+			data.request.api.ip = translate.request.api.ip;
+			data.request.api.connectTest = translate.request.api.connectTest;
+			data.request.api.init = translate.request.api.init;
+			data.request.listener.use = translate.request.listener.use;
+			data.request.listener.delayExecuteTime = translate.request.listener.delayExecuteTime;
+			data.request.listener.minIntervalTime = translate.request.listener.minIntervalTime;
+			data.request.appendParams = translate.request.appendParams;
+			data.request.appendHeaders = translate.request.appendHeaders;
+			data.request.waitingExecute = translate.waitingExecute.use;
+			data.element.tagAttribute = translate.element.tagAttribute;
+			data.progress.api.use = translate.progress.api.use;
+			data.progress.style = translate.progress.style;
+			data.network.rules = translate.network.rules;
+			data.network.use = translate.network.isUse;
+			data.visual.webPageLoadTranslateBeforeHiddenText.use = translate.visual.webPageLoadTranslateBeforeHiddenText_use;
 			
-			return this.data;
-		}
+			return data;
+		},
 
 		/*
 			设置数据，传入 Config.data 格式的数据， 设置到当前 translate.js 中
 			不想设置的项可以不传入。
 		*/
-		set(data){
-			console.log(data);
+		set: function(data){
+			//console.log(data);
 			if(typeof(data.documents) === 'object'){
 				translate.setDocuments(data.documents);
 			}
@@ -331,13 +340,9 @@ var translate = {
 					translate.visual.webPageLoadTranslateBeforeHiddenText();
 				}
 			}
-
-
 		}
 	},
 
-
-	
 
 	// AUTO_VERSION_END
 	/*

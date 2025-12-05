@@ -14,7 +14,331 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.98.20251202',
+	version: '3.18.99.20251205',
+
+
+	Config: class{
+		data = {
+			//只翻译指定的元素 https://translate.zvo.cn/4063.html  translate.setDocuments(documents);  对应的数据 translate.documents
+			documents:[],
+			language:{
+				//设定是否自动出现 select 切换语言， https://translate.zvo.cn/4056.html
+				select:{
+					// 对应的数据 translate.selectLanguageTag.show
+					show: true,
+					// 对应的数据 translate.selectLanguageTag.languages = 'english,chinese_simplified,korean';
+					languages:'',
+				},
+				//设置本地语种（当前网页的语种） https://translate.zvo.cn/4066.html translate.language.setLocal('chinese_simplified');  对应的数据 translate.language.local
+				local:'', 
+				//设置默认翻译为的语种 https://translate.zvo.cn/4071.html translate.language.setDefaultTo('english');  对应的数据 translate.language.defaultTo
+				defaultTo:'',
+				//自动切换为用户所使用的语种 https://translate.zvo.cn/4065.html  translate.setAutoDiscriminateLocalLanguage();  对应 translate.autoDiscriminateLocalLanguage 的值
+				autoDiscriminateLocalLanguage: false,
+				//设置只对指定语种进行翻译 https://translate.zvo.cn/4085.html  translate.language.translateLanguagesRange = ['chinese_simplified','english']; 对应的数据 translate.language.translateLanguagesRange
+				range:[],
+				//根据URL传参控制以何种语种显示  https://translate.zvo.cn/4075.html  
+				urlParamControl: {
+					// translate.language.setUrlParamControl(); 默认是false， 对应的数据 translate.language.setUrlParamControl_use
+					use: false,
+					// translate.language.setUrlParamControl('lang'); 默认是 language ，对应的数据 translate.language.setUrlParamControl_name
+					name: 'language'
+				},
+				//本地语种也进行强制翻译 https://translate.zvo.cn/289574.html 对应的数据 translate.language.translateLocal
+				translateLocal: false
+			},
+			//对网页中图片进行翻译 https://translate.zvo.cn/4055.html  translate.images.add(...)  对应的数据 translate.images.queues
+			images:[],
+			//自定义翻译术语 https://translate.zvo.cn/4070.html translate.nomenclature.append(from, to, properties);  对应的数据  translate.nomenclature.data
+			nomenclature:[],
+			listener:{
+				//监控页面动态渲染的文本进行自动翻译 https://translate.zvo.cn/4067.html translate.listener.start(); 如果为true，则是启用。 对应 translate.listener.use 的值
+				use:false,
+			},
+			ignore:{
+				// 翻译时忽略指定的文字不翻译 https://translate.zvo.cn/283381.html  translate.ignore.text.push('你好');  对应的数据 translate.ignore.text
+				text:[],
+				//通过正则的方式忽略某些文字不翻译 https://translate.zvo.cn/283381.html translate.ignore.setTextRegexs([/请求/g, /[u4a01-u4a05]+/g]);  对应的数据 translate.ignore.textRegex
+				textRegex:[],
+				// 翻译时忽略指定的id https://translate.zvo.cn/4062.html translate.ignore.id.push('test'); 对应的数据 translate.ignore.id
+				id:[],
+				//翻译时忽略指定的class属性 https://translate.zvo.cn/4061.html translate.ignore.class.push('test'); 对应的数据 translate.ignore.class
+				class:[],
+				//翻译时忽略指定的tag标签 https://translate.zvo.cn/4060.html translate.ignore.tag.push('span');  对应的数据 translate.ignore.tag
+				tag:[],
+
+			},
+			//设置使用的翻译服务 translate.service.use  https://translate.zvo.cn/4081.html  translate.service.use('client.edge');   对应的数据  translate.service.name , 默认则是 translate.service
+			service:'translate.service',
+			//元素的内容整体翻译能力配置  https://translate.zvo.cn/4078.html
+			whole:{
+				//是否开启对整个html页面的整体翻译，也就是整个页面上所有存在的能被翻译的全部会采用整体翻译的方式。默认是 false不开启		对应的数据 translate.whole.isEnableAll
+				enableAll:false,
+				/*
+					以下三个，也就是  class tag id 分别存储加入的值。
+					比如 translate.whole.tag.push('h3');
+					对应的数据 translate.whole.tag\class\id
+				*/
+				class:[],
+				tag:[],
+				id:[],
+			},
+			//鼠标划词翻译 https://translate.zvo.cn/4072.html
+			selectionTranslate:{
+				//是否启用，默认是false，不启用。如果启用，则是 translate.selectionTranslate.start();   对应的数据  translate.selectionTranslate.use
+				use:false
+			},
+			request:{
+				api:{
+					// 指定翻译服务接口 https://translate.zvo.cn/4068.html   translate.request.setHost(['https://api.translate.zvo.cn/','https://api2.translate.zvo.cn/']);
+					// 这里数据同步的是 translate.request.api.host
+					host:[],
+					// 获取支持的语种列表接口， 可以设置两种形态。
+					// 可以设置为 language.json 具体请求api的文件名
+					// 另外它还可以设置为 translate.request.api.language = [{id: "chinese_simplified", name: "简体中文"},{id: "korean", name: "한국어"}]; 这种形态，不需要通过联网即可获取切换的语言。
+					language:'language.json',
+					translate:'translate.json', //翻译接口
+					ip:'ip.json', //根据用户当前ip获取其所在地的语种
+					connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
+					init:'init.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
+				},
+				//网页ajax请求触发自动翻译  https://translate.zvo.cn/4086.html
+				listener:{
+					// 用户的代码里是否启用了 translate.request.listener.start() ，true：启用  对应的数据 translate.request.listener.use
+					use:false,
+					// 进行翻译时，延迟翻译执行的时间 当ajax请求结束后，延迟这里设置的时间，然后自动触发 translate.execute() 执行。 对应的数据 translate.request.listener.delayExecuteTime
+					delayExecuteTime: 200,
+					//两次触发的最小间隔时间，单位是毫秒，这里默认是800毫秒。最小填写时间为 200毫秒。 对应的数据 translate.request.listener.minIntervalTime
+					minIntervalTime: 800,
+				},
+				// 网络请求自定义附加参数-追加请求参数， https://translate.zvo.cn/471711.html  对应的数据 translate.request.appendParams
+				appendParams: {},
+				// 网络请求自定义附加参数-追加 header 请求头参数， https://translate.zvo.cn/471711.html  对应的数据 translate.request.appendHeaders
+				appendHeaders: {},
+				// 翻译排队执行  https://translate.zvo.cn/479742.html  对应的数据 translate.waitingExecute.use
+				waitingExecute: true,
+			},
+			element:{
+				//增加对指定标签的属性进行翻译  https://translate.zvo.cn/231504.html  translate.element.tagAttribute
+				//当前忽略 condition 的function 参数
+				tagAttribute: {}
+			},
+			//翻译中的遮罩层 https://translate.zvo.cn/407105.html
+			progress:{
+				api:{
+					//启用翻译中的遮罩层， 默认不使用，translate.progress.api.startUITip(); 可以设置为启用，对应的数据 translate.progress.api.use
+					use: false,
+				},
+				// 对应 translate.progress.style 的数据
+				style:'',
+			},
+			//网络请求数据拦截并翻译  https://translate.zvo.cn/479724.html
+			network:{
+				// 对应的数据 translate.network.rules
+				rules:[],
+				// 对应的数据 translate.network.isUse
+				use: false
+			},
+			visual:{
+				//网页打开时自动隐藏文字，翻译完成后显示译文 https://translate.zvo.cn/549731.html 对应的数据 translate.visual.webPageLoadTranslateBeforeHiddenText_use
+				webPageLoadTranslateBeforeHiddenText: {
+					use: false,
+				}
+			}
+		};
+
+		//获取当前 translate.js 所设置的数据
+		get(){
+			this.data.documents = translate.documents;
+			this.data.language.select.show = translate.selectLanguageTag.show;
+			this.data.language.select.languages = translate.selectLanguageTag.languages;
+			this.data.language.local = translate.language.local;
+			this.data.language.defaultTo = translate.language.defaultTo;
+			this.data.language.autoDiscriminateLocalLanguage = translate.autoDiscriminateLocalLanguage;
+			this.data.language.range = translate.language.translateLanguagesRange;
+			this.data.language.urlParamControl.use = translate.language.setUrlParamControl_use;
+			this.data.language.urlParamControl.name = translate.language.setUrlParamControl_name;
+			this.data.language.translateLocal = translate.language.translateLocal;
+			this.data.images = translate.images.queues;
+			this.data.nomenclature = translate.images.queues;
+			this.data.listener.use = translate.listener.use;
+			this.data.ignore.text = translate.ignore.text;
+			this.data.ignore.textRegex = translate.ignore.textRegex;
+			this.data.ignore.id = translate.ignore.id;
+			this.data.ignore.class = translate.ignore.class;
+			this.data.service = translate.service.name;
+			this.data.whole.enableAll = translate.whole.isEnableAll;
+			this.data.whole.class = translate.whole.class;
+			this.data.whole.tag = translate.whole.tag;
+			this.data.whole.id = translate.whole.id;
+			this.data.selectionTranslate.use = translate.selectionTranslate.use;
+			this.data.request.api.host = translate.request.api.host;
+			this.data.request.api.language = translate.request.api.language;
+			this.data.request.api.translate = translate.request.api.translate;
+			this.data.request.api.ip = translate.request.api.ip;
+			this.data.request.api.connectTest = translate.request.api.connectTest;
+			this.data.request.api.init = translate.request.api.init;
+			this.data.request.listener.use = translate.request.listener.use;
+			this.data.request.listener.delayExecuteTime = translate.request.listener.delayExecuteTime;
+			this.data.request.listener.minIntervalTime = translate.request.listener.minIntervalTime;
+			this.data.request.appendParams = translate.request.appendParams;
+			this.data.request.appendHeaders = translate.request.appendHeaders;
+			this.data.request.waitingExecute = translate.waitingExecute.use;
+			this.data.element.tagAttribute = translate.element.tagAttribute;
+			this.data.progress.api.use = translate.progress.api.use;
+			this.data.progress.style = translate.progress.style;
+			this.data.network.rules = translate.network.rules;
+			this.data.network.use = translate.network.isUse;
+			this.data.visual.webPageLoadTranslateBeforeHiddenText.use = translate.visual.webPageLoadTranslateBeforeHiddenText_use;
+			
+			return this.data;
+		}
+
+		/*
+			设置数据，传入 Config.data 格式的数据， 设置到当前 translate.js 中
+			不想设置的项可以不传入。
+		*/
+		set(data){
+			console.log(data);
+			if(typeof(data.documents) === 'object'){
+				translate.setDocuments(data.documents);
+			}
+			if(typeof(data.language.select.show) === 'boolean'){
+				translate.selectLanguageTag.show = data.language.select.show;
+			}
+			if(typeof(data.language.select.languages) === 'string' && data.language.select.languages.trim().length>0){
+				translate.selectLanguageTag.languages = data.language.select.languages;
+			}
+			if(typeof(data.language.local) === 'string' && data.language.local.trim().length>0){
+				translate.language.setLocal(data.language.local);
+			}
+			if(typeof(data.language.defaultTo) === 'string' && data.language.defaultTo.trim().length>0){
+				translate.language.setDefaultTo(data.language.defaultTo);
+			}
+			if(typeof(data.language.autoDiscriminateLocalLanguage) === 'boolean' && data.language.autoDiscriminateLocalLanguage === true){
+				translate.setAutoDiscriminateLocalLanguage();
+			}
+			if(typeof(data.language.range) === 'object' && data.language.range.length > 0){
+				translate.language.translateLanguagesRange = data.language.range;
+			}
+			if(typeof(data.language.urlParamControl.use) === 'boolean'){
+				translate.language.setUrlParamControl_use = data.language.urlParamControl.use;
+			}
+			if(typeof(data.language.urlParamControl.name) === 'string' && data.language.urlParamControl.name.trim().toLowerCase() !== 'language'){
+				translate.language.setUrlParamControl(data.language.urlParamControl.name);
+			}
+			if(typeof(data.language.translateLocal) === 'boolean'){
+				translate.language.translateLocal = data.language.translateLocal;
+			}
+			if(typeof(data.images) === 'object'){
+				translate.images.queues = data.images;
+			}
+			if(typeof(data.nomenclature) === 'object'){
+				translate.nomenclature.data = data.nomenclature;
+			}
+			if(typeof(data.listener.use) === 'boolean'){
+				translate.listener.use = data.listener.use;
+			}
+			if(typeof(data.ignore.text) === 'object'){
+				translate.ignore.text = data.ignore.text;
+			}
+			if(typeof(data.ignore.textRegex) === 'object'){
+				translate.ignore.textRegex = data.ignore.textRegex;
+			}
+			if(typeof(data.ignore.id) === 'object'){
+				translate.ignore.id = data.ignore.id;
+			}
+			if(typeof(data.ignore.class) === 'object'){
+				translate.ignore.class = data.ignore.class;
+			}
+			if(typeof(data.ignore.tag) === 'object'){
+				translate.ignore.tag = data.ignore.tag;
+			}
+			if(typeof(data.service) === 'string' && data.service.trim().length > 0){
+				translate.service.name = data.service;
+			}
+			if(typeof(data.whole.enableAll) === 'boolean'){
+				translate.listener.use = data.whole.enableAll;
+			}
+			if(typeof(data.whole.class) === 'object'){
+				translate.whole.class = data.whole.class;
+			}
+			if(typeof(data.whole.tag) === 'object'){
+				translate.whole.tag = data.whole.tag;
+			}
+			if(typeof(data.whole.id) === 'object'){
+				translate.whole.id = data.whole.id;
+			}
+			if(typeof(data.selectionTranslate.use) === 'boolean' && data.selectionTranslate.use === true){
+				if(translate.selectionTranslate.use === false){ //没有启动，才会启动
+					translate.selectionTranslate.start();
+				}
+			}
+			if(typeof(data.request.api.host) === 'object'){
+				translate.request.api.host = data.request.api.host;
+			}
+			if(typeof(data.request.api.language) === 'string'){
+				translate.request.api.language = data.request.api.language;
+			}
+			if(typeof(data.request.api.ip) === 'string'){
+				translate.request.api.ip = data.request.api.ip;
+			}
+			if(typeof(data.request.api.connectTest) === 'string'){
+				translate.request.api.connectTest = data.request.api.connectTest;
+			}
+			if(typeof(data.request.api.init) === 'string'){
+				translate.request.api.init = data.request.api.init;
+			}
+			if(typeof(data.request.listener.use) === 'boolean'){
+				translate.request.listener.use = data.request.listener.use;
+			}
+			if(typeof(data.request.listener.delayExecuteTime) === 'number'){
+				translate.request.listener.delayExecuteTime = data.request.listener.delayExecuteTime;
+			}
+			if(typeof(data.request.listener.minIntervalTime) === 'number'){
+				translate.request.listener.minIntervalTime = data.request.listener.minIntervalTime;
+			}
+			if(typeof(data.request.appendParams) === 'object'){
+				translate.request.appendParams = data.request.appendParams;
+			}
+			if(typeof(data.request.appendHeaders) === 'object'){
+				translate.request.appendHeaders = data.request.appendHeaders;
+			}
+			if(typeof(data.request.waitingExecute) === 'boolean'){
+				translate.waitingExecute.use = data.request.waitingExecute;
+			}
+			if(typeof(data.element.tagAttribute) === 'object'){
+				translate.element.tagAttribute = data.element.tagAttribute;
+			}
+			if(typeof(data.progress.api.use) === 'boolean' && data.progress.api.use === true){
+				if(translate.progress.api.use === false){ //没有启动，才会启动
+					translate.progress.api.startUITip();
+				}
+			}
+			if(typeof(data.progress.style) === 'string'){
+				translate.progress.style = data.progress.style;
+			}
+			if(typeof(data.network.rules) === 'object'){
+				translate.network.rules = data.network.rules;
+			}
+			if(typeof(data.network.use) === 'boolean' && data.network.use === true){
+				if(translate.network.isUse === false){ //没有启动，才会启动
+					translate.network.use();
+				}
+			}
+			if(typeof(data.visual.webPageLoadTranslateBeforeHiddenText.use) === 'boolean' && data.visual.webPageLoadTranslateBeforeHiddenText.use === true){
+				if(translate.visual.webPageLoadTranslateBeforeHiddenText_use === false){ //没有启动，才会启动
+					translate.visual.webPageLoadTranslateBeforeHiddenText();
+				}
+			}
+
+
+		}
+	},
+
+
+	
+
 	// AUTO_VERSION_END
 	/*
 		当前使用的版本，默认使用v2. 可使用 setUseVersion2(); 
@@ -5140,9 +5464,15 @@ var translate = {
 			}
 			return translate.language.getLocal();
 		},
+
+
 		//如果第一次用，默认以什么语种显示。
 		//比如本地当前语种是简体中文，这里设置为english，那么用户第一次使用时，会自动翻译为english进行显示。如果用户手动切换为其他语种比如韩语，那么就遵循用户手动切换的为主，显示韩语。
+		defaultTo:'',
 		setDefaultTo:function(languageName){
+			if(typeof(languageName) === 'string' && languageName.trim().length > 0){
+				translate.language.defaultTo = languageName;
+			}
 			var to_storage = translate.storage.get('to');
 			if(to_storage != null && typeof(to_storage) != 'undefined' && to_storage.length > 0){
 				//之前有过使用，并且主动设置过目标语种，那么不进行处理
@@ -5167,6 +5497,10 @@ var translate = {
 			translate.to = '';
 			translate.storage.set('to','');
 		},
+		//标记已执行了 translate.language.setUrlParamControl  如果已经执行启用，则是true，默认是不启用是false
+		setUrlParamControl_use: false,
+		// translate.language.setUrlParamControl('language') 这里传入的 language 参数，默认不设置则是 language ，比如传入 lang ，那这个 setUrlParamControl_name 值便是 lang
+		setUrlParamControl_name: 'language',
 		//根据URL传参控制以何种语种显示
 		//设置可以根据当前访问url的某个get参数来控制使用哪种语言显示。
 		//比如当前语种是简体中文，网页url是http://translate.zvo.cn/index.html ,那么可以通过在url后面增加 language 参数指定翻译语种，来使网页内容以英文形态显示 http://translate.zvo.cn/index.html?language=english
@@ -5175,6 +5509,7 @@ var translate = {
 			if(typeof(paramName) == 'undefined' || paramName.length < 1){
 				paramName = 'language';
 			}
+			translate.language.setUrlParamControl_name = paramName;
 			var paramValue = translate.util.getUrlParam(paramName);
 			if(typeof(paramValue) == 'undefined'){
 				return;
@@ -8933,9 +9268,11 @@ var translate = {
 	/*
 		划词翻译，鼠标在网页中选中一段文字，会自动出现对应翻译后的文本
 		有网友 https://gitee.com/huangguishen 提供。
-		详细使用说明参见：http://translate.zvo.cn/41557.html
+		详细使用说明参见：https://translate.zvo.cn/4072.html
 	*/
 	selectionTranslate:{
+		//是否启用，默认是false，不启用。如果启用，则是 translate.selectionTranslate.start();
+		use:false,
 		selectionX:0,
 		selectionY:0,
 		callTranslate:function (event){
@@ -8971,6 +9308,8 @@ var translate = {
 			}, null);
 		},
 		start:function () {
+			translate.selectionTranslate.use = true;
+
 			//新建一个tooltip元素节点用于显示翻译
 			let tooltipEle = document.createElement('span');
 			tooltipEle.innerText = '';
@@ -9108,6 +9447,7 @@ var translate = {
 		 */
 		api:{
 			isTip:true,//是否显示ui的提示，true显示，false不显示
+			use: false, //默认不使用，translate.progress.api.startUITip(); 可以设置为启用
 			setUITip:function(tip){
 				translate.progress.api.isTip = tip;
 			},
@@ -9150,6 +9490,8 @@ var translate = {
 				
 			*/
 			startUITip:function(config){
+				translate.progress.api.use = true;
+
 				if(typeof(config) === 'undefined'){
 					config = {};
 				}
@@ -9682,6 +10024,9 @@ var translate = {
 
 	*/	
 	network: {
+		//是否启用， true为启用 ，通过 translate.network.use(); 设置启用。 更多说明：  https://translate.zvo.cn/479724.html
+	    isUse:false, 
+
 	    // 原始方法保存
 	    originalOpen: XMLHttpRequest.prototype.open,
 	    originalSend: XMLHttpRequest.prototype.send,
@@ -9726,6 +10071,8 @@ var translate = {
 			return null;
 	    },
 	    use:function(){
+	    	translate.network.isUse = true;
+
 	    	// 应用Hook
 			XMLHttpRequest.prototype.open = function(...args) {
 			    return translate.network.hookOpen.apply(this, args);

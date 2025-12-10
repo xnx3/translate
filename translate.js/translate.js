@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.101.20251210',
+	version: '3.18.103.20251210',
 
 	/*js translate.config start*/
 	/*
@@ -1923,12 +1923,24 @@ var translate = {
 							img 的 alt 属性
 							所有标签的 title 属性
 						*/
-						 
+
 						if(mutation.attributeName === 'placeholder' || mutation.attributeName === 'alt' || mutation.attributeName === 'title'){
 							//允许翻译
 						}else{
+							
+							var nodeNameLowerCase = mutation.target.nodeName.toLowerCase();
+							
+							//判断是否是 iframe 的，允许翻译
+							if(nodeNameLowerCase === 'iframe' && typeof(mutation.attributeName) === 'string' && mutation.attributeName.toLowerCase() === 'src'){
+								//iframe 改变了src，那么iframe会重新加载新网页，针对这个新网页，也要监听
+								if(typeof(translate.element.iframe) !== 'undefined'){
+									translate.element.iframe.execute(mutation.target);
+								}
+							}
+							
+							
 							//判断是否是 translate.element.tagAttribute 自定义翻译属性的
-							var divTagAttribute = translate.element.tagAttribute[mutation.target.nodeName.toLowerCase()];
+							var divTagAttribute = translate.element.tagAttribute[nodeNameLowerCase];
 							//console.log('divTagAttribute:'+divTagAttribute);
 							if(typeof(divTagAttribute) !== 'undefined' && divTagAttribute.attribute.indexOf(mutation.attributeName) > -1 && divTagAttribute.condition(mutation.target)){
 								//是自定义翻译这个属性的，以及判定是否达到翻译条件
@@ -1937,6 +1949,7 @@ var translate = {
 								//条件不满足，不在翻译的属性范围
 								continue;
 							}
+							
 						}
 
 						//这里出现的 mutation.target 是定位到了元素上面，而不是变化的这个 attributes 属性上，需要用 mutation.attributeName 获取到这个属性的node
@@ -4381,6 +4394,14 @@ var translate = {
 				translate.element.iframe.isUse = true;
 				translate.element.iframe.translateJsUrl = translateJsUrl;
 			},
+			/*
+				用于记录已经操作过的iframe
+				key: iframe 元素
+				value: 
+					addLoad: true  如果没有添加 load 的事件，这里是空的，也就是通过判断 typeof(iframeMap.get(iframe).addLoad) === 'boolean' && iframeMap.get(iframe).addLoad === true 来判断是否已经添加 load 事件了
+					isTranslate: true 是否已经触发过 ifr.injectJs(); 翻译了， 如果已经触发过，则是true 也就是通过判断 typeof(iframeMap.get(iframe).isTranslate) === 'boolean' && iframeMap.get(iframe).isTranslate === true 来判断是否已经触发过
+			*/
+			iframeMap: new Map(),
 			
 			/**
 			 * 通过URL判断iframe是否未跨域（true=未跨域，false=跨域）
@@ -4521,6 +4542,9 @@ var translate = {
 				if(translate.element.iframe.isUse === false){
 					return;
 				}
+				if(translate.element.iframe.iframeMap.get(iframeTag) === null || typeof(translate.element.iframe.iframeMap.get(iframeTag)) === 'undefined'){
+					translate.element.iframe.iframeMap.set(iframeTag, {});
+				}
 				
 				if(!translate.element.iframe.isIframeSameOrigin(iframeTag)){
 					//console.log('iframe跨域，忽略 - ');
@@ -4528,22 +4552,36 @@ var translate = {
 					return;
 				}
 				
-				var iframeWindow = iframeTag.contentWindow; 
-				// 监听 iframe 内部的 DOMContentLoaded 事件
-				iframeTag.contentWindow.addEventListener('DOMContentLoaded', () => {
-					//console.log('iframe DOM 加载完成（触发DOMContentLoaded）， url：'+iframeTag.src);
+				if(typeof(iframeTag.src) === 'string' && iframeTag.src.trim().length > 0){
+					//是通过 src 加载内容的
 					
-					if(typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){
-						//发现了iframe中已经成功引入了 translate.js ，将不在注入
-					}else{
-						//iframe中没有发现 translate.js ，进行注入
-					
-						//setTimeout(function(){
-						  var ifr = new translate.element.iframe.iframeJsInjector(iframeTag, translate.element.iframe.translateJsUrl);
-						  ifr.injectJs();
-						//}, 1);
+					// 先监听 iframe 的 load（确保 iframe 内部 window 存在）
+					//console.log(typeof(translate.element.iframe.iframeMap.get(iframeTag)));
+					if(typeof(translate.element.iframe.iframeMap.get(iframeTag).addLoad) !== 'boolean' || translate.element.iframe.iframeMap.get(iframeTag).addLoad !== true){
+						//未添加过 load 事件，需要添加
+						translate.element.iframe.iframeMap.get(iframeTag).addLoad = true;
+						iframeTag.addEventListener('load', function() {
+							console.log('----load url: '+iframeTag.src);
+							var iframeWindow = iframeTag.contentWindow;
+							if(typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){
+								//发现了iframe中已经成功引入了 translate.js ，将不在注入
+							}else{
+								//iframe中没有发现 translate.js ，进行注入								
+								translate.element.iframe.iframeMap.get(iframeTag).isTranslate = true;
+								var ifr = new translate.element.iframe.iframeJsInjector(iframeTag, translate.element.iframe.translateJsUrl);
+								ifr.injectJs();
+							}
+						});
 					}
-				});
+					
+					
+					
+				}else{
+					//不通过src，根本就没有src参数，直接用js渲染赋予内容的，那么就不用监听了，直接强制赋予
+					var ifr = new translate.element.iframe.iframeJsInjector(iframeTag, translate.element.iframe.translateJsUrl);
+					ifr.injectJs();
+				}
+				
 				
 				
 				// 先监听 iframe 的 load（确保 iframe 内部 window 存在）

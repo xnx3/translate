@@ -14,8 +14,9 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.100.20251205',
+	version: '3.18.101.20251210',
 
+	/*js translate.config start*/
 	/*
 		用于当前整个 translate.js 配置参数（整形、布尔值、字符串等参数，不包括function参数） 的导出及导入。
 		v3.18.99.20251205 增加，主要用于自动注入iframe中的页面实现翻译而作。
@@ -175,6 +176,7 @@ var translate = {
 			data.ignore.textRegex = translate.ignore.textRegex;
 			data.ignore.id = translate.ignore.id;
 			data.ignore.class = translate.ignore.class;
+			data.ignore.tag = translate.ignore.tag;
 			data.service = translate.service.name;
 			data.whole.enableAll = translate.whole.isEnableAll;
 			data.whole.class = translate.whole.class;
@@ -342,6 +344,7 @@ var translate = {
 			}
 		}
 	},
+	/*js translate.config end*/
 
 
 	// AUTO_VERSION_END
@@ -861,6 +864,7 @@ var translate = {
 	},
 	/*js translate.check end*/
 	
+
 	
 	/**************************** v2.0 */
 	to:'', //翻译为的目标语言，如 english 、chinese_simplified
@@ -1885,6 +1889,12 @@ var translate = {
 							//多了组件
 							for(var ani = 0; ani < mutation.addedNodes.length; ani++){
 								var addNodeName = translate.element.getNodeName(mutation.addedNodes[ani]).toLowerCase();
+								if(addNodeName === 'iframe'){	//如果是iframe，还要进行注入进去翻译
+									//console.log(mutation.addedNodes[ani]);
+									if(typeof(translate.element.iframe) !== 'undefined'){
+										translate.element.iframe.execute(mutation.addedNodes[ani]);
+									}
+								}
 								if(addNodeName.length > 0 && translate.ignore.tag.indexOf(addNodeName) == -1){
 									addNodes.push(mutation.addedNodes[ani]);
 								}
@@ -4361,6 +4371,189 @@ var translate = {
 				}
 			},
 		},
+
+		/*js translate.element.iframe start*/
+		iframe:{
+			isUse:false, //是否启用，对非跨域的iframe的页面也进行自动翻译。true则是启用。默认是false为不启用
+			translateJsUrl: '', //设置载入的 translate.js 这个文件的url， iframe 中会自动
+			//启用对同域的iframe也进行翻译（即使页面中没有引入 translate.js）
+			use: function(translateJsUrl){
+				translate.element.iframe.isUse = true;
+				translate.element.iframe.translateJsUrl = translateJsUrl;
+			},
+			
+			/**
+			 * 通过URL判断iframe是否未跨域（true=未跨域，false=跨域）
+			 * @param {HTMLIFrameElement} iframe - iframe DOM对象
+			 * @returns {boolean} true=未跨域，false=跨域
+			 */
+			isIframeSameOrigin: function(iframe) {
+				// 1. 先校验iframe参数有效性：不是有效DOM对象，直接返回false（跨域）
+				if (!iframe || !(iframe instanceof HTMLIFrameElement)) {
+					console.warn('传入的iframe不是有效的DOM对象');
+					return false;
+				}
+
+				// 2. 获取当前页面的origin
+				const currentOrigin = window.location.origin;
+
+				// 3. 获取iframe的实际URL（优先取内部URL，跨域则取src，增加兜底）
+				let iframeUrl;
+				try {
+					// 同域时：获取iframe最终的URL（含重定向）
+					iframeUrl = iframe.contentDocument?.URL || iframe.contentWindow?.location.href;
+				} catch (e) {
+					// 跨域时：取src，若src为空则默认about:blank
+					iframeUrl = iframe.src || 'about:blank';
+				}
+
+				// 4. 特殊处理：about:blank 视为未跨域
+				if (iframeUrl === 'about:blank') return true;
+
+				// 5. 解析iframe URL的origin并对比（增加解析容错）
+				try {
+					const iframeOrigin = new URL(iframeUrl).origin;
+					return currentOrigin === iframeOrigin;
+				} catch (e) {
+					// 无效URL解析失败，默认视为跨域
+					return false;
+				}
+			},
+			
+			/*
+				要执行注入时的对象。
+				每次注入一个iframe，都会new一个出来
+			*/
+			iframeJsInjector : class{
+				// 存储要注入的 JS 地址（可选，也可在调用时传入）
+				translateJsUrl = '';
+				iframe = null;
+
+				// 构造函数：初始化 JS 地址
+				constructor(iframe, translateJsUrl) {
+					this.translateJsUrl = translateJsUrl;
+					this.iframe = iframe;
+				}
+
+				//是否已经注入了tranlate.js ， true已经触发 importJsAndTranslateExecute(...) 注入
+				isInjectJs=false;
+
+				importJsAndTranslateExecute = function(){
+					//console.log('importJsAndTranslateExecute -> '+this.translateJsUrl);
+					if(this.isInjectJs === true){
+						console.log('已导入了，不在继续导入');
+						return;
+					}
+					if(!translate.element.iframe.isIframeSameOrigin(this.iframe)){
+						//console.log('iframe跨域，忽略 - ');
+						//console.log(this.iframe);
+						return;
+					}
+					
+					var iframeContentWindow;
+					try{
+						iframeContentWindow = this.iframe.contentWindow;
+					} catch (e) {
+						console.error('注入失败（大概率跨域）', e);
+						return;
+					}
+					
+					this.isInjectJs = true;
+					try {
+						const iframeDoc = this.iframe.contentDocument || this.iframe.contentWindow.document;
+						// 用 iframe 新文档创建 script（此时是新文档，不是之前的 about:blank）
+						const script = iframeDoc.createElement('script');
+						script.type = 'text/javascript';
+						script.src = this.translateJsUrl;
+						
+						script.onload = function() {
+							//console.log('✅ JS 注入成功');
+
+							var parentConfigData = parent.translate.config.get();
+							iframeContentWindow.translate.config.set(parentConfigData);
+							iframeContentWindow.translate.to = iframeContentWindow.translate.language.getCurrent();
+							//iframeContentWindow.translate.time.use = true;
+
+							setTimeout(function(){
+								iframeContentWindow.translate.execute();
+							},10);
+
+						}
+						script.onerror = function(err) {
+							console.log('失败：');
+							console.log(err);
+						}
+
+						// 插入到新文档的任意位置（无需 head，body/html 都可）
+						iframeDoc.documentElement.appendChild(script);
+						
+					} catch (e) {
+						console.error('注入失败（大概率跨域）', e);
+					}
+				}
+
+				injectJs = function(){
+					if(typeof(this.iframe) === 'object'){
+						//存在于当前页面的dom中了
+						if(typeof(this.iframe.contentDocument) === 'object'){
+							//有了dom了
+							if(typeof(this.iframe.contentDocument.readyState) === 'string'){
+								//有了正常的状态了
+								this.importJsAndTranslateExecute();
+							}else{
+								console.log('iframe - '+this.translateJsUrl+' state is not string');
+							}
+						}else{
+							console.log('iframe - '+this.translateJsUrl+' state is not string');
+						}
+					}else{
+						console.log('iframe - '+this.translateJsUrl+' is not find (not object)');
+					}
+				}
+			},
+
+
+			/*
+				对某个iframe进行翻译  
+				iframeTag: 传入 iframe 的对象，比如  document.getElementById('iframe')
+			*/
+			execute: function(iframeTag){
+				if(translate.element.iframe.isUse === false){
+					return;
+				}
+				
+				if(!translate.element.iframe.isIframeSameOrigin(iframeTag)){
+					//console.log('iframe跨域，忽略 - ');
+					//console.log(this.iframeTag);
+					return;
+				}
+				
+				var iframeWindow = iframeTag.contentWindow; 
+				// 监听 iframe 内部的 DOMContentLoaded 事件
+				iframeTag.contentWindow.addEventListener('DOMContentLoaded', () => {
+					//console.log('iframe DOM 加载完成（触发DOMContentLoaded）， url：'+iframeTag.src);
+					
+					if(typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){
+						//发现了iframe中已经成功引入了 translate.js ，将不在注入
+					}else{
+						//iframe中没有发现 translate.js ，进行注入
+					
+						//setTimeout(function(){
+						  var ifr = new translate.element.iframe.iframeJsInjector(iframeTag, translate.element.iframe.translateJsUrl);
+						  ifr.injectJs();
+						//}, 1);
+					}
+				});
+				
+				
+				// 先监听 iframe 的 load（确保 iframe 内部 window 存在）
+				//iframeTag.addEventListener('load', function() {
+				//	console.log('----load');
+				//});
+			}
+		},
+		/*js translate.element.iframe end*/
+
 		//获取这个node元素的node name ,如果未发现，则返回''空字符串
 		getNodeName:function(node){
 			if(node == null || typeof(node) == 'undefined'){

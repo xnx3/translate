@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.103.20251210',
+	version: '3.18.104.20251212',
 
 	/*js translate.config start*/
 	/*
@@ -68,8 +68,14 @@ var translate = {
 				textRegex:[],
 				// 翻译时忽略指定的id https://translate.zvo.cn/4062.html translate.ignore.id.push('test'); 对应的数据 translate.ignore.id
 				id:[],
-				//翻译时忽略指定的class属性 https://translate.zvo.cn/4061.html translate.ignore.class.push('test'); 对应的数据 translate.ignore.class
-				class:[],
+				//翻译时忽略指定的class属性 https://translate.zvo.cn/4061.html translate.ignore.class.push('test'); 
+				//class:[],
+				class:{
+					//对应的数据 translate.ignore.class.data
+					data:[],
+					//对应的数据 translate.ignore.class.conditionFunction
+					conditionFunction:{}
+				},
 				//翻译时忽略指定的tag标签 https://translate.zvo.cn/4060.html translate.ignore.tag.push('span');  对应的数据 translate.ignore.tag
 				tag:[],
 
@@ -175,7 +181,8 @@ var translate = {
 			data.ignore.text = translate.ignore.text;
 			data.ignore.textRegex = translate.ignore.textRegex;
 			data.ignore.id = translate.ignore.id;
-			data.ignore.class = translate.ignore.class;
+			data.ignore.class.data = translate.ignore.class.data;
+			data.ignore.class.conditionFunction = translate.ignore.class.conditionFunction;
 			data.ignore.tag = translate.ignore.tag;
 			data.service = translate.service.name;
 			data.whole.enableAll = translate.whole.isEnableAll;
@@ -878,7 +885,37 @@ var translate = {
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'link', 'pre', 'code'],
-		class:['ignore','translateSelectLanguage'],
+		//class:['ignore','translateSelectLanguage'],
+		class:{
+			data:['ignore','translateSelectLanguage'],
+			conditionFunction:{
+				ignore: function(element){return true;}
+			},
+			/*
+				追加一个忽略翻译的 class name
+				className 忽略翻译的 class name 的字符串值
+				conditionFunction function(element){} 方法，用于呼应 class name 的规则判定
+									其中 element 则是当前扫描到的，已经被 class name 所标记影响范围的某个html元素，针对这个元素进行进一步判定，是否真的忽略对它进行翻译。
+										如果这个方法返回true则是遵循忽略class name 的规则，不对这个传入的element元素进行翻译；
+										如果返回false，则是不遵循class name 的规则，没有达到忽略class name 的条件，对于element 这个元素，依旧正常进行翻译，所设置的 class name 对这个 element 这个元素无效。
+									如果不传入	conditionFunction 这个参数，或传入 null ，则默认相当于设置为 function(element){return true;}
+			*/
+			push:function(className, conditionFunction){
+				if(translate.ignore.class.data.indexOf(className) > -1){
+					translate.log('translate.ignore.class.push 设置异常，所设置的 className: '+className+' 已存在里面了，所以此次设置被放弃');
+					return;
+				}
+				translate.ignore.class.data.push(className);
+				if(conditionFunction === null){
+					return;
+				}
+				if(typeof(conditionFunction) !== 'function'){
+					translate.log('translate.ignore.class.push 设置异常，所设置的第二个参数类型不是function，被抛弃');
+					return;
+				}
+				translate.ignore.class.conditionFunction[className] = conditionFunction;
+			},
+		},
 		id:[],
 		/*
 			传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
@@ -931,9 +968,14 @@ var translate = {
 					for(var c_index = 0; c_index < classNames.length; c_index++){
 						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
 							//有效的class name，进行判断
-							if(translate.ignore.class.indexOf(classNames[c_index]) > -1){
-								//发现ignore.class 当前是处于被忽略的 class
-								return true;
+							if(translate.ignore.class.data.indexOf(classNames[c_index]) > -1){
+								//发现ignore.class 当前是处于被忽略的 class, 在判定它的 conditionFunction 是否正常
+								
+								if(typeof(translate.ignore.class.conditionFunction[classNames[c_index]]) === 'function'){
+									return translate.ignore.class.conditionFunction[classNames[c_index]](ele);
+								}else{
+									return true;	
+								}
 							}
 						}
 					}					
@@ -1634,7 +1676,16 @@ var translate = {
 			translate.documents[0] = documents;
 		}else{
 			//是数组，直接赋予
-			translate.documents = documents;
+			for(var i = 0; i < documents.length; i++){
+				if(typeof(documents[i]) === 'undefined' || documents[i] === null){
+					//这个元素不存在，从这里面删除掉
+					 documents.splice(i, 1);
+				}
+			}
+
+			if(documents.length > 0){
+				translate.documents = documents;
+			}
 		}
 		//清空翻译队列，下次翻译时重新检索
 		translate.nodeQueue = {};
@@ -5761,6 +5812,8 @@ var translate = {
 			获取翻译区域的原始文本，翻译前的文本。 这里会把空白符等过滤掉，只返回纯显示的文本
 			也就是获取 translate.setDocument(...) 定义的翻译区域中，翻译前，要参与翻译的文本。 
 			其中像是 translate.ignore.tag 这种忽略翻译的标签，这里也不会获取的，这里只是获取实际要参与翻译的文本。
+
+			返回值： 字符串。 如果获取不到，则返回空字符串 ''
 		 */
 		getTranslateAreaText:function(){
 			//v3.16.1 优化，获取本地语种，针对开源中国只对 readme 部分进行翻译的场景，将针对设置的 translate.setDocument() 区域的元素的显示文本进行判定语种
@@ -5815,7 +5868,7 @@ var translate = {
 			if(translateAreaText == null || typeof(translateAreaText) == 'undefined' || translateAreaText.length < 1){
 				//未取到，默认赋予简体中文
 				translate.language.local = 'chinese_simplified';
-				return;
+				return '';
 			}
 			// 移除所有空白字符（包括空格、制表符、换行符等）
 			translateAreaText = translateAreaText.replace(/\s/g, '');

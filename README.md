@@ -122,6 +122,13 @@ translate.execute();//完成翻译初始化，进行翻译
 * [Layui](extend/layui/) | [Demo](https://res.zvo.cn/translate/else/layui_exts/demo.html)
 
 
+### 帮你集成
+正常情况，你稍微懂一点JavaScript，就可以非常方便的进行使用了。你还可以加我们讨论QQ群等进行讨论各种不同的使用方式等。  
+如果使用时遇到的一些意外情况，我们可以给你进行协助：  
+* [你在使用时遇到BUG，文档就是这么说的，但是它没生效，可以反馈我，我免费帮你排查、解决](http://translate.zvo.cn/4032.html)
+* [你不懂JavaScript，或者你没有时间去集成它，我们可以有偿帮你完成接入集成](http://translate.zvo.cn/4025.html)
+* [你们的项目是内网形态，没有提供公网访问，想要我支持参与，我也可以出差去你们公司实地进行参与调试、指导、配合，完成接入集成工作。可联系我](http://translate.zvo.cn/4030.html)
+
 # 扩展分支
 translate.js 衍生了一系列扩展能力，在其他各个不同的领域，默默对当前的现状进行着改变。
 

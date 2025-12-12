@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.104.20251212',
+	version: '3.18.105.20251212',
 
 	/*js translate.config start*/
 	/*
@@ -4442,6 +4442,10 @@ var translate = {
 			translateJsUrl: '', //设置载入的 translate.js 这个文件的url， iframe 中会自动
 			//启用对同域的iframe也进行翻译（即使页面中没有引入 translate.js）
 			use: function(translateJsUrl){
+				if(typeof(window.location.protocol) === 'string' && window.location.protocol.toLowerCase() === 'file:'){
+					console.log('ERROR: 您当前设置了 translate.element.iframe.use(...); 但是您当前的协议是file协议访问的，这个协议访问会存在跨域问题，所以您的设置没有生效。 您可以通过本地开一个访问服务，以 http、https 等正常请求的方式进行访问。');
+					return;
+				}
 				translate.element.iframe.isUse = true;
 				translate.element.iframe.translateJsUrl = translateJsUrl;
 			},

@@ -44,10 +44,29 @@ public class Set {
 	 */
 	private int accuracy;
 	
+	/**
+	 * 大模型进行翻译，是否启用思考能力，来提高翻译质量
+	 * 默认不设置，则是 false，不启用思考能力。 可以设置为 true 则是启用思考能力
+	 */
+	private boolean think;
+	
 	public Set() {
 		useRepair = true;
 		contain = false;
 		accuracy = 50;
+		think = false;
+	}
+	
+	/**
+	 * 相当于通过传入的 set，克隆一个新的出来
+	 * @param cloneSet 要克隆的 Set
+	 */
+	public Set(Set cloneSet) {
+		this.useRepair = cloneSet.isUseRepair();
+		this.contain = cloneSet.isContain();
+		this.accuracy = cloneSet.getAccuracy();
+		this.think = cloneSet.isThink();
+		this.requestParams = cloneSet.getRequestParams();
 	}
 	
 	public boolean isUseRepair() {
@@ -80,6 +99,37 @@ public class Set {
 
 	public void setAccuracy(int accuracy) {
 		this.accuracy = accuracy;
+	}
+	
+	
+	public boolean isThink() {
+		return think;
+	}
+
+	public void setThink(boolean think) {
+		this.think = think;
+	}
+	
+	/**
+	 * 通过配置文件读取到的字符串格式的值
+	 * @param think 
+	 */
+	public void setThink(String think) {
+		if(think == null || think.trim().length() == 0) {
+			this.think = false;
+		}else{
+			if(think.trim().equalsIgnoreCase("true")){
+				this.think = true;
+			}else {
+				this.think = false;
+			}
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return "Set [useRepair=" + useRepair + ", contain=" + contain + ", requestParams=" + requestParams
+				+ ", accuracy=" + accuracy + "]";
 	}
 	
 }

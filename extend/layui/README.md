@@ -8,62 +8,22 @@ layui 的 翻译插件
 
 ## 快速使用
 
-在你的网页中加入以下js  
+在你的网页 head 中加入以下代码  
 
 ````
-layui.extend({
-	translate: '{/}https://res.zvo.cn/translate/else/layui_exts/translate/translate' // {/}的意思即代表采用自有路径，即不跟随 base 路径
-})
-//使用拓展模块
-layui.use(['translate'], function(){
-	var translate = layui.translate;
-	
-	//设置本地语种
-	translate.language.setLocal('chinese_simplified');
-	//设置翻译通道
-	translate.service.use('client.edge');
-
-	//更多设置项，可以参考  https://translate.zvo.cn/4019.html  可以更灵活的配置你的项目
-	
-	//当页面加载完后执行翻译操作
-	window.onload = function () {
-		translate.execute();
-	};  
-});
-````
-
-
-## 实际使用场景示例
-#### 普通网站中点击某个语言进行切换
-如下图所示，网站中的某个位置要有几种语言切换  
-![](http://cdn.weiunity.com/site/341/news/43b838ea6ad041898037eaaaf5802776.png)  
-直接在其html代码末尾的位置加入以下代码：  
-
-````
-<!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
-<ul class="ignore">
-	<li><a href="javascript:translate.changeLanguage('english');">English</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_simplified');">简体中文</a></li>|
-	<li><a href="javascript:translate.changeLanguage('chinese_traditional');">繁體中文</a></li>
-</ul>
-
+<script src="./translate/translate.js"></script>  <!-- 引入 layui 的 translate.js AI翻译模块，自行下载这个js放到你自己项目里。 js下载地址：  https://raw.githubusercontent.com/xnx3/translate/refs/heads/master/extend/layui/layui_exts/translate/translate.js  -->
 <script>
-	layui.extend({
-		translate: '{/}https://res.zvo.cn/translate/else/layui_exts/translate/translate' // {/}的意思即代表采用自有路径，即不跟随 base 路径
-	})
-	//使用拓展模块
-	layui.use(['translate'], function(){
-		var translate = layui.translate;
-		translate.selectLanguageTag.show = false; //不出现的select的选择语言
-		translate.service.use('client.edge'); //设置翻译通道
-		//当页面加载完后执行翻译操作
-		window.onload = function () {
-			translate.execute();
-		};  
-	});
+translate.language.setLocal('chinese_simplified'); 	//设置本地语种，如果不设置会自动识别 http://translate.zvo.cn/4066.html
+translate.service.use('client.edge'); 	//设置翻译通道 http://translate.zvo.cn/4081.html
+translate.visual.webPageLoadTranslateBeforeHiddenText(); 	//网页打开时自动隐藏文字，翻译完成后显示译文。 参考文档 http://translate.zvo.cn/549731.html
+translate.progress.api.startUITip(); 	//启用翻译中的遮罩层 参考文档 http://translate.zvo.cn/407105.html
+window.onload = function () { 	//当页面DOM加载完后执行翻译操作
+	translate.execute(); 	//进行翻译的执行
+};  
 </script>
-
 ````
+
+
 
 ## 重点支持
 注意，我们将重点支持layui的适配，如果你是layui项目，使用后遇到任何异常，都可[喊我](https://translate.zvo.cn/4030.html) ，我来给你做配合，让你能完美使用！
@@ -73,3 +33,4 @@ layui.use(['translate'], function(){
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee: [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate) 
 
+官方网站：[https://translate.zvo.cn](https://translate.zvo.cn)

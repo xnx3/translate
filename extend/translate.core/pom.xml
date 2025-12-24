@@ -6,7 +6,7 @@
 
 	<groupId>cn.zvo.translate</groupId>
 	<artifactId>translate.core</artifactId>
-	<version>1.3</version>
+	<version>1.4</version>
 	<packaging>jar</packaging>
 
 	<description>translate core</description>

@@ -125,15 +125,14 @@ public class Language {
 			//属于自动识别语种的，那直接原样返回
 			return BaseVO.success(id);
 		}
-		
-		Object obj = map.get(serviceName).get(id);
-		if(obj == null) {
+		//Log.info("serviceName:"+serviceName+", id:"+id);
+		Map<String, String> findMap = map.get(serviceName).get(id);
+		if(findMap == null) {
 			//未发现
 			return BaseVO.failure("language not find");
 		}
 		
-		Map<String, String> valueMap = (Map<String, String>) obj;
-		return BaseVO.success(valueMap.get("serviceId"));
+		return BaseVO.success(findMap.get("serviceId"));
 	}
 	
 	/**

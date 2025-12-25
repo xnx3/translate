@@ -92,6 +92,18 @@
     }
   }
 
+  function isValidDomain(domain) {
+    if (domain == null || domain.trim().length == 0) {
+      return false;
+    }
+    domain = domain.trim().toLowerCase();
+    if (domain.indexOf('http://') == 0 || domain.indexOf('https://') == 0 || domain.indexOf('://') > -1) {
+      return false;
+    }
+    var regex = /^[a-z0-9.-]+$/;
+    return regex.test(domain);
+  }
+
   var tableInstance; // 全局保存table实例，便于重载
   layui.use(['form', 'table', 'layer', 'jquery'], function(){
     var form = layui.form;
@@ -134,6 +146,11 @@
       var domainInput = $('#domain').val().trim();
       var to = $('#to').val().trim();
 
+      if (domainInput.length > 0 && !isValidDomain(domainInput)) {
+        msg.failure('目标域名格式不正确，请只填写域名（不需要 http:// 或 https://），仅允许字母/数字/点/连字符');
+        return;
+      }
+
       // 渲染表格，使用服务器分页
       tableInstance = table.render({
         elem: '#ID-table-demo-data',
@@ -158,11 +175,11 @@
               var item = tableData[i];
               item.translateResult = []; // 初始化 translateResult 数组
 
-              // 遍历所有 to_<language> 字段
+              // 遍历接口返回的所有 to_<language> 字段（包含空字符串），都显示编辑按钮
               for (var key in item) {
-                if (key.indexOf('to_') == 0 && item[key] && item[key].length > 0) {
+                if (key.indexOf('to_') == 0) {
                   var language = key.replace('to_', '');
-                  var cleanedText = cleanText(item[key]); // 清理文本
+                  var cleanedText = cleanText(item[key] || '');
                   item.translateResult.push({
                     'id': cleanText(item['id'] || ''),
                     'language': language,

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.105.20251212',
+	version: '3.18.106.20260105',
 
 	/*js translate.config start*/
 	/*
@@ -2156,8 +2156,10 @@ var translate = {
 		 * originalText:待翻译的字符
 		 * resultText:翻译后的结果字符
 		 * attribute: 要替换的是哪个属性，比如 a标签的title属性，这里便是传入title。如果不是替换属性，这里不用传入，或者传入null
+		 * participles: 分词，数组形态。默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
+        		比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
 		 */
-		add(node, originalText, resultText, attribute){
+		add(node, originalText, resultText, attribute, participles){
 			//console.log('renderTask.add : originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute+', node:');
 			//console.log(node);
 			var nodeAnaly = translate.element.nodeAnalyse.get(node, attribute); //node解析
@@ -2203,6 +2205,8 @@ var translate = {
 			task['originalText'] = originalText;
 			task['resultText'] = resultText;
 			task['attribute'] = attribute;
+			task['participles'] = participles;
+			
 
 			//console.log(task);
 			tasks.push(task);
@@ -2312,7 +2316,8 @@ var translate = {
 						//渲染页面进行翻译显示
 						//console.log(task.originalText+' ('+task['attribute']+') --> ' + task.resultText+', node:');
 						//console.log(node);
-						var analyseSet = translate.element.nodeAnalyse.set(node, task.originalText, task.resultText, task['attribute']);
+						//console.log(typeof(task['participles']) === 'undefined'? []:task['participles'])
+						var analyseSet = translate.element.nodeAnalyse.set(node, task.originalText, task.resultText, task['attribute'], typeof(task['participles']) === 'undefined'? []:task['participles']);
 						//console.log(analyseSet);
 
 						if(translate.node.data.get(translateNode) != null){
@@ -3218,11 +3223,26 @@ var translate = {
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
 						//console.log(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]);
 
-
+						//判断是否是整体翻译，如果不是整体翻译，要考虑到缓存中短句会打散整个句子结构，破坏断句分词，造成 长句子中包含的短句子被翻译了，最后长句子翻译之后未能替换，产生部分未翻译的情况，所以要讲断句的分词也要拿出来
+						var translateNodeData = translate.node.get(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index].node);
+						var participles = [];
+						if(typeof(translateNodeData) !== 'undefined' && translateNodeData !== null && typeof(translateNodeData.whole) === 'boolean' && translateNodeData.whole === false){
+							//console.log(translateNodeData);
+							//console.log(typeof(translateNodeData.translateTexts))
+							//不是整体翻译，那就要将拆分的每句都整理，避免破坏分词结构
+							for(var translateText_original in translateNodeData.translateTexts){
+								//console.log(translateText_original);
+								if (!translateNodeData.translateTexts.hasOwnProperty(translateText_original)) {
+						    		continue;
+						    	}
+						    	participles.push(translateText_original);
+						    }
+						}
+						
 						
 						//翻译结果的文本，包含了before  、 after 了
 						var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute'], participles);
 						//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						//console.log(translateResultText);
 
@@ -3280,10 +3300,9 @@ var translate = {
 						cacheScanNodes[twoScanIndex_cache]['array'][arrayIndex_cache] = translateResultText;
 						
 					}
-					
 
 
-						
+
 					continue;	//跳出，不用在传入下面的翻译接口了
 				}
 				
@@ -4132,11 +4151,13 @@ var translate = {
 				返回结果是一个数组，其中：
 					resultText: 翻译完成之后的text内容文本，注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
 					node: 进行翻译的目标node	
+					participles: 分词，数组形态。默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
+        		比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
 
 				注意，使用本set方法，不要用 返回的 text参数，要用 	resultText 这个参数，这个才是翻译之后的文本	
 			*/
-			set:function(node, originalText, resultText, attribute){
-				return translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute);
+			set:function(node, originalText, resultText, attribute, participles){
+				return translate.element.nodeAnalyse.analyse(node,originalText,resultText, attribute, participles);
 			},
 			/*	
 				
@@ -4152,6 +4173,8 @@ var translate = {
 					则是进行翻译之后的渲染显示
 
 				attribute : 进行替换渲染时使用，存放要替换的属性，比如 a标签的title属性。 如果是直接替换node.nodeValue ，那这个没有
+				participles: 分词，数组形态。保障 originalText 不被拆乱了。 默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
+        					比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
 				
 				返回结果是一个数组，其中：
 					resultText: 翻译完成之后的text内容文本。 当使用 translate.element.nodeAnalyse.set 时才会有这个参数返回。 注意，如果返回的是空字符串，那么则是翻译结果进行替换时，并没有成功替换，应该是翻译的过程中，这个node的值被其他js又赋予其他内容了。
@@ -4159,15 +4182,17 @@ var translate = {
 					node: 要进行翻译的目标node
 							注意，如果是对 input、textarea 的value进行翻译，而 value是通过js赋予的，那么这个value属性的值并不是一个单独的node，所以是为空的，此时要记录的node便是  input、textarea 这个node本身。
 			*/
-			analyse:function(node, originalText, resultText, attribute){
+			analyse:function(node, originalText, resultText, attribute, participles){
 				var result = new Array(); //返回的结果
 				result['node'] = node;
 				result['text'] = '';
-
+				
 				var nodename = translate.element.getNodeName(node);
 				//console.log('nodeAnalyse.analyse: NodeName:'+nodename+', originalText:'+originalText+', resultText:'+resultText+', attribute:'+attribute+', node:');
 				//console.log(node)
-				
+
+				//console.log('participles:');
+				//console.log(participles);
 				if(attribute != null && typeof(attribute) == 'string' && attribute.length > 0){
 					//这个node有属性，替换的是node的属性，而不是nodeValue
 
@@ -4186,7 +4211,7 @@ var translate = {
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
 						if(typeof(nodeAttributeValue) != 'undefined'){
 							//这种是主流框架，像是vue、element、react 都是用这种 DOM Property 的方式，更快
-							var resultShowText = translate.util.textReplace(nodeAttributeValue, originalText, resultText, translate.to);
+							var resultShowText = translate.util.textReplace(nodeAttributeValue, originalText, resultText, translate.to, participles);
 							translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 							if((nodename === 'INPUT' || nodename === 'TEXTAREA') && attribute.toLowerCase() == 'value'){
@@ -4266,7 +4291,7 @@ var translate = {
 							if(input_value_node != null && typeof(input_value_node) != 'undefined' && typeof(input_value_node.nodeValue) != 'undefined' && input_value_node.nodeValue.length > 0){
 								//替换渲染
 								if(typeof(originalText) != 'undefined' && originalText.length > 0){
-									var resultShowText = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to);
+									var resultShowText = translate.util.textReplace(input_value_node.nodeValue, originalText, resultText, translate.to, participles);
 									translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 									input_value_node.nodeValue = resultShowText;  //2025.4.26 变更为此方式
@@ -4290,7 +4315,7 @@ var translate = {
 						//console.log(node);
 						//替换渲染
 						if(typeof(originalText) != 'undefined' && originalText.length > 0){
-							var resultShowText = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to);
+							var resultShowText = translate.util.textReplace(node.attributes['placeholder'].nodeValue, originalText, resultText, translate.to, participles);
 							translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 							node.attributes['placeholder'].nodeValue = resultShowText;  //2025.4.26 变更为此方式
@@ -4322,7 +4347,7 @@ var translate = {
 						if(nodeAttributeName == 'keywords' || nodeAttributeName == 'description' || nodeAttributeName == 'sharetitle' || nodeAttributeProperty == 'og:title' || nodeAttributeProperty == 'og:description' || nodeAttributeProperty == 'og:site_name' || nodeAttributeProperty == 'og:novel:latest_chapter_name'){
 							//替换渲染
 							if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
-								var resultShowText = translate.util.textReplace(node.content, originalText, resultText, translate.to);
+								var resultShowText = translate.util.textReplace(node.content, originalText, resultText, translate.to, participles);
 								translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 								node.content = resultShowText;  //2025.4.26 变更为此方式
@@ -4351,7 +4376,7 @@ var translate = {
 
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText.length > 0){
-						var resultShowText = translate.util.textReplace(node.alt, originalText, resultText, translate.to);
+						var resultShowText = translate.util.textReplace(node.alt, originalText, resultText, translate.to, participles);
 						translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 						node.alt = resultShowText;  //2025.4.26 变更为此方式
@@ -4376,7 +4401,7 @@ var translate = {
 					//替换渲染
 					if(typeof(originalText) != 'undefined' && originalText != null && originalText.length > 0){
 						//console.log(originalText+'|');
-						var resultShowText = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to);
+						var resultShowText = translate.util.textReplace(node.nodeValue, originalText, resultText, translate.to, participles);
 						translate.element.nodeAnalyse.analyseReplaceBefore_DateToTranslateNode(node, attribute, resultShowText);
 
 						//console.log(resultShowText+'|');
@@ -5175,11 +5200,14 @@ var translate = {
 		/**** v3.10.2.20241206 - 自定义术语能力全面优化 - end ****/
 		
 
-
 		//记录 nodeHistory - 判断text是否已经被拆分了
 		if(textArray.length > 0 && textArray[0] != text){  //主要是后面的是否相等，前面的>0只是避免代码报错
 			translate.node.get(translateNode).whole = false; //已经被拆分了，不是整体翻译了
 			//这时，也默认给其赋值操作，将自定义术语匹配后的结果进行赋予
+
+			for(var tai = 0; tai < textArray.length; tai++){
+				translate.node.get(translateNode).translateTexts[textArray[tai]] = null;
+			}
 		}else{
 			translate.node.get(translateNode).whole = true; //未拆分，是整体翻译
 		}
@@ -6967,6 +6995,115 @@ var translate = {
 	},
 	
 	util:{
+
+		/*
+			针对 textReplace 处理时对句子生成其全角、半角状态的处理 的 逆向处理
+
+			text: 要处理的文本句子
+			language: 目标语言，如 english
+			返回数组。
+
+			比如
+			 text 传入的是 :
+				，是吗。
+			 language 传入的是 english
+			 那么返回的数组是：
+			 	[
+					"，是吗。",				
+					", 是吗。",
+					"，是吗. ",
+					", 是吗. ",
+			 	]
+		*/
+		text_full_half_width_generate: function(text, language){
+			//console.log(text);
+
+			if(typeof(text) === 'undefined'){
+				return [text];
+			}
+			if(text.trim().length == 0){
+				return [text];
+			}
+
+			//文字之间需要空格，也就是半角标点符号，像是英语，法语， 则是true
+        	var requireSpace = translate.language.wordBlankConnector(language);
+
+        	/**** 判断 findText 的开始字符跟结束字符是否包含着 特殊符号 ，：。 因为在 translate.util.textReplace 替换时，会根据当前语种，自动将前后有句号等符号时进行中英的符号转换，此时如果 findText 传入的带有句号的，比如 “你好，” 而实际上text的内容是已经被替换过，就会导致 “你好，” 找不到，而 “你好,” 能找到 ****/
+			var punctuationMarks_fullWidth = ['，','：','。']; //标点符号-全角，用于中文等语种
+			var punctuationMarks_halfWidth = [',',':','.']; //标点符号-半角，用于英文等语种
+			
+			//如果要替换的文本只是原文本中的一部分，那么就需要进行处理了
+        	var findText = text;
+
+			//取第一个字符
+			var findTextFirstChar = findText.charAt(0);
+			//取最后一个字符
+			var findTextLastChar = findText.charAt(findText.length-1);
+
+        	/*
+			 * translateOriginal 生成的用于替换的变种，可能是多个，比如  “你好，世界。” 中的  "，世界" 在翻译为英文情况时，会出现这几种变种：
+			 * , 世界。
+			 * , 世界. 
+			 * ，世界。
+			 * ，世界. 
+			 * 根据不同的中英文，标点符号后面是否跟空格也不同
+			 */
+			var originalArray = [];
+			originalArray.push(text); //首先把当前的加入进去
+
+			//翻译替换为半角标点符号，如英语
+			if(requireSpace){
+
+				//第一个发现全角字符， 转为半角处理
+				if(punctuationMarks_fullWidth.indexOf(findTextFirstChar) > -1){
+					var processFirstCharText = punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextFirstChar)]+' '+findText.substring(1, findText.length);
+					originalArray.push(processFirstCharText);
+					
+					//第一个处理后，寻找最后一个全角字符转为半角处理
+					if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+						originalArray.push(processFirstCharText.substring(0, processFirstCharText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]+' ');
+						originalArray.push(processFirstCharText.substring(0, processFirstCharText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]);
+					}
+				}
+
+				//将最后一个全角字符转为半角处理
+				if(punctuationMarks_fullWidth.indexOf(findTextLastChar) > -1){
+					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]+ ' ');
+					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_halfWidth[punctuationMarks_fullWidth.indexOf(findTextLastChar)]);
+				}
+			}else{
+				//翻译替换为全角标点符号，如中文
+
+				//第一个发现半字符， 转为全角处理。这里不用跟上面似的追加去除空格的，因为 textReplace_service 只为了阅读方便追加空格，并没有做去空格处理。 
+				if(punctuationMarks_halfWidth.indexOf(findTextFirstChar) > -1){
+					var processLastCharText = punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextFirstChar)]+findText.substring(1, findText.length);
+					originalArray.push(processLastCharText);
+
+					//判断第二个字符是否是空格，如果是，那可能是自动有英转中时追加的空格，这也要考虑把空格去掉的情况
+					if(processLastCharText.charAt(1) === ' '){
+						originalArray.push(processLastCharText.substring(0, 1) + processLastCharText.substring(2, findText.length));
+					}
+
+					//第一个处理后，寻找最后一个半角字符转为全角处理
+					if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+						originalArray.push(processLastCharText.substring(0, processLastCharText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
+						
+						//判断第二个字符是否是空格，如果是，那可能是自动有英转中时追加的空格，这也要考虑把空格去掉的情况
+						if(processLastCharText.charAt(1) === ' '){
+							originalArray.push(processLastCharText.substring(0, 1) + processLastCharText.substring(2, processLastCharText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
+						}
+					}
+				}
+
+				//将最后一个全角字符转为半角处理
+				if(punctuationMarks_halfWidth.indexOf(findTextLastChar) > -1){
+					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
+				}
+			}
+			//console.log(originalArray);
+			return originalArray;
+		},
+
 		/*
             文本替换，将替换完毕的结果返回
             自定义术语等都是通过这个来进行替换
@@ -6990,20 +7127,39 @@ var translate = {
 
         */
         textReplace:function(text, translateOriginal, translateResult, language, participles){
-        	//console.log('----text:'+text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]')+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
+        	//console.log('----text:'+text.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/ /g, '[空白符]')+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult+',\tparticiples:');
+        	//console.log(participles);
         	
         	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
         	if(text == translateOriginal){
         		return translateResult;
         	}
         	
+        	//console.log('participles ---- 处理');
+        	//console.log(participles);
+        	if(typeof(participles) === 'object'){
+        		for(var pi = participles.length; pi >= 0; pi--){
+        			var participlesItemArray = translate.util.text_full_half_width_generate(participles[pi], language);
+        			if(participlesItemArray.length > 1){
+        				//被拆了，要合并
+        				participlesItemArray.shift(); // 移除第一个，也就是原本的participles中的元素
+        				participles = participles.concat(participlesItemArray);
+        			}
+        		}
+        	}
+        	
+
+        	/*
         	//文字之间需要空格，也就是半角标点符号，像是英语，法语， 则是true
         	var requireSpace = translate.language.wordBlankConnector(language);
 
         	//如果要替换的文本只是原文本中的一部分，那么就需要进行处理了
         	var findText = translateOriginal;
+			*/
+
 
         	/**** 判断 findText 的开始字符跟结束字符是否包含着 特殊符号 ，：。 因为在 translate.util.textReplace 替换时，会根据当前语种，自动将前后有句号等符号时进行中英的符号转换，此时如果 findText 传入的带有句号的，比如 “你好，” 而实际上text的内容是已经被替换过，就会导致 “你好，” 找不到，而 “你好,” 能找到 ****/
+			/*
 			var punctuationMarks_fullWidth = ['，','：','。']; //标点符号-全角，用于中文等语种
 			var punctuationMarks_halfWidth = [',',':','.']; //标点符号-半角，用于英文等语种
 			
@@ -7011,6 +7167,7 @@ var translate = {
 			var findTextFirstChar = findText.charAt(0);
 			//取最后一个字符
 			var findTextLastChar = findText.charAt(findText.length-1);
+			*/
 
 			/*
 			 * translateOriginal 生成的用于替换的变种，可能是多个，比如  “你好，世界。” 中的  "，世界" 在翻译为英文情况时，会出现这几种变种：
@@ -7020,8 +7177,12 @@ var translate = {
 			 * ，世界. 
 			 * 根据不同的中英文，标点符号后面是否跟空格也不同
 			 */
+        	var originalArray = translate.util.text_full_half_width_generate(translateOriginal, language);
+			/*
 			var originalArray = [];
 			originalArray.push(translateOriginal); //首先把当前的加入进去
+
+			
 
 			//翻译替换为半角标点符号，如英语
 			if(requireSpace){
@@ -7060,7 +7221,7 @@ var translate = {
 					originalArray.push(findText.substring(0, findText.length-1)+punctuationMarks_fullWidth[punctuationMarks_halfWidth.indexOf(findTextLastChar)]);
 				}
 			}
-			//console.log(originalArray);
+			*/
 
 			for(var i = 0; i < originalArray.length; i++){
 				if(text.indexOf(originalArray[i]) > -1){
@@ -7075,7 +7236,8 @@ var translate = {
 
         */
         textReplace_service:function(text, translateOriginal, translateResult, language, participles){
-        	//console.log('----text:'+text+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult);
+        	//console.log('----text:'+text+', translateOriginal:'+translateOriginal+', translateResult:'+translateResult+", participles:");
+        	//console.log(participles);
         	//如果要替换的源文本直接就是整个文本，那也就不用在做什么判断了，直接将 翻译的结果文本返回就好了
         	if(text == translateOriginal){
         		return translateResult;
@@ -7102,6 +7264,7 @@ var translate = {
            		let replaceResultText = ''+translateResult; 
            		//替换的文本 ，这里有可能会追加上某些标点符号，所以单独也列出来，而不是使用方法中传入的 translateOriginal
            		let replaceOriginalText = '' + translateOriginal; 
+
 
            		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
            		if(translate.language.wordBlankConnector(language)){
@@ -7182,12 +7345,13 @@ var translate = {
 	            }
         	}
 
+        	//console.log(text);
             return text;
         },
         /*
 			从一个字符串中, 寻找某个分词。这个分词不能破坏其他分词。
 			text: 原始文本，翻译的某句或者某个词就在这个文本之中
-			findParticiple: 寻找的分词文本
+			findText: 寻找的分词文本
 			participles: 分词，数组形态。默认不传则是没有其他分词需要保留的。 传入比如  ['你好','你是谁'] 
         		比如 translateOriginal 传入 '你' 时， text 中的 '你好','你是谁' 是不能被拆出'你'这个字进行替换的，不然就破坏了分词了
 			
@@ -7199,78 +7363,164 @@ var translate = {
 
         */
         findParticiple:function(text, findText, translateTexts){
-        	var resultArray = [];
+            var resultArray = [];
 
-			//兼容 translateTexts 不传入的情况
-			if(typeof(translateTexts) == 'undefined' || translateTexts == null){
-				translateTexts = [];
-			}
+            //兼容 translateTexts 不传入的情况
+            if(typeof(translateTexts) == 'undefined' || translateTexts == null){
+                translateTexts = [];
+            }
 
-			/*****1. 先过滤，过滤掉 translateTexts 中 不包含 translateOriginal、 以及文本长度小于等于 translateOriginal  这个分词的情况*****/
-			var newTranslateTexts = []; 
-			for(var i = 0; i < translateTexts.length; i++){
-				if(translateTexts[i].indexOf(findText) != -1 && translateTexts[i].length > findText.length){
-					newTranslateTexts.push(translateTexts[i]);
-				}
-			}
-			//console.log('包含'+findText+'的分词：');
-			//console.log(newTranslateTexts)
+            /*****1. 先过滤，过滤掉 translateTexts 中 不包含 translateOriginal、 以及文本长度小于等于 translateOriginal  这个分词的情况*****/
+            var newTranslateTexts = [];
+            for(var i = 0; i < translateTexts.length; i++){
+                if(translateTexts[i].indexOf(findText) != -1 && translateTexts[i].length > findText.length){
+                    newTranslateTexts.push(translateTexts[i]);
+                }
+            }
+            //console.log('包含'+findText+'的分词：');
+            //console.log(newTranslateTexts)
 
-			//当前替换后，替换结果结束位置的下标。 
-			//一开始还没进行替换，那么这个下标就是 0
-			//比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
-			var currentReplaceEndIndex = 0;
+            //当前替换后，替换结果结束位置的下标。
+            //一开始还没进行替换，那么这个下标就是 0
+            //比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2
+            var currentReplaceEndIndex = 0;
 
-			//while最大循环次数30次，免得出现未知异常导致死循环
-			var maxWhileNumber = 30;
+            // TODO 【原方案】
+            // //while最大循环次数30次，免得出现未知异常导致死循环
+            // var maxWhileNumber = 30;
+            //
+            // // 识别，indexOf 逐个识别 '你' ，识别到之后，再跟 其他比如 '你是谁'  进行判断，比如  '你是谁'  就要讲 indexOf 的下标+2 来截取这text中的三个字符，去跟 '你是谁' 判定，以判定是否是一个正常的不能拆分的分词
+            // while(text.indexOf(findText, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
+            //     var index = text.indexOf(findText, currentReplaceEndIndex);
+            //
+            //     var findParticiple = false; //发现是其他分词了是true，没发现可以替换则是false
+            //     console.log('index -> ', index)
+            //
+            //     //进行其他分词发现策略（旧：将句子按下标进行拆分，判断出是否属于分词）
+            //     if(newTranslateTexts.length > 0){
+            //         //发现的这个词可能是其他分词中的一部分，这个要判断当前index是否是其他分词的一部分。 这里要进行遍历 newTranslateTexts 逐个取出进行对比
+            //
+            //         for(var j = 0; j < newTranslateTexts.length; j++){
+            //             //判断 newTranslateTexts[j] 这个分词中包含的 findText 这个文本，这个文本是在 newTranslateTexts[j] 的下标的多少
+						   //注意，这里有bug
+						   //当前替换后，替换结果结束位置的下标。 
+						   //一开始还没进行替换，那么这个下标就是 0
+						   //比如 你好吗  中的 好 替换为 "好的" 那最后结果为 "你好的吗" ，这里是 “的” 的下标 2、
+            //             var indexInNewTranslateTexts = newTranslateTexts[j].indexOf(findText);
+            //             // 因为 newTranslateTexts 是通过筛选包含 findText 而出的，所以它肯定是包含的，有下标的
+            //             // 这里要从 text 中，根据 indexInNewTranslateTexts 及 原本 findText 的 index，在这个index的前或者后，追加几个文本，这追加的文本长度，也就是根据 indexInNewTranslateTexts 以及 newTranslateTexts[j] 的长度
+            //
+            //             //这里准备要根据 newTranslateTexts[j] 、 indexInNewTranslateTexts ，来定义从 text 中去取 对应 newTranslateTexts[j] 的长度，以判断当前index是否是取的 newTranslateTexts[j] 这个分词的
+            //             var length = newTranslateTexts[j].length;
+            //             var split_text = text.substring(index-indexInNewTranslateTexts, index-indexInNewTranslateTexts + length);
+            //             if(split_text == newTranslateTexts[j]){
+            //                 //说明当前index是取的 newTranslateTexts[j] 这个分词的,那这个就不能替换，要忽略
+            //                 //console.log('当前是其他分词，不能直接替换 ： '+newTranslateTexts[j]);
+            //                 findParticiple = true;
+            //                 break;
+            //             }
+            //             console.log('split_text -> ', split_text);
+            //             console.log('newTranslateTexts[j] -> ', newTranslateTexts[j]);
+            //             console.log('split_text == newTranslateTexts[j] -> ', split_text == newTranslateTexts[j]);
+            //             console.log('indexInNewTranslateTexts -> ', indexInNewTranslateTexts);
+            //             console.log('length -> ', length);
+            //             console.log('index-indexInNewTranslateTexts -> ', index-indexInNewTranslateTexts);
+            //             console.log('index-index-indexInNewTranslateTexts + length -> ', index-indexInNewTranslateTexts + length);
+            //         }
+            //     }
+            //
+            //     console.log('findParticiple -> ', findParticiple);
+            //     if(!findParticiple){
+            //         resultArray.push(index);
+            //     }
+            //     currentReplaceEndIndex = index+findText.length;
+            //     console.log(" ---------- ")
+            // }
 
-			// 识别，indexOf 逐个识别 '你' ，识别到之后，再跟 其他比如 '你是谁'  进行判断，比如  '你是谁'  就要讲 indexOf 的下标+2 来截取这text中的三个字符，去跟 '你是谁' 判定，以判定是否是一个正常的不能拆分的分词
-			while(text.indexOf(findText, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
-				var index = text.indexOf(findText, currentReplaceEndIndex);
+            // 【方案1】使用下标数组记录位置
+            let flagArr = translate.util.participleIndexFind(text, newTranslateTexts);
 
-				var findParticiple = false; //发现是其他分词了是true，没发现可以替换则是false
+            // while最大循环次数30次，免得出现未知异常导致死循环
+            var maxWhileNumber = 300;
 
-				//进行其他分词发现策略
-				if(newTranslateTexts.length > 0){
-					//发现的这个词可能是其他分词中的一部分，这个要判断当前index是否是其他分词的一部分。 这里要进行遍历 newTranslateTexts 逐个取出进行对比
+            // 识别，indexOf 逐个识别 '你' ，识别到之后，再跟 其他比如 '你是谁'  进行判断，比如  '你是谁'  就要讲 indexOf 的下标+2 来截取这text中的三个字符，去跟 '你是谁' 判定，以判定是否是一个正常的不能拆分的分词
+            while(text.indexOf(findText, currentReplaceEndIndex) > -1 && maxWhileNumber-- > 0){
+                var index = text.indexOf(findText, currentReplaceEndIndex);
 
-					for(var j = 0; j < newTranslateTexts.length; j++){
-						//判断 newTranslateTexts[j] 这个分词中包含的 findText 这个文本，这个文本是在 newTranslateTexts[j] 的下标的多少
-						var indexInNewTranslateTexts = newTranslateTexts[j].indexOf(findText);
-						// 因为 newTranslateTexts 是通过筛选包含 findText 而出的，所以它肯定是包含的，有下标的
-						// 这里要从 text 中，根据 indexInNewTranslateTexts 及 原本 findText 的 index，在这个index的前或者后，追加几个文本，这追加的文本长度，也就是根据 indexInNewTranslateTexts 以及 newTranslateTexts[j] 的长度
+                var findParticiple = false; //发现是其他分词了是true，没发现可以替换则是false
 
-						//这里准备要根据 newTranslateTexts[j] 、 indexInNewTranslateTexts ，来定义从 text 中去取 对应 newTranslateTexts[j] 的长度，以判断当前index是否是取的 newTranslateTexts[j] 这个分词的 
-						var length = newTranslateTexts[j].length;
-						var split_text = text.substring(index-indexInNewTranslateTexts, index-indexInNewTranslateTexts + length);
-						if(split_text == newTranslateTexts[j]){
-							//说明当前index是取的 newTranslateTexts[j] 这个分词的,那这个就不能替换，要忽略
-							//console.log('当前是其他分词，不能直接替换 ： '+newTranslateTexts[j]);
-							findParticiple = true;
-							break;
-						}
-					}
-				}
+                // 遍历分词，获取出在原句子中的位置，根据下标对比判断是否属于分词
+                if(newTranslateTexts.length > 0 && flagArr.length > 0){
+                    // 发现的这个词可能是其他分词中的一部分，这个要判断当前index是否是其他分词的一部分。 这里要进行遍历 flagArr，如果index在此数组中的范围内说明属于其他分词
+                    for(var j = 0; j < flagArr.length; j++){
+                        // 取出子数组，标记了分词在原文中的位置
+                        let flagItem = flagArr[j];
+                        if(index >= flagItem.start && index <= flagItem.end){
+                            // 说明当前index是取的 flagArr[j] 这个分词的,那这个就不能替换，要忽略
+                            findParticiple = true;
+                            break;
+                        }
+                    }
+                }
 
-				if(!findParticiple){
-					resultArray.push(index);
-				}
-				currentReplaceEndIndex = index+findText.length;
-			}
+                if(!findParticiple){
+                    resultArray.push(index);
+                }
+                currentReplaceEndIndex = index+findText.length;
+            }
 
 
 
-			  /*
+            /*
 			    这里需要将下面的 9、7 这个下标找出来，然后进行替换。  注意要先从后进行替换，避免从前替换，之后的下标长度出现变化
 			  */
 
-			  //text = translate.util.replaceFromIndex(text, 9, translateOriginal, translateResult).text;
-			  //text = translate.util.replaceFromIndex(text, 7, translateOriginal, translateResult).text;
+            //text = translate.util.replaceFromIndex(text, 9, translateOriginal, translateResult).text;
+            //text = translate.util.replaceFromIndex(text, 7, translateOriginal, translateResult).text;
 
 
-			  //return text;
+            //return text;
 
-			return resultArray;
+            return resultArray;
+        },
+        /**
+         * 方案1：使用下标数组来标记分词位置
+         *  传入原文和分词内容数组，返回分词在原文中的下标数组
+         *  例如：
+         *      text 传入 "只有那些敢于追求梦想的人，才能实现梦想。"
+         *      newTranslateTexts 传入 ["梦想", "敢于追求"]
+         *      则输出 [{start: 4, end: 7}, {"start": 8, "end": 9}, {"start": 17, "end": 18}]
+         * @param text 原文。字符串
+         * @param newTranslateTexts 分词内容数组
+         * @returns 分词所在的下标范围的数组。格式为 [{"start": 1, "end": 2}]
+         */
+        participleIndexFind:function(text, newTranslateTexts) {
+        	//console.log('text: '+text+', newTranslateTexts: ');
+        	//console.log(newTranslateTexts);
+            let indexArr = [];
+            // 遍历分词
+            for(let i = newTranslateTexts.length-1; i >= 0; i--){
+                // 取出分词
+                let word = newTranslateTexts[i];
+                // 找出分词在原文中出现的所有位置
+                let startIndex = 0; // 起始位置
+                while(text.indexOf(word, startIndex) > -1) {
+                    // 开始的下标
+                    let index = text.indexOf(word, startIndex);
+                    // 结束的下标
+                    let endIndex = index+word.length-1;
+                    // 封装成数组，存入二维数组中
+                    let item = {
+                        start: index,
+                        end: endIndex
+                    }
+                    indexArr.push(item);
+                    // 改变起始位置
+                    startIndex = index+word.length-1;
+                }
+            }
+            //console.log(indexArr);
+            return indexArr;
         },
         /*
 			js 的 replace 能力，这个是可以指定从第几个字符开始进行replace

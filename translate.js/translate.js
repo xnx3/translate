@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.106.20260105',
+	version: '3.18.107.20260106',
 
 	/*js translate.config start*/
 	/*
@@ -1868,6 +1868,10 @@ var translate = {
 			@return boolean true：需要触发 translate.execute(node) 进行翻译
 		*/
 		nodeValueChangeNeedTranslate: function(node){
+			if(typeof(node) === 'undefined' || node === null){
+				return false;
+			}
+
 			//是否是要加入翻译扫描触发执行，是则是true
 			var addTranslateExecute = true;
 

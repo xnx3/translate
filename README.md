@@ -222,7 +222,7 @@ Hunyuan-MT ...) 转为统一的文本翻译API输出。
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具  
 [IoTSharp](https://gitee.com/IoTSharp) IoTSharp 是一个 基于.Net Core 开源的物联网基础平台， 支持 HTTP、MQTT 、CoAp 协议    
 [流之云](https://gitee.com/ntdgg) 信息化、数字化服务提供商    
-[IMAI.WORK](https://gitee.com/tsinghua-open/imaiwork) 全自动AI获客，微信群发、朋友圈营销、自动加微 ... 完整的AI营销自动化解决方案。  
+[IMAI.WORK](https://gitee.com/tsinghua-open/imaiwork) 全自动AI获客，如AI直播、微信群发、朋友圈营销、自动加微、智能对话 ... 完整的AI营销自动化解决方案。  
 
 # 我的其他开源项目
 

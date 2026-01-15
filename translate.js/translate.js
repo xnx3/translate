@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.107.20260106',
+	version: '3.18.108.20260115',
 
 	/*js translate.config start*/
 	/*
@@ -8919,7 +8919,7 @@ var translate = {
 		 * url 请求的url或者path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * data 请求的数据，如 {"author":"管雷鸣",'site':'www.guanleiming.com'} 
 		 * appendXhrData 附加到 xhr.data 中的对象数据，传入比如  {"from":"english","to":"japanese"} ，他会直接赋予 xhr.data
-		 * func 请求完成的回调，也就是只要响应码是 200 ，则会触发这个方法。 传入如 function(requestData, responseData){ console.log(responseData); }
+		 * func 请求完成的回调，也就是只要响应码是 200 ，则会触发这个方法。 传入如 function(requestData, responseData, xhr){ console.log(responseData); }
 		 * 				其中的参数：
 		 * 					requestData post请求所携带的数据
 		 * 					responseData 响应的数据
@@ -9034,7 +9034,7 @@ var translate = {
 			        	if(json === null){
 			        		func(xhr.responseText);
 			        	}else{
-			        		func(json, xhr.data);
+			        		func(json, xhr.data, xhr);
 			        	}
 			        }else{
 			        	if(showErrorLog){
@@ -12174,6 +12174,45 @@ var translate = {
 
 	},
 	/*js translate.recycle end*/
+
+	/*js translate.debug start*/
+	debug: {
+
+		loadDebugJs: function(func, debugJsUrl){
+			if(typeof(debugJsUrl) !== 'string' || debugJsUrl.length < 5){
+				debugJsUrl = 'https://translate.zvo.cn/static/debug.min.js';
+			}
+			if(typeof(translate.debug.data) === 'undefined'){
+				//载入 translate_debug.js
+
+				//if(window.location.protocol.toLowerCase() === 'file:'){
+					if(debugJsUrl.indexOf('file') !== 0){
+						//alert('您当前的页面是file协议，请手动下载 https://translate.zvo.cn/static/debug.min.js 这个js文件，然后传入 translate.debug.showUIDialog(\'file://a/b/debug.min.js\'); 使用')
+					}
+					// 1. 创建script标签
+				    const script = document.createElement('script');
+				    script.src = "https://translate.zvo.cn/static/debug.min.js";
+				    script.onload = script.onreadystatechange = function() {
+				    	func();
+				    }
+				    document.head.appendChild(script);
+				//}else{
+				//	translate.util.synchronizesLoadJs(debugJsUrl);
+				//}
+
+			}
+		},
+
+		/*
+			显示debug 的 UI对话界面
+		*/
+		use: function(debugJsUrl){
+			translate.debug.loadDebugJs(function(){
+				translate.debug.showUIDialog();
+			}, debugJsUrl);
+		}
+	},
+	/*js translate.debug end*/
 
 	/*js translate.init start*/
 	/*

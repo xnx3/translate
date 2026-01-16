@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.108.20260115',
+	version: '3.18.109.20260116',
 
 	/*js translate.config start*/
 	/*
@@ -918,21 +918,47 @@ var translate = {
 		},
 		id:[],
 		/*
-			传入一个元素，判断这个元素是否是被忽略的元素。 这个会找父类，看看父类中是否包含在忽略的之中。
+			传入一个 node 节点，判断这个node是否是被忽略的。 这个会找父类，看看父类中是否包含在忽略的之中。
+			
+
+			node node节点
+			data 其他的一些属信息，这个参数在这个方法里没有任何使用，它是给 用户自定义ignore 的 function 参数进行自定义判断使用的
+					node: 	当前实际要参与翻译的节点。
+							如果是 <p>123</p> 这种元素，那上面传入的ele参数跟这里的node参数的值都是相同的，都是这个p元素
+							如果是 <input type="text" title="我是title标签的内容" placeholder="请填写你的姓名" /> 这种元素，当前翻译的是其中的 placeholder 属性的内容
+								那么传入的 element 参数是 input 这个元素
+								而 node 参数则是 placeholder 这个节点属性（打印它时  console.log(node);  会输出 #text ）
+
+					attribute : 当前实际要进行翻译的 node 节点，是否是 element 传入元素其中的某个属性。
+								如果是 '' 空字符串 ，则是当前要翻译的 node 它等于 element，是一个元素
+								如果是长度大于0的字符串 ，那么当前翻译的 node 数据是 element 参数的某个属性，而这个属性的名字，便是 attribute 的值
+								它的值如：  ''、 'title'、'alt'、'placeholder' ... 这种
+					
 			return true是在忽略的之中，false不再忽略的之中
 		*/
-		isIgnore:function(ele){
-			if(ele == null || typeof(ele) == 'undefined'){
+		isIgnore:function(node, data){
+			if(node == null || typeof(node) == 'undefined'){
 				return false;
 			}
-			if(ele.nodeType === 2){ //是属性，将其转为元素判断，因为当前忽略配置，是针对元素配置的
-				ele = ele.ownerElement;
-			}else if(ele.nodeType === 3){
-				//文本节点，转为元素
-				ele = ele.parentNode;
+			if(typeof(data) === 'undefined'){
+				data = {
+					attribute: null
+				};
+			}
+			if(typeof(data.node) === 'undefined'){
+				data.node = node;
 			}
 
-			var parentNode = ele;
+			var currentElement = node;
+			if(currentElement.nodeType === 2){ //是属性，将其转为元素判断，因为当前忽略配置，是针对元素配置的
+				currentElement = currentElement.ownerElement;
+			}else if(currentElement.nodeType === 3){
+				//文本节点，转为元素
+				currentElement = currentElement.parentNode;
+			}
+
+			var parentNode = currentElement;
+			
 			var maxnumber = 100;	//最大循环次数，避免死循环
 			while(maxnumber-- > 0){
 				if(parentNode == null || typeof(parentNode) == 'undefined'){
@@ -971,7 +997,7 @@ var translate = {
 							if(translate.ignore.class.data.indexOf(classNames[c_index]) > -1){
 								//发现ignore.class 当前是处于被忽略的 class, 在判定它的 conditionFunction 是否正常
 								if(typeof(translate.ignore.class.conditionFunction[classNames[c_index]]) === 'function'){
-									return translate.ignore.class.conditionFunction[classNames[c_index]](ele);
+									return translate.ignore.class.conditionFunction[classNames[c_index]](currentElement, data);
 								}else{
 									return true;	
 								}
@@ -4725,7 +4751,7 @@ var translate = {
 				//console.log('------------');
 				
 				//判断当前元素是否在ignore忽略的tag、id、class name中
-				if(!translate.ignore.isIgnore(node)){
+				if(!translate.ignore.isIgnore(node, {node: node.getAttributeNode('title'), attribute: 'title'})){
 					//不在忽略的里面，才会加入翻译
 					//translate.addNodeToQueue(uuid, node, node['title'], 'title');
 					translate.addNodeToQueue(uuid, node.getAttributeNode('title'), node['title'], '');
@@ -4783,7 +4809,7 @@ var translate = {
 					//	continue
 					//}
 					//判断当前元素是否在ignore忽略的tag、id、class name中   v3.15.7 增加	
-					if(!translate.ignore.isIgnore(node)){
+					if(!translate.ignore.isIgnore(node, {attribute: attributeName})){
 						//加入翻译
 						translate.addNodeToQueue(uuid, isInputValue? node:node.getAttributeNode(attributeName), attributeValue, isInputValue? 'value':'');
 					}
@@ -4843,18 +4869,19 @@ var translate = {
 
 
 
-			/**** 避免中途局部翻译，在判断一下 ****/
-			//判断当前元素是否在ignore忽略的tag、id、class name中
-			if(translate.ignore.isIgnore(node)){
-				//console.log('node包含在要忽略的元素中：');
-				//console.log(node);
-				return;
-			}
-
 			//node分析，分析这个node的所有可翻译属性（包含自定义翻译属性 translate.element.tagAttribute ）
 			var nodeAnalyChild = translate.element.nodeAnalyse.gets(node);
 			//console.log(nodeAnalyChild);
 			for(var nci = 0; nci < nodeAnalyChild.length; nci++){
+
+				/**** 避免中途局部翻译，在判断一下 ****/
+				//判断当前元素是否在ignore忽略的tag、id、class name中。 这里要放到循环里面，是因为class 有 function 参数进行可编程判断
+				if(translate.ignore.isIgnore(node, {node: nodeAnalyChild[nci].node, attribute: nodeAnalyChild[nci].attribute})){
+					//console.log('node包含在要忽略的元素中：');
+					//console.log(node);
+					continue;
+				}
+
 				translate.addNodeToQueue(uuid, nodeAnalyChild[nci].node, nodeAnalyChild[nci].text, '');
 			}
 			/*

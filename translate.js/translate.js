@@ -970,7 +970,6 @@ var translate = {
 							//有效的class name，进行判断
 							if(translate.ignore.class.data.indexOf(classNames[c_index]) > -1){
 								//发现ignore.class 当前是处于被忽略的 class, 在判定它的 conditionFunction 是否正常
-								
 								if(typeof(translate.ignore.class.conditionFunction[classNames[c_index]]) === 'function'){
 									return translate.ignore.class.conditionFunction[classNames[c_index]](ele);
 								}else{

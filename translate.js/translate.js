@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.109.20260116',
+	version: '3.18.110.20260117',
 
 	/*js translate.config start*/
 	/*
@@ -958,6 +958,11 @@ var translate = {
 			}
 
 			var parentNode = currentElement;
+
+			//为自定义忽略 function 传入参数进行的整理
+			currentElement.element = currentElement;
+			currentElement.attribute = data.attribute;
+			currentElement.node = data.node;
 			
 			var maxnumber = 100;	//最大循环次数，避免死循环
 			while(maxnumber-- > 0){
@@ -12217,7 +12222,7 @@ var translate = {
 					}
 					// 1. 创建script标签
 				    const script = document.createElement('script');
-				    script.src = "https://translate.zvo.cn/static/debug.min.js";
+				    script.src = debugJsUrl;
 				    script.onload = script.onreadystatechange = function() {
 				    	func();
 				    }

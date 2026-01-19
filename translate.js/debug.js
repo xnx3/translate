@@ -167,9 +167,19 @@ translate.debug = {
 		显示debug 的 UI对话界面
 	*/
 	showUIDialog: function(){
-
+		if(typeof(document.getElementById('translate_debug_showUIDialog')) === 'undefined' || document.getElementById('translate_debug_showUIDialog') === null){
+			const styleElement = document.createElement('style');
+			styleElement.type = 'text/css';
+			styleElement.id = 'translate_debug_showUIDialog';
+			styleElement.innerHTML = `
+			  #checkResult>h2{margin-bottom: 3px; font-size: larger;} 
+			  #checkResult>.warn{color:red;} 
+			`;
+			document.head.appendChild(styleElement);
+		}
+		
 		msg.popups({
-		    text:'<div style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding-left: 1rem;"><br/><h1>私有部署的 translate.sevice 服务检测</h1><br/>你 translate.sevice 服务的授权码:<br/><textarea id="translate_service_key"></textarea><br/><button onclick="window.translate.debug.check.privateDeployment();">进行检测</button><div id="checkResult"></div></div>',
+		    text:'<div style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding-left: 1rem;"><br/><h1>私有部署的 translate.sevice 服务检测</h1><br/>你 translate.sevice 服务的授权码:<br/><textarea id="translate_service_key" style="border: 1px solid gray;"></textarea><br/><button onclick=" window.translate.debug.check.privateDeploymentCheckButton();">进行检测</button><div id="checkResult" style="max-height: 450px;"></div></div>',
 		    padding:'1px',
 		    height:'85%'
 		});
@@ -228,6 +238,12 @@ translate.debug = {
 		        		//应该是json格式
 		        		try{
 			        		json = JSON.parse(xhr.responseText);
+			        		if(json.result === 1){
+			        			result = true;
+			        		}else{
+			        			result = false;
+			        			info = json.info;
+			        		}
 			        	}catch(e){
 			        		translate.log(e);
 			        		result = false;
@@ -262,43 +278,59 @@ translate.debug = {
 				return null;
 			}
 		},
+		privateDeploymentCheckButton: function(){
+			document.getElementById("checkResult").innerHTML = "checking ...";
+			setTimeout(translate.debug.check.privateDeployment, 200);
+		},
+		/*
+			私有部署的翻译服务接入检测
+
+		*/
 		privateDeployment: function(){
 			var translate_service_key = document.getElementById('translate_service_key').value;
 			if(typeof(translate_service_key) === 'string' && translate_service_key.trim().length > 0){
 				sessionStorage.setItem('translate_service_key', translate_service_key);
 			}
 
-			var checkResultDom = document.getElementById('checkResult');
-			checkResultDom.innerHTML = '检测中...';
+			var checkResultDom = document.getElementById("checkResult");
 
 			//取得当前配置
 			var config = translate.config.get();
 			checkResultDom.innerHTML = '<h2>当前翻译服务域名检测</h2>'+String(config.request.api.host);
 			if('https://api.translate.zvo.cn/' === config.request.api.host[0]){	
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><b>注意，当前使用的是开源通道，并不是私有部署通道！设置<a href="https://translate.zvo.cn/4068.html" target="_black">私有部署通道</a>的方式点此查看</b>';
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">注意，当前使用的是开源通道，并不是私有部署通道！设置<a href="https://translate.zvo.cn/4068.html" target="_black">私有部署通道</a>的方式点此查看</b> </span>';
 			}else{
+				/*
 				var queren = confirm('请确认 '+config.request.api.host[0]+' 是否是你私有部署的 translate.service ?');
 				console.log(queren);
 				if(queren === false){
 					translate_service_key = '';  //清空掉这个授权码，避免泄露
 				}
+				*/
 			}
 
 			//检测当前的翻译通道是否是私有部署的，并且跟授权码是一致的
-			var check_auth = translate.debug.check.sendTranslateRequest(config.request.api.host[0]+'admin/system/status.json', {token: translate_service_key});
-			console.log((check_auth.result === 1 && check_auth.json.result === 1))
+			var translate_service_config;
+			try{
+				translate_service_config = translate.debug.check.sendTranslateRequest(config.request.api.host[0]+'admin/system/config.json', {token: translate_service_key});
+			}catch(e){
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">失败，连通异常，请确认设置的 '+config.request.api.host[0]+' 是否能正常连通? 是否有对某些请求做了拦截？ <br/> 当前post连接 '+config.request.api.host[0]+'admin/system/config.json 失败: '+e+'</span>';
+				console.log(e);
+				return;
+			}
+			console.log(translate_service_config)
 			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>验证当前网页接入私有部署的 translate.service </h2>';
-			if(check_auth.result === 1 && check_auth.json.result === 1){
+			if(translate_service_config.result === 1 && translate_service_config.json.result === 1){
 				checkResultDom.innerHTML = checkResultDom.innerHTML + '成功，已成功对接！';
 			}else{
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '失败，未正常对接';
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">失败，未正常对接</span>';
 			}
-			if (check_auth.result === 1){
-				if(check_auth.json.result === 0){
-					if(check_auth.json.info.toLowerCase().indexOf('authorize code error') > -1){
-						checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>可能一：您这里填写的 私有部署的translate.service 的授权码错误 <br/>可能二：私有部署的translate.service 中，config.properties 配置文件中，未正确 <a href="https://translate.zvo.cn/549775.html" target="_black">配置授权码</a>！';
+			if (translate_service_config.result === 1){
+				if(translate_service_config.json.result === 0){
+					if(translate_service_config.json.info.toLowerCase().indexOf('authorize code error') > -1){
+						checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">可能一：您这里填写的 私有部署的translate.service 的授权码错误 <br/>可能二：私有部署的translate.service 中，config.properties 配置文件中，未正确 <a href="https://translate.zvo.cn/549775.html" target="_black">配置授权码</a>！</span>';
 					}else{
-						checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>验证授权异常：'+check_auth.json.info;
+						checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">验证授权异常：'+translate_service_config.json.info+'</span>';
 					}
 					return;
 				}else{
@@ -306,13 +338,36 @@ translate.debug = {
 					//checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><br/>验证当前网页接入私有部署的 translate.service 成功，已成功对接！';
 				}
 			}else{
-				checkResultDom.innerHTML = checkResultDom.innerHTML +'<br/>'+check_auth.info;
+				checkResultDom.innerHTML = checkResultDom.innerHTML +'<br/><span class="warn">'+translate_service_config.info+'</span>';
 				return;
 			}
 
 
+
 			//整体翻译
-			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>当前整体翻译是否启用</h2>'+(config.whole.enableAll? '启用':'未启用')+'<br/>'+(config.whole.enableAll? '启用整体翻译，可提高阅读通畅，此项设置检测达标。':'启用整体翻译，可提高阅读通畅。当前未启用，建议设置 <a href="http://translate.zvo.cn/4078.html" target="_black">translate.whole.enableAll();</a> 启用');
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>当前整体翻译是否启用</h2>'+(config.whole.enableAll? '启用':'<span class="warn">未启用</span>')+'<br/>'+(config.whole.enableAll? '启用整体翻译，可提高阅读通畅，此项设置检测达标。':'<span class="warn">启用整体翻译，可提高阅读通畅。当前未启用，建议设置 <a href="http://translate.zvo.cn/4078.html" target="_black">translate.whole.enableAll();</a> 启用</span>');
+
+			//私有部署的数据库是否启用
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>私有部署的数据库是否启用</h2>'+(translate_service_config.json.useDatabase === 1? '启用':'未启用');
+			if(translate_service_config.json.useDatabase === 1){
+				'<br/><span class="warn">启用数据库能力后，可开启私有部署管理控制台的 术语库、译文管理 的功能，建议启用，参考文档： <a href="http://translate.zvo.cn/509578.html" target="_black">http://translate.zvo.cn/509578.html</a></span>'
+			}
+			
+
+			//私有部署的频率控制
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>私有部署的翻译接口请求频率控制</h2>';
+			if(translate_service_config.json.translateJsonNumberMaxRequests < 4 && translate_service_config.json.translateJsonNumberCycleTime < 2100){
+				if(translate_service_config.json.translateJsonNumberCycleTime === 0){
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '已设置 (maxRequests:'+translate_service_config.json.translateJsonNumberMaxRequests+', cycleTime:'+translate_service_config.json.translateJsonNumberCycleTime+')';
+				}else{
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">尚未设置！强烈建议放宽它的请求频率限制，比如2秒20次，以提高用户翻译体验。设置参考：<a href="http://translate.zvo.cn/413975.html" target="_black">http://translate.zvo.cn/413975.html</a></span>';
+				}
+			}
+
+			//翻译排队执行
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译排队能力</h2>'+(config.request.waitingExecute? '<span class="warn">开启，尚未禁用。强烈建议禁用排队等待，提高多语言切换速度。参考：<a href="http://translate.zvo.cn/413975.html" target="_black">http://translate.zvo.cn/413975.html</a></span>':'已禁用（正常，加速页面翻译）');
+			
+
 
 			//文本翻译测试
 			var data = {
@@ -324,11 +379,12 @@ translate.debug = {
 
 			//翻译通道检测-进行文本翻译
 			var xhr_trans_test = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+translate.request.api.translate, data);
-			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-是否配置</h2><br/>中译英翻译测试'+(xhr_trans_test.result === 1? '成功':'失败');
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-是否配置</h2>中译英翻译测试'+(xhr_trans_test.result === 1? '成功':'<span class="warn">失败</span>');
 			if(xhr_trans_test.result === 0){
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>'+xhr_trans_test_failure_info+'<br/>你可以再次测试，如果还是这样，请检查你配置的 <a href="http://translate.zvo.cn/391752.html" target="_black">翻译通道</a> 是否正常';
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">'+xhr_trans_test_failure_info+'<br/>你可以再次测试，如果还是这样，请检查你配置的 <a href="http://translate.zvo.cn/391752.html" target="_black">翻译通道</a> 是否正常</span>';
 			}
 			
+
 
 			//文件缓存测试是否启用
 			var xhr_trans_test_fileCache = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+translate.request.api.translate, data);
@@ -337,7 +393,7 @@ translate.debug = {
 			if(typeof(xhr_trans_test_fileCache_Filecachehit) !== 'undefined' && xhr_trans_test_fileCache_Filecachehit !== null && xhr_trans_test_fileCache_Filecachehit === 'true'){
 				xhr_trans_test_fileCache_use = true;
 			}
-			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-文件缓存</h2><br/>私有部署的服务端文件缓存能力：'+(xhr_trans_test_fileCache_use? '开启':'未开启');
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-文件缓存</h2>私有部署的服务端文件缓存能力：'+(xhr_trans_test_fileCache_use? '开启':'未开启');
 
 
 			//内存缓存测试是否启用
@@ -349,7 +405,7 @@ translate.debug = {
 				if(typeof(xhr_trans_test_memoryCache_hitnumber) !== 'undefined' && xhr_trans_test_memoryCache_hitnumber !== null && xhr_trans_test_memoryCache_hitnumber > 0){
 					xhr_trans_test_memoryCache_use = true;
 				}
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-内存缓存</h2><br/>私有部署的服务端内存缓存能力：'+(xhr_trans_test_memoryCache_use? '开启':'未开启');
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>私有部署的服务端内存缓存能力</h2>'+(xhr_trans_test_memoryCache_use? '已开启':'<span class="warn">未开启，强烈建议开启，加速翻译，降低tokens消耗。详细参考：<a href="http://translate.zvo.cn/391130.html" target="_black">http://translate.zvo.cn/391130.html</a> </span>');
 				if(xhr_trans_test_memoryCache.result === 0){
 					checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>'+xhr_trans_test_failure_info;
 				}
@@ -357,8 +413,90 @@ translate.debug = {
 			
 
 
-			//译文管理 检测是否能正常产生译文
 
+			//检查是否是内存缓存没启用
+			var xhr_admin_yiwen_domain_status_find = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/domain/getDomainStatus.json', {token: translate_service_key, domain:domain});	
+			console.log(xhr_admin_yiwen_domain_status_find)
+
+
+			
+			//译文管理 检测是否能正常产生译文
+			if(translate_service_config.json.useDatabase === 1){
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<h2>私有部署-译文管理-检测</h2>';
+				if(window.location.hostname !== ''){
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">您的网址不是正常网址，请使用 http、https 的方式访问本页面</span>';
+				}else{
+
+					//首先发起测试翻译文本
+					var xhr_trans_yiwen_test_text = '你好'+new Date().getTime()+'世界';
+					data.text = encodeURIComponent(JSON.stringify([xhr_trans_yiwen_test_text]));
+					var xhr_trans_yiwen_test = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+translate.request.api.translate, data);
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '&nbsp&nbsp&nbsp&nbsp 发起测试翻译文本 - 翻译'+(xhr_trans_yiwen_test.result === 1? '成功':'<span class="warn">失败: '+xhr_trans_yiwen_test.info+'</span>');
+					
+					//去私有部署翻译服务检测，译文管理中是否有了这条文本的译文记录
+					//window.location.hostname
+					var domain = window.location.hostname;
+					domain = 'cf2577e313014e8ab86ac4e1fadda175';
+					var xhr_admin_yiwen = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/cache/getCacheTextList.json', {token: translate_service_key, domain:domain, to:'english', originalText: encodeURIComponent(xhr_trans_yiwen_test_text)});
+					console.log(xhr_admin_yiwen)
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp&nbsp&nbsp&nbsp 获取译文管理记录 - ';
+					if((xhr_admin_yiwen.result === 1 && xhr_admin_yiwen.json.list.length === 1)){
+						checkResultDom.innerHTML = checkResultDom.innerHTML + '成功<br/>&nbsp&nbsp&nbsp&nbsp 译文管理测试完毕，正常';
+					}else{
+						checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">失败</span>';
+
+						if(xhr_admin_yiwen.result === 0){
+							checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">'+xhr_admin_yiwen.info+'</span>';
+						}
+						if(xhr_admin_yiwen.json.list.length === 0){
+							checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">译文管理中，没有找到这条测试翻译的记录！您当前的网页域名：'+domain+'</span>';
+
+							//进行检测这个域名是否在 domain.json 中存在
+							var xhr_admin_yiwen_domain_find = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/domain/getDomainList.json', {token: translate_service_key, domain:domain, domainFuzzySearch:0});
+							console.log(xhr_admin_yiwen_domain_find);
+							checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp&nbsp&nbsp&nbsp 检查域名 '+domain+'是否已经设置到 domain.json';
+							if(xhr_admin_yiwen_domain_find === 1 && xhr_admin_yiwen_domain_find.json.list.length === 1){
+								checkResultDom.innerHTML = checkResultDom.innerHTML + '已正常设置';
+
+								/*
+									正常存在于 domain.json 中了，但是译文中没有增加，继续检测：
+									检查是否是内存缓存没启用
+									检查此域名是否内存缓存已满
+
+									这两项检测基本不存在于刚私有部署的情况，所以先不检测了
+								*/
+
+								//检查是否是内存缓存没启用
+								//var xhr_admin_yiwen_domain_find = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/domain/getDomainStatus.json', {token: translate_service_key, domain:domain});	
+
+
+
+							}else{
+								//不正常
+								if(xhr_admin_yiwen_domain_find === 0){
+									checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">失败：'+xhr_admin_yiwen_domain_find.info+'</span>';
+								}else if(xhr_admin_yiwen_domain_find.json.list.length !== 1){
+									checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">domain.json 中未发现 '+domain+' ，请将 '+domain+' 加入 domain.json ， 详细参考：<a href="http://translate.zvo.cn/391130.html" target="_black">http://translate.zvo.cn/391130.html</a> </span>';
+								}
+							}
+
+
+
+						}
+					}
+					
+					
+
+				}
+
+				
+
+
+			}else{
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<h2>私有部署-译文管理-检测</h2><span class="warn">未启用数据库能力，译文管理功能无效。</span>';
+			}
+
+			//检测是否网络中专导致回源host丢失
 
 		}
 	},

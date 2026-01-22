@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.110.20260117',
+	version: '3.18.111.20260122',
 
 	/*js translate.config start*/
 	/*
@@ -34,6 +34,8 @@ var translate = {
 					show: true,
 					// 对应的数据 translate.selectLanguageTag.languages = 'english,chinese_simplified,korean';
 					languages:'',
+					// 将切换语言的选择框显示到哪个id元素上。 对应的数据 translate.selectLanguageTag.documentId
+					documentId: 'translate'
 				},
 				//设置本地语种（当前网页的语种） https://translate.zvo.cn/4066.html translate.language.setLocal('chinese_simplified');  对应的数据 translate.language.local
 				local:'', 
@@ -168,6 +170,7 @@ var translate = {
 			data.documents = translate.documents;
 			data.language.select.show = translate.selectLanguageTag.show;
 			data.language.select.languages = translate.selectLanguageTag.languages;
+			data.language.select.documentId = translate.selectLanguageTag.documentId;
 			data.language.local = translate.language.local;
 			data.language.defaultTo = translate.language.defaultTo;
 			data.language.autoDiscriminateLocalLanguage = translate.autoDiscriminateLocalLanguage;
@@ -226,6 +229,9 @@ var translate = {
 			}
 			if(typeof(data.language.select.languages) === 'string' && data.language.select.languages.trim().length>0){
 				translate.selectLanguageTag.languages = data.language.select.languages;
+			}
+			if(typeof(data.language.select.documentId) === 'string' && data.language.select.documentId.trim().length>0){
+				translate.selectLanguageTag.documentId = data.language.select.documentId;
 			}
 			if(typeof(data.language.local) === 'string' && data.language.local.trim().length>0){
 				translate.language.setLocal(data.language.local);

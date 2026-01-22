@@ -172,14 +172,14 @@ translate.debug = {
 			styleElement.type = 'text/css';
 			styleElement.id = 'translate_debug_showUIDialog';
 			styleElement.innerHTML = `
-			  #checkResult>h2{margin-bottom: 3px; font-size: larger;} 
+			  #checkResult>h2{margin-bottom: 3px; font-size: larger; padding-top: 10px;} 
 			  #checkResult>.warn{color:red;} 
 			`;
 			document.head.appendChild(styleElement);
 		}
 		
 		msg.popups({
-		    text:'<div style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding-left: 1rem;"><br/><h1>私有部署的 translate.sevice 服务检测</h1><br/>你 translate.sevice 服务的授权码:<br/><textarea id="translate_service_key" style="border: 1px solid gray;"></textarea><br/><button onclick=" window.translate.debug.check.privateDeploymentCheckButton();">进行检测</button><div id="checkResult" style="max-height: 450px;"></div></div>',
+		    text:'<div class="ignore" style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding-left: 1rem;"><br/><h1>私有部署的 translate.sevice 服务检测</h1><br/>你 translate.sevice 服务的授权码:<br/><textarea id="translate_service_key" style="border: 1px solid gray;"></textarea><br/><button onclick=" window.translate.debug.check.privateDeploymentCheckButton();">进行检测</button><div id="checkResult" style="max-height: 450px;"></div></div>',
 		    padding:'1px',
 		    height:'85%'
 		});
@@ -356,18 +356,30 @@ translate.debug = {
 
 			//私有部署的频率控制
 			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>私有部署的翻译接口请求频率控制</h2>';
-			if(translate_service_config.json.translateJsonNumberMaxRequests < 4 && translate_service_config.json.translateJsonNumberCycleTime < 2100){
-				if(translate_service_config.json.translateJsonNumberCycleTime === 0){
-					checkResultDom.innerHTML = checkResultDom.innerHTML + '已设置 (maxRequests:'+translate_service_config.json.translateJsonNumberMaxRequests+', cycleTime:'+translate_service_config.json.translateJsonNumberCycleTime+')';
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '当前为 maxRequests:'+translate_service_config.json.translateJsonNumberMaxRequests+', cycleTime:'+translate_service_config.json.translateJsonNumberCycleTime;
+			if(translate_service_config.json.translateJsonNumberCycleTime === 0){
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>已设置，当前已关闭请求频率控制能力（需注意，别被人恶意利用消耗翻译通道的tokens）';
+			}else{
+				var translateJsonNumberMaxRequests_tishimessage = ''; //未设置时的提示开头信息
+				if(translate_service_config.json.translateJsonNumberMaxRequests === 2 && translate_service_config.json.translateJsonNumberCycleTime === 2000){
+					translateJsonNumberMaxRequests_tishimessage = '尚未设置过！';
 				}else{
-					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">尚未设置！强烈建议放宽它的请求频率限制，比如2秒20次，以提高用户翻译体验。设置参考：<a href="http://translate.zvo.cn/413975.html" target="_black">http://translate.zvo.cn/413975.html</a></span>';
+					if(translate_service_config.json.translateJsonNumberMaxRequests * 1000 / translate_service_config.json.translateJsonNumberCycleTime > 10){
+						checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>已设置，且每秒的请求数大于10';
+					}else{
+						translateJsonNumberMaxRequests_tishimessage = '<br/>待优化，您当前设置的请求控制策略，每秒的请求数小于10，当<a href="http://translate.zvo.cn/479742.html" target="_black">禁用翻译排队能力</a>后，页面的某些动态改变等导致的请求频率高时，可能会触发私有部署翻译服务的拦截，导致偶发的高频翻译请求会被拦截无法被翻译。';
+					}
+				}
+
+				if(translateJsonNumberMaxRequests_tishimessage.length > 2){
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">'+translateJsonNumberMaxRequests_tishimessage+'<br/>强烈建议放宽它的请求频率限制，比如2秒20次，配合<a href="http://translate.zvo.cn/479742.html" target="_black">禁用翻译排队能力</a>，以提高用户翻译体验。设置参考：<a href="http://translate.zvo.cn/413975.html" target="_black">http://translate.zvo.cn/413975.html</a></span>';
 				}
 			}
-
-			//翻译排队执行
-			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译排队能力</h2>'+(config.request.waitingExecute? '<span class="warn">开启，尚未禁用。强烈建议禁用排队等待，提高多语言切换速度。参考：<a href="http://translate.zvo.cn/413975.html" target="_black">http://translate.zvo.cn/413975.html</a></span>':'已禁用（正常，加速页面翻译）');
 			
-
+		
+			//翻译排队执行
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译排队能力</h2>'+(config.request.waitingExecute? '<span class="warn">开启，尚未禁用。强烈建议禁用排队等待，提高多语言切换速度。参考：<a href="http://translate.zvo.cn/479742.html" target="_black">http://translate.zvo.cn/479742.html</a></span>':'已禁用（正常，加速页面翻译）');
+			
 
 			//文本翻译测试
 			var data = {
@@ -423,7 +435,7 @@ translate.debug = {
 			//译文管理 检测是否能正常产生译文
 			if(translate_service_config.json.useDatabase === 1){
 				checkResultDom.innerHTML = checkResultDom.innerHTML + '<h2>私有部署-译文管理-检测</h2>';
-				if(window.location.hostname !== ''){
+				if(window.location.hostname === ''){
 					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">您的网址不是正常网址，请使用 http、https 的方式访问本页面</span>';
 				}else{
 
@@ -436,7 +448,7 @@ translate.debug = {
 					//去私有部署翻译服务检测，译文管理中是否有了这条文本的译文记录
 					//window.location.hostname
 					var domain = window.location.hostname;
-					domain = 'cf2577e313014e8ab86ac4e1fadda175';
+					//domain = 'cf2577e313014e8ab86ac4e1fadda175';
 					var xhr_admin_yiwen = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/cache/getCacheTextList.json', {token: translate_service_key, domain:domain, to:'english', originalText: encodeURIComponent(xhr_trans_yiwen_test_text)});
 					console.log(xhr_admin_yiwen)
 					checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp&nbsp&nbsp&nbsp 获取译文管理记录 - ';
@@ -446,9 +458,11 @@ translate.debug = {
 						checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">失败</span>';
 
 						if(xhr_admin_yiwen.result === 0){
-							checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">'+xhr_admin_yiwen.info+'</span>';
-						}
-						if(xhr_admin_yiwen.json.list.length === 0){
+							if(xhr_admin_yiwen.info.indexOf('请先配置 domain.json 文件，将域名') > -1){
+								xhr_admin_yiwen.info = '<a href="http://translate.zvo.cn/391130.html" target="_black">'+xhr_admin_yiwen.info+'</a>'
+							}
+							checkResultDom.innerHTML = checkResultDom.innerHTML + '&nbsp;&nbsp;<span class="warn">'+xhr_admin_yiwen.info+'</span>';
+						}else if(xhr_admin_yiwen.json.list.length === 0){
 							checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">译文管理中，没有找到这条测试翻译的记录！您当前的网页域名：'+domain+'</span>';
 
 							//进行检测这个域名是否在 domain.json 中存在

@@ -345,7 +345,7 @@ translate.debug = {
 			//取得当前配置
 			var config = translate.config.get();
 			checkResultDom.innerHTML = '<h2>当前翻译服务域名检测</h2>'+String(config.request.api.host);
-			if('https://api.translate.zvo.cn/' === config.request.api.host[0]){	
+			if('https://api.translate.zvo.cn/' === config.request.api.host[0]){
 				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">注意，当前使用的是开源通道，并不是私有部署通道！设置<a href="https://translate.zvo.cn/4068.html" target="_black">私有部署通道</a>的方式点此查看</b> </span>';
 			}else{
 				/*
@@ -355,6 +355,33 @@ translate.debug = {
 					translate_service_key = '';  //清空掉这个授权码，避免泄露
 				}
 				*/
+			}
+
+			// 协议兼容性检测
+			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>网页协议与API协议兼容性检测</h2>';
+			var currentProtocol = window.location.protocol; // "http:" 或 "https:"
+			var apiUrl = config.request.api.host[0];
+			var apiProtocol = '';
+
+			// 从 API URL 中提取协议
+			if (apiUrl.indexOf('https://') === 0) {
+				apiProtocol = 'https:';
+			} else if (apiUrl.indexOf('http://') === 0) {
+				apiProtocol = 'http:';
+			} else {
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">无法识别API地址的协议，请确认 config.request.api.host[0] 的值是否正确（应该以 http:// 或 https:// 开头）</span>';
+			}
+
+			if (apiProtocol !== '') {
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '当前网页协议：<b>' + currentProtocol + '</b><br/>API服务协议：<b>' + apiProtocol + '</b><br/>';
+
+				if (currentProtocol === 'https:' && apiProtocol === 'http:') {
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">❌ 警告：协议不兼容！<br/><br/>当前网页使用 <b>HTTPS</b> 协议，但翻译服务使用 <b>HTTP</b> 协议。<br/>浏览器的混合内容安全策略会阻止 HTTPS 页面请求 HTTP 资源，导致翻译功能<b>无法正常工作</b>。<br/><br/><b>解决方案：</b><br/>1. <b>推荐方案</b>：将翻译服务升级为 HTTPS 协议（为翻译服务配置SSL证书）<br/>2. <b>临时方案</b>：将当前网页改为 HTTP 协议访问（不推荐，存在安全风险）<br/>3. 了解更多：<a href="https://developer.mozilla.org/zh-CN/docs/Web/Security/Mixed_content" target="_blank">混合内容安全策略说明</a></span>';
+				} else if (currentProtocol === 'http:' && apiProtocol === 'https:') {
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '✅ 正常：HTTP 页面可以请求 HTTPS 资源，协议兼容，可以正常使用';
+				} else if (currentProtocol === apiProtocol) {
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '✅ 正常：网页协议与API协议一致，可以正常请求';
+				}
 			}
 
 			//检测当前的翻译通道是否是私有部署的，并且跟授权码是一致的

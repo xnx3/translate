@@ -369,11 +369,11 @@ translate.debug = {
 			} else if (apiUrl.indexOf('http://') === 0) {
 				apiProtocol = 'http:';
 			} else {
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">无法识别API地址的协议，请确认 config.request.api.host[0] 的值是否正确（应该以 http:// 或 https:// 开头）</span>';
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">无法识别API地址的协议，请确认 translate.request.setHost(...); 配置的值是否正确（应该以 http:// 或 https:// 开头）</span>';
 			}
 
 			if (apiProtocol !== '') {
-				checkResultDom.innerHTML = checkResultDom.innerHTML + '当前网页协议：<b>' + currentProtocol + '</b><br/>API服务协议：<b>' + apiProtocol + '</b><br/>';
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '当前网页协议：<b>' + currentProtocol + '</b><br/>API服务协议：<b>' + apiProtocol + '</b>';
 
 				if (currentProtocol === 'https:' && apiProtocol === 'http:') {
 					checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">❌ 警告：协议不兼容！<br/><br/>当前网页使用 <b>HTTPS</b> 协议，但翻译服务使用 <b>HTTP</b> 协议。<br/>浏览器的混合内容安全策略会阻止 HTTPS 页面请求 HTTP 资源，导致翻译功能<b>无法正常工作</b>。<br/><br/><b>解决方案：</b><br/>1. <b>推荐方案</b>：将翻译服务升级为 HTTPS 协议（为翻译服务配置SSL证书）<br/>2. <b>临时方案</b>：将当前网页改为 HTTP 协议访问（不推荐，存在安全风险）<br/>3. 了解更多：<a href="https://developer.mozilla.org/zh-CN/docs/Web/Security/Mixed_content" target="_blank">混合内容安全策略说明</a></span>';

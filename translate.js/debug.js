@@ -830,8 +830,8 @@ translate.debug.threeD = {
 		leftPane.appendChild(leftScaleWrapper);
 
 		// 右侧：3D视图
-		translate.debug.threeD.rightPane = document.createElement('div');
-		translate.debug.threeD.rightPane.style.cssText = `
+		translate.debug.threeD.config.rightPane = document.createElement('div');
+		translate.debug.threeD.config.rightPane.style.cssText = `
 			width: 50% !important;
 			height: 100% !important;
 			background: #0a0a0a !important;
@@ -857,8 +857,8 @@ translate.debug.threeD = {
 		`;
 
 		// 3D场景
-		translate.debug.threeD.scene = document.createElement('div');
-		translate.debug.threeD.scene.style.cssText = `
+		translate.debug.threeD.config.scene = document.createElement('div');
+		translate.debug.threeD.config.scene.style.cssText = `
 			position: absolute !important;
 			top: 0 !important;
 			left: 0 !important;
@@ -867,10 +867,10 @@ translate.debug.threeD = {
 		`;
 
 		//console.log('📋 克隆页面内容...');
-		translate.debug.threeD.bodyDomClone = document.body.cloneNode(true);
+		translate.debug.threeD.config.bodyDomClone = document.body.cloneNode(true);
 
 		// 保持原始宽度，不触发响应式（复用之前的originalWidth）
-		translate.debug.threeD.bodyDomClone.style.cssText = `
+		translate.debug.threeD.config.bodyDomClone.style.cssText = `
 			position: absolute !important;
 			top: 0 !important;
 			left: 0 !important;
@@ -881,13 +881,13 @@ translate.debug.threeD = {
 		`;
 
 		// 移除克隆中的分屏容器（避免递归）
-		const existingContainer = translate.debug.threeD.bodyDomClone.querySelector('#split-view-container');
+		const existingContainer = translate.debug.threeD.config.bodyDomClone.querySelector('#split-view-container');
 		if (existingContainer) {
 			existingContainer.remove();
 		}
 
 		// 修复右侧3D视图中的固定定位元素
-		const fixedIn3D = translate.debug.threeD.bodyDomClone.querySelectorAll('*');
+		const fixedIn3D = translate.debug.threeD.config.bodyDomClone.querySelectorAll('*');
 		fixedIn3D.forEach(el => {
 			const computedStyle = window.getComputedStyle(el);
 
@@ -898,7 +898,7 @@ translate.debug.threeD = {
 		});
 
 		//console.log('🔍 处理3D元素...');
-		const elements = translate.debug.threeD.bodyDomClone.querySelectorAll('div, section, article, p, h1, h2, h3, h4, h5, h6, span, a, li, header, footer, nav, main');
+		const elements = translate.debug.threeD.config.bodyDomClone.querySelectorAll('div, section, article, p, h1, h2, h3, h4, h5, h6, span, a, li, header, footer, nav, main');
 		//console.log(`📊 找到 ${elements.length} 个元素`);
 
 		let count = 0;
@@ -906,7 +906,7 @@ translate.debug.threeD = {
 			// 计算深度
 			let depth = 0;
 			let p = el.parentElement;
-			while (p && p !== translate.debug.threeD.bodyDomClone) {
+			while (p && p !== translate.debug.threeD.config.bodyDomClone) {
 				depth++;
 				p = p.parentElement;
 			}
@@ -997,7 +997,7 @@ translate.debug.threeD = {
 		console.log(`✅ 处理完成！共 ${count} 个元素`);
 
 		// 为3D视图中的元素添加点击事件
-		translate.debug.threeD.bodyDomClone.addEventListener('click', (e) => {
+		translate.debug.threeD.config.bodyDomClone.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 
@@ -1015,7 +1015,7 @@ translate.debug.threeD = {
 		}, true);
 
 		// 禁用3D视图中的所有链接
-		const allLinks = translate.debug.threeD.bodyDomClone.querySelectorAll('a');
+		const allLinks = translate.debug.threeD.config.bodyDomClone.querySelectorAll('a');
 		allLinks.forEach(link => {
 			link.style.pointerEvents = 'none';
 			link.onclick = (e) => {
@@ -1063,16 +1063,16 @@ translate.debug.threeD = {
 
 		
 
-		translate.debug.threeD.scene.appendChild(translate.debug.threeD.bodyDomClone);
-		translate.debug.threeD.rightPane.appendChild(rightLabel);
-		translate.debug.threeD.rightPane.appendChild(translate.debug.threeD.scene);
+		translate.debug.threeD.config.scene.appendChild(translate.debug.threeD.config.bodyDomClone);
+		translate.debug.threeD.config.rightPane.appendChild(rightLabel);
+		translate.debug.threeD.config.rightPane.appendChild(translate.debug.threeD.config.scene);
 
 		// 初始变换
-		translate.debug.threeD.config.rotX = 65
-		translate.debug.threeD.config.rotY = 0
-		translate.debug.threeD.config.scale = 0.45;
-		translate.debug.threeD.config.translateX = 0;
-		translate.debug.threeD.config.translateY = 0;
+		//translate.debug.threeD.config.rotX = 65
+		//translate.debug.threeD.config.rotY = 0
+		//translate.debug.threeD.config.scale = 0.45;
+		//translate.debug.threeD.config.translateX = 0;
+		//translate.debug.threeD.config.translateY = 0;
 		
 		//渲染视图
 		translate.debug.threeD.updateTransform();
@@ -1081,12 +1081,12 @@ translate.debug.threeD = {
 		let dragging = false, dragType = null, lastX = 0, lastY = 0;
 
 		// 阻止右键菜单
-		translate.debug.threeD.rightPane.oncontextmenu = (e) => {
+		translate.debug.threeD.config.rightPane.oncontextmenu = (e) => {
 			e.preventDefault();
 			return false;
 		};
 
-		translate.debug.threeD.rightPane.onmousedown = (e) => {
+		translate.debug.threeD.config.rightPane.onmousedown = (e) => {
 			dragging = true;
 			lastX = e.clientX;
 			lastY = e.clientY;
@@ -1094,11 +1094,11 @@ translate.debug.threeD = {
 			if (e.button === 0) {
 				// 左键：平移
 				dragType = 'move';
-				translate.debug.threeD.rightPane.style.cursor = 'move';
+				translate.debug.threeD.config.rightPane.style.cursor = 'move';
 			} else if (e.button === 2) {
 				// 右键：旋转
 				dragType = 'rotate';
-				translate.debug.threeD.rightPane.style.cursor = 'grabbing';
+				translate.debug.threeD.config.rightPane.style.cursor = 'grabbing';
 			}
 		};
 
@@ -1127,18 +1127,18 @@ translate.debug.threeD = {
 		document.onmouseup = () => {
 			dragging = false;
 			dragType = null;
-			translate.debug.threeD.rightPane.style.cursor = 'grab';
+			translate.debug.threeD.config.rightPane.style.cursor = 'grab';
 		};
 
 		// 滚轮缩放（仅在右侧）
-		translate.debug.threeD.rightPane.onwheel = (e) => {
+		translate.debug.threeD.config.rightPane.onwheel = (e) => {
 			e.preventDefault();
 			translate.debug.threeD.config.scale += e.deltaY > 0 ? -0.05 : 0.05;
 			translate.debug.threeD.config.scale = Math.max(0.1, Math.min(1.5, translate.debug.threeD.config.scale));
 			translate.debug.threeD.updateTransform();
 		};
 
-		translate.debug.threeD.rightPane.style.cursor = 'grab';
+		translate.debug.threeD.config.rightPane.style.cursor = 'grab';
 
 		// 键盘控制
 		document.onkeydown = (e) => {
@@ -1179,22 +1179,22 @@ translate.debug.threeD = {
 			box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2) !important;
 		`;
 		panel.innerHTML = `
-			<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #00ff88;">🎮 控制</div>
+			<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #00ff88;">控制</div>
 			<div style="color: #aaa;">🖱️ 左键 - 平移</div>
 			<div style="color: #aaa;">🖱️ 右键 - 旋转</div>
 			<div style="color: #aaa;">🖱️ 滚轮 - 缩放</div>
 			<div style="color: #aaa;">👆 点击元素 - 同步</div>
 			<div style="color: #aaa;">⎋ ESC - 退出</div>
 			<button onclick="document.getElementById('split-view-container').remove(); document.body.style.overflow='';"
-				style="margin-top: 8px; width: 100%; padding: 5px; background: #00ff88; color: #000; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">
+				style="margin-top: 8px; width: 100%; padding: 5px;padding-bottom: 3.6px; background: #00ff88; color: #000; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">
 				退出
 			</button>
 		`;
-		translate.debug.threeD.rightPane.appendChild(panel);
+		translate.debug.threeD.config.rightPane.appendChild(panel);
 
 		// 组装
 		container.appendChild(leftPane);
-		container.appendChild(translate.debug.threeD.rightPane);
+		container.appendChild(translate.debug.threeD.config.rightPane);
 		document.body.appendChild(container);
 
 		window.__3dSplitView = true;
@@ -1207,7 +1207,7 @@ translate.debug.threeD = {
 
 	// 更新3D视图变换
 	updateTransform: function () {
-		translate.debug.threeD.scene.style.transform = `
+		translate.debug.threeD.config.scene.style.transform = `
 			translate(${translate.debug.threeD.config.translateX}px, ${translate.debug.threeD.config.translateY}px)
 			rotateX(${translate.debug.threeD.config.rotX}deg)
 			rotateY(${translate.debug.threeD.config.rotY}deg)
@@ -1264,7 +1264,7 @@ translate.debug.threeD = {
 	focusElement: function (leftElement) {
 		// 步骤1: 通过DOM路径找到3D视图中的对应元素
 		const path = translate.debug.threeD.getElementPath(leftElement);
-		const targetElement = translate.debug.threeD.findElementByPath(translate.debug.threeD.bodyDomClone, path);
+		const targetElement = translate.debug.threeD.findElementByPath(translate.debug.threeD.config.bodyDomClone, path);
 
 		if (!targetElement) {
 			console.warn('⚠️ 未找到对应的3D元素');
@@ -1287,7 +1287,7 @@ translate.debug.threeD = {
 		translate.debug.threeD.config.rotY = 0;  // 无Y轴旋转（不旋转）
 
 		// 步骤3: 缩放到50%（宽度刚好填满3D视图）
-		scale = 0.5;
+		translate.debug.threeD.config.scale = 0.5;
 
 		// X轴不动，保持为0（宽度对齐）
 		translate.debug.threeD.config.translateX = 0;
@@ -1307,10 +1307,10 @@ translate.debug.threeD = {
 					// 方法：使用offsetTop获取元素在文档中的原始位置
 					// 这个值不受transform影响，更可靠
 
-					// 获取元素相对于translate.debug.threeD.bodyDomClone的offsetTop
+					// 获取元素相对于translate.debug.threeD.config.bodyDomClone的offsetTop
 					let elementOffsetTop = 0;
 					let el = targetElement;
-					while (el && el !== translate.debug.threeD.bodyDomClone) {
+					while (el && el !== translate.debug.threeD.config.bodyDomClone) {
 						elementOffsetTop += el.offsetTop;
 						el = el.offsetParent;
 					}
@@ -1322,13 +1322,13 @@ translate.debug.threeD = {
 					const elementCenterY = elementOffsetTop + elementHeight / 2;
 
 					// 右侧面板的垂直中心点（在原始坐标系中，需要除以scale）
-					const paneCenterY = translate.debug.threeD.rightPane.clientHeight / 2 / scale;
+					const paneCenterY = translate.debug.threeD.config.rightPane.clientHeight / 2 / translate.debug.threeD.config.scale;
 
 					// 计算Y轴需要平移的距离（在原始坐标系中）
 					const deltaY = paneCenterY - elementCenterY;
 
 					// 应用平移（需要乘以scale转换到显示坐标系）
-					translate.debug.threeD.config.translateY = deltaY * scale;
+					translate.debug.threeD.config.translateY = deltaY * translate.debug.threeD.config.scale;
 
 					// 应用平移变换
 					translate.debug.threeD.updateTransform();

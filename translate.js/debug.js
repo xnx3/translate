@@ -658,544 +658,562 @@ translate.debug.threeD = {
         // 是否启用模糊效果 (true/false)  true 启用 false 不启用
         enableBlur: false, 
         blurAmount: '1.5px', // 模糊程度
-        containerOpacity: 0.6 // 容器元素透明度
+        containerOpacity: 0.6, // 容器元素透明度
+
+		// 3D分屏视图的右侧div元素，所有3d视图的元素都在这个div中
+		rightPane: null,
+		//动态，通过触发 init() 方法，自动克隆当前body 元素，用于 3D 查看，它包含在 rightPane 中
+		bodyDomClone: null,
+		//3d场景所在的div元素
+		scene : null,
+
+		// 3D分屏视图的平移量
+		translateX: 0,
+		// 3D分屏视图的平移量
+		translateY: 0,
+		// 3D分屏视图的旋转角度
+		rotX: 0,
+		// 3D分屏视图的旋转角度
+		rotY: 0,
+		// 3D分屏视图的缩放比例
+		scale: 0.45,
     },
 
     //初始化3D分屏查看器
     init: function(){
-        try {
-            // 检查是否已运行
-            if (window.__3dSplitView) {
-                console.log('⚠️ 检测到已有分屏，正在移除...');
-                document.getElementById('split-view-container')?.remove();
-                window.__3dSplitView = null;
-                document.body.style.overflow = '';
-                console.log('✅ 已移除');
-                return;
-            }
-
-            // 隐藏滚动条
-            document.body.style.overflow = 'hidden';
-
-            // 创建分屏容器
-            const container = document.createElement('div');
-            container.id = 'split-view-container';
-            container.style.cssText = `
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                background: #0a0a0a !important;
-                z-index: 2147483647 !important;
-                display: flex !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            `;
-
-            // 添加动画样式
-            const animStyle = document.createElement('style');
-            animStyle.textContent = `
-                @keyframes blink-highlight {
-                    0%, 100% { outline-color: #ff0000 !important; }
-                    50% { outline-color: #ffff00 !important; }
-                }
-            `;
-            document.head.appendChild(animStyle);
-
-            // 左侧：原始页面
-            const leftPane = document.createElement('div');
-            leftPane.style.cssText = `
-                width: 50% !important;
-                height: 100% !important;
-                overflow: auto !important;
-                background: white !important;
-                border-right: 2px solid #333 !important;
-                position: relative !important;
-            `;
-
-            const leftLabel = document.createElement('div');
-            leftLabel.textContent = '原始页面 (50% 缩放)';
-            leftLabel.style.cssText = `
-                position: fixed !important;
-                top: 10px !important;
-                left: 10px !important;
-                background: rgba(0,0,0,0.8) !important;
-                color: white !important;
-                padding: 8px 15px !important;
-                border-radius: 5px !important;
-                font-size: 14px !important;
-                font-weight: bold !important;
-                z-index: 10000 !important;
-                font-family: Arial, sans-serif !important;
-            `;
-
-            // 创建缩放容器
-            const leftScaleWrapper = document.createElement('div');
-            leftScaleWrapper.style.cssText = `
-                width: 200% !important;
-                height: 200% !important;
-                transform: scale(0.5) !important;
-                transform-origin: 0 0 !important;
-                position: relative !important;
-            `;
-
-            // 直接克隆body内容到左侧
-            const leftClone = document.body.cloneNode(true);
-            const originalWidth = document.body.scrollWidth || window.innerWidth;
-            leftClone.style.cssText = `
-                width: ${originalWidth}px !important;
-                min-width: ${originalWidth}px !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                position: relative !important;
-            `;
-
-            // 移除左侧克隆中的分屏容器
-            const existingInLeft = leftClone.querySelector('#split-view-container');
-            if (existingInLeft) {
-                existingInLeft.remove();
-            }
-
-            // 修复固定定位元素，使其只在左侧显示
-            const fixedElements = leftClone.querySelectorAll('*');
-            fixedElements.forEach(el => {
-                const computedStyle = window.getComputedStyle(el);
-
-                // 修复固定定位
-                if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
-                    el.style.position = 'absolute !important';
-                }
-            });
-
-            // 禁用左侧所有链接和交互
-            const leftLinks = leftClone.querySelectorAll('a');
-            leftLinks.forEach(link => {
-                link.href = 'javascript:void(0)';
-                link.target = '';
-                link.style.cursor = 'pointer';
-            });
-
-            // 禁用左侧所有表单
-            const leftForms = leftClone.querySelectorAll('form');
-            leftForms.forEach(form => {
-                form.onsubmit = (e) => {
-                    e.preventDefault();
-                    return false;
-                };
-            });
-
-            // 为左侧元素添加点击事件
-            leftClone.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-
-                const clickedElement = e.target;
-
-                // 高亮显示
-                if (window.__lastHighlighted) {
-                    window.__lastHighlighted.style.outline = '';
-                }
-                clickedElement.style.outline = '3px solid #ff0000';
-                window.__lastHighlighted = clickedElement;
-
-                // 在右侧3D视图中找到对应元素并聚焦
-                translate.debug.threeD.focusElement(clickedElement);
-
-                return false;
-            }, true);
-
-            // 组装左侧
-            leftScaleWrapper.appendChild(leftClone);
-            leftPane.appendChild(leftLabel);
-            leftPane.appendChild(leftScaleWrapper);
-
-            // 右侧：3D视图
-            const rightPane = document.createElement('div');
-            rightPane.style.cssText = `
-                width: 50% !important;
-                height: 100% !important;
-                background: #0a0a0a !important;
-                position: relative !important;
-                perspective: 1800px !important;
-                overflow: hidden !important;
-            `;
-
-            const rightLabel = document.createElement('div');
-            rightLabel.textContent = '3D 视图';
-            rightLabel.style.cssText = `
-                position: absolute !important;
-                top: 10px !important;
-                left: 10px !important;
-                background: rgba(0,0,0,0.9) !important;
-                color: #00ff88 !important;
-                padding: 8px 15px !important;
-                border-radius: 5px !important;
-                font-size: 14px !important;
-                font-weight: bold !important;
-                z-index: 1000 !important;
-                font-family: Arial, sans-serif !important;
-            `;
-
-            // 3D场景
-            const scene = document.createElement('div');
-            scene.style.cssText = `
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                transform-style: preserve-3d !important;
-                transform-origin: 0 0 !important;
-            `;
-
-            //console.log('📋 克隆页面内容...');
-            const clone = document.body.cloneNode(true);
-
-            // 保持原始宽度，不触发响应式（复用之前的originalWidth）
-            clone.style.cssText = `
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: ${originalWidth}px !important;
-                min-width: ${originalWidth}px !important;
-                transform-style: preserve-3d !important;
-                background: white !important;
-            `;
-
-            // 移除克隆中的分屏容器（避免递归）
-            const existingContainer = clone.querySelector('#split-view-container');
-            if (existingContainer) {
-                existingContainer.remove();
-            }
-
-            // 修复右侧3D视图中的固定定位元素
-            const fixedIn3D = clone.querySelectorAll('*');
-            fixedIn3D.forEach(el => {
-                const computedStyle = window.getComputedStyle(el);
-
-                // 修复固定定位
-                if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
-                    el.style.position = 'absolute !important';
-                }
-            });
-
-            //console.log('🔍 处理3D元素...');
-            const elements = clone.querySelectorAll('div, section, article, p, h1, h2, h3, h4, h5, h6, span, a, li, header, footer, nav, main');
-            //console.log(`📊 找到 ${elements.length} 个元素`);
-
-            let count = 0;
-            elements.forEach((el) => {
-                // 计算深度
-                let depth = 0;
-                let p = el.parentElement;
-                while (p && p !== clone) {
-                    depth++;
-                    p = p.parentElement;
-                }
-
-                // 累积高度：父元素的高度 + 自己的位置
-                const stackHeight = depth * translate.debug.threeD.config.boxThickness;
-
-                const isText = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'A', 'LI', 'BUTTON'].includes(el.tagName);
-
-                // 设置元素为3D盒子
-                el.style.transformStyle = 'preserve-3d';
-
-                if (isText) {
-                    // 文本元素：更厚的长方体，更明显
-                    const textThickness = 60;
-                    el.style.cssText += `
-                        transform: translateZ(${stackHeight}px) !important;
-                        transform-style: preserve-3d !important;
-                        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 255, 240, 0.98)) !important;
-                        box-shadow:
-                            0 0 0 1px rgba(0, 255, 136, 0.3),
-                            0 ${textThickness}px 0 rgba(0, 255, 136, 0.15),
-                            0 0 20px rgba(0, 255, 136, 0.2) !important;
-                        padding: 3px 6px !important;
-                        border-radius: 3px !important;
-                        position: relative !important;
-                    `;
-
-                    // 创建3D厚度效果（侧面）
-                    const sides = document.createElement('div');
-                    sides.style.cssText = `
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100% !important;
-                        height: 100% !important;
-                        background: rgba(0, 255, 136, 0.3) !important;
-                        transform: translateZ(-${textThickness}px) !important;
-                        border-radius: 3px !important;
-                        pointer-events: none !important;
-                    `;
-                    el.appendChild(sides);
-
-                } else {
-                    // 容器元素：标准长方体
-                    let containerStyle = `
-                        transform: translateZ(${stackHeight}px) !important;
-                        transform-style: preserve-3d !important;
-                        outline: 1px solid rgba(100, 150, 255, 0.3) !important;
-                        position: relative !important;
-                        box-shadow:
-                            0 0 0 1px rgba(100, 150, 255, 0.2),
-                            0 ${translate.debug.threeD.config.boxThickness}px 0 rgba(100, 150, 255, 0.1) !important;
-                    `;
-
-                    // 根据配置决定是否添加模糊效果
-                    if (translate.debug.threeD.config.enableBlur) {
-                        containerStyle += `
-                            filter: blur(${translate.debug.threeD.config.blurAmount}) !important;
-                            opacity: ${translate.debug.threeD.config.containerOpacity} !important;
-                        `;
-                    }
-
-                    el.style.cssText += containerStyle;
-
-                    // 创建3D厚度效果（底面）
-                    const bottom = document.createElement('div');
-                    bottom.style.cssText = `
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100% !important;
-                        height: 100% !important;
-                        background: rgba(100, 150, 255, 0.15) !important;
-                        transform: translateZ(-${translate.debug.threeD.config.boxThickness}px) !important;
-                        pointer-events: none !important;
-                        outline: 1px solid rgba(100, 150, 255, 0.2) !important;
-                    `;
-                    el.appendChild(bottom);
-                }
-
-                count++;
-                if (count % 300 === 0) {
-                    console.log(`⏳ 已处理 ${count}/${elements.length}`);
-                }
-            });
-
-            console.log(`✅ 处理完成！共 ${count} 个元素`);
-
-            // 为3D视图中的元素添加点击事件
-            clone.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const clickedElement = e.target;
-
-                // 高亮3D视图中的元素
-                if (window.__last3DHighlighted) {
-                    window.__last3DHighlighted.style.outline = '';
-                }
-                clickedElement.style.outline = '3px solid #ff0000 !important';
-                window.__last3DHighlighted = clickedElement;
-
-                // 在左侧找到对应元素并滚动到中心
-                scrollToElementInIframe(clickedElement, leftClone);
-            }, true);
-
-            // 禁用3D视图中的所有链接
-            const allLinks = clone.querySelectorAll('a');
-            allLinks.forEach(link => {
-                link.style.pointerEvents = 'none';
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    return false;
-                };
-            });
-
-            
-
-            // 滚动函数：右侧点击 -> 左侧页面滚动
-            function scrollToElementInIframe(cloneElement, leftClone) {
-                try {
-                    const path = translate.debug.threeD.getElementPath(cloneElement);
-                    const targetElement = findElementByPath(leftClone, path);
-
-                    if (targetElement) {
-                        // 高亮左侧元素
-                        if (window.__lastHighlighted) {
-                            window.__lastHighlighted.style.outline = '';
-                        }
-                        targetElement.style.outline = '3px solid #ff0000';
-                        window.__lastHighlighted = targetElement;
-
-                        // 滚动到元素中心
-                        const rect = targetElement.getBoundingClientRect();
-                        const leftPaneRect = leftPane.getBoundingClientRect();
-                        const elementTop = rect.top - leftPaneRect.top + leftPane.scrollTop;
-                        const viewportHeight = leftPane.clientHeight;
-                        const scrollTo = elementTop - (viewportHeight / 2) + (rect.height / 2);
-
-                        leftPane.scrollTo({
-                            top: scrollTo,
-                            behavior: 'smooth'
-                        });
-
-                        console.log('✅ 已滚动到左侧元素');
-                    }
-                } catch (err) {
-                    console.warn('⚠️ 无法滚动到元素:', err);
-                }
-            }
-
-            
-
-            
-
-            scene.appendChild(clone);
-            rightPane.appendChild(rightLabel);
-            rightPane.appendChild(scene);
-
-            // 初始变换
-            let rotX = 65, rotY = 0, scale = 0.45;
-            let translateX = 0, translateY = 0;
-
-            function updateTransform() {
-                scene.style.transform = `
-                    translate(${translateX}px, ${translateY}px)
-                    rotateX(${rotX}deg)
-                    rotateY(${rotY}deg)
-                    scale(${scale})
-                `;
-            }
-
-            updateTransform();
-
-            // 鼠标控制（仅在右侧）
-            let dragging = false, dragType = null, lastX = 0, lastY = 0;
-
-            // 阻止右键菜单
-            rightPane.oncontextmenu = (e) => {
-                e.preventDefault();
-                return false;
-            };
-
-            rightPane.onmousedown = (e) => {
-                dragging = true;
-                lastX = e.clientX;
-                lastY = e.clientY;
-
-                if (e.button === 0) {
-                    // 左键：平移
-                    dragType = 'move';
-                    rightPane.style.cursor = 'move';
-                } else if (e.button === 2) {
-                    // 右键：旋转
-                    dragType = 'rotate';
-                    rightPane.style.cursor = 'grabbing';
-                }
-            };
-
-            document.onmousemove = (e) => {
-                if (!dragging) return;
-
-                const deltaX = e.clientX - lastX;
-                const deltaY = e.clientY - lastY;
-
-                if (dragType === 'move') {
-                    // 左键：平移位置
-                    translateX += deltaX;
-                    translateY += deltaY;
-                } else if (dragType === 'rotate') {
-                    // 右键：旋转视角
-                    rotY += deltaX * 0.5;
-                    rotX -= deltaY * 0.5;
-                    rotX = Math.max(0, Math.min(90, rotX));
-                }
-
-                lastX = e.clientX;
-                lastY = e.clientY;
-                updateTransform();
-            };
-
-            document.onmouseup = () => {
-                dragging = false;
-                dragType = null;
-                rightPane.style.cursor = 'grab';
-            };
-
-            // 滚轮缩放（仅在右侧）
-            rightPane.onwheel = (e) => {
-                e.preventDefault();
-                scale += e.deltaY > 0 ? -0.05 : 0.05;
-                scale = Math.max(0.1, Math.min(1.5, scale));
-                updateTransform();
-            };
-
-            rightPane.style.cursor = 'grab';
-
-            // 键盘控制
-            document.onkeydown = (e) => {
-                if (e.key === 'Escape') {
-                    container.remove();
-                    document.body.style.overflow = '';
-                    window.__3dSplitView = null;
-                    console.log('👋 已退出分屏模式');
-                    return;
-                }
-
-                const step = 5;
-                if (e.key === 'ArrowLeft') rotY -= step;
-                if (e.key === 'ArrowRight') rotY += step;
-                if (e.key === 'ArrowUp') rotX = Math.max(0, rotX - step);
-                if (e.key === 'ArrowDown') rotX = Math.min(90, rotX + step);
-                if (e.key === '+' || e.key === '=') scale += 0.05;
-                if (e.key === '-' || e.key === '_') scale -= 0.05;
-                scale = Math.max(0.1, Math.min(1.5, scale));
-                updateTransform();
-            };
-
-            // 控制面板（缩小一倍）
-            const panel = document.createElement('div');
-            panel.style.cssText = `
-                position: absolute !important;
-                bottom: 10px !important;
-                right: 10px !important;
-                background: rgba(0, 0, 0, 0.95) !important;
-                color: #00ff88 !important;
-                padding: 10px !important;
-                border-radius: 5px !important;
-                font-family: 'Courier New', monospace !important;
-                font-size: 11px !important;
-                z-index: 1000 !important;
-                line-height: 1.6 !important;
-                border: 1px solid rgba(0, 255, 136, 0.3) !important;
-                box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2) !important;
-            `;
-            panel.innerHTML = `
-                <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #00ff88;">🎮 控制</div>
-                <div style="color: #aaa;">🖱️ 左键 - 平移</div>
-                <div style="color: #aaa;">🖱️ 右键 - 旋转</div>
-                <div style="color: #aaa;">🖱️ 滚轮 - 缩放</div>
-                <div style="color: #aaa;">👆 点击元素 - 同步</div>
-                <div style="color: #aaa;">⎋ ESC - 退出</div>
-                <button onclick="document.getElementById('split-view-container').remove(); document.body.style.overflow='';"
-                    style="margin-top: 8px; width: 100%; padding: 5px; background: #00ff88; color: #000; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">
-                    退出
-                </button>
-            `;
-            rightPane.appendChild(panel);
-
-            // 组装
-            container.appendChild(leftPane);
-            container.appendChild(rightPane);
-            document.body.appendChild(container);
-
-            window.__3dSplitView = true;
-
-            console.log('✅ 分屏3D查看器已启动！');
-            console.log('💡 左侧是原始页面，右侧是3D视图');
-            console.log('💡 在右侧拖动鼠标可以旋转3D视图');
-
-        } catch (error) {
-            console.error('❌ 错误:', error);
-            alert('执行失败: ' + error.message);
-        }
+		// 检查是否已运行
+		if (window.__3dSplitView) {
+			console.log('⚠️ 检测到已有分屏，正在移除...');
+			document.getElementById('split-view-container')?.remove();
+			window.__3dSplitView = null;
+			document.body.style.overflow = '';
+			console.log('✅ 已移除');
+			return;
+		}
+
+		// 隐藏滚动条
+		document.body.style.overflow = 'hidden';
+
+		// 创建分屏容器
+		const container = document.createElement('div');
+		container.id = 'split-view-container';
+		container.style.cssText = `
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: 100vw !important;
+			height: 100vh !important;
+			background: #0a0a0a !important;
+			z-index: 2147483647 !important;
+			display: flex !important;
+			margin: 0 !important;
+			padding: 0 !important;
+		`;
+
+		// 添加动画样式
+		const animStyle = document.createElement('style');
+		animStyle.textContent = `
+			@keyframes blink-highlight {
+				0%, 100% { outline-color: #ff0000 !important; }
+				50% { outline-color: #ffff00 !important; }
+			}
+		`;
+		document.head.appendChild(animStyle);
+
+		// 左侧：原始页面
+		const leftPane = document.createElement('div');
+		leftPane.style.cssText = `
+			width: 50% !important;
+			height: 100% !important;
+			overflow: auto !important;
+			background: white !important;
+			border-right: 2px solid #333 !important;
+			position: relative !important;
+		`;
+
+		const leftLabel = document.createElement('div');
+		leftLabel.textContent = '原始页面 (50% 缩放)';
+		leftLabel.style.cssText = `
+			position: fixed !important;
+			top: 10px !important;
+			left: 10px !important;
+			background: rgba(0,0,0,0.8) !important;
+			color: white !important;
+			padding: 8px 15px !important;
+			border-radius: 5px !important;
+			font-size: 14px !important;
+			font-weight: bold !important;
+			z-index: 10000 !important;
+			font-family: Arial, sans-serif !important;
+		`;
+
+		// 创建缩放容器
+		const leftScaleWrapper = document.createElement('div');
+		leftScaleWrapper.style.cssText = `
+			width: 200% !important;
+			height: 200% !important;
+			transform: scale(0.5) !important;
+			transform-origin: 0 0 !important;
+			position: relative !important;
+		`;
+
+		// 直接克隆body内容到左侧
+		const leftClone = document.body.cloneNode(true);
+		const originalWidth = document.body.scrollWidth || window.innerWidth;
+		leftClone.style.cssText = `
+			width: ${originalWidth}px !important;
+			min-width: ${originalWidth}px !important;
+			margin: 0 !important;
+			padding: 0 !important;
+			background: white !important;
+			position: relative !important;
+		`;
+
+		// 移除左侧克隆中的分屏容器
+		const existingInLeft = leftClone.querySelector('#split-view-container');
+		if (existingInLeft) {
+			existingInLeft.remove();
+		}
+
+		// 修复固定定位元素，使其只在左侧显示
+		const fixedElements = leftClone.querySelectorAll('*');
+		fixedElements.forEach(el => {
+			const computedStyle = window.getComputedStyle(el);
+
+			// 修复固定定位
+			if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
+				el.style.position = 'absolute !important';
+			}
+		});
+
+		// 禁用左侧所有链接和交互
+		const leftLinks = leftClone.querySelectorAll('a');
+		leftLinks.forEach(link => {
+			link.href = 'javascript:void(0)';
+			link.target = '';
+			link.style.cursor = 'pointer';
+		});
+
+		// 禁用左侧所有表单
+		const leftForms = leftClone.querySelectorAll('form');
+		leftForms.forEach(form => {
+			form.onsubmit = (e) => {
+				e.preventDefault();
+				return false;
+			};
+		});
+
+		// 为左侧元素添加点击事件
+		leftClone.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+
+			const clickedElement = e.target;
+
+			// 高亮显示
+			if (window.__lastHighlighted) {
+				window.__lastHighlighted.style.outline = '';
+			}
+			clickedElement.style.outline = '3px solid #ff0000';
+			window.__lastHighlighted = clickedElement;
+
+			// 在右侧3D视图中找到对应元素并聚焦
+			translate.debug.threeD.focusElement(clickedElement);
+
+			return false;
+		}, true);
+
+		// 组装左侧
+		leftScaleWrapper.appendChild(leftClone);
+		leftPane.appendChild(leftLabel);
+		leftPane.appendChild(leftScaleWrapper);
+
+		// 右侧：3D视图
+		translate.debug.threeD.rightPane = document.createElement('div');
+		translate.debug.threeD.rightPane.style.cssText = `
+			width: 50% !important;
+			height: 100% !important;
+			background: #0a0a0a !important;
+			position: relative !important;
+			perspective: 1800px !important;
+			overflow: hidden !important;
+		`;
+
+		const rightLabel = document.createElement('div');
+		rightLabel.textContent = '3D 视图';
+		rightLabel.style.cssText = `
+			position: absolute !important;
+			top: 10px !important;
+			left: 10px !important;
+			background: rgba(0,0,0,0.9) !important;
+			color: #00ff88 !important;
+			padding: 8px 15px !important;
+			border-radius: 5px !important;
+			font-size: 14px !important;
+			font-weight: bold !important;
+			z-index: 1000 !important;
+			font-family: Arial, sans-serif !important;
+		`;
+
+		// 3D场景
+		translate.debug.threeD.scene = document.createElement('div');
+		translate.debug.threeD.scene.style.cssText = `
+			position: absolute !important;
+			top: 0 !important;
+			left: 0 !important;
+			transform-style: preserve-3d !important;
+			transform-origin: 0 0 !important;
+		`;
+
+		//console.log('📋 克隆页面内容...');
+		translate.debug.threeD.bodyDomClone = document.body.cloneNode(true);
+
+		// 保持原始宽度，不触发响应式（复用之前的originalWidth）
+		translate.debug.threeD.bodyDomClone.style.cssText = `
+			position: absolute !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: ${originalWidth}px !important;
+			min-width: ${originalWidth}px !important;
+			transform-style: preserve-3d !important;
+			background: white !important;
+		`;
+
+		// 移除克隆中的分屏容器（避免递归）
+		const existingContainer = translate.debug.threeD.bodyDomClone.querySelector('#split-view-container');
+		if (existingContainer) {
+			existingContainer.remove();
+		}
+
+		// 修复右侧3D视图中的固定定位元素
+		const fixedIn3D = translate.debug.threeD.bodyDomClone.querySelectorAll('*');
+		fixedIn3D.forEach(el => {
+			const computedStyle = window.getComputedStyle(el);
+
+			// 修复固定定位
+			if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
+				el.style.position = 'absolute !important';
+			}
+		});
+
+		//console.log('🔍 处理3D元素...');
+		const elements = translate.debug.threeD.bodyDomClone.querySelectorAll('div, section, article, p, h1, h2, h3, h4, h5, h6, span, a, li, header, footer, nav, main');
+		//console.log(`📊 找到 ${elements.length} 个元素`);
+
+		let count = 0;
+		elements.forEach((el) => {
+			// 计算深度
+			let depth = 0;
+			let p = el.parentElement;
+			while (p && p !== translate.debug.threeD.bodyDomClone) {
+				depth++;
+				p = p.parentElement;
+			}
+
+			// 累积高度：父元素的高度 + 自己的位置
+			const stackHeight = depth * translate.debug.threeD.config.boxThickness;
+
+			const isText = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'A', 'LI', 'BUTTON'].includes(el.tagName);
+
+			// 设置元素为3D盒子
+			el.style.transformStyle = 'preserve-3d';
+
+			if (isText) {
+				// 文本元素：更厚的长方体，更明显
+				const textThickness = 60;
+				el.style.cssText += `
+					transform: translateZ(${stackHeight}px) !important;
+					transform-style: preserve-3d !important;
+					background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 255, 240, 0.98)) !important;
+					box-shadow:
+						0 0 0 1px rgba(0, 255, 136, 0.3),
+						0 ${textThickness}px 0 rgba(0, 255, 136, 0.15),
+						0 0 20px rgba(0, 255, 136, 0.2) !important;
+					padding: 3px 6px !important;
+					border-radius: 3px !important;
+					position: relative !important;
+				`;
+
+				// 创建3D厚度效果（侧面）
+				const sides = document.createElement('div');
+				sides.style.cssText = `
+					position: absolute !important;
+					top: 0 !important;
+					left: 0 !important;
+					width: 100% !important;
+					height: 100% !important;
+					background: rgba(0, 255, 136, 0.3) !important;
+					transform: translateZ(-${textThickness}px) !important;
+					border-radius: 3px !important;
+					pointer-events: none !important;
+				`;
+				el.appendChild(sides);
+
+			} else {
+				// 容器元素：标准长方体
+				let containerStyle = `
+					transform: translateZ(${stackHeight}px) !important;
+					transform-style: preserve-3d !important;
+					outline: 1px solid rgba(100, 150, 255, 0.3) !important;
+					position: relative !important;
+					box-shadow:
+						0 0 0 1px rgba(100, 150, 255, 0.2),
+						0 ${translate.debug.threeD.config.boxThickness}px 0 rgba(100, 150, 255, 0.1) !important;
+				`;
+
+				// 根据配置决定是否添加模糊效果
+				if (translate.debug.threeD.config.enableBlur) {
+					containerStyle += `
+						filter: blur(${translate.debug.threeD.config.blurAmount}) !important;
+						opacity: ${translate.debug.threeD.config.containerOpacity} !important;
+					`;
+				}
+
+				el.style.cssText += containerStyle;
+
+				// 创建3D厚度效果（底面）
+				const bottom = document.createElement('div');
+				bottom.style.cssText = `
+					position: absolute !important;
+					top: 0 !important;
+					left: 0 !important;
+					width: 100% !important;
+					height: 100% !important;
+					background: rgba(100, 150, 255, 0.15) !important;
+					transform: translateZ(-${translate.debug.threeD.config.boxThickness}px) !important;
+					pointer-events: none !important;
+					outline: 1px solid rgba(100, 150, 255, 0.2) !important;
+				`;
+				el.appendChild(bottom);
+			}
+
+			count++;
+			if (count % 300 === 0) {
+				console.log(`⏳ 已处理 ${count}/${elements.length}`);
+			}
+		});
+
+		console.log(`✅ 处理完成！共 ${count} 个元素`);
+
+		// 为3D视图中的元素添加点击事件
+		translate.debug.threeD.bodyDomClone.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const clickedElement = e.target;
+
+			// 高亮3D视图中的元素
+			if (window.__last3DHighlighted) {
+				window.__last3DHighlighted.style.outline = '';
+			}
+			clickedElement.style.outline = '3px solid #ff0000 !important';
+			window.__last3DHighlighted = clickedElement;
+
+			// 在左侧找到对应元素并滚动到中心
+			scrollToElementInIframe(clickedElement, leftClone);
+		}, true);
+
+		// 禁用3D视图中的所有链接
+		const allLinks = translate.debug.threeD.bodyDomClone.querySelectorAll('a');
+		allLinks.forEach(link => {
+			link.style.pointerEvents = 'none';
+			link.onclick = (e) => {
+				e.preventDefault();
+				return false;
+			};
+		});
+
+		
+
+		// 滚动函数：右侧点击 -> 左侧页面滚动
+		function scrollToElementInIframe(cloneElement, leftClone) {
+			try {
+				const path = translate.debug.threeD.getElementPath(cloneElement);
+				const targetElement = translate.debug.threeD.findElementByPath(leftClone, path);
+
+				if (targetElement) {
+					// 高亮左侧元素
+					if (window.__lastHighlighted) {
+						window.__lastHighlighted.style.outline = '';
+					}
+					targetElement.style.outline = '3px solid #ff0000';
+					window.__lastHighlighted = targetElement;
+
+					// 滚动到元素中心
+					const rect = targetElement.getBoundingClientRect();
+					const leftPaneRect = leftPane.getBoundingClientRect();
+					const elementTop = rect.top - leftPaneRect.top + leftPane.scrollTop;
+					const viewportHeight = leftPane.clientHeight;
+					const scrollTo = elementTop - (viewportHeight / 2) + (rect.height / 2);
+
+					leftPane.scrollTo({
+						top: scrollTo,
+						behavior: 'smooth'
+					});
+
+					console.log('✅ 已滚动到左侧元素');
+				}
+			} catch (err) {
+				console.warn('⚠️ 无法滚动到元素:', err);
+			}
+		}
+
+		
+
+		
+
+		translate.debug.threeD.scene.appendChild(translate.debug.threeD.bodyDomClone);
+		translate.debug.threeD.rightPane.appendChild(rightLabel);
+		translate.debug.threeD.rightPane.appendChild(translate.debug.threeD.scene);
+
+		// 初始变换
+		translate.debug.threeD.config.rotX = 65
+		translate.debug.threeD.config.rotY = 0
+		translate.debug.threeD.config.scale = 0.45;
+		translate.debug.threeD.config.translateX = 0;
+		translate.debug.threeD.config.translateY = 0;
+		
+		//渲染视图
+		translate.debug.threeD.updateTransform();
+
+		// 鼠标控制（仅在右侧）
+		let dragging = false, dragType = null, lastX = 0, lastY = 0;
+
+		// 阻止右键菜单
+		translate.debug.threeD.rightPane.oncontextmenu = (e) => {
+			e.preventDefault();
+			return false;
+		};
+
+		translate.debug.threeD.rightPane.onmousedown = (e) => {
+			dragging = true;
+			lastX = e.clientX;
+			lastY = e.clientY;
+
+			if (e.button === 0) {
+				// 左键：平移
+				dragType = 'move';
+				translate.debug.threeD.rightPane.style.cursor = 'move';
+			} else if (e.button === 2) {
+				// 右键：旋转
+				dragType = 'rotate';
+				translate.debug.threeD.rightPane.style.cursor = 'grabbing';
+			}
+		};
+
+		document.onmousemove = (e) => {
+			if (!dragging) return;
+
+			const deltaX = e.clientX - lastX;
+			const deltaY = e.clientY - lastY;
+
+			if (dragType === 'move') {
+				// 左键：平移位置
+				translate.debug.threeD.config.translateX += deltaX;
+				translate.debug.threeD.config.translateY += deltaY;
+			} else if (dragType === 'rotate') {
+				// 右键：旋转视角
+				translate.debug.threeD.config.rotY += deltaX * 0.5;
+				translate.debug.threeD.config.rotX -= deltaY * 0.5;
+				translate.debug.threeD.config.rotX = Math.max(0, Math.min(90, translate.debug.threeD.config.rotX));
+			}
+
+			lastX = e.clientX;
+			lastY = e.clientY;
+			translate.debug.threeD.updateTransform();
+		};
+
+		document.onmouseup = () => {
+			dragging = false;
+			dragType = null;
+			translate.debug.threeD.rightPane.style.cursor = 'grab';
+		};
+
+		// 滚轮缩放（仅在右侧）
+		translate.debug.threeD.rightPane.onwheel = (e) => {
+			e.preventDefault();
+			translate.debug.threeD.config.scale += e.deltaY > 0 ? -0.05 : 0.05;
+			translate.debug.threeD.config.scale = Math.max(0.1, Math.min(1.5, translate.debug.threeD.config.scale));
+			translate.debug.threeD.updateTransform();
+		};
+
+		translate.debug.threeD.rightPane.style.cursor = 'grab';
+
+		// 键盘控制
+		document.onkeydown = (e) => {
+			if (e.key === 'Escape') {
+				container.remove();
+				document.body.style.overflow = '';
+				window.__3dSplitView = null;
+				console.log('👋 已退出分屏模式');
+				return;
+			}
+
+			const step = 5;
+			if (e.key === 'ArrowLeft') translate.debug.threeD.config.rotY -= step;
+			if (e.key === 'ArrowRight') translate.debug.threeD.config.rotY += step;
+			if (e.key === 'ArrowUp') translate.debug.threeD.config.rotX = Math.max(0, translate.debug.threeD.config.rotX - step);
+			if (e.key === 'ArrowDown') translate.debug.threeD.config.rotX = Math.min(90, translate.debug.threeD.config.rotX + step);
+			if (e.key === '+' || e.key === '=') translate.debug.threeD.config.scale += 0.05;
+			if (e.key === '-' || e.key === '_') translate.debug.threeD.config.scale -= 0.05;
+			translate.debug.threeD.config.scale = Math.max(0.1, Math.min(1.5, translate.debug.threeD.config.scale));
+			translate.debug.threeD.updateTransform();
+		};
+
+		// 控制面板（缩小一倍）
+		const panel = document.createElement('div');
+		panel.style.cssText = `
+			position: absolute !important;
+			bottom: 10px !important;
+			right: 10px !important;
+			background: rgba(0, 0, 0, 0.95) !important;
+			color: #00ff88 !important;
+			padding: 10px !important;
+			border-radius: 5px !important;
+			font-family: 'Courier New', monospace !important;
+			font-size: 11px !important;
+			z-index: 1000 !important;
+			line-height: 1.6 !important;
+			border: 1px solid rgba(0, 255, 136, 0.3) !important;
+			box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2) !important;
+		`;
+		panel.innerHTML = `
+			<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #00ff88;">🎮 控制</div>
+			<div style="color: #aaa;">🖱️ 左键 - 平移</div>
+			<div style="color: #aaa;">🖱️ 右键 - 旋转</div>
+			<div style="color: #aaa;">🖱️ 滚轮 - 缩放</div>
+			<div style="color: #aaa;">👆 点击元素 - 同步</div>
+			<div style="color: #aaa;">⎋ ESC - 退出</div>
+			<button onclick="document.getElementById('split-view-container').remove(); document.body.style.overflow='';"
+				style="margin-top: 8px; width: 100%; padding: 5px; background: #00ff88; color: #000; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">
+				退出
+			</button>
+		`;
+		translate.debug.threeD.rightPane.appendChild(panel);
+
+		// 组装
+		container.appendChild(leftPane);
+		container.appendChild(translate.debug.threeD.rightPane);
+		document.body.appendChild(container);
+
+		window.__3dSplitView = true;
+
+		console.log('✅ 分屏3D查看器已启动！');
+		console.log('💡 左侧是原始页面，右侧是3D视图');
+		console.log('💡 在右侧拖动鼠标可以旋转3D视图');
+
     },
+
+	// 更新3D视图变换
+	updateTransform: function () {
+		translate.debug.threeD.scene.style.transform = `
+			translate(${translate.debug.threeD.config.translateX}px, ${translate.debug.threeD.config.translateY}px)
+			rotateX(${translate.debug.threeD.config.rotX}deg)
+			rotateY(${translate.debug.threeD.config.rotY}deg)
+			scale(${translate.debug.threeD.config.scale})
+		`;
+	},
 
 	// 获取元素路径（用于匹配左右两侧的元素）
 	getElementPath: function (element) {
@@ -1244,110 +1262,101 @@ translate.debug.threeD = {
 	* 5. 延迟0.5秒后，向右下倾斜3度
 	*/
 	focusElement: function (leftElement) {
-		try {
-			// 步骤1: 通过DOM路径找到3D视图中的对应元素
-			const path = translate.debug.threeD.getElementPath(leftElement);
-			const targetElement = findElementByPath(clone, path);
+		// 步骤1: 通过DOM路径找到3D视图中的对应元素
+		const path = translate.debug.threeD.getElementPath(leftElement);
+		const targetElement = translate.debug.threeD.findElementByPath(translate.debug.threeD.bodyDomClone, path);
 
-			if (!targetElement) {
-				console.warn('⚠️ 未找到对应的3D元素');
-				return;
-			}
-
-			// 清除之前的高亮
-			if (window.__last3DHighlighted) {
-				window.__last3DHighlighted.style.outline = '';
-				window.__last3DHighlighted.style.outlineOffset = '';
-			}
-
-			// 高亮新元素
-			targetElement.style.outline = '5px solid #ff0000 !important';
-			targetElement.style.outlineOffset = '2px !important';
-			window.__last3DHighlighted = targetElement;
-
-			// 步骤2: 重置为正常角度（无倾斜、无旋转）
-			rotX = 0;  // 无X轴旋转（不倾斜）
-			rotY = 0;  // 无Y轴旋转（不旋转）
-
-			// 步骤3: 缩放到50%（宽度刚好填满3D视图）
-			scale = 0.5;
-
-			// X轴不动，保持为0（宽度对齐）
-			translateX = 0;
-
-			// Y轴先重置为0
-			translateY = 0;
-
-			// 应用初始变换
-			updateTransform();
-
-			// 等待两帧，确保DOM完全更新
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					try {
-						// 步骤4: 只调整Y轴，将元素垂直居中
-
-						// 方法：使用offsetTop获取元素在文档中的原始位置
-						// 这个值不受transform影响，更可靠
-
-						// 获取元素相对于clone的offsetTop
-						let elementOffsetTop = 0;
-						let el = targetElement;
-						while (el && el !== clone) {
-							elementOffsetTop += el.offsetTop;
-							el = el.offsetParent;
-						}
-
-						// 元素的高度
-						const elementHeight = targetElement.offsetHeight;
-
-						// 元素中心点在原始坐标系中的Y位置
-						const elementCenterY = elementOffsetTop + elementHeight / 2;
-
-						// 右侧面板的垂直中心点（在原始坐标系中，需要除以scale）
-						const paneCenterY = rightPane.clientHeight / 2 / scale;
-
-						// 计算Y轴需要平移的距离（在原始坐标系中）
-						const deltaY = paneCenterY - elementCenterY;
-
-						// 应用平移（需要乘以scale转换到显示坐标系）
-						translateY = deltaY * scale;
-
-						// 应用平移变换
-						updateTransform();
-
-						console.log('✅ 元素已垂直居中显示:', targetElement.tagName);
-						console.log('   - 元素offsetTop:', elementOffsetTop);
-						console.log('   - 元素高度:', elementHeight);
-						console.log('   - 元素中心Y:', elementCenterY);
-						console.log('   - 面板中心Y:', paneCenterY);
-						console.log('   - Y偏移(原始):', deltaY);
-						console.log('   - Y偏移(显示):', translateY);
-
-						// 步骤5: 延迟0.5秒后，向右下倾斜3度
-						setTimeout(() => {
-							rotX = 3;  // 向下倾斜3度
-							rotY = 3;  // 向右旋转3度
-							updateTransform();
-							console.log('✅ 已应用3度倾斜效果');
-						}, 500);
-
-					} catch (err) {
-						console.warn('⚠️ 居中计算出错:', err);
-						console.error(err);
-					}
-				});
-			});
-
-		} catch (err) {
-			console.warn('⚠️ 无法聚焦3D元素:', err);
-			console.error(err);
+		if (!targetElement) {
+			console.warn('⚠️ 未找到对应的3D元素');
+			return;
 		}
+
+		// 清除之前的高亮
+		if (window.__last3DHighlighted) {
+			window.__last3DHighlighted.style.outline = '';
+			window.__last3DHighlighted.style.outlineOffset = '';
+		}
+
+		// 高亮新元素
+		targetElement.style.outline = '5px solid #ff0000 !important';
+		targetElement.style.outlineOffset = '2px !important';
+		window.__last3DHighlighted = targetElement;
+
+		// 步骤2: 重置为正常角度（无倾斜、无旋转）
+		translate.debug.threeD.config.rotX = 0;  // 无X轴旋转（不倾斜）
+		translate.debug.threeD.config.rotY = 0;  // 无Y轴旋转（不旋转）
+
+		// 步骤3: 缩放到50%（宽度刚好填满3D视图）
+		scale = 0.5;
+
+		// X轴不动，保持为0（宽度对齐）
+		translate.debug.threeD.config.translateX = 0;
+
+		// Y轴先重置为0
+		translate.debug.threeD.config.translateY = 0;
+
+		// 应用初始变换
+		translate.debug.threeD.updateTransform();
+
+		// 等待两帧，确保DOM完全更新
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				try {
+					// 步骤4: 只调整Y轴，将元素垂直居中
+
+					// 方法：使用offsetTop获取元素在文档中的原始位置
+					// 这个值不受transform影响，更可靠
+
+					// 获取元素相对于translate.debug.threeD.bodyDomClone的offsetTop
+					let elementOffsetTop = 0;
+					let el = targetElement;
+					while (el && el !== translate.debug.threeD.bodyDomClone) {
+						elementOffsetTop += el.offsetTop;
+						el = el.offsetParent;
+					}
+
+					// 元素的高度
+					const elementHeight = targetElement.offsetHeight;
+
+					// 元素中心点在原始坐标系中的Y位置
+					const elementCenterY = elementOffsetTop + elementHeight / 2;
+
+					// 右侧面板的垂直中心点（在原始坐标系中，需要除以scale）
+					const paneCenterY = translate.debug.threeD.rightPane.clientHeight / 2 / scale;
+
+					// 计算Y轴需要平移的距离（在原始坐标系中）
+					const deltaY = paneCenterY - elementCenterY;
+
+					// 应用平移（需要乘以scale转换到显示坐标系）
+					translate.debug.threeD.config.translateY = deltaY * scale;
+
+					// 应用平移变换
+					translate.debug.threeD.updateTransform();
+
+					console.log('✅ 元素已垂直居中显示:', targetElement.tagName);
+					console.log('   - 元素offsetTop:', elementOffsetTop);
+					console.log('   - 元素高度:', elementHeight);
+					console.log('   - 元素中心Y:', elementCenterY);
+					console.log('   - 面板中心Y:', paneCenterY);
+					console.log('   - Y偏移(原始):', deltaY);
+					console.log('   - Y偏移(显示):', translate.debug.threeD.config.translateY);
+
+					// 步骤5: 延迟0.5秒后，向右下倾斜3度
+					setTimeout(() => {
+						translate.debug.threeD.config.rotX = 3;  // 向下倾斜3度
+						translate.debug.threeD.config.rotY = 3;  // 向右旋转3度
+						translate.debug.threeD.updateTransform();
+						console.log('✅ 已应用3度倾斜效果');
+					}, 1500);
+
+				} catch (err) {
+					console.warn('⚠️ 居中计算出错:', err);
+					console.error(err);
+				}
+			});
+		});
+
 	}
 }
     
 
-
-
-
-translate.debug.threeD.init();

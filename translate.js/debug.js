@@ -224,17 +224,18 @@ translate.debug = {
 			document.head.appendChild(styleElement);
 		}
 
-		msg.popups({
-		    text:'<div class="ignore" style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding: 20px; box-sizing: border-box; border: 1px solid #dfe2e5;"><h2 style="margin-top: 0;">私有部署的 translate.service 服务检测</h2><div style="margin: 15px 0;">translate.service 服务的授权码:</div><textarea id="translate_service_key" placeholder="请输入您的授权码..."></textarea><button class="debug-button" onclick="window.translate.debug.check.privateDeploymentCheckButton();">开始检测</button><div id="checkResult"></div></div>',
+		translate.debug.showUIDialog_id = msg.popups({
+		    text:'<div class="ignore" style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding: 20px; box-sizing: border-box; border: 1px solid #dfe2e5;">'
+		    	+'<button class="debug-button" onclick="window.translate.debug.mouseTracking.use()">打开数据调试</button><br/>'
+		    	+'<button class="debug-button" onclick="msg.close(window.translate.debug.showUIDialog_id); window.translate.debug.threeD.init();">打开3D视觉</button><br/>'
+		    	+'<button class="debug-button" onclick="window.translate.debug.check.privateDeploymentUIDialog();">私有部署接入检测</button><br/>'
+		    	+'</div>',
 		    padding:'0px',
 			opacity: 100,
-		    height:'85%'
+		    height:'auto',
+		    width:'230px'
 		});
 
-		var translate_service_key = sessionStorage.getItem('translate_service_key');
-		if(typeof(translate_service_key) === 'string' && translate_service_key.trim().length > 0){
-			document.getElementById('translate_service_key').value = translate_service_key;
-		}
 	},
 
 	/*
@@ -329,6 +330,24 @@ translate.debug = {
 			document.getElementById("checkResult").innerHTML = "checking ...";
 			document.getElementById("checkResult").style.display = 'block';
 			setTimeout(translate.debug.check.privateDeployment, 200);
+		},
+		/*
+			私有部署的翻译服务接入检测 - UI界面
+
+		*/
+		privateDeploymentUIDialog: function(){
+			
+			msg.popups({
+			    text:'<div class="ignore" style="background-color: white; color: black; width: 100%; height: 100%; overflow: auto; padding: 20px; box-sizing: border-box; border: 1px solid #dfe2e5;"><h2 style="margin-top: 0;">私有部署的 translate.service 服务检测</h2><div style="margin: 15px 0;">translate.service 服务的授权码:</div><textarea id="translate_service_key" placeholder="请输入您的授权码..."></textarea><button class="debug-button" onclick="window.translate.debug.check.privateDeploymentCheckButton();">开始检测</button><div id="checkResult"></div></div>',
+			    padding:'0px',
+				opacity: 100,
+			    height:'85%'
+			});
+
+			var translate_service_key = sessionStorage.getItem('translate_service_key');
+			if(typeof(translate_service_key) === 'string' && translate_service_key.trim().length > 0){
+				document.getElementById('translate_service_key').value = translate_service_key;
+			}
 		},
 		/*
 			私有部署的翻译服务接入检测
@@ -673,6 +692,8 @@ translate.debug.threeD = {
 		bodyDomClone: null,
 		//3d场景所在的div元素
 		scene : null,
+		// 分屏容器
+		container: null,
 
 		// 3D分屏视图的平移量
 		translateX: 0,
@@ -691,10 +712,7 @@ translate.debug.threeD = {
 		// 检查是否已运行
 		if (window.__3dSplitView) {
 			console.log('⚠️ 检测到已有分屏，正在移除...');
-			document.getElementById('split-view-container')?.remove();
-			window.__3dSplitView = null;
-			document.body.style.overflow = '';
-			console.log('✅ 已移除');
+			window.translate.debug.threeD.exit();
 			return;
 		}
 
@@ -702,9 +720,9 @@ translate.debug.threeD = {
 		document.body.style.overflow = 'hidden';
 
 		// 创建分屏容器
-		const container = document.createElement('div');
-		container.id = 'split-view-container';
-		container.style.cssText = `
+		translate.debug.threeD.container = document.createElement('div');
+		translate.debug.threeD.container.id = 'split-view-container';
+		translate.debug.threeD.container.style.cssText = `
 			position: fixed !important;
 			top: 0 !important;
 			left: 0 !important;
@@ -1150,10 +1168,7 @@ translate.debug.threeD = {
 		// 键盘控制
 		document.onkeydown = (e) => {
 			if (e.key === 'Escape') {
-				container.remove();
-				document.body.style.overflow = '';
-				window.__3dSplitView = null;
-				console.log('👋 已退出分屏模式');
+				window.translate.debug.threeD.exit();
 				return;
 			}
 
@@ -1187,12 +1202,12 @@ translate.debug.threeD = {
 		`;
 		panel.innerHTML = `
 			<div style="font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #00ff88;">控制</div>
-			<div style="color: #aaa;">🖱️ 左键 - 平移</div>
-			<div style="color: #aaa;">🖱️ 右键 - 旋转</div>
-			<div style="color: #aaa;">🖱️ 滚轮 - 缩放</div>
-			<div style="color: #aaa;">👆 点击元素 - 同步</div>
-			<div style="color: #aaa;">⎋ ESC - 退出</div>
-			<button onclick="document.getElementById('split-view-container').remove(); document.body.style.overflow='';"
+			<div style="color: #aaa;">左键点击 - 平移</div>
+			<div style="color: #aaa;">右键点击 - 旋转</div>
+			<div style="color: #aaa;">鼠标滚轮 - 缩放</div>
+			<div style="color: #aaa;">点击元素 - 同步</div>
+			<div style="color: #aaa;">按 ESC 键退出</div>
+			<button onclick="window.translate.debug.threeD.exit();"
 				style="margin-top: 8px; width: 100%; padding: 5px;padding-bottom: 3.6px; background: #00ff88; color: #000; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">
 				退出
 			</button>
@@ -1200,9 +1215,9 @@ translate.debug.threeD = {
 		translate.debug.threeD.config.rightPane.appendChild(panel);
 
 		// 组装
-		container.appendChild(leftPane);
-		container.appendChild(translate.debug.threeD.config.rightPane);
-		document.body.appendChild(container);
+		translate.debug.threeD.container.appendChild(leftPane);
+		translate.debug.threeD.container.appendChild(translate.debug.threeD.config.rightPane);
+		document.body.appendChild(translate.debug.threeD.container);
 
 		window.__3dSplitView = true;
 
@@ -1210,6 +1225,17 @@ translate.debug.threeD = {
 		console.log('💡 左侧是原始页面，右侧是3D视图');
 		console.log('💡 在右侧拖动鼠标可以旋转3D视图');
 
+    },
+
+    /*
+		退出 3D 模式，销毁。
+    */
+    exit: function(){
+    	console.log('正在移除...');
+		document.getElementById('split-view-container')?.remove();
+		window.__3dSplitView = null;
+		document.body.style.overflow = '';
+		console.log('已移除');
     },
 
 	// 更新3D视图变换

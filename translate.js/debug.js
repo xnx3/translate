@@ -599,13 +599,20 @@ translate.debug = {
 			document.addEventListener('keydown', function(e) {
 				// e.key === 'Control' 确认按下的是Ctrl键本身，排除组合键
 				if (e.ctrlKey && e.key === 'Control') {
+					console.log('current nodes:');
 			    	console.log(translate.debug.data.nodes);
+			    	console.log('-----对每个node进行分析-----');
 			    	for(var ni = 0; ni < translate.debug.data.nodes.length; ni++){
+			    		console.log(translate.debug.data.nodes[ni]);
 			    		var finds = translate.debug.getTranslateNodeQueue(translate.debug.data.nodes[ni]);
 			    		var fnode = translate.debug.getTranslateNode(translate.debug.data.nodes[ni]);
+			    		console.log('\t---translate.nodeQueue---');
 			    		console.log(finds);
+			    		console.log('\t---translate.node---');
 			    		console.log(fnode);
+			    		console.log('\t-----');
 			    	}
+			    	console.log('--------------------');
 				}
 			});
 

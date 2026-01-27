@@ -1833,6 +1833,134 @@ translate.debug.threeD = {
 		if (infoBox) infoBox.remove();
 		if (infoLine) infoLine.remove();
 	},
+	
+	/**
+	 * 更改3D视图区域内，元素柱状凸出的厚度
+	 * @param {HTMLElement} element - 要更新厚度的元素。 如果传入 undefined 则是当前3D视图区域中所有有厚度的元素
+	 * @param {number} thickness - 新的厚度值（px），会更新 config.boxThickness
+	 * @param {number} animationTime - 动画时间，单位是毫秒，代表厚度有当前的厚度变为设置的厚度，这期间逐渐变化的时间，默认0（无动画）
+	 */
+	updateElementThickness: function(element, thickness = 0, animationTime = 0) {
+		// 检查3D视图是否已初始化
+		if (!translate.debug.threeD.config.bodyDomClone) {
+			console.warn('3D视图未初始化，请先调用 translate.debug.threeD.init()');
+			return;
+		}
+
+		const oldThickness = translate.debug.threeD.config.boxThickness;
+		const newThickness = thickness;
+
+		// 更新全局配置
+		translate.debug.threeD.config.boxThickness = newThickness;
+
+		console.log(`🔄 开始更新厚度：${oldThickness}px -> ${newThickness}px`);
+
+		// 查找元素的底面div（厚度层）
+		const findBottomFace = (el) => {
+			if (!el || !el.children) return null;
+
+			for (let i = el.children.length - 1; i >= 0; i--) {
+				const child = el.children[i];
+				const style = child.style;
+
+				if (style.position === 'absolute' &&
+					style.pointerEvents === 'none' &&
+					style.transform &&
+					style.transform.includes('translateZ(-')) {
+					return child;
+				}
+			}
+			return null;
+		};
+
+		// 计算元素的深度（在DOM树中的层级）
+		const getElementDepth = (el) => {
+			let depth = 0;
+			let p = el.parentElement;
+			while (p && p !== translate.debug.threeD.config.bodyDomClone) {
+				depth++;
+				p = p.parentElement;
+			}
+			return depth;
+		};
+
+		// 更新单个元素的Z轴位置和厚度
+		const updateSingleElement = (el) => {
+			// 计算元素深度
+			const depth = getElementDepth(el);
+
+			// 计算新的层级高度
+			const stackHeight = depth * newThickness;
+
+			// 获取元素的层级类型，计算zOffset
+			const layerType = translate.debug.threeD.getElementLayerType(el);
+			let zOffset = 0;
+			if (layerType === 'interactive') {
+				zOffset = newThickness * 2.5;
+			} else if (layerType === 'text') {
+				zOffset = newThickness * 1.5;
+			} else if (layerType === 'container-with-text') {
+				zOffset = newThickness * 0.5;
+			}
+
+			// 如果有动画时间，添加transition
+			if (animationTime > 0) {
+				el.style.transition = `transform ${animationTime}ms ease-in-out`;
+				setTimeout(() => {
+					el.style.transition = '';
+				}, animationTime);
+			}
+
+			// 更新元素本身的Z轴位置
+			const currentTransform = el.style.transform || '';
+			const newElementTransform = currentTransform.replace(
+				/translateZ\([^)]+\)/,
+				`translateZ(${stackHeight + zOffset}px)`
+			);
+			el.style.transform = newElementTransform;
+
+			// 更新底面div的厚度
+			const bottomFace = findBottomFace(el);
+			if (bottomFace) {
+				if (animationTime > 0) {
+					bottomFace.style.transition = `transform ${animationTime}ms ease-in-out`;
+					setTimeout(() => {
+						bottomFace.style.transition = '';
+					}, animationTime);
+				}
+
+				const bottomTransform = bottomFace.style.transform || '';
+				const newBottomTransform = bottomTransform.replace(
+					/translateZ\([^)]+\)/,
+					`translateZ(-${newThickness}px)`
+				);
+				bottomFace.style.transform = newBottomTransform;
+			}
+		};
+
+		// 如果element是undefined，更新所有元素
+		if (typeof element === 'undefined' || element === null) {
+			const allElements = translate.debug.threeD.config.bodyDomClone.querySelectorAll('*');
+			let count = 0;
+
+			allElements.forEach(el => {
+				// 跳过非可视元素
+				const tag = el.tagName ? el.tagName.toUpperCase() : '';
+				if (['SCRIPT', 'STYLE', 'META', 'LINK', 'HEAD', 'TITLE', 'BR', 'HR', 'NOSCRIPT'].includes(tag)) {
+					return;
+				}
+
+				updateSingleElement(el);
+				count++;
+			});
+
+			console.log(`✅ 已更新 ${count} 个元素的厚度为 ${newThickness}px`);
+		} else {
+			// 更新指定元素
+			updateSingleElement(element);
+			console.log(`✅ 已更新元素厚度为 ${newThickness}px`);
+		}
+	},
 
 	/**
 	* 在3D视图中聚焦并居中显示指定元素

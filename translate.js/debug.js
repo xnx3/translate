@@ -695,6 +695,9 @@ translate.debug.threeD = {
 		// 分屏容器
 		container: null,
 
+		// 当前显示的元素信息框 showElementInfo 中显示的是哪个元素的信息。这里的值是 Element
+		currentShowElement: null,
+
 		// 3D分屏视图的平移量
 		translateX: 0,
 		// 3D分屏视图的平移量
@@ -1389,6 +1392,8 @@ translate.debug.threeD = {
 		return current;
 	},
 
+	
+
 	/**
 	 * 显示元素信息框，带有连接线
 	 * @param {HTMLElement} targetElement - 3D视图中的目标元素
@@ -1399,6 +1404,8 @@ translate.debug.threeD = {
 
 		const rightPane = translate.debug.threeD.config.rightPane;
 		if (!rightPane || !targetElement) return;
+
+		translate.debug.threeD.config.currentShowElement = targetElement;
 
 		// 获取元素信息
 		const tagName = targetElement.tagName || 'UNKNOWN';
@@ -1775,6 +1782,39 @@ translate.debug.threeD = {
 			transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
 		`;
 
+		// 获取父元素信息
+		const parentElement = targetElement.parentElement;
+		let parentInfo = '<无>';
+		if (parentElement && parentElement !== translate.debug.threeD.config.bodyDomClone) {
+			const parentTag = parentElement.tagName || 'UNKNOWN';
+			const parentId = parentElement.id ? `#${parentElement.id}` : '';
+			const parentClass = parentElement.className ? `.${String(parentElement.className).split(' ')[0]}` : '';
+			parentInfo = '<span class="parent-link" style="color: #00ff88 !important; cursor: pointer !important; text-decoration: underline !important;" onclick="window.translate.debug.threeD.showElementInfo(translate.debug.threeD.config.currentShowElement.parentElement);">'+parentTag+parentId+parentClass+'</span>';
+		}
+
+		// 获取子元素信息
+		const children = Array.from(targetElement.children).filter(child => {
+			// 过滤掉底面div（厚度层）
+			const style = child.style;
+			return !(style.position === 'absolute' &&
+					 style.pointerEvents === 'none' &&
+					 style.transform &&
+					 style.transform.includes('translateZ(-'));
+		});
+
+		let childrenInfo = '<无>';
+		if (children.length > 0) {
+			childrenInfo = children.slice(0, 5).map((child, index) => {
+				const childTag = child.tagName || 'UNKNOWN';
+				const childId = child.id ? `#${child.id}` : '';
+				const childClass = child.className ? `.${String(child.className).split(' ')[0]}` : '';
+				return `<span class="child-link" data-child-index="${index}" style="color: #ffaa00 !important; cursor: pointer !important; text-decoration: underline !important; margin-right: 8px !important;">${childTag}${childId}${childClass}</span>`;
+			}).join('');
+			if (children.length > 5) {
+				childrenInfo += `<span style="color: #888 !important;">...+${children.length - 5}</span>`;
+			}
+		}
+
 		// 信息框内容
 		infoBox.innerHTML = `
 			<div style="
@@ -1794,9 +1834,17 @@ translate.debug.threeD = {
 				<span style="color: #00aaff !important;">ID:</span>
 				<span style="color: #ffaa00 !important;">${id || '<无>'}</span>
 			</div>
-			<div style="word-break: break-all !important;">
+			<div style="margin-bottom: 6px !important; word-break: break-all !important;">
 				<span style="color: #00aaff !important;">CLASS:</span>
 				<span style="color: #ff88ff !important; font-size: 11px !important;">${displayClass || '<无>'}</span>
+			</div>
+			<div style="margin-bottom: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">
+				<span style="color: #00aaff !important;">父元素:</span>
+				${parentInfo}
+			</div>
+			<div style="word-break: break-all !important;">
+				<span style="color: #00aaff !important;">子元素:</span>
+				<div style="margin-top: 4px !important; line-height: 1.6 !important;">${childrenInfo}</div>
 			</div>
 		`;
 
@@ -1828,6 +1876,69 @@ translate.debug.threeD = {
 		// 添加到右侧面板
 		rightPane.appendChild(svg);
 		rightPane.appendChild(infoBox);
+
+		// 为父元素链接添加点击事件
+		const parentLink = infoBox.querySelector('.parent-link');
+		if (parentLink && parentElement) {
+			parentLink.addEventListener('click', (e) => {
+				e.stopPropagation();
+				console.log('🔼 点击父元素，定位到:', parentElement.tagName);
+
+				// 高亮父元素
+				if (window.__last3DHighlighted) {
+					window.__last3DHighlighted.style.outline = '';
+					window.__last3DHighlighted.style.outlineOffset = '';
+				}
+				parentElement.style.outline = '5px solid #ff0000 !important';
+				parentElement.style.outlineOffset = '2px !important';
+				window.__last3DHighlighted = parentElement;
+
+				// 显示父元素的信息
+				translate.debug.threeD.showElementInfo(parentElement);
+			});
+
+			// 添加悬停效果
+			parentLink.addEventListener('mouseenter', () => {
+				parentLink.style.color = '#00ffff !important';
+			});
+			parentLink.addEventListener('mouseleave', () => {
+				parentLink.style.color = '#00ff88 !important';
+			});
+		}
+
+		// 为子元素链接添加点击事件
+		const childLinks = infoBox.querySelectorAll('.child-link');
+		childLinks.forEach((childLink) => {
+			const childIndex = parseInt(childLink.getAttribute('data-child-index'));
+			const childElement = children[childIndex];
+
+			if (childElement) {
+				childLink.addEventListener('click', (e) => {
+					e.stopPropagation();
+					console.log('🔽 点击子元素，定位到:', childElement.tagName);
+
+					// 高亮子元素
+					if (window.__last3DHighlighted) {
+						window.__last3DHighlighted.style.outline = '';
+						window.__last3DHighlighted.style.outlineOffset = '';
+					}
+					childElement.style.outline = '5px solid #ff0000 !important';
+					childElement.style.outlineOffset = '2px !important';
+					window.__last3DHighlighted = childElement;
+
+					// 显示子元素的信息
+					translate.debug.threeD.showElementInfo(childElement);
+				});
+
+				// 添加悬停效果
+				childLink.addEventListener('mouseenter', () => {
+					childLink.style.color = '#00ffff !important';
+				});
+				childLink.addEventListener('mouseleave', () => {
+					childLink.style.color = '#ffaa00 !important';
+				});
+			}
+		});
 
 		// 触发动画
 		requestAnimationFrame(() => {

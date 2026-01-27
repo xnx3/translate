@@ -1031,9 +1031,14 @@ translate.debug.threeD = {
 			// 高亮3D视图中的元素
 			if (window.__last3DHighlighted) {
 				window.__last3DHighlighted.style.outline = '';
+				window.__last3DHighlighted.style.outlineOffset = '';
 			}
-			clickedElement.style.outline = '3px solid #ff0000 !important';
+			clickedElement.style.outline = '5px solid #ff0000 !important';
+			clickedElement.style.outlineOffset = '2px !important';
 			window.__last3DHighlighted = clickedElement;
+
+			// 显示元素信息框
+			translate.debug.threeD.showElementInfo(clickedElement);
 
 			// 在左侧找到对应元素并滚动到中心
 			scrollToElementInIframe(clickedElement, leftClone);
@@ -1112,6 +1117,9 @@ translate.debug.threeD = {
 		};
 
 		translate.debug.threeD.config.rightPane.onmousedown = (e) => {
+			// 开始拖动时隐藏信息框（因为位置会变化）
+			translate.debug.threeD.hideElementInfo();
+
 			dragging = true;
 			lastX = e.clientX;
 			lastY = e.clientY;
@@ -1158,6 +1166,8 @@ translate.debug.threeD = {
 		// 滚轮缩放（仅在右侧）
 		translate.debug.threeD.config.rightPane.onwheel = (e) => {
 			e.preventDefault();
+			// 缩放时隐藏信息框（因为位置会变化）
+			translate.debug.threeD.hideElementInfo();
 			translate.debug.threeD.config.scale += e.deltaY > 0 ? -0.05 : 0.05;
 			translate.debug.threeD.config.scale = Math.max(0.1, Math.min(1.5, translate.debug.threeD.config.scale));
 			translate.debug.threeD.updateTransform();
@@ -1232,7 +1242,11 @@ translate.debug.threeD = {
     */
     exit: function(){
     	console.log('正在移除...');
+    	// 清理信息框
+    	translate.debug.threeD.hideElementInfo();
 		document.getElementById('split-view-container')?.remove();
+		// 清理动画样式
+		document.getElementById('translate-3d-info-animations')?.remove();
 		window.__3dSplitView = null;
 		document.body.style.overflow = '';
 		console.log('已移除');
@@ -1284,6 +1298,463 @@ translate.debug.threeD = {
 	},
 
 	/**
+	 * 显示元素信息框，带有连接线
+	 * @param {HTMLElement} targetElement - 3D视图中的目标元素
+	 */
+	showElementInfo: function(targetElement) {
+		// 移除之前的信息框和连接线
+		translate.debug.threeD.hideElementInfo();
+
+		const rightPane = translate.debug.threeD.config.rightPane;
+		if (!rightPane || !targetElement) return;
+
+		// 获取元素信息
+		const tagName = targetElement.tagName || 'UNKNOWN';
+		const id = targetElement.id || '';
+		const className = targetElement.className || '';
+		// 处理className，可能是字符串或DOMTokenList
+		const classStr = typeof className === 'string' ? className : (className.toString ? className.toString() : '');
+		// 过滤掉过长的class，只显示前100个字符
+		const displayClass = classStr.length > 100 ? classStr.substring(0, 100) + '...' : classStr;
+
+		// 获取右侧面板的尺寸
+		const paneRect = rightPane.getBoundingClientRect();
+		const paneWidth = paneRect.width;
+		const paneHeight = paneRect.height;
+
+		// 获取当前3D变换参数
+		const config = translate.debug.threeD.config;
+		const scale = config.scale;
+		const rotX = config.rotX * Math.PI / 180; // 转为弧度
+		const rotY = config.rotY * Math.PI / 180;
+		const transX = config.translateX;
+		const transY = config.translateY;
+
+		// 获取元素在 bodyDomClone 中的原始位置（不受3D变换影响）
+		const bodyClone = config.bodyDomClone;
+		let elemOriginalX = 0, elemOriginalY = 0;
+		let el = targetElement;
+
+		// 计算元素相对于 bodyDomClone 的原始位置
+		while (el && el !== bodyClone && el !== document.body) {
+			elemOriginalX += el.offsetLeft;
+			elemOriginalY += el.offsetTop;
+			el = el.offsetParent;
+			if (el === null) break;
+		}
+
+		// 元素的原始尺寸
+		const elemOriginalWidth = targetElement.offsetWidth;
+		const elemOriginalHeight = targetElement.offsetHeight;
+
+		// 元素原始中心点
+		const origCenterX = elemOriginalX + elemOriginalWidth / 2;
+		const origCenterY = elemOriginalY + elemOriginalHeight / 2;
+
+		// 应用3D变换计算屏幕位置
+		// 简化的3D投影计算（考虑旋转和缩放）
+		// 注意：这是一个近似计算，假设透视中心在视口中心
+
+		// 先应用缩放
+		let screenX = origCenterX * scale;
+		let screenY = origCenterY * scale;
+
+		// 应用Y轴旋转（左右旋转）- 影响X坐标
+		screenX = screenX * Math.cos(rotY);
+
+		// 应用X轴旋转（上下倾斜）- 影响Y坐标
+		screenY = screenY * Math.cos(rotX);
+
+		// 应用平移
+		screenX += transX;
+		screenY += transY;
+
+		// 确保坐标在有效范围内
+		const elemCenterX = Math.max(10, Math.min(paneWidth - 10, screenX));
+		const elemCenterY = Math.max(10, Math.min(paneHeight - 10, screenY));
+
+		// 同时获取 getBoundingClientRect 作为备用/验证
+		const elemRect = targetElement.getBoundingClientRect();
+		const elemRectCenterX = elemRect.left - paneRect.left + elemRect.width / 2;
+		const elemRectCenterY = elemRect.top - paneRect.top + elemRect.height / 2;
+
+		// 如果 getBoundingClientRect 的结果在有效范围内且与计算结果差距不大，使用它（更准确）
+		let finalCenterX = elemCenterX;
+		let finalCenterY = elemCenterY;
+
+		if (elemRectCenterX > 0 && elemRectCenterX < paneWidth &&
+			elemRectCenterY > 0 && elemRectCenterY < paneHeight &&
+			elemRect.width > 0 && elemRect.height > 0) {
+			// getBoundingClientRect 结果有效，使用它
+			finalCenterX = elemRectCenterX;
+			finalCenterY = elemRectCenterY;
+		}
+
+		// 获取3D页面内容的边界（bodyDomClone的可见区域）
+		const bodyRect = bodyClone ? bodyClone.getBoundingClientRect() : null;
+		let contentLeft = 0, contentTop = 0, contentRight = paneWidth, contentBottom = paneHeight;
+		if (bodyRect) {
+			contentLeft = Math.max(0, bodyRect.left - paneRect.left);
+			contentTop = Math.max(0, bodyRect.top - paneRect.top);
+			contentRight = Math.min(paneWidth, bodyRect.right - paneRect.left);
+			contentBottom = Math.min(paneHeight, bodyRect.bottom - paneRect.top);
+		}
+
+		// 信息框尺寸
+		const infoBoxWidth = 220;
+		const infoBoxHeight = 130;
+		const margin = 15;
+
+		// 计算四个方向的黑色区域空间
+		const spaceLeft = contentLeft;
+		const spaceRight = paneWidth - contentRight;
+		const spaceTop = contentTop;
+		const spaceBottom = paneHeight - contentBottom;
+
+		// 决定信息框位置：优先放在黑色区域
+		let infoBoxX, infoBoxY, lineEndX, lineEndY;
+		let position = 'right';
+
+		// 计算各方向的可用性
+		const canFitLeft = spaceLeft >= infoBoxWidth + margin;
+		const canFitRight = spaceRight >= infoBoxWidth + margin;
+		const canFitTop = spaceTop >= infoBoxHeight + margin;
+		const canFitBottom = spaceBottom >= infoBoxHeight + margin;
+
+		// 优先级：右侧黑色 > 左侧黑色 > 底部黑色 > 顶部黑色 > 页面内容区域
+		if (canFitRight) {
+			position = 'right';
+			infoBoxX = contentRight + margin;
+			infoBoxY = Math.max(margin, Math.min(paneHeight - infoBoxHeight - margin, finalCenterY - infoBoxHeight / 2));
+		} else if (canFitLeft) {
+			position = 'left';
+			infoBoxX = Math.max(margin, contentLeft - infoBoxWidth - margin);
+			infoBoxY = Math.max(margin, Math.min(paneHeight - infoBoxHeight - margin, finalCenterY - infoBoxHeight / 2));
+		} else if (canFitBottom) {
+			position = 'bottom';
+			infoBoxX = Math.max(margin, Math.min(paneWidth - infoBoxWidth - margin, finalCenterX - infoBoxWidth / 2));
+			infoBoxY = contentBottom + margin;
+		} else if (canFitTop) {
+			position = 'top';
+			infoBoxX = Math.max(margin, Math.min(paneWidth - infoBoxWidth - margin, finalCenterX - infoBoxWidth / 2));
+			infoBoxY = Math.max(margin, contentTop - infoBoxHeight - margin);
+		} else {
+			// 没有足够的黑色区域，放在最大空间的方向
+			const maxSpace = Math.max(spaceRight, spaceLeft, spaceBottom, spaceTop);
+			if (maxSpace === spaceRight || spaceRight > 50) {
+				position = 'right';
+				infoBoxX = paneWidth - infoBoxWidth - margin;
+				infoBoxY = Math.max(margin, Math.min(paneHeight - infoBoxHeight - margin, finalCenterY - infoBoxHeight / 2));
+			} else if (maxSpace === spaceLeft || spaceLeft > 50) {
+				position = 'left';
+				infoBoxX = margin;
+				infoBoxY = Math.max(margin, Math.min(paneHeight - infoBoxHeight - margin, finalCenterY - infoBoxHeight / 2));
+			} else if (maxSpace === spaceBottom) {
+				position = 'bottom';
+				infoBoxX = Math.max(margin, Math.min(paneWidth - infoBoxWidth - margin, finalCenterX - infoBoxWidth / 2));
+				infoBoxY = paneHeight - infoBoxHeight - margin;
+			} else {
+				position = 'top';
+				infoBoxX = Math.max(margin, Math.min(paneWidth - infoBoxWidth - margin, finalCenterX - infoBoxWidth / 2));
+				infoBoxY = margin;
+			}
+		}
+
+		// 计算连接线的起点和终点
+		let lineStartX, lineStartY;
+		if (position === 'right') {
+			lineStartX = infoBoxX;
+			lineStartY = infoBoxY + infoBoxHeight / 2;
+			lineEndX = finalCenterX;
+			lineEndY = finalCenterY;
+		} else if (position === 'left') {
+			lineStartX = infoBoxX + infoBoxWidth;
+			lineStartY = infoBoxY + infoBoxHeight / 2;
+			lineEndX = finalCenterX;
+			lineEndY = finalCenterY;
+		} else if (position === 'bottom') {
+			lineStartX = infoBoxX + infoBoxWidth / 2;
+			lineStartY = infoBoxY;
+			lineEndX = finalCenterX;
+			lineEndY = finalCenterY;
+		} else {
+			// top
+			lineStartX = infoBoxX + infoBoxWidth / 2;
+			lineStartY = infoBoxY + infoBoxHeight;
+			lineEndX = finalCenterX;
+			lineEndY = finalCenterY;
+		}
+
+		// 确保所有坐标都是有效数字
+		if (isNaN(lineStartX) || isNaN(lineStartY) || isNaN(lineEndX) || isNaN(lineEndY) ||
+			isNaN(infoBoxX) || isNaN(infoBoxY)) {
+			console.warn('showElementInfo: 坐标计算出现NaN，跳过显示');
+			return;
+		}
+
+		// 确保连接线有足够的长度（至少20px）
+		const lineLength = Math.sqrt(Math.pow(lineEndX - lineStartX, 2) + Math.pow(lineEndY - lineStartY, 2));
+		if (lineLength < 5) {
+			// 线太短，调整终点位置
+			if (position === 'right' || position === 'left') {
+				lineEndX = position === 'right' ? lineStartX - 30 : lineStartX + 30;
+			} else {
+				lineEndY = position === 'bottom' ? lineStartY - 30 : lineStartY + 30;
+			}
+		}
+
+		// 创建SVG连接线容器
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.id = 'translate-3d-info-line';
+		svg.setAttribute('width', paneWidth);
+		svg.setAttribute('height', paneHeight);
+		svg.style.cssText = `
+			position: absolute !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: ${paneWidth}px !important;
+			height: ${paneHeight}px !important;
+			pointer-events: none !important;
+			z-index: 9998 !important;
+			overflow: visible !important;
+		`;
+
+		// 直接使用纯色绘制连接线（避免渐变ID冲突问题）
+		// 创建连接线路径
+		const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		// 根据方向使用不同的贝塞尔曲线
+		let pathD;
+		if (position === 'left' || position === 'right') {
+			// 水平方向：使用S形曲线
+			const midX = (lineStartX + lineEndX) / 2;
+			pathD = `M ${lineStartX} ${lineStartY} C ${midX} ${lineStartY} ${midX} ${lineEndY} ${lineEndX} ${lineEndY}`;
+		} else {
+			// 垂直方向：使用S形曲线
+			const midY = (lineStartY + lineEndY) / 2;
+			pathD = `M ${lineStartX} ${lineStartY} C ${lineStartX} ${midY} ${lineEndX} ${midY} ${lineEndX} ${lineEndY}`;
+		}
+		line.setAttribute('d', pathD);
+		line.setAttribute('stroke', '#00ff88');
+		line.setAttribute('stroke-width', '1.5');
+		line.setAttribute('fill', 'none');
+		line.setAttribute('stroke-linecap', 'round');
+		line.style.filter = 'drop-shadow(0 0 3px #00ff88)';
+		svg.appendChild(line);
+
+		// 创建端点圆圈（在元素位置）- 外圈发光
+		const circleOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		circleOuter.setAttribute('cx', lineEndX);
+		circleOuter.setAttribute('cy', lineEndY);
+		circleOuter.setAttribute('r', '8');
+		circleOuter.setAttribute('fill', 'rgba(0, 255, 136, 0.2)');
+		circleOuter.setAttribute('stroke', '#00ff88');
+		circleOuter.setAttribute('stroke-width', '1');
+		svg.appendChild(circleOuter);
+
+		// 创建端点圆圈（在元素位置）- 内圈实心
+		const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		circle.setAttribute('cx', lineEndX);
+		circle.setAttribute('cy', lineEndY);
+		circle.setAttribute('r', '4');
+		circle.setAttribute('fill', '#00ff88');
+		circle.setAttribute('stroke', '#ffffff');
+		circle.setAttribute('stroke-width', '1');
+		circle.style.filter = 'drop-shadow(0 0 4px #00ff88)';
+		svg.appendChild(circle);
+
+		// 创建脉冲动画圆圈 - 使用 SMIL 动画（更可靠）
+		const pulseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		pulseCircle.setAttribute('cx', lineEndX);
+		pulseCircle.setAttribute('cy', lineEndY);
+		pulseCircle.setAttribute('r', '5');
+		pulseCircle.setAttribute('fill', 'none');
+		pulseCircle.setAttribute('stroke', '#00ff88');
+		pulseCircle.setAttribute('stroke-width', '1.5');
+		pulseCircle.setAttribute('opacity', '1');
+
+		// 使用 SMIL 动画
+		const animateR = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+		animateR.setAttribute('attributeName', 'r');
+		animateR.setAttribute('from', '5');
+		animateR.setAttribute('to', '18');
+		animateR.setAttribute('dur', '1.2s');
+		animateR.setAttribute('repeatCount', 'indefinite');
+		pulseCircle.appendChild(animateR);
+
+		const animateOpacity = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+		animateOpacity.setAttribute('attributeName', 'opacity');
+		animateOpacity.setAttribute('from', '1');
+		animateOpacity.setAttribute('to', '0');
+		animateOpacity.setAttribute('dur', '1.2s');
+		animateOpacity.setAttribute('repeatCount', 'indefinite');
+		pulseCircle.appendChild(animateOpacity);
+
+		svg.appendChild(pulseCircle);
+
+		// 在信息框端也添加一个小圆点
+		const startCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		startCircle.setAttribute('cx', lineStartX);
+		startCircle.setAttribute('cy', lineStartY);
+		startCircle.setAttribute('r', '3');
+		startCircle.setAttribute('fill', '#00aaff');
+		startCircle.setAttribute('stroke', '#ffffff');
+		startCircle.setAttribute('stroke-width', '0.5');
+		svg.appendChild(startCircle);
+
+		// 创建选中元素的高亮覆盖层（显示元素的实际区域）
+		// 注意：elemRect 已在前面获取过，直接使用
+		const highlightLeft = elemRect.left - paneRect.left;
+		const highlightTop = elemRect.top - paneRect.top;
+		const highlightWidth = elemRect.width;
+		const highlightHeight = elemRect.height;
+
+		// 只有当元素在可视区域内且有有效尺寸时才显示高亮
+		if (highlightWidth > 0 && highlightHeight > 0 &&
+			highlightLeft > -highlightWidth && highlightLeft < paneWidth &&
+			highlightTop > -highlightHeight && highlightTop < paneHeight) {
+
+			// 创建高亮矩形（带动画边框）
+			const highlightRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+			highlightRect.setAttribute('x', highlightLeft);
+			highlightRect.setAttribute('y', highlightTop);
+			highlightRect.setAttribute('width', highlightWidth);
+			highlightRect.setAttribute('height', highlightHeight);
+			highlightRect.setAttribute('fill', 'rgba(0, 255, 136, 0.1)');
+			highlightRect.setAttribute('stroke', '#00ff88');
+			highlightRect.setAttribute('stroke-width', '1.5');
+			highlightRect.setAttribute('stroke-dasharray', '6,4');
+			highlightRect.style.filter = 'drop-shadow(0 0 4px #00ff88)';
+
+			// 添加边框动画
+			const animateDash = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+			animateDash.setAttribute('attributeName', 'stroke-dashoffset');
+			animateDash.setAttribute('from', '0');
+			animateDash.setAttribute('to', '30');
+			animateDash.setAttribute('dur', '1s');
+			animateDash.setAttribute('repeatCount', 'indefinite');
+			highlightRect.appendChild(animateDash);
+
+			svg.appendChild(highlightRect);
+
+			// 在高亮区域四角添加角标
+			const cornerSize = Math.min(12, highlightWidth / 4, highlightHeight / 4);
+			const corners = [
+				{ x: highlightLeft, y: highlightTop, dx: 1, dy: 1 }, // 左上
+				{ x: highlightLeft + highlightWidth, y: highlightTop, dx: -1, dy: 1 }, // 右上
+				{ x: highlightLeft, y: highlightTop + highlightHeight, dx: 1, dy: -1 }, // 左下
+				{ x: highlightLeft + highlightWidth, y: highlightTop + highlightHeight, dx: -1, dy: -1 } // 右下
+			];
+
+			corners.forEach(corner => {
+				const cornerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+				const pathData = `M ${corner.x} ${corner.y + corner.dy * cornerSize} L ${corner.x} ${corner.y} L ${corner.x + corner.dx * cornerSize} ${corner.y}`;
+				cornerPath.setAttribute('d', pathData);
+				cornerPath.setAttribute('stroke', '#ffffff');
+				cornerPath.setAttribute('stroke-width', '1.5');
+				cornerPath.setAttribute('fill', 'none');
+				cornerPath.setAttribute('stroke-linecap', 'square');
+				cornerPath.style.filter = 'drop-shadow(0 0 2px #00ff88)';
+				svg.appendChild(cornerPath);
+			});
+		}
+
+		// 创建信息框
+		const infoBox = document.createElement('div');
+		infoBox.id = 'translate-3d-info-box';
+		infoBox.style.cssText = `
+			position: absolute !important;
+			left: ${infoBoxX}px !important;
+			top: ${infoBoxY}px !important;
+			width: ${infoBoxWidth}px !important;
+			background: linear-gradient(135deg, rgba(10, 20, 30, 0.95), rgba(20, 40, 60, 0.95)) !important;
+			border: 1px solid rgba(0, 255, 136, 0.5) !important;
+			border-radius: 8px !important;
+			padding: 12px !important;
+			box-shadow:
+				0 0 20px rgba(0, 255, 136, 0.3),
+				inset 0 0 20px rgba(0, 255, 136, 0.05) !important;
+			z-index: 10001 !important;
+			font-family: 'Courier New', monospace !important;
+			color: #e0e0e0 !important;
+			font-size: 12px !important;
+			backdrop-filter: blur(10px) !important;
+			transform: scale(0.8) !important;
+			opacity: 0 !important;
+			transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+		`;
+
+		// 信息框内容
+		infoBox.innerHTML = `
+			<div style="
+				color: #00ff88 !important;
+				font-size: 14px !important;
+				font-weight: bold !important;
+				margin-bottom: 10px !important;
+				padding-bottom: 8px !important;
+				border-bottom: 1px solid rgba(0, 255, 136, 0.3) !important;
+				text-shadow: 0 0 10px rgba(0, 255, 136, 0.5) !important;
+			">元素信息</div>
+			<div style="margin-bottom: 6px !important;">
+				<span style="color: #00aaff !important;">TAG:</span>
+				<span style="color: #ffffff !important; font-weight: bold !important;">${tagName}</span>
+			</div>
+			<div style="margin-bottom: 6px !important;">
+				<span style="color: #00aaff !important;">ID:</span>
+				<span style="color: #ffaa00 !important;">${id || '<无>'}</span>
+			</div>
+			<div style="word-break: break-all !important;">
+				<span style="color: #00aaff !important;">CLASS:</span>
+				<span style="color: #ff88ff !important; font-size: 11px !important;">${displayClass || '<无>'}</span>
+			</div>
+		`;
+
+		// 添加动画样式
+		const animStyleId = 'translate-3d-info-animations';
+		if (!document.getElementById(animStyleId)) {
+			const animStyle = document.createElement('style');
+			animStyle.id = animStyleId;
+			animStyle.textContent = `
+				@keyframes dash-animation {
+					to {
+						stroke-dashoffset: 0;
+					}
+				}
+				@keyframes pulse-animation {
+					0% {
+						r: 6;
+						opacity: 1;
+					}
+					100% {
+						r: 20;
+						opacity: 0;
+					}
+				}
+			`;
+			document.head.appendChild(animStyle);
+		}
+
+		// 添加到右侧面板
+		rightPane.appendChild(svg);
+		rightPane.appendChild(infoBox);
+
+		// 触发动画
+		requestAnimationFrame(() => {
+			infoBox.style.transform = 'scale(1)';
+			infoBox.style.opacity = '1';
+		});
+	},
+
+	/**
+	 * 隐藏元素信息框和连接线
+	 */
+	hideElementInfo: function() {
+		const infoBox = document.getElementById('translate-3d-info-box');
+		const infoLine = document.getElementById('translate-3d-info-line');
+		if (infoBox) infoBox.remove();
+		if (infoLine) infoLine.remove();
+	},
+
+	/**
 	* 在3D视图中聚焦并居中显示指定元素
 	* @param {HTMLElement} leftElement - 左侧页面中被点击的元素
 	*
@@ -1295,6 +1766,9 @@ translate.debug.threeD = {
 	* 5. 延迟0.5秒后，向右下倾斜3度
 	*/
 	focusElement: function (leftElement) {
+		//隐藏元素信息框，如果有的话
+		translate.debug.threeD.hideElementInfo();
+
 		// 步骤1: 通过DOM路径找到3D视图中的对应元素
 		const path = translate.debug.threeD.getElementPath(leftElement);
 		const targetElement = translate.debug.threeD.findElementByPath(translate.debug.threeD.config.bodyDomClone, path);
@@ -1380,7 +1854,12 @@ translate.debug.threeD = {
 						translate.debug.threeD.config.rotY = 3;  // 向右旋转3度
 						translate.debug.threeD.updateTransform();
 						console.log('✅ 已应用3度倾斜效果');
-					}, 1500);
+
+						// 步骤6: 显示元素信息框（在倾斜效果后显示，确保位置准确）
+						setTimeout(() => {
+							translate.debug.threeD.showElementInfo(targetElement);
+						}, 200);
+					}, 100);
 
 				} catch (err) {
 					console.warn('⚠️ 居中计算出错:', err);

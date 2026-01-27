@@ -1043,6 +1043,16 @@ translate.debug.threeD = {
 
 			if (layerType !== 'container') {
 				// 非纯容器元素：根据层级类型显示不同的视觉效果
+				// 为不同层级设置不同的z-index，确保交互元素在最上层
+				let zIndex = 1;
+				if (layerType === 'interactive') {
+					zIndex = 1000; // 交互元素最高优先级
+				} else if (layerType === 'text') {
+					zIndex = 500; // 文本元素中等优先级
+				} else if (layerType === 'container-with-text') {
+					zIndex = 100; // 包含文本的容器较低优先级
+				}
+
 				el.style.cssText += `
 					transform: translateZ(${stackHeight + zOffset}px) !important;
 					transform-style: preserve-3d !important;
@@ -1052,6 +1062,7 @@ translate.debug.threeD = {
 						0 0 12px rgba(0, 255, 136, 0.4) !important;
 					border-radius: 3px !important;
 					position: relative !important;
+					z-index: ${zIndex} !important;
 				`;
 
 				// 创建3D厚度效果（底面）- 明亮的绿色
@@ -1070,15 +1081,16 @@ translate.debug.threeD = {
 				el.appendChild(bottom);
 
 			} else {
-				// 容器元素：颜色淡，不抢眼
+				// 容器元素：颜色非常淡，不遮挡上层文本元素
 				el.style.cssText += `
 					transform: translateZ(${stackHeight}px) !important;
 					transform-style: preserve-3d !important;
-					outline: 1px solid rgba(100, 150, 200, 0.15) !important;
+					outline: 1px solid rgba(100, 150, 200, 0.05) !important;
 					position: relative !important;
+					z-index: 1 !important;
 				`;
 
-				// 创建3D厚度效果（底面）- 淡色
+				// 创建3D厚度效果（底面）- 非常淡的颜色
 				const bottom = document.createElement('div');
 				bottom.style.cssText = `
 					position: absolute !important;
@@ -1086,7 +1098,7 @@ translate.debug.threeD = {
 					left: 0 !important;
 					width: 100% !important;
 					height: 100% !important;
-					background: rgba(100, 150, 200, 0.08) !important;
+					background: rgba(100, 150, 200, 0.02) !important;
 					transform: translateZ(-${baseThickness}px) !important;
 					pointer-events: none !important;
 				`;

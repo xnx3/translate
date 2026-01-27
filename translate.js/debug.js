@@ -1212,6 +1212,13 @@ translate.debug.threeD = {
 		};
 
 		translate.debug.threeD.config.rightPane.onmousedown = (e) => {
+			// 检查点击目标是否是信息框或其子元素
+			const infoBox = document.getElementById('translate-3d-info-box');
+			if (infoBox && (e.target === infoBox || infoBox.contains(e.target))) {
+				// 点击的是信息框，不触发拖动
+				return;
+			}
+
 			// 开始拖动时隐藏信息框（因为位置会变化）
 			translate.debug.threeD.hideElementInfo();
 
@@ -1260,6 +1267,13 @@ translate.debug.threeD = {
 
 		// 滚轮缩放（仅在右侧）
 		translate.debug.threeD.config.rightPane.onwheel = (e) => {
+			// 检查滚动目标是否是信息框或其子元素
+			const infoBox = document.getElementById('translate-3d-info-box');
+			if (infoBox && (e.target === infoBox || infoBox.contains(e.target))) {
+				// 在信息框上滚动，不触发3D视图缩放
+				return;
+			}
+
 			e.preventDefault();
 			// 缩放时隐藏信息框（因为位置会变化）
 			translate.debug.threeD.hideElementInfo();

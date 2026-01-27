@@ -707,6 +707,82 @@ translate.debug.threeD = {
 		scale: 0.45,
     },
 
+	/**
+	 * 获取元素的层级类型，用于确定 Z 轴偏移量
+	 * 返回值：
+	 * - 'interactive': 交互元素（A, BUTTON, INPUT 等）- 最高层
+	 * - 'text': 文本元素（P, SPAN, H1-H6 等）- 中间层
+	 * - 'container-with-text': 包含文本的容器（DIV with text）- 较低层
+	 * - 'container': 纯容器元素 - 最低层
+	 */
+	getElementLayerType: function(element){
+		if (!element || !element.tagName) return 'container';
+
+		const tag = element.tagName.toUpperCase();
+
+		// 交互元素 - 最高优先级
+		if (['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'OPTION'].includes(tag)) {
+			return 'interactive';
+		}
+
+		// 文本元素 - 中等优先级
+		if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'LABEL',
+			 'LI', 'TD', 'TH', 'BLOCKQUOTE', 'PRE', 'CODE',
+			 'EM', 'STRONG', 'B', 'I', 'U'].includes(tag)) {
+			return 'text';
+		}
+
+		// 容器元素 - 检查是否包含文本
+		if (['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'MAIN', 'ASIDE'].includes(tag)) {
+			// 检查是否有直接的文本子节点
+			for (let i = 0; i < element.childNodes.length; i++) {
+				const child = element.childNodes[i];
+				if (child.nodeType === 3 && child.textContent.trim().length > 0) {
+					return 'container-with-text';
+				}
+			}
+			return 'container';
+		}
+
+		return 'container';
+	},
+
+	/**
+	 * 检查元素是否是进行显示文本的元素。
+	 * 这里的显示文本，是指比如：
+	 * button 按钮，会显示按钮文字，那么也属于
+	 * a 标签，会显示链接文字，那么也属于
+	 * textarea、input、select、option 等，也会显示文本，那么也属于
+	 * div、p 等，会判断它里面是否有文本，有的话那么也属于；而如果他们只是作为一个容器，那就不属于文本。
+	 *
+	 * 是，属于，则返回true
+	 */
+	isTextElement: function(element){
+		if (!element || !element.tagName) return false;
+
+		const tag = element.tagName.toUpperCase();
+
+		// 这些元素本身就是显示文本的
+		if (['BUTTON', 'A', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'LABEL',
+			 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'LI', 'TD', 'TH',
+			 'BLOCKQUOTE', 'PRE', 'CODE', 'EM', 'STRONG', 'B', 'I', 'U'].includes(tag)) {
+			return true;
+		}
+
+		// 对于 div 等容器元素，检查是否直接包含文本节点
+		if (['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'MAIN', 'ASIDE'].includes(tag)) {
+			// 检查是否有直接的文本子节点（不是空白）
+			for (let i = 0; i < element.childNodes.length; i++) {
+				const child = element.childNodes[i];
+				if (child.nodeType === 3 && child.textContent.trim().length > 0) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	},
+
     //初始化3D分屏查看器
     init: function(){
 		// 检查是否已运行
@@ -923,11 +999,20 @@ translate.debug.threeD = {
 		});
 
 		//console.log('🔍 处理3D元素...');
-		const elements = translate.debug.threeD.config.bodyDomClone.querySelectorAll('div, section, article, p, h1, h2, h3, h4, h5, h6, span, a, li, header, footer, nav, main');
+		const elements = translate.debug.threeD.config.bodyDomClone.querySelectorAll('*');
 		//console.log(`📊 找到 ${elements.length} 个元素`);
+
+		// 基础层厚度
+		const baseThickness = translate.debug.threeD.config.boxThickness;
 
 		let count = 0;
 		elements.forEach((el) => {
+			// 跳过 script, style, meta 等非可视元素
+			const tag = el.tagName.toUpperCase();
+			if (['SCRIPT', 'STYLE', 'META', 'LINK', 'HEAD', 'TITLE', 'BR', 'HR', 'NOSCRIPT'].includes(tag)) {
+				return;
+			}
+
 			// 计算深度
 			let depth = 0;
 			let p = el.parentElement;
@@ -936,68 +1021,40 @@ translate.debug.threeD = {
 				p = p.parentElement;
 			}
 
-			// 累积高度：父元素的高度 + 自己的位置
-			const stackHeight = depth * translate.debug.threeD.config.boxThickness;
+			// 层级高度：深度 * 每层厚度
+			const stackHeight = depth * baseThickness;
 
-			const isText = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'A', 'LI', 'BUTTON'].includes(el.tagName);
+			// 获取元素的层级类型
+			const layerType = translate.debug.threeD.getElementLayerType(el);
+
+			// 根据层级类型计算 Z 轴偏移量
+			let zOffset = 0;
+			if (layerType === 'interactive') {
+				zOffset = baseThickness * 2.5; // 交互元素（A, BUTTON）最高层
+			} else if (layerType === 'text') {
+				zOffset = baseThickness * 1.5; // 文本元素（P, SPAN）中间层
+			} else if (layerType === 'container-with-text') {
+				zOffset = baseThickness * 0.5; // 包含文本的容器较低层
+			}
+			// container 类型 zOffset = 0，无额外偏移
 
 			// 设置元素为3D盒子
 			el.style.transformStyle = 'preserve-3d';
 
-			if (isText) {
-				// 文本元素：更厚的长方体，更明显
-				const textThickness = 60;
+			if (layerType !== 'container') {
+				// 非纯容器元素：根据层级类型显示不同的视觉效果
 				el.style.cssText += `
-					transform: translateZ(${stackHeight}px) !important;
+					transform: translateZ(${stackHeight + zOffset}px) !important;
 					transform-style: preserve-3d !important;
-					background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 255, 240, 0.98)) !important;
+					background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 255, 250, 0.95)) !important;
 					box-shadow:
-						0 0 0 1px rgba(0, 255, 136, 0.3),
-						0 ${textThickness}px 0 rgba(0, 255, 136, 0.15),
-						0 0 20px rgba(0, 255, 136, 0.2) !important;
-					padding: 3px 6px !important;
+						0 0 0 1px rgba(0, 255, 136, 0.6),
+						0 0 12px rgba(0, 255, 136, 0.4) !important;
 					border-radius: 3px !important;
 					position: relative !important;
 				`;
 
-				// 创建3D厚度效果（侧面）
-				const sides = document.createElement('div');
-				sides.style.cssText = `
-					position: absolute !important;
-					top: 0 !important;
-					left: 0 !important;
-					width: 100% !important;
-					height: 100% !important;
-					background: rgba(0, 255, 136, 0.3) !important;
-					transform: translateZ(-${textThickness}px) !important;
-					border-radius: 3px !important;
-					pointer-events: none !important;
-				`;
-				el.appendChild(sides);
-
-			} else {
-				// 容器元素：标准长方体
-				let containerStyle = `
-					transform: translateZ(${stackHeight}px) !important;
-					transform-style: preserve-3d !important;
-					outline: 1px solid rgba(100, 150, 255, 0.3) !important;
-					position: relative !important;
-					box-shadow:
-						0 0 0 1px rgba(100, 150, 255, 0.2),
-						0 ${translate.debug.threeD.config.boxThickness}px 0 rgba(100, 150, 255, 0.1) !important;
-				`;
-
-				// 根据配置决定是否添加模糊效果
-				if (translate.debug.threeD.config.enableBlur) {
-					containerStyle += `
-						filter: blur(${translate.debug.threeD.config.blurAmount}) !important;
-						opacity: ${translate.debug.threeD.config.containerOpacity} !important;
-					`;
-				}
-
-				el.style.cssText += containerStyle;
-
-				// 创建3D厚度效果（底面）
+				// 创建3D厚度效果（底面）- 明亮的绿色
 				const bottom = document.createElement('div');
 				bottom.style.cssText = `
 					position: absolute !important;
@@ -1005,10 +1062,33 @@ translate.debug.threeD = {
 					left: 0 !important;
 					width: 100% !important;
 					height: 100% !important;
-					background: rgba(100, 150, 255, 0.15) !important;
-					transform: translateZ(-${translate.debug.threeD.config.boxThickness}px) !important;
+					background: rgba(0, 255, 136, 0.4) !important;
+					transform: translateZ(-${baseThickness}px) !important;
+					border-radius: 3px !important;
 					pointer-events: none !important;
-					outline: 1px solid rgba(100, 150, 255, 0.2) !important;
+				`;
+				el.appendChild(bottom);
+
+			} else {
+				// 容器元素：颜色淡，不抢眼
+				el.style.cssText += `
+					transform: translateZ(${stackHeight}px) !important;
+					transform-style: preserve-3d !important;
+					outline: 1px solid rgba(100, 150, 200, 0.15) !important;
+					position: relative !important;
+				`;
+
+				// 创建3D厚度效果（底面）- 淡色
+				const bottom = document.createElement('div');
+				bottom.style.cssText = `
+					position: absolute !important;
+					top: 0 !important;
+					left: 0 !important;
+					width: 100% !important;
+					height: 100% !important;
+					background: rgba(100, 150, 200, 0.08) !important;
+					transform: translateZ(-${baseThickness}px) !important;
+					pointer-events: none !important;
 				`;
 				el.appendChild(bottom);
 			}
@@ -1401,7 +1481,7 @@ translate.debug.threeD = {
 		}
 
 		// 信息框尺寸
-		const infoBoxWidth = 220;
+		const infoBoxWidth = 300;
 		const infoBoxHeight = 130;
 		const margin = 15;
 
@@ -1859,7 +1939,7 @@ translate.debug.threeD = {
 						setTimeout(() => {
 							translate.debug.threeD.showElementInfo(targetElement);
 						}, 200);
-					}, 100);
+					}, 1);
 
 				} catch (err) {
 					console.warn('⚠️ 居中计算出错:', err);

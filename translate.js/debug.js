@@ -1805,7 +1805,7 @@ translate.debug.threeD = {
 			const parentTag = parentElement.tagName || 'UNKNOWN';
 			const parentId = parentElement.id ? `#${parentElement.id}` : '';
 			const parentClass = parentElement.className ? `.${String(parentElement.className).split(' ')[0]}` : '';
-			parentInfo = '<span class="parent-link" style="color: #00ff88 !important; cursor: pointer !important; text-decoration: underline !important;" onclick="window.translate.debug.threeD.showElementInfo(translate.debug.threeD.config.currentShowElement.parentElement);">'+parentTag+parentId+parentClass+'</span>';
+			parentInfo = '<span class="parent-link" style="color: #00ff88 !important; cursor: pointer !important; text-decoration: underline !important;" >'+parentTag+parentId+parentClass+'</span>';
 		}
 
 		// 获取子元素信息
@@ -1837,29 +1837,46 @@ translate.debug.threeD = {
 		//获取当前元素中可被翻译的node节点
 		const translateNodes = translate.debug.whileNodes(targetElement)
 		let translateNodesString = '';
+		let translateNodesForClick = []; // 存储可点击的节点信息
 		for(let i=0;i<translateNodes.length;i++){
 			if(translateNodes[i].isSameNode(targetElement)){
 				continue;
 			}
 			let analyseGets = translate.element.nodeAnalyse.gets(translateNodes[i]);
 			for(let j=0;j<analyseGets.length;j++){
+				let nodeTagName = '';
+				let targetNodeForClick = translateNodes[i]; // 默认使用当前节点
+
 				switch (translateNodes[i].nodeType){
 					case 1:
-						translateNodesString = translateNodesString + translateNodes[i].tagName;
+						nodeTagName = translateNodes[i].tagName;
 						break;
 					case 2:
-						translateNodesString = translateNodesString + translateNodes[i].nodeName;
+						nodeTagName = translateNodes[i].nodeName;
 						break;
 					case 3:
 						//转成父级的element
-						//translateNodesString = translateNodesString + 'Text';
-						translateNodesString = translateNodesString + translateNodes[i].parentElement.tagName;
-						break;	
+						nodeTagName = translateNodes[i].parentElement.tagName;
+						targetNodeForClick = translateNodes[i].parentElement; // 文本节点点击时定位到父元素
+						break;
 					default:
-						translateNodesString = translateNodesString + 'nodeType:'+translateNodes[i].nodeType;
+						nodeTagName = 'nodeType:'+translateNodes[i].nodeType;
 						break;
 				}
-				translateNodesString = translateNodesString + (analyseGets[j].attribute.length > 0? '.'+analyseGets[j].attribute:'') + ' : ' + (analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) + ' <br/>';
+
+				// 存储节点信息用于后续点击事件
+				const nodeIndex = translateNodesForClick.length;
+				translateNodesForClick.push(targetNodeForClick);
+
+				// 生成可点击的 HTML
+				translateNodesString = translateNodesString +
+					`<span class="translate-node-link" data-node-index="${nodeIndex}" style="color: #00ff88 !important; cursor: pointer !important; text-decoration: underline !important;">` +
+					nodeTagName +
+					(analyseGets[j].attribute.length > 0? '.'+analyseGets[j].attribute:'') +
+					'</span>' +
+					' : ' +
+					(analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) +
+					' <br/>';
 			}
 
 			/*
@@ -2030,6 +2047,40 @@ translate.debug.threeD = {
 				});
 				childLink.addEventListener('mouseleave', () => {
 					childLink.style.color = '#ffaa00 !important';
+				});
+			}
+		});
+
+		// 为 translate.node 节点链接添加点击事件
+		const translateNodeLinks = infoBox.querySelectorAll('.translate-node-link');
+		translateNodeLinks.forEach((nodeLink) => {
+			const nodeIndex = parseInt(nodeLink.getAttribute('data-node-index'));
+			const nodeElement = translateNodesForClick[nodeIndex];
+
+			if (nodeElement) {
+				nodeLink.addEventListener('click', (e) => {
+					e.stopPropagation();
+					console.log('🎯 点击翻译节点，定位到:', nodeElement.tagName || nodeElement.nodeName);
+
+					// 高亮节点元素
+					if (window.__last3DHighlighted) {
+						window.__last3DHighlighted.style.outline = '';
+						window.__last3DHighlighted.style.outlineOffset = '';
+					}
+					nodeElement.style.outline = '5px solid #ff0000 !important';
+					nodeElement.style.outlineOffset = '2px !important';
+					window.__last3DHighlighted = nodeElement;
+
+					// 显示节点元素的信息
+					translate.debug.threeD.showElementInfo(nodeElement);
+				});
+
+				// 添加悬停效果
+				nodeLink.addEventListener('mouseenter', () => {
+					nodeLink.style.color = '#00ffff !important';
+				});
+				nodeLink.addEventListener('mouseleave', () => {
+					nodeLink.style.color = '#00ff88 !important';
 				});
 			}
 		});

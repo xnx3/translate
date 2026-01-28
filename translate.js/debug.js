@@ -1829,6 +1829,58 @@ translate.debug.threeD = {
 			}
 		}
 
+		//判断当前元素是否是忽略翻译的元素, true 是
+		var isIgnoreElement = translate.ignore.isIgnore(targetElement);
+
+		//获取当前元素中可被翻译的node节点
+		const translateNodes = translate.debug.whileNodes(targetElement)
+		console.log(translateNodes)
+		let translateNodesString = '';
+		for(let i=0;i<translateNodes.length;i++){
+			if(translateNodes[i].isSameNode(targetElement)){
+				continue;
+			}
+			let analyseGets = translate.element.nodeAnalyse.gets(translateNodes[i]);
+			console.log(analyseGets);
+			for(let j=0;j<analyseGets.length;j++){
+				switch (translateNodes[i].nodeType){
+					case 1:
+						translateNodesString = translateNodesString + translateNodes[i].tagName;
+						break;
+					case 2:
+						translateNodesString = translateNodesString + translateNodes[i].nodeName;
+						break;
+					case 3:
+						translateNodesString = translateNodesString + 'Text';
+						break;	
+					default:
+						translateNodesString = translateNodesString + 'nodeType:'+translateNodes[i].nodeType;
+						break;
+				}
+				translateNodesString = translateNodesString + (analyseGets[j].attribute.length > 0? '.'+analyseGets[j].attribute:'') + ' :' + (analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) + ' ';
+			}
+
+			/*
+			switch (translateNodes[i].nodeType){
+				case 1:
+					translateNodesString = translateNodesString + translateNodes[i].tagName;
+					break;
+				case 2:
+					translateNodesString = translateNodesString + translateNodes[i].nodeName;
+					break;
+				case 3:
+					if(translateNodes[i].textContent.trim().length > 0){ //如果没有可以显示的文本，自然也不需要翻译的，所以不需要翻译的是不需要显示出来的
+						translateNodesString = translateNodesString + 'Text:' + (translateNodes[i].textContent.trim().length > 2 ? translateNodes[i].textContent.trim().substring(0, 2) + '...' : translateNodes[i].textContent.trim());
+					}
+					break;	
+				default:
+					translateNodesString = translateNodesString + 'nodeType:'+translateNodes[i].nodeType;
+					break;
+			}
+			*/
+			translateNodesString = translateNodesString + ' <br/>';
+		}
+
 		// 信息框内容
 		infoBox.innerHTML = `
 			<div style="
@@ -1851,6 +1903,14 @@ translate.debug.threeD = {
 			<div style="margin-bottom: 6px !important; word-break: break-all !important;">
 				<span style="color: #00aaff !important;">CLASS:</span>
 				<span style="color: #ff88ff !important; font-size: 11px !important;">${displayClass || '<无>'}</span>
+			</div>
+			<div style="margin-bottom: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">
+				<span style="color: #00aaff !important;">忽略翻译:</span>
+				${isIgnoreElement? '是':'否'}
+			</div>
+			<div style="word-break: break-all !important;">
+				<span style="color: #00aaff !important;">translate.node:</span>
+				<div style="margin-top: 4px !important; line-height: 1.6 !important;" class="ignore">${translateNodesString}</div>
 			</div>
 			<div style="margin-bottom: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">
 				<span style="color: #00aaff !important;">父元素:</span>
@@ -2184,7 +2244,7 @@ translate.debug.threeD = {
 
 					// 应用平移变换
 					translate.debug.threeD.updateTransform();
-
+					/*
 					console.log('✅ 元素已垂直居中显示:', targetElement.tagName);
 					console.log('   - 元素offsetTop:', elementOffsetTop);
 					console.log('   - 元素高度:', elementHeight);
@@ -2192,6 +2252,7 @@ translate.debug.threeD = {
 					console.log('   - 面板中心Y:', paneCenterY);
 					console.log('   - Y偏移(原始):', deltaY);
 					console.log('   - Y偏移(显示):', translate.debug.threeD.config.translateY);
+					*/
 
 					// 步骤5: 延迟0.5秒后，向右下倾斜3度
 					setTimeout(() => {

@@ -1794,7 +1794,7 @@ translate.debug.threeD = {
 			transform: scale(0.8) !important;
 			opacity: 0 !important;
 			transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
-			max-height:390px;
+			max-height:330px;
 			overflow:auto;
 		`;
 
@@ -1883,8 +1883,14 @@ translate.debug.threeD = {
 			//translateNodesString = translateNodesString + ' <br/>';
 		}
 
+		//判断当前元素是否就是最底层的元素Element了，如果是，那么要显示具体的翻译信息
+		if(targetElement.children.length === 0){
+			
+		}
+
+
 		// 信息框内容
-		infoBox.innerHTML = `
+		let infoBoxHtml = `
 			<div style="
 				color: #00ff88 !important;
 				font-size: 14px !important;
@@ -1898,14 +1904,25 @@ translate.debug.threeD = {
 				<span style="color: #00aaff !important;">TAG:</span>
 				<span style="color: #ffffff !important; font-weight: bold !important;">${tagName}</span>
 			</div>
-			<div style="margin-bottom: 6px !important;">
-				<span style="color: #00aaff !important;">ID:</span>
-				<span style="color: #ffaa00 !important;">${id || '<无>'}</span>
-			</div>
-			<div style="margin-bottom: 6px !important; word-break: break-all !important;">
-				<span style="color: #00aaff !important;">CLASS:</span>
-				<span style="color: #ff88ff !important; font-size: 11px !important;">${displayClass || '<无>'}</span>
-			</div>
+		`;
+		if(typeof(id) === 'string' && id.length > 0){
+			infoBoxHtml = infoBoxHtml + `
+				<div style="margin-bottom: 6px !important;">
+					<span style="color: #00aaff !important;">ID:</span>
+					<span style="color: #ffaa00 !important;">${id || '<无>'}</span>
+				</div>
+			`;
+		}
+		if(typeof(displayClass) === 'string' && displayClass.length > 0){
+			infoBoxHtml = infoBoxHtml + `
+				<div style="margin-bottom: 6px !important; word-break: break-all !important;">
+					<span style="color: #00aaff !important;">CLASS:</span>
+					<span style="color: #ff88ff !important; font-size: 11px !important;">${displayClass || '<无>'}</span>
+				</div>
+			`;
+		}
+			
+		infoBoxHtml = infoBoxHtml + `
 			<div style="margin-bottom: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">
 				<span style="color: #00aaff !important;">忽略翻译:</span>
 				${isIgnoreElement? '是':'否'}
@@ -1923,6 +1940,7 @@ translate.debug.threeD = {
 				<div style="margin-top: 4px !important; line-height: 1.6 !important;">${childrenInfo}</div>
 			</div>
 		`;
+		infoBox.innerHTML = infoBoxHtml;
 
 		// 添加动画样式
 		const animStyleId = 'translate-3d-info-animations';

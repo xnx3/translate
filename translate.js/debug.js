@@ -1794,6 +1794,8 @@ translate.debug.threeD = {
 			transform: scale(0.8) !important;
 			opacity: 0 !important;
 			transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+			max-height:390px;
+			overflow:auto;
 		`;
 
 		// 获取父元素信息
@@ -1834,14 +1836,12 @@ translate.debug.threeD = {
 
 		//获取当前元素中可被翻译的node节点
 		const translateNodes = translate.debug.whileNodes(targetElement)
-		console.log(translateNodes)
 		let translateNodesString = '';
 		for(let i=0;i<translateNodes.length;i++){
 			if(translateNodes[i].isSameNode(targetElement)){
 				continue;
 			}
 			let analyseGets = translate.element.nodeAnalyse.gets(translateNodes[i]);
-			console.log(analyseGets);
 			for(let j=0;j<analyseGets.length;j++){
 				switch (translateNodes[i].nodeType){
 					case 1:
@@ -1851,13 +1851,15 @@ translate.debug.threeD = {
 						translateNodesString = translateNodesString + translateNodes[i].nodeName;
 						break;
 					case 3:
-						translateNodesString = translateNodesString + 'Text';
+						//转成父级的element
+						//translateNodesString = translateNodesString + 'Text';
+						translateNodesString = translateNodesString + translateNodes[i].parentElement.tagName;
 						break;	
 					default:
 						translateNodesString = translateNodesString + 'nodeType:'+translateNodes[i].nodeType;
 						break;
 				}
-				translateNodesString = translateNodesString + (analyseGets[j].attribute.length > 0? '.'+analyseGets[j].attribute:'') + ' :' + (analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) + ' ';
+				translateNodesString = translateNodesString + (analyseGets[j].attribute.length > 0? '.'+analyseGets[j].attribute:'') + ' : ' + (analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) + ' <br/>';
 			}
 
 			/*
@@ -1878,7 +1880,7 @@ translate.debug.threeD = {
 					break;
 			}
 			*/
-			translateNodesString = translateNodesString + ' <br/>';
+			//translateNodesString = translateNodesString + ' <br/>';
 		}
 
 		// 信息框内容

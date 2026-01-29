@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.111.20260122',
+	version: '3.18.112.20260129',
 
 	/*js translate.config start*/
 	/*
@@ -1065,21 +1065,43 @@ var translate = {
 	},
 
 	/*
-		判定当前是否使用翻译，也就是使用多语言切换能力
-		注意，它里面会触发 translate.language.getLocal() 进行判定，要保证提前设置了本地语种，或在dom加载完（网页内容已渲染完毕，以便能进行本地语种自动识别）后使用此
+		当前是否已进行了翻译处理
+		也就是已经使用多语言切换能力进行切换语种了。
+
+		1. 如果已经进行了语言切换，但是还在切换中，尚未切换完，也是返回true
+		2. 如果当前未进行过任何语言切换，那么返回true
+		3. 如果当前进行了切换语言，但是页面并未进行任何翻译时，也返回true。比如以下两种情况
+				1. 点击了切换语言的select，切换到了其他语言
+				2. 触发了 translate.changeLanguage(...)  
+		4. 如果设置了本地语种也进行强制翻译 https://translate.zvo.cn/289574.html ，且当前语种跟本地语种也是相同时，无论是否实际上页面也没有元素真正进行了翻译，都会认定为当前是进行翻译处理了，会返回true
 		
-		@param to 要以什么语种显示。 如果不传入，则默认赋予 translate.to
+
+		注意，它里面会触发 translate.language.getLocal() 进行判定，要保证以下两种满足其中一个：
+			1. 提前设置了本地语种
+			2. 在dom加载完（网页内容已渲染完毕，以便能进行本地语种自动识别）后使用此
+		
+		@param to 判断当前是否是以这种语种显示。 如果不传入，则是判断当前页面是否有使用 translate.js 进行了翻译。只要有一个元素参与了翻译，那也是进行了。
 
 		true：是
 		false：否，不需要进行任何翻译
 	*/
-	isTranslate: function(to){
-		if(typeof(to) === 'undefined'){
+	isTranslateExecute: function(to){
+		if(typeof(to) !== 'string' || to.length === 0){
+			//没有设置to参数，那么就是对整体是否进行了翻译进行判断了。
+
+			//判断 translate.to 参数，如果没有值，那肯定就是没有进行任何翻译。
+			if(typeof(translate.to) !== 'string' || translate.to.length === 0){
+				return false;
+			}
 			to = translate.to;
 		}
-		if(to.length === 0){
-			return false;
-		}
+
+		//判断  如果没有值，那肯定没有参与过翻译。
+		//这个不应该，不管是否产生了元素翻译结果，但是动作有过切换，就是true
+		//if(typeof(translate.node.data) !== 'object' || translate.node.data.size === 0){
+		//	return false;
+		//}
+		
 		if(to === translate.language.getLocal()){
 			if(translate.language.translateLocal){
 				return true;
@@ -1089,6 +1111,12 @@ var translate = {
 		}else{
 			return true;
 		}
+	},
+	/*
+		废弃，请使用 translate.isTranslateExecuted(to);
+	*/
+	isTranslate: function(to){
+		return translate.isTranslateExecute(to);
 	},
 
 	//自定义翻译术语

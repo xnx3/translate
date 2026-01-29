@@ -789,11 +789,10 @@ translate.debug.threeD = {
     //初始化3D分屏查看器
     init: function(){
 		//检测当前是否已经进行翻译
+		let translateTargetLanguage = ''; //如果有值，则是之前有过翻译，切换到3D 模式后还要进行翻译的
 		if(translate.isTranslate()){
+			translateTargetLanguage = translate.language.getCurrent();
 			translate.reset();
-			setTimeout(() => {
-				msg.alert('您当前已经进行了翻译！<br/>需要在翻译前，启动3D视觉<br/>已自动帮您将语种切换回原语种');
-			}, 500);
 		}
 
 		// 检查是否已运行
@@ -1120,11 +1119,11 @@ translate.debug.threeD = {
 
 			count++;
 			if (count % 300 === 0) {
-				console.log(`⏳ 已处理 ${count}/${elements.length}`);
+				//console.log(`⏳ 已处理 ${count}/${elements.length}`);
 			}
 		});
 
-		console.log(`✅ 处理完成！共 ${count} 个元素`);
+		//console.log(`✅ 处理完成！共 ${count} 个元素`);
 
 		// 为3D视图中的元素添加点击事件
 		translate.debug.threeD.config.bodyDomClone.addEventListener('click', (e) => {
@@ -1350,10 +1349,15 @@ translate.debug.threeD = {
 
 		window.__3dSplitView = true;
 
-		console.log('✅ 分屏3D查看器已启动！');
-		console.log('💡 左侧是原始页面，右侧是3D视图');
-		console.log('💡 在右侧拖动鼠标可以旋转3D视图');
+		//console.log('✅ 分屏3D查看器已启动！');
+		//console.log('💡 左侧是原始页面，右侧是3D视图');
+		//console.log('💡 在右侧拖动鼠标可以旋转3D视图');
 
+		//进行翻译切换
+		setTimeout(() => {
+			//msg.alert('<span class="ignore">您当前已经进行了翻译！<br/>需要在翻译前，启动3D视觉<br/>已自动帮您将语种切换回原语种，并</span>');
+			translate.changeLanguage(translateTargetLanguage);
+		}, 20);
     },
 
     /*
@@ -1524,7 +1528,7 @@ translate.debug.threeD = {
 		}
 
 		// 信息框尺寸
-		const infoBoxWidth = 300;
+		const infoBoxWidth = 280;
 		const infoBoxHeight = 130;
 		const margin = 15;
 
@@ -1865,6 +1869,7 @@ translate.debug.threeD = {
 
 		//获取当前元素中可被翻译的node节点
 		const translateNodes = translate.debug.whileNodes(targetElement)
+		//console.log(translateNodes)
 		let translateNodesString = '';
 		let translateNodesForClick = []; // 存储可点击的节点信息
 		for(let i=0;i<translateNodes.length;i++){
@@ -1872,6 +1877,13 @@ translate.debug.threeD = {
 			if(translateNodes[i].isSameNode(targetElement)){
 				currentTranslateNodeIsThisElement = true;
 			}
+			if(translateNodes[i].nodeType === 3){
+				//文本节点，判断一下这个文本节点的父元素是不是 targetElement
+				if(translateNodes[i].parentElement.isSameNode(targetElement)){
+					currentTranslateNodeIsThisElement = true;
+				}
+			}
+
 			//if(currentTranslateNodeIsThisElement){
 			//	continue;
 			//}
@@ -1912,6 +1924,7 @@ translate.debug.threeD = {
 					(analyseGets[j].text.trim().length > 10 ? analyseGets[j].text.trim().substring(0, 10) + '...' : analyseGets[j].text.trim()) +
 					' <br/>';
 				//生成翻译数据对比， 如果当前是最底层的元素、或者当前元素本身内有文字被翻译
+				//console.log('isBottomLevelElement:'+isBottomLevelElement+', currentTranslateNodeIsThisElement:'+currentTranslateNodeIsThisElement);
 				if(isBottomLevelElement || currentTranslateNodeIsThisElement){
 					let currentTranslateNode = translate.node.get(analyseGets[j].node); //当前翻译的node
 					if(typeof(currentTranslateNode) === 'undefined' || currentTranslateNode === null ){
@@ -1919,11 +1932,11 @@ translate.debug.threeD = {
 					}
 
 					translate.util.formatToHms = (ts) => {
-						const d = new Date(ts * 1000);
+						const d = new Date(ts);
 						const pad = n => n.toString().padStart(2, '0');
 						return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 					};
-					console.log(currentTranslateNode)
+					//console.log(currentTranslateNode)
 					translateNodesString = translateNodesString +
 					`<div class="translate-node-link" style="padding-left:15px; ">` +
 					'翻译前文本 : '+currentTranslateNode.originalText+
@@ -2016,16 +2029,25 @@ translate.debug.threeD = {
 			<div style="word-break: break-all !important;">
 				<span style="color: #00aaff !important;">翻译节点: </span>
 				<div style="margin-top: 4px !important; line-height: 1.6 !important;" class="ignore">${translateNodesString}</div>
-			</div>
-			<div style="margin-bottom: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">
-				<span style="color: #00aaff !important;">父元素: </span>
-				${parentInfo}
-			</div>
-			<div style="word-break: break-all !important;">
-				<span style="color: #00aaff !important;">子元素: </span>
-				<div style="margin-top: 4px !important; line-height: 1.6 !important;">${childrenInfo}</div>
-			</div>
-		`;
+			</div>`;
+		
+		if(parentInfo !== '<无>' || childrenInfo !== '<无>'){
+			infoBoxHtml = infoBoxHtml + '<div style="margin-bottom: 6px !important; margin-top: 6px !important; padding-top: 8px !important; border-top: 1px solid rgba(0, 255, 136, 0.2) !important;">';
+			if(parentInfo !== '<无>'){
+				infoBoxHtml = infoBoxHtml + 
+				`<div style="word-break: break-all !important;">
+					<span style="color: #00aaff !important;">父元素: </span>
+					${parentInfo}
+				</div>`;
+			}
+			if (childrenInfo !== '<无>'){
+				infoBoxHtml = infoBoxHtml + 
+				`<div style="word-break: break-all !important;">
+					<span style="color: #00aaff !important;">子元素: </span>
+					<div style="margin-top: 4px !important; line-height: 1.6 !important;">${childrenInfo}</div>
+				</div>`;
+			}
+		}
 		infoBox.innerHTML = infoBoxHtml;
 
 		// 添加动画样式
@@ -2397,9 +2419,10 @@ translate.debug.threeD = {
 					// 步骤5: 延迟0.5秒后，向右下倾斜3度
 					setTimeout(() => {
 						translate.debug.threeD.config.rotX = 3;  // 向下倾斜3度
-						translate.debug.threeD.config.rotY = 3;  // 向右旋转3度
+						translate.debug.threeD.config.rotY = -45;  // 向右旋转3度
+						translate.debug.threeD.config.translateX = 100; //整体向右移动150px
 						translate.debug.threeD.updateTransform();
-						console.log('✅ 已应用3度倾斜效果');
+						//console.log('✅ 已应用3度倾斜效果');
 
 						// 步骤6: 显示元素信息框（在倾斜效果后显示，确保位置准确）
 						setTimeout(() => {

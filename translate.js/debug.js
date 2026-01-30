@@ -2357,17 +2357,17 @@ translate.debug.threeD = {
 		window.__last3DHighlighted = targetElement;
 
 		// 步骤2: 重置为正常角度（无倾斜、无旋转）
-		translate.debug.threeD.config.rotX = 0;  // 无X轴旋转（不倾斜）
-		translate.debug.threeD.config.rotY = 0;  // 无Y轴旋转（不旋转）
+		//translate.debug.threeD.config.rotX = 0;  // 无X轴旋转（不倾斜）
+		//translate.debug.threeD.config.rotY = 0;  // 无Y轴旋转（不旋转）
 
 		// 步骤3: 缩放到50%（宽度刚好填满3D视图）
-		translate.debug.threeD.config.scale = 0.5;
+		//translate.debug.threeD.config.scale = 0.5;
 
 		// X轴不动，保持为0（宽度对齐）
-		translate.debug.threeD.config.translateX = 0;
+		//translate.debug.threeD.config.translateX = 0;
 
 		// Y轴先重置为0
-		translate.debug.threeD.config.translateY = 0;
+		//translate.debug.threeD.config.translateY = 0;
 
 		// 应用初始变换
 		translate.debug.threeD.updateTransform();
@@ -2418,11 +2418,10 @@ translate.debug.threeD = {
 
 					// 步骤5: 延迟0.5秒后，向右下倾斜3度
 					setTimeout(() => {
-						translate.debug.threeD.config.rotX = 3;  // 向下倾斜3度
-						translate.debug.threeD.config.rotY = -45;  // 向右旋转3度
-						translate.debug.threeD.config.translateX = 100; //整体向右移动150px
-						translate.debug.threeD.updateTransform();
-						//console.log('✅ 已应用3度倾斜效果');
+						//translate.debug.threeD.config.rotX = 3;  // 向下倾斜3度
+						//translate.debug.threeD.config.rotY = -45;  // 向右旋转3度
+						//translate.debug.threeD.config.translateX = 100; //整体向右移动150px
+						//translate.debug.threeD.updateTransform();
 
 						// 步骤6: 显示元素信息框（在倾斜效果后显示，确保位置准确）
 						setTimeout(() => {

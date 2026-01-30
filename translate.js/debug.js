@@ -2194,6 +2194,220 @@ translate.debug.threeD = {
 	},
 	
 	/**
+	 * 使3D视图中的 整个页面/某个元素 相对于整个黑色背景画布，进行居中
+	 * 目的是让网页的3D视图能正好位于浏览器的高度的中间，能更好的进行显示网页的3D效果。
+	 * @param {object} data 这是一个对象： 
+	 * 					{
+	 * 						time:0, //进行的动画时间，会有一个过度的动画。动画持续的时长。单位是毫秒，如果没有设置则是默认0（无动画）
+	 * 						vertical: true, //垂直居中，是相对于浏览器的高度，也就是整个3D区域内的黑色背景画布的高度。 先计算出3D视图中的网页的高度，然后计算出垂直居中的距离移量。 默认不设置则是true。 如果设置为false，则不进行垂直居中。
+	 * 						level:true, //水平居中，参数值同 vertical 参数
+	 * 						element: document.getElementById('a') //元素，是否是相对于这个元素，来进行的居中操作。 如果传入这个元素，则最终目的是让这个元素进行居中，而不是整个3D网页了。 如果没有传入这个设置，则是整个3D网页。
+	 * 					}
+	 * 				
+	 */
+	updateCenter: function(data = {}){
+		// 检查3D视图是否已初始化
+		if (!translate.debug.threeD.config.bodyDomClone || !translate.debug.threeD.config.rightPane) {
+			console.warn('3D视图未初始化，请先调用 translate.debug.threeD.init()');
+			return;
+		}
+
+		// 解析参数，设置默认值
+		const time = data.time || 0;
+		const vertical = data.vertical !== false; // 默认true
+		const level = data.level !== false; // 默认true
+		const element = data.element; // 可选的元素
+
+		// 获取当前的缩放比例
+		const scale = translate.debug.threeD.config.scale;
+
+		// 获取右侧面板的尺寸（黑色背景画布的尺寸）
+		const paneWidth = translate.debug.threeD.config.rightPane.clientWidth;
+		const paneHeight = translate.debug.threeD.config.rightPane.clientHeight;
+
+		let relativeOffsetX = 0;
+		let relativeOffsetY = 0;
+
+		// 如果指定了元素，则针对该元素进行居中
+		if (element) {
+			// 查找3D视图中对应的元素
+			let targetElement = element;
+
+			// 如果传入的是左侧页面的元素，需要找到对应的3D元素
+			if (!translate.debug.threeD.config.bodyDomClone.contains(element)) {
+				const path = translate.debug.threeD.getElementPath(element);
+				targetElement = translate.debug.threeD.findElementByPath(translate.debug.threeD.config.bodyDomClone, path);
+
+				if (!targetElement) {
+					console.warn('⚠️ 未找到对应的3D元素');
+					return;
+				}
+			}
+
+			// 计算元素相对于 bodyDomClone 的位置
+			let elementOffsetTop = 0;
+			let elementOffsetLeft = 0;
+			let el = targetElement;
+
+			while (el && el !== translate.debug.threeD.config.bodyDomClone) {
+				elementOffsetTop += el.offsetTop;
+				elementOffsetLeft += el.offsetLeft;
+				el = el.offsetParent;
+			}
+
+			// 元素的尺寸
+			const elementWidth = targetElement.offsetWidth;
+			const elementHeight = targetElement.offsetHeight;
+
+			// 垂直居中计算
+			if (vertical) {
+				// 元素中心点在原始坐标系中的Y位置
+				const elementCenterY = elementOffsetTop + elementHeight / 2;
+
+				// 面板的垂直中心点（在原始坐标系中，需要除以scale）
+				const paneCenterY = paneHeight / 2 / scale;
+
+				// 计算Y轴需要平移的距离（在原始坐标系中）
+				const deltaY = paneCenterY - elementCenterY;
+
+				// 转换到显示坐标系（需要乘以scale）
+				const targetTranslateY = deltaY * scale;
+
+				// 计算相对于当前位置的偏移量
+				const currentTranslateY = translate.debug.threeD.config.translateY;
+				relativeOffsetY = targetTranslateY - currentTranslateY;
+			}
+
+			// 水平居中计算
+			if (level) {
+				// 元素中心点在原始坐标系中的X位置
+				const elementCenterX = elementOffsetLeft + elementWidth / 2;
+
+				// 面板的水平中心点（在原始坐标系中，需要除以scale）
+				const paneCenterX = paneWidth / 2 / scale;
+
+				// 计算X轴需要平移的距离（在原始坐标系中）
+				const deltaX = paneCenterX - elementCenterX;
+
+				// 转换到显示坐标系（需要乘以scale）
+				const targetTranslateX = deltaX * scale;
+
+				// 计算相对于当前位置的偏移量
+				const currentTranslateX = translate.debug.threeD.config.translateX;
+				relativeOffsetX = targetTranslateX - currentTranslateX;
+			}
+
+		} else {
+			// 针对整个3D网页进行居中
+
+			// 获取3D视图中网页的尺寸
+			const bodyWidth = translate.debug.threeD.config.bodyDomClone.offsetWidth;
+			const bodyHeight = translate.debug.threeD.config.bodyDomClone.offsetHeight;
+
+			// 垂直居中计算
+			if (vertical) {
+				// 计算面板的垂直中心点（在原始坐标系中，需要除以scale）
+				const paneCenterY = paneHeight / 2 / scale;
+
+				// 计算网页的垂直中心点
+				const bodyCenterY = bodyHeight / 2;
+
+				// 计算Y轴需要平移的距离（在原始坐标系中）
+				const deltaY = paneCenterY - bodyCenterY;
+
+				// 转换到显示坐标系（需要乘以scale）
+				const targetTranslateY = deltaY * scale;
+
+				// 计算相对于当前位置的偏移量
+				const currentTranslateY = translate.debug.threeD.config.translateY;
+				relativeOffsetY = targetTranslateY - currentTranslateY;
+			}
+
+			// 水平居中计算
+			if (level) {
+				// 计算面板的水平中心点（在原始坐标系中，需要除以scale）
+				const paneCenterX = paneWidth / 2 / scale;
+
+				// 计算网页的水平中心点
+				const bodyCenterX = bodyWidth / 2;
+
+				// 计算X轴需要平移的距离（在原始坐标系中）
+				const deltaX = paneCenterX - bodyCenterX;
+
+				// 转换到显示坐标系（需要乘以scale）
+				const targetTranslateX = deltaX * scale;
+
+				// 计算相对于当前位置的偏移量
+				const currentTranslateX = translate.debug.threeD.config.translateX;
+				relativeOffsetX = targetTranslateX - currentTranslateX;
+			}
+		}
+
+		// 使用 updateRotate 方法应用居中（改变 translateX 和/或 translateY）
+		translate.debug.threeD.updateRotate(0, 0, relativeOffsetX, relativeOffsetY, time);
+	},
+
+	/**
+	 * 更新3D视图的旋转角度和平移距离
+	 * 注意，这里的旋转角度和平移距离是相对于初始值 translate.debug.threeD.config.rotateX、translate.debug.threeD.config.rotateY、translate.debug.threeD.config.translateX、translate.debug.threeD.config.translateY 的
+	 * 也就是它的旋转及平移，是相对于上一次的值的
+	 * @param {number} rotX - 旋转角度（x轴）
+	 * @param {number} rotX - 旋转角度（x轴）
+	 * @param {number} rotY - 旋转角度（y轴）
+	 * @param {number} translateX - 平移距离（x轴）
+	 * @param {number} translateY - 平移距离（y轴）
+	 * @param {number} time - 进行旋转的动画时间，会有一个旋转动画。动画持续的时长。单位是毫秒，默认0（无动画）
+	 * @returns 
+	 */
+	updateRotate: function(rotX = 0, rotY = 0, translateX = 0, translateY = 0, time=0){
+		// 检查3D视图是否已初始化
+		if (!translate.debug.threeD.config.scene) {
+			console.warn('3D视图未初始化，请先调用 translate.debug.threeD.init()');
+			return;
+		}
+
+		// 保存初始值（用于动画插值）
+		const startRotX = translate.debug.threeD.config.rotX;
+		const startRotY = translate.debug.threeD.config.rotY;
+		const startTranslateX = translate.debug.threeD.config.translateX;
+		const startTranslateY = translate.debug.threeD.config.translateY;
+
+		// 计算目标值（相对于初始值的增量）
+		const targetRotX = startRotX + rotX;
+		const targetRotY = startRotY + rotY;
+		const targetTranslateX = startTranslateX + translateX;
+		const targetTranslateY = startTranslateY + translateY;
+
+		// 如果没有动画时间，直接更新
+		if (time <= 0) {
+			translate.debug.threeD.config.rotX = targetRotX;
+			translate.debug.threeD.config.rotY = targetRotY;
+			translate.debug.threeD.config.translateX = targetTranslateX;
+			translate.debug.threeD.config.translateY = targetTranslateY;
+			translate.debug.threeD.updateTransform();
+			return;
+		}
+
+		// 使用 CSS transition 实现动画
+		const scene = translate.debug.threeD.config.scene;
+		scene.style.transition = `transform ${time}ms ease-in-out`;
+
+		// 更新配置值
+		translate.debug.threeD.config.rotX = targetRotX;
+		translate.debug.threeD.config.rotY = targetRotY;
+		translate.debug.threeD.config.translateX = targetTranslateX;
+		translate.debug.threeD.config.translateY = targetTranslateY;
+
+		// 应用变换（触发动画）
+		translate.debug.threeD.updateTransform();
+
+		// 动画结束后清除 transition
+		setTimeout(() => {
+			scene.style.transition = '';
+		}, time);
+	},
+
+	/**
 	 * 更改3D视图区域内，元素柱状凸出的厚度
 	 * @param {HTMLElement} element - 要更新厚度的元素。 如果传入 undefined 则是当前3D视图区域中所有有厚度的元素
 	 * @param {number} thickness - 新的厚度值（px），会更新 config.boxThickness

@@ -2590,58 +2590,20 @@ translate.debug.threeD = {
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => {
 				try {
-					// 步骤4: 只调整Y轴，将元素垂直居中
+					// 只调整Y轴，将元素垂直居中
+					// 使用 updateCenter 方法实现元素居中
+					translate.debug.threeD.updateCenter({
+						element: targetElement,
+						vertical: true,
+						level: false, // 只垂直居中，不水平居中（X轴不动，保持宽度对齐）
+						time: 200 // 无动画
+					});
 
-					// 方法：使用offsetTop获取元素在文档中的原始位置
-					// 这个值不受transform影响，更可靠
-
-					// 获取元素相对于translate.debug.threeD.config.bodyDomClone的offsetTop
-					let elementOffsetTop = 0;
-					let el = targetElement;
-					while (el && el !== translate.debug.threeD.config.bodyDomClone) {
-						elementOffsetTop += el.offsetTop;
-						el = el.offsetParent;
-					}
-
-					// 元素的高度
-					const elementHeight = targetElement.offsetHeight;
-
-					// 元素中心点在原始坐标系中的Y位置
-					const elementCenterY = elementOffsetTop + elementHeight / 2;
-
-					// 右侧面板的垂直中心点（在原始坐标系中，需要除以scale）
-					const paneCenterY = translate.debug.threeD.config.rightPane.clientHeight / 2 / translate.debug.threeD.config.scale;
-
-					// 计算Y轴需要平移的距离（在原始坐标系中）
-					const deltaY = paneCenterY - elementCenterY;
-
-					// 应用平移（需要乘以scale转换到显示坐标系）
-					translate.debug.threeD.config.translateY = deltaY * translate.debug.threeD.config.scale;
-
-					// 应用平移变换
-					translate.debug.threeD.updateTransform();
-					/*
-					console.log('✅ 元素已垂直居中显示:', targetElement.tagName);
-					console.log('   - 元素offsetTop:', elementOffsetTop);
-					console.log('   - 元素高度:', elementHeight);
-					console.log('   - 元素中心Y:', elementCenterY);
-					console.log('   - 面板中心Y:', paneCenterY);
-					console.log('   - Y偏移(原始):', deltaY);
-					console.log('   - Y偏移(显示):', translate.debug.threeD.config.translateY);
-					*/
-
-					// 步骤5: 延迟0.5秒后，向右下倾斜3度
+					// 显示元素信息框（在倾斜效果后显示，确保位置准确）
 					setTimeout(() => {
-						//translate.debug.threeD.config.rotX = 3;  // 向下倾斜3度
-						//translate.debug.threeD.config.rotY = -45;  // 向右旋转3度
-						//translate.debug.threeD.config.translateX = 100; //整体向右移动150px
-						//translate.debug.threeD.updateTransform();
-
-						// 步骤6: 显示元素信息框（在倾斜效果后显示，确保位置准确）
-						setTimeout(() => {
-							translate.debug.threeD.showElementInfo(targetElement);
-						}, 200);
-					}, 1);
+						//translate.debug.threeD.updateElementThickness(targetElement, translate.debug.threeD.config.boxThickness*1.2, 400);
+						translate.debug.threeD.showElementInfo(targetElement);
+					}, 250);
 
 				} catch (err) {
 					console.warn('⚠️ 居中计算出错:', err);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '3.18.112.20260129',
+	version: '3.18.113.20260203',
 
 	/*js translate.config start*/
 	/*
@@ -8536,7 +8536,7 @@ var translate = {
 			//backupHost:['',''],
 			language:'language.json', //获取支持的语种列表接口
 			translate:'translate.json', //翻译接口
-			ip:'ip.json', //根据用户当前ip获取其所在地的语种
+			ip:'', //根据用户当前ip获取其所在地的语种 ，原本的值为 ip.json ，v4版本已废弃。 如果启用，可手动设置此值为 ip.json ,注意，需服务端的 ip.json 开启此能力
 			connectTest:'connectTest.json',	//用于 translate.js 多节点翻译自动检测网络连通情况
 			init:'init.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
 

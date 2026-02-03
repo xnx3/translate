@@ -7038,12 +7038,12 @@ var translate = {
 	executeByLocalLanguage:function(){
 		//先读用户自己浏览器的默认语言
 		var browserDefaultLanguage = translate.util.browserDefaultLanguage();
-		if(typeof(browserDefaultLanguage) != 'undefined' && browserDefaultLanguage.length > 0){
+		if(typeof(browserDefaultLanguage) !== 'undefined' && browserDefaultLanguage.length > 0){
 			translate.changeLanguage(browserDefaultLanguage);
 			return;
 		}
 
-		if(typeof(translate.request.api.ip) != 'string' || translate.request.api.ip == null || translate.request.api.ip.length < 1){
+		if(typeof(translate.request.api.ip) !== 'string' || translate.request.api.ip === null || translate.request.api.ip.length < 1){
 			return;
 		}
 
@@ -7051,9 +7051,16 @@ var translate = {
 		translate.request.post(translate.request.api.ip, {}, function(responseData, requestData){
 			//console.log(responseData); 
 			if(responseData.result != 1){
-				translate.log('==== ERROR 获取当前用户所在区域异常 ====');
-				translate.log(data.info);
-				translate.log('==== ERROR END ====');
+				if(typeof(responseData.info) === 'string' && responseData.info.indexOf('file not find') > -1){
+					translate.log('WARNING ： 服务端未启动根据用户所在的ip来获取用户所在的具体位置（此能力因准确率问题已被废弃）。当前您的浏览器默认语言为：'+', translate.js自动识别出的为：'+browserDefaultLanguage);
+					if(typeof(browserDefaultLanguage) === 'string' && browserDefaultLanguage.length === 0){
+						translate.log('原因是浏览器默认语言未在 translate.js 的语言对照数据中找到对应的语种，请联系我们 https://translate.zvo.cn/4030.html 反馈此问题，我们追加对应的语种对应关系。');
+					}
+				}else{
+					translate.log('==== ERROR 获取当前用户所在区域异常 ====');
+					translate.log(data.info);
+					translate.log('==== ERROR END ====');
+				}
 			}else{
 				translate.storage.set('to',responseData.language);	//设置目标翻译语言
 				translate.to = responseData.language; //设置目标语言
@@ -8168,7 +8175,7 @@ var translate = {
 		*/
 		browserDefaultLanguage:function(){
 			var language = navigator.language || navigator.userLanguage;
-			if(typeof(language) == 'string' && language.length > 0){
+			if(typeof(language) === 'string' && language.length > 0){
 				var tLang = translate.util.browserLanguage[language];
 				if(typeof(tLang) == 'undefined'){
 					//没有在里面

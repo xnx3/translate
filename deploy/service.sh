@@ -56,7 +56,8 @@ wget http://down.zvo.cn/translate/translate.service/config.properties -O /mnt/se
 wget http://down.zvo.cn/translate/translate.service/domain.json -O /mnt/service/domain.json
 
 # ip2region.xdb
-wget http://down.zvo.cn/translate/translate.service/ip2region.xdb -O /mnt/service/bin/ip2region.xdb
+# 已经不带服务端判定地址能力了，有浏览器来获取用户所使用的语言。只有开源版本暂时保留着这个，以适配非常老旧的版本进行兼容
+#wget http://down.zvo.cn/translate/translate.service/ip2region.xdb -O /mnt/service/bin/ip2region.xdb
 
 # 下载启动文件
 cd /mnt/service/

@@ -21,7 +21,7 @@ translate.debug = {
 	},
 	data:{
 		//当前鼠标停留所在位置，它这个元素下可以进行参与翻译的nodes
-		currentNodes: [],
+		nodes: [],
 	},
 
 	/*
@@ -30,18 +30,18 @@ translate.debug = {
 		如果没获取到，则返回 null
 	*/
 	getNode:function(node){
-		if (typeof(translate.node.get(key)) === 'undefined') {
+		if (typeof(translate.node.get(node)) === 'undefined') {
     		return null;
     	}
-		if (translate.node.get(key) === null) {
+		if (translate.node.get(node) === null) {
     		return null;
     	}
 
-		if(typeof(translate.node.get(key).originalText) !== 'string'){
+		if(typeof(translate.node.get(node).originalText) !== 'string'){
 			return null;
 		}
-		
-		return translate.node.get(key);
+
+		return translate.node.get(node);
 	},
 
 
@@ -444,7 +444,7 @@ translate.debug = {
 			//私有部署的数据库是否启用
 			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>私有部署的数据库是否启用</h2>'+(translate_service_config.json.useDatabase === 1? '启用':'未启用');
 			if(translate_service_config.json.useDatabase === 1){
-				'<br/><span class="warn">启用数据库能力后，可开启私有部署管理控制台的 术语库、译文管理 的功能，建议启用，参考文档： <a href="http://translate.zvo.cn/509578.html" target="_black">http://translate.zvo.cn/509578.html</a></span>'
+				checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><span class="warn">启用数据库能力后，可开启私有部署管理控制台的 术语库、译文管理 的功能，建议启用，参考文档： <a href="http://translate.zvo.cn/509578.html" target="_black">http://translate.zvo.cn/509578.html</a></span>';
 			}
 			
 
@@ -486,6 +486,7 @@ translate.debug = {
 			//翻译通道检测-进行文本翻译
 			var xhr_trans_test = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+translate.request.api.translate, data);
 			checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/><h2>翻译通道检测-是否配置</h2>中译英翻译测试'+(xhr_trans_test.result === 1? '成功':'<span class="warn">失败</span>');
+			var xhr_trans_test_failure_info = xhr_trans_test.info;
 			if(xhr_trans_test.result === 0){
 				checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">'+xhr_trans_test_failure_info+'<br/>你可以再次测试，如果还是这样，请检查你配置的 <a href="http://translate.zvo.cn/391752.html" target="_black">翻译通道</a> 是否正常</span>';
 			}
@@ -521,6 +522,7 @@ translate.debug = {
 
 
 			//检查是否是内存缓存没启用
+			var domain = window.location.hostname;
 			var xhr_admin_yiwen_domain_status_find = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/domain/getDomainStatus.json', {token: translate_service_key, domain:domain});	
 			console.log(xhr_admin_yiwen_domain_status_find)
 
@@ -537,15 +539,14 @@ translate.debug = {
 					var xhr_trans_yiwen_test_text = '你好'+new Date().getTime()+'世界';
 					data.text = encodeURIComponent(JSON.stringify([xhr_trans_yiwen_test_text]));
 					var xhr_trans_yiwen_test = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+translate.request.api.translate, data);
-					checkResultDom.innerHTML = checkResultDom.innerHTML + '&nbsp&nbsp&nbsp&nbsp 发起测试翻译文本 - 翻译'+(xhr_trans_yiwen_test.result === 1? '成功':'<span class="warn">失败: '+xhr_trans_yiwen_test.info+'</span>');
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '&nbsp;&nbsp;&nbsp;&nbsp; 发起测试翻译文本 - 翻译'+(xhr_trans_yiwen_test.result === 1? '成功':'<span class="warn">失败: '+xhr_trans_yiwen_test.info+'</span>');
 					
 					//去私有部署翻译服务检测，译文管理中是否有了这条文本的译文记录
 					//window.location.hostname
-					var domain = window.location.hostname;
 					//domain = 'cf2577e313014e8ab86ac4e1fadda175';
 					var xhr_admin_yiwen = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/cache/getCacheTextList.json', {token: translate_service_key, domain:domain, to:'english', originalText: encodeURIComponent(xhr_trans_yiwen_test_text)});
 					console.log(xhr_admin_yiwen)
-					checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp&nbsp&nbsp&nbsp 获取译文管理记录 - ';
+					checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp;&nbsp;&nbsp;&nbsp; 获取译文管理记录 - ';
 					if((xhr_admin_yiwen.result === 1 && xhr_admin_yiwen.json.list.length === 1)){
 						checkResultDom.innerHTML = checkResultDom.innerHTML + '成功<br/>&nbsp&nbsp&nbsp&nbsp 译文管理测试完毕，正常';
 					}else{
@@ -561,9 +562,9 @@ translate.debug = {
 
 							//进行检测这个域名是否在 domain.json 中存在
 							var xhr_admin_yiwen_domain_find = translate.debug.check.sendTranslateRequest(translate.request.api.host[0]+'admin/domain/getDomainList.json', {token: translate_service_key, domain:domain, domainFuzzySearch:0});
-							console.log(xhr_admin_yiwen_domain_find);
-							checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp&nbsp&nbsp&nbsp 检查域名 '+domain+'是否已经设置到 domain.json';
-							if(xhr_admin_yiwen_domain_find === 1 && xhr_admin_yiwen_domain_find.json.list.length === 1){
+							//console.log(xhr_admin_yiwen_domain_find);
+							checkResultDom.innerHTML = checkResultDom.innerHTML + '<br/>&nbsp;&nbsp;&nbsp;&nbsp; 检查域名 '+domain+'是否已经设置到 domain.json';
+							if(xhr_admin_yiwen_domain_find.result === 1 && xhr_admin_yiwen_domain_find.json.list.length === 1){
 								checkResultDom.innerHTML = checkResultDom.innerHTML + '已正常设置';
 
 								/*
@@ -581,7 +582,7 @@ translate.debug = {
 
 							}else{
 								//不正常
-								if(xhr_admin_yiwen_domain_find === 0){
+								if(xhr_admin_yiwen_domain_find.result === 0){
 									checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">失败：'+xhr_admin_yiwen_domain_find.info+'</span>';
 								}else if(xhr_admin_yiwen_domain_find.json.list.length !== 1){
 									checkResultDom.innerHTML = checkResultDom.innerHTML + '<span class="warn">domain.json 中未发现 '+domain+' ，请将 '+domain+' 加入 domain.json ， 详细参考：<a href="http://translate.zvo.cn/391130.html" target="_black">http://translate.zvo.cn/391130.html</a> </span>';
@@ -708,6 +709,11 @@ translate.debug.threeD = {
 		rotY: 0,
 		// 3D分屏视图的缩放比例
 		scale: 0.45,
+
+		// 保存原始的全局事件处理器，退出时恢复
+		_originalOnMouseMove: null,
+		_originalOnMouseUp: null,
+		_originalOnKeyDown: null,
     },
 
 	/**
@@ -889,11 +895,9 @@ translate.debug.threeD = {
 		// 修复固定定位元素，使其只在左侧显示
 		const fixedElements = leftClone.querySelectorAll('*');
 		fixedElements.forEach(el => {
-			const computedStyle = window.getComputedStyle(el);
-
 			// 修复固定定位
-			if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
-				el.style.position = 'absolute !important';
+			if (el.style.position === 'fixed') {
+				el.style.setProperty('position', 'absolute', 'important');
 			}
 		});
 
@@ -1000,11 +1004,9 @@ translate.debug.threeD = {
 		// 修复右侧3D视图中的固定定位元素
 		const fixedIn3D = translate.debug.threeD.config.bodyDomClone.querySelectorAll('*');
 		fixedIn3D.forEach(el => {
-			const computedStyle = window.getComputedStyle(el);
-
 			// 修复固定定位
-			if (computedStyle.position === 'fixed' || el.style.position === 'fixed') {
-				el.style.position = 'absolute !important';
+			if (el.style.position === 'fixed') {
+				el.style.setProperty('position', 'absolute', 'important');
 			}
 		});
 
@@ -1012,7 +1014,8 @@ translate.debug.threeD = {
 		const elements = translate.debug.threeD.config.bodyDomClone.querySelectorAll('*');
 		//console.log(`📊 找到 ${elements.length} 个元素`);
 
-		// 基础层厚度
+		// 基础层厚度 - 默认不突出，会在3D视图渲染出后自动以动画的方式凸出元素，更有科技感
+		translate.debug.threeD.config.boxThickness = 0; 
 		const baseThickness = translate.debug.threeD.config.boxThickness;
 
 		let count = 0;
@@ -1246,6 +1249,11 @@ translate.debug.threeD = {
 			}
 		};
 
+		// 保存原始的全局事件处理器
+		translate.debug.threeD.config._originalOnMouseMove = document.onmousemove;
+		translate.debug.threeD.config._originalOnMouseUp = document.onmouseup;
+		translate.debug.threeD.config._originalOnKeyDown = document.onkeydown;
+
 		document.onmousemove = (e) => {
 			if (!dragging) return;
 
@@ -1356,7 +1364,19 @@ translate.debug.threeD = {
 		//进行翻译切换
 		setTimeout(() => {
 			//msg.alert('<span class="ignore">您当前已经进行了翻译！<br/>需要在翻译前，启动3D视觉<br/>已自动帮您将语种切换回原语种，并</span>');
-			translate.changeLanguage(translateTargetLanguage);
+			if(translateTargetLanguage.length > 0){
+				translate.changeLanguage(translateTargetLanguage);
+			}
+
+			//进行动画特效
+			setTimeout(() => {
+				//旋转85度
+				translate.debug.threeD.updateRotate(0, -75, 0, 100, 500);
+				//元素凸出
+				translate.debug.threeD.updateElementThickness(undefined, 15, 2000);
+				
+			}, 20);
+
 		}, 20);
     },
 
@@ -1370,6 +1390,13 @@ translate.debug.threeD = {
 		document.getElementById('split-view-container')?.remove();
 		// 清理动画样式
 		document.getElementById('translate-3d-info-animations')?.remove();
+		// 恢复原始的全局事件处理器
+		document.onmousemove = translate.debug.threeD.config._originalOnMouseMove;
+		document.onmouseup = translate.debug.threeD.config._originalOnMouseUp;
+		document.onkeydown = translate.debug.threeD.config._originalOnKeyDown;
+		translate.debug.threeD.config._originalOnMouseMove = null;
+		translate.debug.threeD.config._originalOnMouseUp = null;
+		translate.debug.threeD.config._originalOnKeyDown = null;
 		window.__3dSplitView = null;
 		document.body.style.overflow = '';
 		console.log('已移除');
@@ -1872,6 +1899,16 @@ translate.debug.threeD = {
 		//console.log(translateNodes)
 		let translateNodesString = '';
 		let translateNodesForClick = []; // 存储可点击的节点信息
+
+		// 时间格式化工具
+		if(typeof(translate.util.formatToHms) !== 'function'){
+			translate.util.formatToHms = (ts) => {
+				const d = new Date(ts);
+				const pad = n => n.toString().padStart(2, '0');
+				return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+			};
+		}
+
 		for(let i=0;i<translateNodes.length;i++){
 			let currentTranslateNodeIsThisElement = false; //当前翻译的node是否是当前元素,比如当前node就是这个div元素的文本，true是
 			if(translateNodes[i].isSameNode(targetElement)){
@@ -1931,11 +1968,6 @@ translate.debug.threeD = {
 						continue;
 					}
 
-					translate.util.formatToHms = (ts) => {
-						const d = new Date(ts);
-						const pad = n => n.toString().padStart(2, '0');
-						return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-					};
 					//console.log(currentTranslateNode)
 					translateNodesString = translateNodesString +
 					`<div class="translate-node-link" style="padding-left:15px; ">` +
@@ -2596,7 +2628,7 @@ translate.debug.threeD = {
 						element: targetElement,
 						vertical: true,
 						level: false, // 只垂直居中，不水平居中（X轴不动，保持宽度对齐）
-						time: 200 // 无动画
+						time: 200 // 200ms 动画过渡
 					});
 
 					// 显示元素信息框（在倾斜效果后显示，确保位置准确）

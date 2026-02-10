@@ -9447,7 +9447,7 @@ var translate = {
 				        		//console.log('忽略：'+url);
 								continue;
 				        	}
-				        	if(translate.request.listener.trigger()){
+				        	if(translate.request.listener.trigger(url)){
 				        		//正常，会触发翻译，也是默认的
 				        	}else{
 				        		//不触发翻译，跳过

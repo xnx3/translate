@@ -5202,7 +5202,7 @@ var translate = {
 			temporaryIgnoreTexts = translate.ignore.text;
 		}else{
 			//将其加入 translate.history.translateTexts 中
-			temporaryIgnoreTexts.concat(translate.ignore.text);
+			temporaryIgnoreTexts = temporaryIgnoreTexts.concat(translate.ignore.text);
 			for(var ti = 0; ti<temporaryIgnoreTexts.length; ti ++){
 				translate.history.translateText.add(temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti]);
 			}

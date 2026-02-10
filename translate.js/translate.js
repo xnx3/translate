@@ -5189,9 +5189,9 @@ var translate = {
 		for (var ri = 0; ri < translate.ignore.textRegex.length; ri++) {
 			var regex = translate.ignore.textRegex[ri];
 			for (var tai = 0; tai < textArray.length; tai++) {
-				var text = textArray[tai];
+				var currentText = textArray[tai];
 				//temporaryIgnoreTexts = text.match(regex) || []
-				var matches = text.match(regex) || [];
+				var matches = currentText.match(regex) || [];
 				temporaryIgnoreTexts = temporaryIgnoreTexts.concat(matches);
 				//translate.ignore.text = translate.ignore.text.concat(ignoreTexts)
 			}

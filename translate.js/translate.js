@@ -10094,7 +10094,7 @@ var translate = {
 				if(typeof(node.className) != 'string'){
 					return;
 				}
-				if(node.className.indexOf('translate_api_in_progress') < -1){
+				if(node.className.indexOf('translate_api_in_progress') === -1){
 					return;
 				}
 				node.className = node.className.replace(/translate_api_in_progress/g, '');

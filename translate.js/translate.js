@@ -7058,7 +7058,7 @@ var translate = {
 					}
 				}else{
 					translate.log('==== ERROR 获取当前用户所在区域异常 ====');
-					translate.log(data.info);
+					translate.log(responseData.info);
 					translate.log('==== ERROR END ====');
 				}
 			}else{

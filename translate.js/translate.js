@@ -11561,7 +11561,7 @@ var translate = {
 						if(translate.node.get(lastChild) !== null){
 							if(typeof(translate.node.get(lastChild).resultText) === 'string'){
 								translate.node.get(lastChild).resultText = translate.node.get(lastChild).resultText + '\u00A0';
-								translate.node.get(lastChild).translateResults[translate.node.get(node).resultText] = 1;
+								translate.node.get(lastChild).translateResults[translate.node.get(lastChild).resultText] = 1;
 								translate.node.get(lastChild).lastTranslateRenderTime = Date.now();
 							}
 						}

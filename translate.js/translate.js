@@ -11685,7 +11685,7 @@ var translate = {
 				document.documentElement.classList.remove(id);
 				//删除 style
 				var style_translatejs_text_hidden = document.getElementById(id);
-				if(typeof(style_translatejs_text_hidden) != null && style_translatejs_text_hidden != null){
+				if(style_translatejs_text_hidden !== null){
 					style_translatejs_text_hidden.remove();
 				}
 			}

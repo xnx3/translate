@@ -11604,20 +11604,7 @@ var translate = {
 			}
 			translate.visual.adjustTranslationSpaces(nodes);
 		},
-		/*
-			通过 translate.nodeQueue 中最后一次执行的 uuid，来获取这个 translate.nodeQueue[uuid] 中所包含涉及到的所有node (除特殊字符外 ，也就是 translate.nodeQueue[uuid].list 下 特殊字符那一类是不会使用的)
-		*/
-		adjustTranslationSpacesByLastNodequeueUuid:function(uuid){
-			var uuid = '';
-			for(var uuid_index in translate.nodeQueue){
-				uuid = uuid_index;
-				break;
-			}
-			if(typeof(uuid) == 'string' && uuid.length > 1){
-				translate.visual.adjustTranslationSpacesByNodequeueUuid(uuid);
-			}
-		},
-
+		
 		/**
 		 * 隐藏当前网页的所有文本
 		 *

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.0.0.20260210',
+	version: '4.0.1.20260401',
 	
 	/*js translate.config start*/
 	/*
@@ -2506,10 +2506,10 @@ var translate = {
 								}
 								if(addNodeName.length > 0 && translate.ignore.tag.indexOf(addNodeName) == -1){
 									// 使用现有的忽略机制检查节点
-									var addedNode = mutation.addedNodes[ani];
-									if(!translate.element.isIgnore(addedNode)){
+									//var addedNode = mutation.addedNodes[ani];
+									//if(!translate.element.isIgnore(addedNode)){
 										addNodes.push(mutation.addedNodes[ani]);
-									}
+									//}
 								}
 							}
 							//addNodes = mutation.addedNodes;
@@ -12853,12 +12853,11 @@ var translate = {
 		if(typeof(translate.recycle) != 'undefined'){
 			// 创建定时器，每1分钟执行一次 translate.recycle 进行清理数据存储
 			setInterval(translate.recycle, 60 * 1000);
-			}
+		}
 
-			//初始化 postMessage 监听器，用于跨域 iframe 通信
-			translate.postMessage.init();
-
-		},
+		//初始化 postMessage 监听器，用于跨域 iframe 通信
+		translate.postMessage.init();
+	},
 	/*js translate.init end*/
 
 }

@@ -1030,12 +1030,19 @@ var translate = {
 		 * @param {boolean} fromParent - 是否来自父页面
 		 */
 		onReceiveChangeLanguage: function(language, fromParent){
-			// 避免重复切换
-			if(translate.to === language){
+			// 避免重复切换 - 但需要考虑更多情况
+			// 修复：不仅要检查 translate.to，还要检查是否真正处于翻译状态
+			var currentLanguage = translate.to;
+			var hasTranslatedContent = translate.node.data && translate.node.data.size > 0;
+
+			// 如果当前语言等于目标语言，且已经有翻译内容，才跳过
+			// 这样可以处理 iframe 初始加载时 translate.to 可能已经等于目标语言但没有翻译内容的情况
+			if(currentLanguage === language && hasTranslatedContent){
+				translate.log('[postMessage] Already at target language with translated content: ' + language);
 				return;
 			}
 
-			translate.log('[postMessage] Received changeLanguage request: ' + language + ', fromParent: ' + fromParent);
+			translate.log('[postMessage] Received changeLanguage request: ' + language + ', fromParent: ' + fromParent + ', currentTo: ' + currentLanguage + ', hasTranslated: ' + hasTranslatedContent);
 
 			// 执行语言切换（使用内部方法避免消息循环）
 			translate.postMessage.executeChangeLanguage(language, fromParent);
@@ -1313,7 +1320,12 @@ var translate = {
 						// 同域，尝试直接调用
 						if(typeof(iframeWindow.translate) == 'object' && typeof(iframeWindow.translate.version) == 'string'){
 							//iframe页面中存在 translate,那么也控制iframe中的进行翻译
-							if(iframeWindow.translate.to != languageName){
+							// 修复：不仅要检查 translate.to，还要检查是否真正处于翻译状态
+							var iframeTo = iframeWindow.translate.to;
+							var iframeHasTranslated = iframeWindow.translate.node.data && iframeWindow.translate.node.data.size > 0;
+
+							// 只有当 iframe 的语言等于目标语言且已有翻译内容时才跳过
+							if(!(iframeTo === languageName && iframeHasTranslated)){
 								iframeWindow.translate.changeLanguage(languageName);
 							}
 						}

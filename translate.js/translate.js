@@ -742,8 +742,8 @@ var translate = {
 
 		/**
 		 * 允许接收的跨域消息来源。
-		 * 默认为空数组，表示只接受同源消息。
-		 * 如需启用跨域 iframe 同步，需显式配置允许的来源。
+		 * 默认不设置时，允许所有网站来源的消息。
+		 * 如需限制来源，可显式配置允许的 origin 数组。
 		 */
 		allowedOrigins: [],
 
@@ -879,12 +879,12 @@ var translate = {
 				return false;
 			}
 
-			if(normalizedOrigin === this.getCurrentOrigin()){
+			if(!Array.isArray(this.allowedOrigins) || this.allowedOrigins.length === 0){
 				return true;
 			}
 
-			if(!Array.isArray(this.allowedOrigins)){
-				return false;
+			if(normalizedOrigin === this.getCurrentOrigin()){
+				return true;
 			}
 
 			for(var i = 0; i < this.allowedOrigins.length; i++){

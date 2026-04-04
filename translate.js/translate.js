@@ -303,7 +303,7 @@ var translate = {
 				translate.service.name = data.service;
 			}
 			if(typeof(whole.enableAll) === 'boolean'){
-				translate.listener.use = whole.enableAll;
+				translate.whole.isEnableAll = whole.enableAll;
 			}
 			if(typeof(whole.class) === 'object'){
 				translate.whole.class = whole.class;

@@ -8924,7 +8924,7 @@ var translate = {
 			 */
 			translate:function(path, data, func, abnormalFunc){
 				var textArray = JSON.parse(decodeURIComponent(data.text));
-				let translateTextArray = translate.util.split(textArray, 40000, 900);
+				var translateTextArray = translate.util.split(textArray, 40000, 900);
 
 
 				var appendXhrData = {
@@ -8954,7 +8954,8 @@ var translate = {
 					}
 					*/
 
-					translate.request.send(transUrl, JSON.stringify(translateTextArray[tai]), appendXhrData, function(result){
+					(function(chunkIndex){
+						translate.request.send(transUrl, JSON.stringify(translateTextArray[chunkIndex]), appendXhrData, function(result){
 						var d = {};
 						d.info = 'SUCCESS';
 						d.result = 1;
@@ -8970,22 +8971,8 @@ var translate = {
 						if(translateTextArray.length > 1){
 							//这一次翻译呗拆分了多次请求，那么要进行补全数组，使数组个数能一致
 
-							/*
-
-								注意这里根据数组的长度来判断当前属于第几个数组，
-								有几率会是拆分的数组，其中有两组的长度是一样的，
-								这样的话是有问题的，只不过几率很小，就先这样了
-								但终归还是留了个坑 -- 记录
-
-							*/
-
-							var currentIndex = -1;	//当前翻译请求属于被拆分的第几个的数组下标，从0开始的
-							for(var cri = 0; cri < translateTextArray.length; cri++){
-								if(translateTextArray[cri].length - d.text.length == 0){
-									currentIndex = cri;
-									break;
-								}
-							}
+							//使用当前分片下标，不再根据返回的长度猜测属于哪个分片
+							var currentIndex = chunkIndex;	//当前翻译请求属于被拆分的第几个的数组下标，从0开始的
 
 							//进行对前后进行补齐数组
 							if(currentIndex < 0){
@@ -9007,13 +8994,14 @@ var translate = {
 									d.text.push(null);
 								}
 							}
-							
+						
 						}
 						
 						func(d);
 					}, 'post', true, {
 						'Content-Type':'application/json'
 					}, abnormalFunc, true);
+					})(tai);
 					
 
 				}

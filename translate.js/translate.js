@@ -9755,7 +9755,7 @@ var translate = {
 
 			// 筛选需要翻译的文本及其原始索引
   			var apiTranslateText = [];
-			var apiTranslateArray = {};
+			var apiTranslateItems = [];
 			for(var i = 0; i < texts.length; i++){
 				//判断是否在浏览器缓存中出现了
 				var hash = translate.util.hash(texts[i]);
@@ -9767,7 +9767,11 @@ var translate = {
 				}else{
 					translateResultArray[i] = '';
 					apiTranslateText.push(texts[i]);
-					apiTranslateArray[hash] = i;
+					apiTranslateItems.push({
+						index: i,
+						text: texts[i],
+						hash: hash
+					});
 				}
 			}
 			if (apiTranslateText.length == 0) {
@@ -9812,16 +9816,20 @@ var translate = {
 				}
 
 				for(var i = 0; i < responseData.text.length; i++){
+					if(typeof(apiTranslateItems[i]) === 'undefined'){
+						continue;
+					}
+
 					//将翻译结果以 key：hash  value翻译结果的形式缓存
-					var hash = translate.util.hash(apiTranslateText[i]);
+					var hash = apiTranslateItems[i].hash;
 					translate.storage.set('hash_'+to+'_'+hash, responseData.text[i]);
 					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
 					if(translate.offline.fullExtract.isUse){
-						translate.offline.fullExtract.set(hash, apiTranslateText[i], data.to, responseData.text[i]);
+						translate.offline.fullExtract.set(hash, apiTranslateItems[i].text, data.to, responseData.text[i]);
 					}
 
 					//进行组合数据到 translateResultArray
-					translateResultArray[apiTranslateArray[hash]] = responseData.text[i];
+					translateResultArray[apiTranslateItems[i].index] = responseData.text[i];
 				}
 				responseData.text = translateResultArray;			
 

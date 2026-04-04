@@ -221,38 +221,59 @@ var translate = {
 		*/
 		set: function(data){
 			//console.log(data);
+			if(typeof(data) !== 'object' || data === null){
+				data = {};
+			}
+
+			var language = (typeof(data.language) === 'object' && data.language !== null) ? data.language : {};
+			var languageSelect = (typeof(language.select) === 'object' && language.select !== null) ? language.select : {};
+			var languageUrlParamControl = (typeof(language.urlParamControl) === 'object' && language.urlParamControl !== null) ? language.urlParamControl : {};
+			var listener = (typeof(data.listener) === 'object' && data.listener !== null) ? data.listener : {};
+			var ignore = (typeof(data.ignore) === 'object' && data.ignore !== null) ? data.ignore : {};
+			var whole = (typeof(data.whole) === 'object' && data.whole !== null) ? data.whole : {};
+			var selectionTranslate = (typeof(data.selectionTranslate) === 'object' && data.selectionTranslate !== null) ? data.selectionTranslate : {};
+			var request = (typeof(data.request) === 'object' && data.request !== null) ? data.request : {};
+			var requestApi = (typeof(request.api) === 'object' && request.api !== null) ? request.api : {};
+			var requestListener = (typeof(request.listener) === 'object' && request.listener !== null) ? request.listener : {};
+			var element = (typeof(data.element) === 'object' && data.element !== null) ? data.element : {};
+			var progress = (typeof(data.progress) === 'object' && data.progress !== null) ? data.progress : {};
+			var progressApi = (typeof(progress.api) === 'object' && progress.api !== null) ? progress.api : {};
+			var network = (typeof(data.network) === 'object' && data.network !== null) ? data.network : {};
+			var visual = (typeof(data.visual) === 'object' && data.visual !== null) ? data.visual : {};
+			var visualWebPageLoadTranslateBeforeHiddenText = (typeof(visual.webPageLoadTranslateBeforeHiddenText) === 'object' && visual.webPageLoadTranslateBeforeHiddenText !== null) ? visual.webPageLoadTranslateBeforeHiddenText : {};
+
 			if(typeof(data.documents) === 'object'){
 				translate.setDocuments(data.documents);
 			}
-			if(typeof(data.language.select.show) === 'boolean'){
-				translate.selectLanguageTag.show = data.language.select.show;
+			if(typeof(languageSelect.show) === 'boolean'){
+				translate.selectLanguageTag.show = languageSelect.show;
 			}
-			if(typeof(data.language.select.languages) === 'string' && data.language.select.languages.trim().length>0){
-				translate.selectLanguageTag.languages = data.language.select.languages;
+			if(typeof(languageSelect.languages) === 'string' && languageSelect.languages.trim().length>0){
+				translate.selectLanguageTag.languages = languageSelect.languages;
 			}
-			if(typeof(data.language.select.documentId) === 'string' && data.language.select.documentId.trim().length>0){
-				translate.selectLanguageTag.documentId = data.language.select.documentId;
+			if(typeof(languageSelect.documentId) === 'string' && languageSelect.documentId.trim().length>0){
+				translate.selectLanguageTag.documentId = languageSelect.documentId;
 			}
-			if(typeof(data.language.local) === 'string' && data.language.local.trim().length>0){
-				translate.language.setLocal(data.language.local);
+			if(typeof(language.local) === 'string' && language.local.trim().length>0){
+				translate.language.setLocal(language.local);
 			}
-			if(typeof(data.language.defaultTo) === 'string' && data.language.defaultTo.trim().length>0){
-				translate.language.setDefaultTo(data.language.defaultTo);
+			if(typeof(language.defaultTo) === 'string' && language.defaultTo.trim().length>0){
+				translate.language.setDefaultTo(language.defaultTo);
 			}
-			if(typeof(data.language.autoDiscriminateLocalLanguage) === 'boolean' && data.language.autoDiscriminateLocalLanguage === true){
+			if(typeof(language.autoDiscriminateLocalLanguage) === 'boolean' && language.autoDiscriminateLocalLanguage === true){
 				translate.setAutoDiscriminateLocalLanguage();
 			}
-			if(typeof(data.language.range) === 'object' && data.language.range.length > 0){
-				translate.language.translateLanguagesRange = data.language.range;
+			if(typeof(language.range) === 'object' && language.range.length > 0){
+				translate.language.translateLanguagesRange = language.range;
 			}
-			if(typeof(data.language.urlParamControl.use) === 'boolean'){
-				translate.language.setUrlParamControl_use = data.language.urlParamControl.use;
+			if(typeof(languageUrlParamControl.use) === 'boolean'){
+				translate.language.setUrlParamControl_use = languageUrlParamControl.use;
 			}
-			if(typeof(data.language.urlParamControl.name) === 'string' && data.language.urlParamControl.name.trim().toLowerCase() !== 'language'){
-				translate.language.setUrlParamControl(data.language.urlParamControl.name);
+			if(typeof(languageUrlParamControl.name) === 'string' && languageUrlParamControl.name.trim().toLowerCase() !== 'language'){
+				translate.language.setUrlParamControl(languageUrlParamControl.name);
 			}
-			if(typeof(data.language.translateLocal) === 'boolean'){
-				translate.language.translateLocal = data.language.translateLocal;
+			if(typeof(language.translateLocal) === 'boolean'){
+				translate.language.translateLocal = language.translateLocal;
 			}
 			if(typeof(data.images) === 'object'){
 				translate.images.queues = data.images;
@@ -260,97 +281,97 @@ var translate = {
 			if(typeof(data.nomenclature) === 'object'){
 				translate.nomenclature.data = data.nomenclature;
 			}
-			if(typeof(data.listener.use) === 'boolean'){
-				translate.listener.use = data.listener.use;
+			if(typeof(listener.use) === 'boolean'){
+				translate.listener.use = listener.use;
 			}
-			if(typeof(data.ignore.text) === 'object'){
-				translate.ignore.text = data.ignore.text;
+			if(typeof(ignore.text) === 'object'){
+				translate.ignore.text = ignore.text;
 			}
-			if(typeof(data.ignore.textRegex) === 'object'){
-				translate.ignore.textRegex = data.ignore.textRegex;
+			if(typeof(ignore.textRegex) === 'object'){
+				translate.ignore.textRegex = ignore.textRegex;
 			}
-			if(typeof(data.ignore.id) === 'object'){
-				translate.ignore.id = data.ignore.id;
+			if(typeof(ignore.id) === 'object'){
+				translate.ignore.id = ignore.id;
 			}
-			if(typeof(data.ignore.class) === 'object'){
-				translate.ignore.class = data.ignore.class;
+			if(typeof(ignore.class) === 'object'){
+				translate.ignore.class = ignore.class;
 			}
-			if(typeof(data.ignore.tag) === 'object'){
-				translate.ignore.tag = data.ignore.tag;
+			if(typeof(ignore.tag) === 'object'){
+				translate.ignore.tag = ignore.tag;
 			}
 			if(typeof(data.service) === 'string' && data.service.trim().length > 0){
 				translate.service.name = data.service;
 			}
-			if(typeof(data.whole.enableAll) === 'boolean'){
-				translate.listener.use = data.whole.enableAll;
+			if(typeof(whole.enableAll) === 'boolean'){
+				translate.listener.use = whole.enableAll;
 			}
-			if(typeof(data.whole.class) === 'object'){
-				translate.whole.class = data.whole.class;
+			if(typeof(whole.class) === 'object'){
+				translate.whole.class = whole.class;
 			}
-			if(typeof(data.whole.tag) === 'object'){
-				translate.whole.tag = data.whole.tag;
+			if(typeof(whole.tag) === 'object'){
+				translate.whole.tag = whole.tag;
 			}
-			if(typeof(data.whole.id) === 'object'){
-				translate.whole.id = data.whole.id;
+			if(typeof(whole.id) === 'object'){
+				translate.whole.id = whole.id;
 			}
-			if(typeof(data.selectionTranslate.use) === 'boolean' && data.selectionTranslate.use === true){
+			if(typeof(selectionTranslate.use) === 'boolean' && selectionTranslate.use === true){
 				if(translate.selectionTranslate.use === false){ //没有启动，才会启动
 					translate.selectionTranslate.start();
 				}
 			}
-			if(typeof(data.request.api.host) === 'object'){
-				translate.request.api.host = data.request.api.host;
+			if(typeof(requestApi.host) === 'object'){
+				translate.request.api.host = requestApi.host;
 			}
-			if(typeof(data.request.api.language) === 'string'){
-				translate.request.api.language = data.request.api.language;
+			if(typeof(requestApi.language) === 'string'){
+				translate.request.api.language = requestApi.language;
 			}
-			if(typeof(data.request.api.ip) === 'string'){
-				translate.request.api.ip = data.request.api.ip;
+			if(typeof(requestApi.ip) === 'string'){
+				translate.request.api.ip = requestApi.ip;
 			}
-			if(typeof(data.request.api.connectTest) === 'string'){
-				translate.request.api.connectTest = data.request.api.connectTest;
+			if(typeof(requestApi.connectTest) === 'string'){
+				translate.request.api.connectTest = requestApi.connectTest;
 			}
-			if(typeof(data.request.api.init) === 'string'){
-				translate.request.api.init = data.request.api.init;
+			if(typeof(requestApi.init) === 'string'){
+				translate.request.api.init = requestApi.init;
 			}
-			if(typeof(data.request.listener.use) === 'boolean'){
-				translate.request.listener.use = data.request.listener.use;
+			if(typeof(requestListener.use) === 'boolean'){
+				translate.request.listener.use = requestListener.use;
 			}
-			if(typeof(data.request.listener.delayExecuteTime) === 'number'){
-				translate.request.listener.delayExecuteTime = data.request.listener.delayExecuteTime;
+			if(typeof(requestListener.delayExecuteTime) === 'number'){
+				translate.request.listener.delayExecuteTime = requestListener.delayExecuteTime;
 			}
-			if(typeof(data.request.listener.minIntervalTime) === 'number'){
-				translate.request.listener.minIntervalTime = data.request.listener.minIntervalTime;
+			if(typeof(requestListener.minIntervalTime) === 'number'){
+				translate.request.listener.minIntervalTime = requestListener.minIntervalTime;
 			}
-			if(typeof(data.request.appendParams) === 'object'){
-				translate.request.appendParams = data.request.appendParams;
+			if(typeof(request.appendParams) === 'object'){
+				translate.request.appendParams = request.appendParams;
 			}
-			if(typeof(data.request.appendHeaders) === 'object'){
-				translate.request.appendHeaders = data.request.appendHeaders;
+			if(typeof(request.appendHeaders) === 'object'){
+				translate.request.appendHeaders = request.appendHeaders;
 			}
-			if(typeof(data.request.waitingExecute) === 'boolean'){
-				translate.waitingExecute.use = data.request.waitingExecute;
+			if(typeof(request.waitingExecute) === 'boolean'){
+				translate.waitingExecute.use = request.waitingExecute;
 			}
-			if(typeof(data.element.tagAttribute) === 'object'){
-				translate.element.tagAttribute = data.element.tagAttribute;
+			if(typeof(element.tagAttribute) === 'object'){
+				translate.element.tagAttribute = element.tagAttribute;
 			}
-			if(typeof(data.progress.api.use) === 'boolean' && data.progress.api.use === true){
+			if(typeof(progressApi.use) === 'boolean' && progressApi.use === true){
 				if(translate.progress.api.use === false){ //没有启动，才会启动
 					translate.progress.api.startUITip();
 				}
 			}
-			if(typeof(data.progress.style) === 'string'){
-				translate.progress.style = data.progress.style;
+			if(typeof(progress.style) === 'string'){
+				translate.progress.style = progress.style;
 			}
-			if(typeof(data.network.rules) === 'object'){
-				translate.network.rules = data.network.rules;
+			if(typeof(network.rules) === 'object'){
+				translate.network.rules = network.rules;
 			}
-			if(typeof(data.network.use) === 'boolean' && data.network.use === true){
+			if(typeof(network.use) === 'boolean' && network.use === true){
 				if(translate.network.isUse === false){ //没有启动，才会启动
 					translate.network.use();
 				}
 			}
-			if(typeof(data.visual.webPageLoadTranslateBeforeHiddenText.use) === 'boolean' && data.visual.webPageLoadTranslateBeforeHiddenText.use === true){
+			if(typeof(visualWebPageLoadTranslateBeforeHiddenText.use) === 'boolean' && visualWebPageLoadTranslateBeforeHiddenText.use === true){
 				if(translate.visual.webPageLoadTranslateBeforeHiddenText_use === false){ //没有启动，才会启动
 					translate.visual.webPageLoadTranslateBeforeHiddenText();
 				}

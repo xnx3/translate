@@ -9812,7 +9812,7 @@ var translate = {
 					translate.log('translate text array : '+texts);
 					translate.log('response error info: '+responseData.info);
 					translate.log('=======ERROR END  =======');
-					//return;
+					return;
 				}
 
 				for(var i = 0; i < responseData.text.length; i++){

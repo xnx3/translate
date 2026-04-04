@@ -2998,6 +2998,8 @@ var translate = {
 			二维对象形态，存放执行传入的 docs
 		*/
 		queue:[],
+		//当前队列调度器的 intervalId。 null 表示未启动调度器
+		intervalId:null,
 		/*
 			增加一个翻译任务到翻译队列中
 			docs 同 translate.execute(docs) 的传入参数
@@ -3005,14 +3007,26 @@ var translate = {
 		add:function(docs){
 			//向数组末尾追加
 			translate.waitingExecute.queue.push(docs);
-			//开启一个定时器进行触发
-			let intervalId = setInterval(function() {
+			//调度器已启动，那么只需要入队即可，避免多个 interval 并发竞争同一个队列
+			if(translate.waitingExecute.intervalId !== null){
+				return;
+			}
+			//开启唯一一个定时器进行触发
+			translate.waitingExecute.intervalId = setInterval(function() {
+				if(translate.waitingExecute.queue.length < 1){
+					//队列已空，关闭调度器
+					clearInterval(translate.waitingExecute.intervalId);
+					translate.waitingExecute.intervalId = null;
+					return;
+				}
 				if(translate.state == 0){
-					//清除定时器，结束循环
-					clearInterval(intervalId);
 					var docs = translate.waitingExecute.get();
+					if(docs == null){
+						clearInterval(translate.waitingExecute.intervalId);
+						translate.waitingExecute.intervalId = null;
+						return;
+					}
 					translate.execute(docs);
-					//console.log('stop waitingExecute setInterval');
 				}
 			}, 500);
 		},

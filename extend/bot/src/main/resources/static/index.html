@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TranslateAI - translate.js 智能接入工具</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>TranslateAI</h1>
+            <p class="subtitle">translate.js 智能接入工具 — 自动分析、注入、审查、修复</p>
+        </header>
+
+        <!-- 步骤1: 输入URL -->
+        <section id="step-url" class="step active">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <span class="step-title">输入目标网址</span>
+            </div>
+            <div class="step-content">
+                <div class="url-input-group">
+                    <input type="text" id="urlInput" placeholder="请输入要接入 translate.js 的网站地址，例如 https://example.com"
+                           autofocus>
+                    <button id="btnLaunch" onclick="launchBrowser()">启动浏览器</button>
+                </div>
+                <div class="tip">工具将启动一个浏览器窗口打开该网址。如果目标页面需要登录，你可以在浏览器中自行完成登录。</div>
+            </div>
+        </section>
+
+        <!-- 步骤2: 等待用户操作 -->
+        <section id="step-wait" class="step" style="display:none;">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <span class="step-title">准备页面</span>
+            </div>
+            <div class="step-content">
+                <div class="wait-message" id="waitMessage">
+                    浏览器已打开，请在浏览器窗口中：<br>
+                    1. 完成登录（如需要）<br>
+                    2. 导航到你要接入翻译的页面<br>
+                    3. 确认页面加载完成后，点击下方按钮
+                </div>
+                <button id="btnReady" class="btn-ready" onclick="pageReady()">页面已就绪，开始分析</button>
+            </div>
+        </section>
+
+        <!-- 步骤3: 分析进度 -->
+        <section id="step-progress" class="step" style="display:none;">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <span class="step-title">自动分析审查中</span>
+            </div>
+            <div class="step-content">
+                <div id="progressLog" class="progress-log"></div>
+            </div>
+        </section>
+
+        <!-- 步骤4: 报告 -->
+        <section id="step-report" class="step" style="display:none;">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <span class="step-title">接入报告</span>
+            </div>
+            <div class="step-content">
+                <!-- 网站信息 -->
+                <div class="report-section">
+                    <h3>网站信息</h3>
+                    <table class="info-table">
+                        <tr><td>网址</td><td id="reportUrl"></td></tr>
+                        <tr><td>标题</td><td id="reportTitle"></td></tr>
+                        <tr><td>框架</td><td id="reportFramework"></td></tr>
+                        <tr><td>语言</td><td id="reportLanguage"></td></tr>
+                    </table>
+                </div>
+
+                <!-- 接入代码 -->
+                <div class="report-section">
+                    <h3>接入代码 <button class="btn-copy" onclick="copyCode()">一键复制</button></h3>
+                    <div class="insert-position" id="insertPosition"></div>
+                    <pre class="code-block"><code id="finalCode"></code></pre>
+                </div>
+
+                <!-- 截图对比 -->
+                <div class="report-section">
+                    <h3>截图对比</h3>
+                    <div class="screenshot-grid">
+                        <div class="screenshot-item">
+                            <div class="screenshot-label">接入前 (原始)</div>
+                            <img id="imgBefore" src="" alt="接入前">
+                        </div>
+                        <div class="screenshot-item">
+                            <div class="screenshot-label">接入后 (翻译效果)</div>
+                            <img id="imgAfter" src="" alt="接入后">
+                        </div>
+                        <div class="screenshot-item">
+                            <div class="screenshot-label">移动端效果</div>
+                            <img id="imgMobile" src="" alt="移动端">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 审查历程 -->
+                <div class="report-section">
+                    <h3>审查历程</h3>
+                    <div id="auditHistory"></div>
+                </div>
+
+                <!-- 注意事项 -->
+                <div class="report-section" id="notesSection" style="display:none;">
+                    <h3>注意事项</h3>
+                    <ul id="notesList"></ul>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="report-actions">
+                    <button onclick="location.reload()">重新分析</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

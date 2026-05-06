@@ -2537,6 +2537,10 @@ var translate = {
 										translate.element.iframe.execute(mutation.addedNodes[ani]);
 									}
 								}
+								// 若新增元素带有 shadowRoot，注册监听（内容翻译由 whileNodes 穿透处理）
+								if(mutation.addedNodes[ani].shadowRoot){
+									translate.element.shadowComponent.observe(mutation.addedNodes[ani]);
+								}
 								if(addNodeName.length > 0 && translate.ignore.tag.indexOf(addNodeName) == -1){
 									// 使用现有的忽略机制检查节点
 									//var addedNode = mutation.addedNodes[ani];
@@ -2660,7 +2664,10 @@ var translate = {
 				}
 			}
 
-			
+			// 扫描页面中已存在的 shadow host，全部注册监听（含嵌套）
+			translate.element.shadowComponent.scanAndObserve();
+
+
 			//如果要对 input 的value进行翻译，那么还要监听 input 的 value 的值
 			if(typeof(translate.element.tagAttribute['input']) === 'object' && translate.element.tagAttribute['input'].attribute.indexOf('value') > -1){
 				translate.listener.input.start();
@@ -5070,6 +5077,44 @@ var translate = {
 			},
 		},
 
+		/*js translate.element.shadowComponent start*/
+		shadowComponent:{
+			/*
+				已被注册监听的 shadow host 集合。
+				WeakSet：O(1) 查找，shadow host 从 DOM 移除后自动回收，无内存泄漏。
+			*/
+			observedSet: new WeakSet(),
+
+			/*
+				对一个 shadow host 的 shadowRoot 注册 MutationObserver 监听。
+				前置条件：listener 已启动（translate.listener.observer 存在）。
+			*/
+			observe: function(shadowHost){
+				if(!shadowHost || !shadowHost.shadowRoot) return;
+				if(this.observedSet.has(shadowHost)) return;
+				if(!translate.listener.observer) return;
+				this.observedSet.add(shadowHost);
+				translate.listener.observer.observe(shadowHost.shadowRoot, translate.listener.config);
+			},
+
+			/*
+				从指定根节点向下扫描所有 shadow host 并注册监听。
+				递归处理嵌套 shadow DOM。
+				仅在 addListener 启动时调用一次。
+			*/
+			scanAndObserve: function(root){
+				root = root || document.documentElement;
+				var elements = root.querySelectorAll('*');
+				for(var i = 0; i < elements.length; i++){
+					if(elements[i].shadowRoot){
+						this.observe(elements[i]);
+						this.scanAndObserve(elements[i].shadowRoot);
+					}
+				}
+			}
+		},
+		/*js translate.element.shadowComponent end*/
+
 		/*js translate.element.iframe start*/
 		iframe:{
 			isUse:false, //是否启用，对非跨域的iframe的页面也进行自动翻译。true则是启用。默认是false为不启用
@@ -5396,7 +5441,16 @@ var translate = {
 				}
 			}
 
-			
+
+			// Shadow DOM 穿透：对含 shadowRoot 的元素，递归翻译其 shadow 内容，并注册监听
+			if(node.nodeType === 1 && node.shadowRoot){
+				var shadowChildNodes = node.shadowRoot.childNodes;
+				for(var si = 0; si < shadowChildNodes.length; si++){
+					translate.element.whileNodes(uuid, shadowChildNodes[si]);
+				}
+				translate.element.shadowComponent.observe(node);
+			}
+
 			var childNodes = node.childNodes;
 			if(childNodes == null || typeof(childNodes) == 'undefined'){
 				return;

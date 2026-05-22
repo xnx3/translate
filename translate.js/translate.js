@@ -4227,6 +4227,197 @@ var translate = {
 				//text:JSON.stringify(translateTextArray[lang])
 				text:encodeURIComponent(JSON.stringify(translateTextArray[lang]))
 			};
+			let requestLang = lang;
+			let requestTo = translate.to;
+			// 记录当前这一次 translate.json 请求中已经通过 SSE 提前渲染过的原始 text 下标。
+			// done 事件仍然会返回完整结果，这里用于跳过已渲染下标，避免同一段 DOM 被重复替换。
+			let sseRenderedIndexMap = {};
+			let isTranslateNodeQueueAvailable = function(){
+				if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
+					translate.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
+					return false;
+				}
+				return true;
+			};
+			let buildSseEventResponseData = function(requestData){
+				var responseData = {};
+				responseData.from = requestLang;
+				responseData.to = requestTo;
+				if(typeof(requestData) == 'object' && requestData != null){
+					if(typeof(requestData.from) != 'undefined' && requestData.from != null){
+						responseData.from = requestData.from;
+					}
+					if(typeof(requestData.to) != 'undefined' && requestData.to != null){
+						responseData.to = requestData.to;
+					}
+				}
+				return responseData;
+			};
+			let isSameTranslateRenderNode = function(leftNodeData, rightNodeData){
+				if(typeof(leftNodeData) != 'object' || leftNodeData == null || typeof(rightNodeData) != 'object' || rightNodeData == null){
+					return false;
+				}
+				if(typeof(leftNodeData.node) == 'undefined' || leftNodeData.node == null || typeof(rightNodeData.node) == 'undefined' || rightNodeData.node == null){
+					return false;
+				}
+				var leftAttribute = typeof(leftNodeData.attribute) == 'string' ? leftNodeData.attribute : '';
+				var rightAttribute = typeof(rightNodeData.attribute) == 'string' ? rightNodeData.attribute : '';
+				if(leftAttribute != rightAttribute){
+					return false;
+				}
+				if(typeof(leftNodeData.node.isSameNode) == 'function'){
+					return leftNodeData.node.isSameNode(rightNodeData.node);
+				}
+				return leftNodeData.node === rightNodeData.node;
+			};
+			let canRenderSseItemNow = function(renderLang, itemIndex, currentIndexMap, isSsePartial){
+				if(isSsePartial !== true){
+					return true;
+				}
+				if(typeof(translateHashArray[renderLang]) == 'undefined' || typeof(translateHashArray[renderLang][itemIndex]) == 'undefined'){
+					return false;
+				}
+				var hash = translateHashArray[renderLang][itemIndex];
+				if(typeof(translate.nodeQueue[uuid]['list']) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang]) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang][hash]) == 'undefined'){
+					return false;
+				}
+				var queueItem = translate.nodeQueue[uuid]['list'][renderLang][hash];
+				if(typeof(queueItem.nodes) == 'undefined' || queueItem.nodes == null){
+					return false;
+				}
+
+				// SSE 的 batch/item 会比 done 更早渲染。若同一个 DOM 节点里还有未返回的文本，
+				// 提前替换其中一段可能破坏后续长文本匹配；这种情况交给 done 统一兜底渲染。
+				for(var otherIndex = 0; otherIndex < translateHashArray[renderLang].length; otherIndex++){
+					if(otherIndex == itemIndex || currentIndexMap[otherIndex] === 1 || sseRenderedIndexMap[otherIndex] === 1){
+						continue;
+					}
+					var otherHash = translateHashArray[renderLang][otherIndex];
+					if(typeof(translate.nodeQueue[uuid]['list'][renderLang][otherHash]) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang][otherHash].nodes) == 'undefined'){
+						continue;
+					}
+					var otherNodes = translate.nodeQueue[uuid]['list'][renderLang][otherHash].nodes;
+					for(var nodeIndex = 0; nodeIndex < queueItem.nodes.length; nodeIndex++){
+						for(var otherNodeIndex = 0; otherNodeIndex < otherNodes.length; otherNodeIndex++){
+							if(isSameTranslateRenderNode(queueItem.nodes[nodeIndex], otherNodes[otherNodeIndex])){
+								return false;
+							}
+						}
+					}
+				}
+				return true;
+			};
+			let renderTranslateResultItems = function(responseData, requestData, items, isSsePartial){
+				if(!isTranslateNodeQueueAvailable()){
+					return 0;
+				}
+				if(typeof(responseData) != 'object' || responseData == null){
+					responseData = {};
+				}
+				var renderLang = requestLang;
+				var renderTo = requestTo;
+				if(typeof(responseData.from) != 'undefined' && responseData.from != null){
+					renderLang = responseData.from;
+				}else if(typeof(requestData) == 'object' && requestData != null && typeof(requestData.from) != 'undefined' && requestData.from != null){
+					renderLang = requestData.from;
+				}
+				if(typeof(responseData.to) != 'undefined' && responseData.to != null){
+					renderTo = responseData.to;
+				}else if(typeof(requestData) == 'object' && requestData != null && typeof(requestData.to) != 'undefined' && requestData.to != null){
+					renderTo = requestData.to;
+				}
+				if(typeof(translateHashArray[renderLang]) == 'undefined'){
+					translate.log('WARNING : translateHashArray['+renderLang+'] is undefined');
+					return 0;
+				}
+
+				var renderItems = [];
+				var currentIndexMap = {};
+				if(typeof(items) == 'object' && items != null && typeof(items.length) == 'number'){
+					for(var itemIndex = 0; itemIndex < items.length; itemIndex++){
+						if(typeof(items[itemIndex]) != 'object' || items[itemIndex] == null){
+							continue;
+						}
+						var originalIndex = parseInt(items[itemIndex].index, 10);
+						if(isNaN(originalIndex) || originalIndex < 0){
+							continue;
+						}
+						renderItems.push({
+							index:originalIndex,
+							text:items[itemIndex].text
+						});
+						currentIndexMap[originalIndex] = 1;
+					}
+				}else{
+					for(var fullIndex = 0; fullIndex < translateHashArray[renderLang].length; fullIndex++){
+						renderItems.push({
+							index:fullIndex,
+							text:typeof(responseData.text) == 'object' && responseData.text != null ? responseData.text[fullIndex] : null
+						});
+						currentIndexMap[fullIndex] = 1;
+					}
+				}
+
+				let task = new translate.renderTask();
+				var renderNumber = 0;
+				for(var renderItemIndex = 0; renderItemIndex < renderItems.length; renderItemIndex++){
+					var i = renderItems[renderItemIndex].index;
+					if(sseRenderedIndexMap[i] === 1){
+						continue;
+					}
+					if(!canRenderSseItemNow(renderLang, i, currentIndexMap, isSsePartial)){
+						continue;
+					}
+
+					//翻译前的语种，如 english
+					var lang = renderLang;
+					//翻译后的内容
+					var text = renderItems[renderItemIndex].text;
+					//如果 text 为 null，说明服务端为了保持结果数组下标对齐填充了空结果，这种结果不能渲染。
+					if(text == null){
+						continue;
+					}
+
+					// 保留原有保护逻辑：如果译文完整包含原文，认为翻译结果不可信，回退显示原始文本。
+					// SSE 的 batch/item 与 done 都必须走同一判断，避免两种返回方式展示不一致。
+					if(typeof(text) == 'string' && typeof(translateTextArray[renderLang]) != 'undefined' && typeof(translateTextArray[renderLang][i]) == 'string' && text.toLowerCase().indexOf(translateTextArray[renderLang][i].toLowerCase()) > -1){
+						text = translateTextArray[renderLang][i];
+					}
+
+					//翻译前的 hash 对应下标，SSE 事件中的 index 永远对应原始 text 数组下标。
+					var hash = translateHashArray[renderLang][i];
+					if(typeof(hash) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][lang][hash]) == 'undefined'){
+						continue;
+					}
+					var cacheHash = translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'];
+
+					//取原始的词，还未经过翻译的、需要进行翻译的词。
+					var originalWord = '';
+					try{
+						originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];
+					}catch(e){
+						translate.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
+						translate.log(e);
+						continue;
+					}
+
+					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
+						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+					}
+
+					//将翻译结果写入浏览器缓存；SSE 提前渲染和 done 兜底渲染共用同一缓存规则。
+					translate.storage.set('hash_'+renderTo+'_'+cacheHash,text);
+					if(translate.offline.fullExtract.isUse){
+						translate.offline.fullExtract.set(hash, originalWord, renderTo, text);
+					}
+					sseRenderedIndexMap[i] = 1;
+					renderNumber++;
+				}
+				if(renderNumber > 0){
+					task.execute(); //执行渲染任务
+				}
+				return renderNumber;
+			};
 			translate.request.post(url, data, function(responseData, requestData){
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
@@ -4264,80 +4455,19 @@ var translate = {
 					return;
 				}
 				
-				if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
-					translate.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
+				if(!isTranslateNodeQueueAvailable()){
 					return;
 				}
-
-				//console.log('-----待翻译3：----');
-				//console.log(translate.nodeQueue);
-				
-				//console.log('response:'+uuid);
-				let task = new translate.renderTask();
-				//遍历 translateHashArray
-				for(var i=0; i<translateHashArray[responseData.from].length; i++){
-					//翻译前的语种，如 english
-					var lang = responseData.from;	
-					//翻译后的内容
-					var text = responseData.text[i];	
-					//如果text为null，那么这个可能是一次翻译字数太多，为了保持数组长度，拼上的null
-					if(text == null){
-						continue;
-					}
-
-					// v3.0.3 添加，避免像是 JavaScript 被错误翻译为 “JavaScript的” ，然后出现了多个句子中都出现了Javascript时，会出现翻译后文本重复的问题
-					// 这里就是验证一下，翻译后的文本，是否会完全包含翻以前的文本，如果包含了，那么强制将翻译后的文本赋予翻译前的原始文本（也就是不被翻译）
-					if(text.toLowerCase().indexOf(translateTextArray[responseData.from][i].toLowerCase()) > -1){
-						//发现了，那么强制赋予翻以前内容
-						text = translateTextArray[responseData.from][i];
-					}
-
-
-					//翻译前的hash对应下标
-					var hash = translateHashArray[responseData.from][i];	
-					var cacheHash = translate.nodeQueue[uuid]['list'][lang][hash]['cacheHash'];
-
-
-					
-					//取原始的词，还未经过翻译的，需要进行翻译的词
-					var originalWord = '';
-					try{
-						originalWord = translate.nodeQueue[uuid]['list'][lang][hash]['original'];
-						//console.log('bef:'+translate.nodeQueue[uuid]['list'][lang][hash]['beforeText']);
-					}catch(e){
-						translate.log('uuid:'+uuid+', originalWord:'+originalWord+', lang:'+lang+', hash:'+hash+', text:'+text+', queue:'+translate.nodeQueue[uuid]);
-						translate.log(e);
-						continue;
-					}
-					
-					//for(var index = 0; index < translate.nodeQueue[lang][hash].length; index++){
-					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-						//translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = translate.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), text);
-						//加入任务
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
-					}
-					//}
-					/*
-					for(var index = 0; index < translate.nodeQueue[data.from][hash].length; index++){
-						translate.nodeQueue[data.from][hash][index].nodeValue = text;
-					}
-					*/
-					
-					//将翻译结果以 key：hash  value翻译结果的形式缓存
-					translate.storage.set('hash_'+responseData.to+'_'+cacheHash,text);
-					//如果离线翻译启用了全部提取，那么还要存入离线翻译指定存储
-					if(translate.offline.fullExtract.isUse){
-						translate.offline.fullExtract.set(hash, originalWord, responseData.to, text);
-					}
-				}
-				task.execute(); //执行渲染任务
+				renderTranslateResultItems(responseData, requestData, null, false);
 				//translate.temp_executeFinishNumber++; //记录执行完的次数
 
-				translate.translateRequest[uuid][lang].result = 1;
-				translate.translateRequest[uuid][lang].executeFinish = 1; //1是执行完毕
-				translate.translateRequest[uuid][lang].stoptime = Math.floor(Date.now() / 1000);
+				var finishLang = typeof(responseData.from) != 'undefined' && responseData.from != null ? responseData.from : requestData.from;
+				var finishTo = typeof(responseData.to) != 'undefined' && responseData.to != null ? responseData.to : requestData.to;
+				translate.translateRequest[uuid][finishLang].result = 1;
+				translate.translateRequest[uuid][finishLang].executeFinish = 1; //1是执行完毕
+				translate.translateRequest[uuid][finishLang].stoptime = Math.floor(Date.now() / 1000);
 				setTimeout(function(){
-					translate.waitingExecute.isAllExecuteFinish(uuid, responseData.from, responseData.to, 1, '');
+					translate.waitingExecute.isAllExecuteFinish(uuid, finishLang, finishTo, 1, '');
 				},5);
 			}, function(xhr){
 				translate.translateRequest[uuid][xhr.data.from].executeFinish = 1; //1是执行完毕
@@ -4354,6 +4484,21 @@ var translate = {
 					info = 'Network connection failed. url: '+xhr.requestURL;
 				}
 				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to, 0, info);
+			}, {
+				onBatch:function(eventData, requestData){
+					if(typeof(eventData) != 'object' || eventData == null || typeof(eventData.items) != 'object' || eventData.items == null){
+						return;
+					}
+					// batch 是服务端已经确定的一批结果，按原始 text 下标提前渲染；不在这里标记请求完成。
+					renderTranslateResultItems(buildSseEventResponseData(requestData), requestData, eventData.items, true);
+				},
+				onItem:function(eventData, requestData){
+					if(typeof(eventData) != 'object' || eventData == null){
+						return;
+					}
+					// item 是服务端返回的单条 API 翻译结果，仍然只按原始 text 下标渲染当前条。
+					renderTranslateResultItems(buildSseEventResponseData(requestData), requestData, [eventData], true);
+				}
 			});
 			/*** 翻译end ***/
 		}

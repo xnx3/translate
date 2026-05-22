@@ -129,6 +129,11 @@ var translate = {
 				appendParams: {},
 				// 网络请求自定义附加参数-追加 header 请求头参数， https://translate.zvo.cn/471711.html  对应的数据 translate.request.appendHeaders
 				appendHeaders: {},
+				// translate.json 的 SSE 流式响应能力，默认关闭。开启后只影响翻译接口请求，并且会在不支持时自动降级回原 JSON 请求。
+				sse:{
+					// 对应的数据 translate.request.sse.use
+					use:false
+				},
 				// 翻译排队执行  https://translate.zvo.cn/479742.html  对应的数据 translate.waitingExecute.use
 				waitingExecute: true,
 			};
@@ -204,6 +209,7 @@ var translate = {
 			data.request.listener.minIntervalTime = translate.request.listener.minIntervalTime;
 			data.request.appendParams = translate.request.appendParams;
 			data.request.appendHeaders = translate.request.appendHeaders;
+			data.request.sse.use = translate.request.sse.use;
 			data.request.waitingExecute = translate.waitingExecute.use;
 			data.element.tagAttribute = translate.element.tagAttribute;
 			data.progress.api.use = translate.progress.api.use;
@@ -235,6 +241,7 @@ var translate = {
 			var request = (typeof(data.request) === 'object' && data.request !== null) ? data.request : {};
 			var requestApi = (typeof(request.api) === 'object' && request.api !== null) ? request.api : {};
 			var requestListener = (typeof(request.listener) === 'object' && request.listener !== null) ? request.listener : {};
+			var requestSse = (typeof(request.sse) === 'object' && request.sse !== null) ? request.sse : {};
 			var element = (typeof(data.element) === 'object' && data.element !== null) ? data.element : {};
 			var progress = (typeof(data.progress) === 'object' && data.progress !== null) ? data.progress : {};
 			var progressApi = (typeof(progress.api) === 'object' && progress.api !== null) ? progress.api : {};
@@ -348,6 +355,9 @@ var translate = {
 			}
 			if(typeof(request.appendHeaders) === 'object'){
 				translate.request.appendHeaders = request.appendHeaders;
+			}
+			if(typeof(requestSse.use) === 'boolean'){
+				translate.request.sse.use = requestSse.use;
 			}
 			if(typeof(request.waitingExecute) === 'boolean'){
 				translate.waitingExecute.use = request.waitingExecute;
@@ -9070,6 +9080,228 @@ var translate = {
 			init:'init.json', //获取最新版本号，跟当前版本进行比对，用于提醒版本升级等使用
 
 		},
+		// translate.json 的 SSE 流式响应能力。默认关闭，开启后仍然保留 XHR JSON 降级路径。
+		sse:{
+			use:false,
+			/**
+			 * 所有 SSE 事件的统一旁路回调。
+			 * <p>当前步骤先建立协议读取能力，不在这里直接改 DOM 渲染主流程。后续接入渐进渲染时，
+			 * 可以在 translate.execute() 的翻译请求上下文中消费 batch/item。</p>
+			 */
+			onEvent:null,
+			onBatch:null,
+			onItem:null,
+			onDone:null,
+			onError:null,
+			start:function(){
+				translate.request.sse.use = true;
+			},
+			stop:function(){
+				translate.request.sse.use = false;
+			},
+			/**
+			 * 判断当前浏览器是否具备 POST SSE 所需的基础能力。
+			 * <p>EventSource 只适合 GET，不适合当前 translate.json 的 POST 表单请求；这里必须依赖
+			 * fetch + ReadableStream 主动读取 text/event-stream。</p>
+			 */
+			isSupport:function(){
+				return typeof(window) != 'undefined'
+					&& typeof(window.fetch) == 'function'
+					&& typeof(window.TextDecoder) == 'function'
+					&& typeof(Promise) == 'function';
+			},
+			/**
+			 * 解析一段完整的 SSE 事件文本块。
+			 *
+			 * @param block 不包含空行分隔符的 SSE 文本块
+			 * @return {name, data, dataText}
+			 */
+			parseEventBlock:function(block){
+				var eventName = 'message';
+				var dataLines = [];
+				var lines = block.split('\n');
+				for(var i = 0; i < lines.length; i++){
+					var line = lines[i];
+					if(line.length == 0 || line.indexOf(':') < 0){
+						continue;
+					}
+					var separatorIndex = line.indexOf(':');
+					var field = line.substring(0, separatorIndex);
+					var value = line.substring(separatorIndex+1);
+					if(value.indexOf(' ') == 0){
+						value = value.substring(1);
+					}
+					if(field == 'event'){
+						eventName = value;
+					}else if(field == 'data'){
+						dataLines.push(value);
+					}
+				}
+				var dataText = dataLines.join('\n');
+				var data = dataText;
+				if(dataText.length > 0){
+					try{
+						data = JSON.parse(dataText);
+					}catch(e){
+						// data 不一定必须是 JSON，解析失败时保留原始字符串，避免因为服务端扩展事件导致流被中断。
+						data = dataText;
+					}
+				}
+				return {
+					name:eventName,
+					data:data,
+					dataText:dataText
+				};
+			},
+			/**
+			 * 触发 SSE 事件旁路回调。
+			 * <p>这些回调不能影响主请求结果；回调异常只记录日志，不中断后续 done/error 处理。</p>
+			 */
+			triggerEvent:function(eventName, eventData, requestData){
+				try{
+					if(typeof(translate.request.sse.onEvent) == 'function'){
+						translate.request.sse.onEvent(eventName, eventData, requestData);
+					}
+					if(eventName == 'batch' && typeof(translate.request.sse.onBatch) == 'function'){
+						translate.request.sse.onBatch(eventData, requestData);
+					}else if(eventName == 'item' && typeof(translate.request.sse.onItem) == 'function'){
+						translate.request.sse.onItem(eventData, requestData);
+					}else if(eventName == 'done' && typeof(translate.request.sse.onDone) == 'function'){
+						translate.request.sse.onDone(eventData, requestData);
+					}else if(eventName == 'error' && typeof(translate.request.sse.onError) == 'function'){
+						translate.request.sse.onError(eventData, requestData);
+					}
+				}catch(e){
+					translate.log('translate.request.sse event callback error: '+e.message);
+				}
+			},
+			/**
+			 * 使用 fetch + ReadableStream 发起 translate.json SSE POST 请求。
+			 * <p>返回 true 表示请求已经由 SSE 接管；如果浏览器不支持流式读取会返回 false，让调用方继续走 XHR。
+			 * 如果 fetch 在收到任何 SSE 事件前失败，会调用 fallbackFunc 降级到原 JSON 请求。</p>
+			 */
+			post:function(path, data, func, abnormalFunc, fallbackFunc){
+				if(!translate.request.sse.isSupport()){
+					return false;
+				}
+
+				var url = translate.request.getUrl(path);
+				var params = translate.request.buildPostParams(data, {stream:'1'});
+				var headers = translate.request.buildHeaders({
+					'content-type':'application/x-www-form-urlencoded',
+					'Accept':'text/event-stream'
+				});
+				var requestState = {
+					data:data,
+					requestURL:url,
+					status:0,
+					responseText:''
+				};
+				var hasEvent = false;
+				var finished = false;
+				var fallbacked = false;
+				var callFallback = function(){
+					if(fallbacked){
+						return;
+					}
+					fallbacked = true;
+					if(typeof(fallbackFunc) == 'function'){
+						fallbackFunc();
+					}
+				};
+				var callAbnormal = function(info){
+					if(typeof(abnormalFunc) == 'function'){
+						requestState.info = info;
+						abnormalFunc(requestState);
+					}
+				};
+
+				window.fetch(url, {
+					method:'POST',
+					headers:headers,
+					body:params
+				}).then(function(response){
+					requestState.status = response.status;
+					if(response.status != 200){
+						if(!hasEvent){
+							callFallback();
+							return null;
+						}
+						callAbnormal('HTTP response code : '+response.status+', url: '+url);
+						return null;
+					}
+					var contentType = '';
+					if(response.headers != null && typeof(response.headers.get) == 'function'){
+						contentType = response.headers.get('content-type') || '';
+					}
+					if(contentType.toLowerCase().indexOf('text/event-stream') < 0){
+						callFallback();
+						return null;
+					}
+					if(typeof(response.body) == 'undefined' || response.body == null || typeof(response.body.getReader) != 'function'){
+						callFallback();
+						return null;
+					}
+
+					var reader = response.body.getReader();
+					var decoder = new window.TextDecoder('utf-8');
+					var buffer = '';
+					var handleBlock = function(block){
+						if(block == null || block.length < 1){
+							return;
+						}
+						hasEvent = true;
+						var event = translate.request.sse.parseEventBlock(block);
+						translate.request.sse.triggerEvent(event.name, event.data, data);
+						if(event.name == 'done'){
+							finished = true;
+							func(event.data, data, requestState);
+						}else if(event.name == 'error'){
+							finished = true;
+							func(event.data, data, requestState);
+						}
+					};
+					var read = function(){
+						return reader.read().then(function(result){
+							if(result.done){
+								buffer = buffer + decoder.decode();
+								buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+								if(buffer.length > 0){
+									handleBlock(buffer);
+									buffer = '';
+								}
+								if(!finished){
+									if(!hasEvent){
+										callFallback();
+									}else{
+										callAbnormal('SSE connection finished before done event. url: '+url);
+									}
+								}
+								return;
+							}
+							buffer = buffer + decoder.decode(result.value, {stream:true});
+							buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+							var splitIndex = buffer.indexOf('\n\n');
+							while(splitIndex > -1){
+								var block = buffer.substring(0, splitIndex);
+								buffer = buffer.substring(splitIndex+2);
+								handleBlock(block);
+								splitIndex = buffer.indexOf('\n\n');
+							}
+							return read();
+						});
+					};
+					return read();
+				}).catch(function(e){
+					if(!hasEvent){
+						callFallback();
+					}else{
+						callAbnormal('SSE request error: '+e.message+', url: '+url);
+					}
+				});
+				return true;
+			}
+		},
 		/*
 			v3.18.35.20250920 增加
 		
@@ -9463,6 +9695,99 @@ var translate = {
 			return url;
 		},
 		/**
+		 * 按 translate.request.send 原有规则组装 POST 表单参数。
+		 * <p>XHR 和 SSE 都必须通过这里生成参数，避免 stream=1 分支遗漏 browserDefaultLanguage、
+		 * appendParams 或企业版 key，导致同一个 translate.json 请求在两条传输路径上的行为不一致。</p>
+		 *
+		 * @param data 请求参数对象或字符串。传入对象时会按原逻辑追加公共参数。
+		 * @param extraParams 仅当前请求额外追加的参数，例如 SSE 请求的 stream=1。
+		 * @return application/x-www-form-urlencoded 格式的请求体
+		 */
+		buildPostParams:function(data, extraParams){
+			var params = '';
+
+			if(data == null || typeof(data) == 'undefined'){
+				data = {};
+			}
+
+			if(typeof(data) == 'string'){
+				params = data; //payload 方式 , edge 的方式
+			}else{
+				//表单提交方式
+
+				//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
+				data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
+
+				//追加附加参数
+				for(var apindex in translate.request.appendParams){
+					if (!translate.request.appendParams.hasOwnProperty(apindex)) {
+						continue;
+					}
+					data[apindex] = translate.request.appendParams[apindex];
+				}
+
+				if(typeof(translate.enterprise) != 'undefined'){
+					//加入key
+					if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
+						data.key = translate.enterprise.key;
+					}
+				}
+
+				//只服务当前传输方式的临时参数放在最后追加，避免被 appendParams 覆盖。
+				if(typeof(extraParams) == 'object' && extraParams != null){
+					for(var epindex in extraParams){
+						if (!extraParams.hasOwnProperty(epindex)) {
+							continue;
+						}
+						data[epindex] = extraParams[epindex];
+					}
+				}
+
+				//组合参数
+				for(var index in data){
+					if (!data.hasOwnProperty(index)) {
+						continue;
+					}
+					if(params.length > 0){
+						params = params + '&';
+					}
+					params = params + index + '=' + data[index];
+				}
+			}
+			return params;
+		},
+		/**
+		 * 按 translate.request.send 原有规则组装请求头。
+		 * <p>这里返回普通对象，XHR 会逐个 setRequestHeader，fetch 会直接作为 headers 使用。</p>
+		 *
+		 * @param headers 当前请求自己的 header
+		 * @return 合并 appendHeaders 和 currentpage 后的 header 对象
+		 */
+		buildHeaders:function(headers){
+			var requestHeaders = {};
+			if(headers != null){
+				for(var index in headers){
+					if (!headers.hasOwnProperty(index)) {
+						continue;
+					}
+					requestHeaders[index] = headers[index];
+				}
+			}
+
+			//追加附加参数
+			for(var ahindex in translate.request.appendHeaders){
+				if (!translate.request.appendHeaders.hasOwnProperty(ahindex)) {
+					continue;
+				}
+				requestHeaders[ahindex] = translate.request.appendHeaders[ahindex];
+			}
+
+			if(translate.service.name != 'client.edge'){
+				requestHeaders.currentpage = window.location.href+'';
+			}
+			return requestHeaders;
+		},
+		/**
 		 * post请求
 		 * @param path 请求的path（path，传入的是translate.request.api.translate 这种的，需要使用 getUrl 来组合真正请求的url ）
 		 * @param data 请求的参数数据，传入如 
@@ -9513,6 +9838,25 @@ var translate = {
 			}
 			// ------- edge end --------
 
+			if(path == translate.request.api.translate && translate.request.sse.use === true && typeof(data) == 'object' && data != null){
+				var sseData = {};
+				for(var sseDataIndex in data){
+					if (!data.hasOwnProperty(sseDataIndex)) {
+						continue;
+					}
+					sseData[sseDataIndex] = data[sseDataIndex];
+				}
+				var selfRequest = this;
+				var sseStarted = translate.request.sse.post(path, sseData, func, abnormalFunc, function(){
+					// 只有在 SSE 还没有收到任何事件前失败，才降级回原始 JSON 请求。
+					// 这里继续使用原始 data，避免 stream=1 残留到降级请求里造成再次进入 SSE 入口。
+					selfRequest.send(path, data, data, func, 'post', true, headers, abnormalFunc, true);
+				});
+				if(sseStarted){
+					return;
+				}
+			}
+
 			this.send(path, data, data, func, 'post', true, headers, abnormalFunc, true);
 		},
 		/**
@@ -9532,46 +9876,7 @@ var translate = {
 		 */
 		send:function(url, data, appendXhrData, func, method, isAsynchronize, headers, abnormalFunc, showErrorLog){
 			//post提交的参数
-			var params = '';
-
-			if(data == null || typeof(data) == 'undefined'){
-				data = {};
-			}
-			
-			if(typeof(data) == 'string'){
-				params = data; //payload 方式 , edge 的方式
-			}else{
-				//表单提交方式
-				
-				//加入浏览器默认语种  v3.6.1 增加，以便更好的进行自动切换语种
-				data.browserDefaultLanguage = translate.util.browserDefaultLanguage();
-				
-				//追加附加参数
-				for(var apindex in translate.request.appendParams){
-					if (!translate.request.appendParams.hasOwnProperty(apindex)) {
-			    		continue;
-			    	}
-					data[apindex] = translate.request.appendParams[apindex];
-				}
-
-				if(typeof(translate.enterprise) != 'undefined'){
-					//加入key
-					if(typeof(translate.enterprise.key) != 'undefined' && typeof(translate.enterprise.key) == 'string' && translate.enterprise.key.length > 0){
-						data.key = translate.enterprise.key;
-					}
-				}
-				
-				//组合参数
-				for(var index in data){
-					if (!data.hasOwnProperty(index)) {
-			    		continue;
-			    	}
-					if(params.length > 0){
-						params = params + '&';
-					}
-					params = params + index + '=' + data[index];
-				}
-			}
+			var params = translate.request.buildPostParams(data);
 			if(url.indexOf('https://') == 0 || url.indexOf('http://') == 0){
 				//采用的url绝对路径
 			}else{
@@ -9589,25 +9894,12 @@ var translate = {
 			//2.调用open方法（true----异步）
 			xhr.open(method,url,isAsynchronize);
 			//设置headers
-			if(headers != null){
-				for(var index in headers){
-					if (!headers.hasOwnProperty(index)) {
-			    		continue;
-			    	}
-					xhr.setRequestHeader(index,headers[index]);
-				}
-			}
-
-			//追加附加参数
-			for(var ahindex in translate.request.appendHeaders){
-				if (!translate.request.appendHeaders.hasOwnProperty(ahindex)) {
+			var requestHeaders = translate.request.buildHeaders(headers);
+			for(var headerIndex in requestHeaders){
+				if (!requestHeaders.hasOwnProperty(headerIndex)) {
 		    		continue;
 		    	}
-				xhr.setRequestHeader(ahindex,translate.request.appendHeaders[ahindex]);
-			}
-
-			if(translate.service.name != 'client.edge'){
-				xhr.setRequestHeader('currentpage', window.location.href+'');
+				xhr.setRequestHeader(headerIndex,requestHeaders[headerIndex]);
 			}
 			xhr.send(params);
 			//4.请求状态改变事件

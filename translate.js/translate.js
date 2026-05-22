@@ -9157,8 +9157,24 @@ var translate = {
 			 * 触发 SSE 事件旁路回调。
 			 * <p>这些回调不能影响主请求结果；回调异常只记录日志，不中断后续 done/error 处理。</p>
 			 */
-			triggerEvent:function(eventName, eventData, requestData){
+			triggerEvent:function(eventName, eventData, requestData, sseCallbacks){
 				try{
+					// 单次请求回调用于 translate.execute() 这种带有请求上下文的消费场景。
+					// 这里不复用全局 onBatch/onItem，避免多个翻译请求并发时互相覆盖回调状态。
+					if(typeof(sseCallbacks) == 'object' && sseCallbacks != null){
+						if(typeof(sseCallbacks.onEvent) == 'function'){
+							sseCallbacks.onEvent(eventName, eventData, requestData);
+						}
+						if(eventName == 'batch' && typeof(sseCallbacks.onBatch) == 'function'){
+							sseCallbacks.onBatch(eventData, requestData);
+						}else if(eventName == 'item' && typeof(sseCallbacks.onItem) == 'function'){
+							sseCallbacks.onItem(eventData, requestData);
+						}else if(eventName == 'done' && typeof(sseCallbacks.onDone) == 'function'){
+							sseCallbacks.onDone(eventData, requestData);
+						}else if(eventName == 'error' && typeof(sseCallbacks.onError) == 'function'){
+							sseCallbacks.onError(eventData, requestData);
+						}
+					}
 					if(typeof(translate.request.sse.onEvent) == 'function'){
 						translate.request.sse.onEvent(eventName, eventData, requestData);
 					}
@@ -9180,7 +9196,7 @@ var translate = {
 			 * <p>返回 true 表示请求已经由 SSE 接管；如果浏览器不支持流式读取会返回 false，让调用方继续走 XHR。
 			 * 如果 fetch 在收到任何 SSE 事件前失败，会调用 fallbackFunc 降级到原 JSON 请求。</p>
 			 */
-			post:function(path, data, func, abnormalFunc, fallbackFunc){
+			post:function(path, data, func, abnormalFunc, fallbackFunc, sseCallbacks){
 				if(!translate.request.sse.isSupport()){
 					return false;
 				}
@@ -9252,7 +9268,7 @@ var translate = {
 						}
 						hasEvent = true;
 						var event = translate.request.sse.parseEventBlock(block);
-						translate.request.sse.triggerEvent(event.name, event.data, data);
+						translate.request.sse.triggerEvent(event.name, event.data, data, sseCallbacks);
 						if(event.name == 'done'){
 							finished = true;
 							func(event.data, data, requestState);
@@ -9803,8 +9819,9 @@ var translate = {
 		 * 					requestData post请求所携带的数据
 		 * 				注意，是响应数据是第一个参数，请求数据是第二个参数。 以向前兼容
 		 * @param abnormalFunc 响应异常所执行的方法，响应码不是200就会执行这个方法 ,传入如 function(xhr){}  另外这里的 xhr 会额外有个参数  xhr.requestURL 返回当前请求失败的url
+		 * @param sseCallbacks SSE 单次请求回调，只对当前请求生效，避免 translate.execute() 并发请求共享全局回调造成串线。
 		 */
-		post:function(path, data, func, abnormalFunc){
+		post:function(path, data, func, abnormalFunc, sseCallbacks){
 			var headers = {
 				'content-type':'application/x-www-form-urlencoded',
 			};
@@ -9851,7 +9868,7 @@ var translate = {
 					// 只有在 SSE 还没有收到任何事件前失败，才降级回原始 JSON 请求。
 					// 这里继续使用原始 data，避免 stream=1 残留到降级请求里造成再次进入 SSE 入口。
 					selfRequest.send(path, data, data, func, 'post', true, headers, abnormalFunc, true);
-				});
+				}, sseCallbacks);
 				if(sseStarted){
 					return;
 				}

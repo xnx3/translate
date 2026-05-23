@@ -9320,37 +9320,40 @@ var translate = {
 			 * <p>这些回调不能影响主请求结果；回调异常只记录日志，不中断后续 done/error 处理。</p>
 			 */
 			triggerEvent:function(eventName, eventData, requestData, sseCallbacks){
-				try{
-					// 单次请求回调用于 translate.execute() 这种带有请求上下文的消费场景。
-					// 这里不复用全局 onBatch/onItem，避免多个翻译请求并发时互相覆盖回调状态。
-					if(typeof(sseCallbacks) == 'object' && sseCallbacks != null){
-						if(typeof(sseCallbacks.onEvent) == 'function'){
-							sseCallbacks.onEvent(eventName, eventData, requestData);
-						}
-						if(eventName == 'batch' && typeof(sseCallbacks.onBatch) == 'function'){
-							sseCallbacks.onBatch(eventData, requestData);
-						}else if(eventName == 'item' && typeof(sseCallbacks.onItem) == 'function'){
-							sseCallbacks.onItem(eventData, requestData);
-						}else if(eventName == 'done' && typeof(sseCallbacks.onDone) == 'function'){
-							sseCallbacks.onDone(eventData, requestData);
-						}else if(eventName == 'error' && typeof(sseCallbacks.onError) == 'function'){
-							sseCallbacks.onError(eventData, requestData);
-						}
+				var runCallback = function(owner, callback, args, callbackName){
+					if(typeof(callback) != 'function'){
+						return;
 					}
-					if(typeof(translate.request.sse.onEvent) == 'function'){
-						translate.request.sse.onEvent(eventName, eventData, requestData);
+					try{
+						// 每个回调单独捕获异常，避免某个监听失败后阻断同一事件的后续监听。
+						callback.apply(owner, args);
+					}catch(e){
+						translate.log('translate.request.sse '+callbackName+' callback error: '+e.message);
 					}
-					if(eventName == 'batch' && typeof(translate.request.sse.onBatch) == 'function'){
-						translate.request.sse.onBatch(eventData, requestData);
-					}else if(eventName == 'item' && typeof(translate.request.sse.onItem) == 'function'){
-						translate.request.sse.onItem(eventData, requestData);
-					}else if(eventName == 'done' && typeof(translate.request.sse.onDone) == 'function'){
-						translate.request.sse.onDone(eventData, requestData);
-					}else if(eventName == 'error' && typeof(translate.request.sse.onError) == 'function'){
-						translate.request.sse.onError(eventData, requestData);
+				};
+				// 单次请求回调用于 translate.execute() 这种带有请求上下文的消费场景。
+				// 这里不复用全局 onBatch/onItem，避免多个翻译请求并发时互相覆盖回调状态。
+				if(typeof(sseCallbacks) == 'object' && sseCallbacks != null){
+					runCallback(sseCallbacks, sseCallbacks.onEvent, [eventName, eventData, requestData], 'onEvent');
+					if(eventName == 'batch'){
+						runCallback(sseCallbacks, sseCallbacks.onBatch, [eventData, requestData], 'onBatch');
+					}else if(eventName == 'item'){
+						runCallback(sseCallbacks, sseCallbacks.onItem, [eventData, requestData], 'onItem');
+					}else if(eventName == 'done'){
+						runCallback(sseCallbacks, sseCallbacks.onDone, [eventData, requestData], 'onDone');
+					}else if(eventName == 'error'){
+						runCallback(sseCallbacks, sseCallbacks.onError, [eventData, requestData], 'onError');
 					}
-				}catch(e){
-					translate.log('translate.request.sse event callback error: '+e.message);
+				}
+				runCallback(translate.request.sse, translate.request.sse.onEvent, [eventName, eventData, requestData], 'global onEvent');
+				if(eventName == 'batch'){
+					runCallback(translate.request.sse, translate.request.sse.onBatch, [eventData, requestData], 'global onBatch');
+				}else if(eventName == 'item'){
+					runCallback(translate.request.sse, translate.request.sse.onItem, [eventData, requestData], 'global onItem');
+				}else if(eventName == 'done'){
+					runCallback(translate.request.sse, translate.request.sse.onDone, [eventData, requestData], 'global onDone');
+				}else if(eventName == 'error'){
+					runCallback(translate.request.sse, translate.request.sse.onError, [eventData, requestData], 'global onError');
 				}
 			},
 			/**

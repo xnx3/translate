@@ -9529,6 +9529,17 @@ var translate = {
 						abnormalFunc(requestState);
 					}
 				};
+				var callResponseFunc = function(args){
+					try{
+						func.apply(null, args);
+					}catch(e){
+						// func 是业务完成回调，异常应像 XHR onreadystatechange 中的回调异常一样暴露出去，
+						// 但不能进入 fetch/read 的 Promise catch，否则会被误判为 SSE 网络失败并触发 abnormalFunc。
+						setTimeout(function(){
+							throw e;
+						}, 0);
+					}
+				};
 				var handleNormalResponse = function(response){
 					return response.text().then(function(responseText){
 						// 这里代表 translate.json 已经返回了完整普通响应，不再触发 fallback 重复请求。
@@ -9550,9 +9561,9 @@ var translate = {
 						}
 
 						if(json === null){
-							func(responseText);
+							callResponseFunc([responseText]);
 						}else{
-							func(json, data, requestState);
+							callResponseFunc([json, data, requestState]);
 						}
 					});
 				};
@@ -9608,9 +9619,9 @@ var translate = {
 						}
 						translate.request.sse.triggerEvent(event.name, event.data, data, sseCallbacks);
 						if(event.name == 'done'){
-							func(event.data, data, requestState);
+							callResponseFunc([event.data, data, requestState]);
 						}else if(event.name == 'error'){
-							func(event.data, data, requestState);
+							callResponseFunc([event.data, data, requestState]);
 						}
 					};
 					var read = function(){

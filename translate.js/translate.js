@@ -9522,12 +9522,24 @@ var translate = {
 						fallbackFunc();
 					}
 				};
+				var callAbnormalFunc = function(){
+					if(typeof(abnormalFunc) != 'function'){
+						return;
+					}
+					try{
+						abnormalFunc(requestState);
+					}catch(e){
+						// abnormalFunc 是用户异常回调，它自身的异常应暴露给调用方，
+						// 但不能再次进入 fetch/read 的 Promise catch 被包装成新的 SSE 网络异常。
+						setTimeout(function(){
+							throw e;
+						}, 0);
+					}
+				};
 				var callAbnormal = function(info){
 					requestState.info = info;
 					triggerResponse();
-					if(typeof(abnormalFunc) == 'function'){
-						abnormalFunc(requestState);
-					}
+					callAbnormalFunc();
 				};
 				var callResponseFunc = function(args){
 					try{

@@ -18,18 +18,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       func: () => document.body.innerHTML  
     });  
   
-    // 在页面头部添加翻译脚本  
-    const script = `  
-      var head = document.getElementsByTagName('head')[0];  
-      var scriptElement = document.createElement('script');  
-      scriptElement.type = 'text/javascript';  
-      scriptElement.src = 'https://res.zvo.cn/translate/inspector_v2.js';  
-      head.appendChild(scriptElement);  
-    `;  
-    await chrome.scripting.executeScript({  
-      target: {tabId: currentTab.id},  
-      code: script  
-    }); 
+    // 在页面头部添加翻译脚本
+    await chrome.scripting.executeScript({
+      target: {tabId: currentTab.id},
+      func: () => {
+        var head = document.getElementsByTagName('head')[0];
+        var scriptElement = document.createElement('script');
+        scriptElement.type = 'text/javascript';
+        scriptElement.src = 'https://res.zvo.cn/translate/inspector_v2.js';
+        head.appendChild(scriptElement);
+      }
+    });
 
     
    /*  translate.listener.start(); 

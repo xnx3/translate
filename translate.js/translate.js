@@ -4152,6 +4152,9 @@ var translate = {
 			list:{}
 		};
 
+		// 当前 translate.execute 内部专用的 SSE 进度遮罩状态。
+		// 只传给 translate.request.sse.collectSafeProgressElements 使用，不作为全局状态保存。
+		let sseProgressState = {};
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
@@ -4450,6 +4453,7 @@ var translate = {
 					}
 				}
 				var sseRenderBatchState = prepareSseRenderBatchState(renderLang, currentIndexMap, isSsePartial);
+				var sseProgressRenderedIndexes = [];
 
 				let task = new translate.renderTask();
 				var renderNumber = 0;
@@ -4504,10 +4508,27 @@ var translate = {
 						translate.offline.fullExtract.set(hash, originalWord, renderTo, text);
 					}
 					markSseItemRendered(renderLang, i, isSsePartial, sseRenderBatchState);
+					if(isSsePartial === true){
+						// 这里只记录已经通过安全判断并加入渲染任务的 index；
+						// 解除遮罩必须等 task.execute() 完成后再做，避免 DOM 尚未替换完成时露出原文。
+						sseProgressRenderedIndexes.push(i);
+					}
 					renderNumber++;
 				}
 				if(renderNumber > 0){
 					task.execute(); //执行渲染任务
+					if(isSsePartial === true && sseProgressRenderedIndexes.length > 0){
+						var safeProgressElements = translate.request.sse.collectSafeProgressElements(sseProgressState, {
+							uuid:uuid,
+							fanyiLangs:fanyiLangs,
+							translateHashArray:translateHashArray,
+							renderLang:renderLang,
+							renderedIndexes:sseProgressRenderedIndexes
+						});
+						if(safeProgressElements.length > 0){
+							translate.progress.api.removeUITipByElements(safeProgressElements);
+						}
+					}
 				}
 				return renderNumber;
 			};
@@ -9455,6 +9476,176 @@ var translate = {
 					runCallback(translate.request.sse, translate.request.sse.onDone, [eventData, requestData], 'global onDone');
 				}else if(eventName == 'error'){
 					runCallback(translate.request.sse, translate.request.sse.onError, [eventData, requestData], 'global onError');
+				}
+			},
+			/**
+			 * 收集本次 SSE 安全增量渲染后，可以提前移除翻译进度遮罩的元素。
+			 * <p>这里不直接改 DOM，只根据当前 translate.execute 的临时状态做输入输出，方便后续排查。
+			 * 如果判断异常，只记录日志并返回空数组，剩余遮罩仍会在最终 translateNetworkAfter 中统一清理。</p>
+			 *
+			 * @param state 当前 translate.execute 闭包内的 SSE 进度状态
+			 * @param data {uuid, fanyiLangs, translateHashArray, renderLang, renderedIndexes}
+			 * @return 可以安全取消遮罩的元素数组
+			 */
+			collectSafeProgressElements:function(state, data){
+				var logPrefix = 'translate.request.sse.collectSafeProgressElements';
+				try{
+					if(translate.progress.api.use !== true || translate.progress.api.isTip !== true){
+						return [];
+					}
+					if(typeof(state) != 'object' || state == null){
+						translate.log(logPrefix+' 参数异常：state 不是对象');
+						return [];
+					}
+					if(typeof(data) != 'object' || data == null){
+						translate.log(logPrefix+' 参数异常：data 不是对象');
+						return [];
+					}
+					if(typeof(data.uuid) == 'undefined' || data.uuid == null){
+						translate.log(logPrefix+' 参数异常：uuid 为空');
+						return [];
+					}
+					if(typeof(data.renderLang) != 'string' || data.renderLang.length < 1){
+						translate.log(logPrefix+' 参数异常：renderLang 为空');
+						return [];
+					}
+					if(typeof(data.renderedIndexes) != 'object' || data.renderedIndexes == null || typeof(data.renderedIndexes.length) != 'number'){
+						translate.log(logPrefix+' 参数异常：renderedIndexes 不是数组');
+						return [];
+					}
+					if(typeof(data.fanyiLangs) != 'object' || data.fanyiLangs == null || typeof(data.fanyiLangs.length) != 'number'){
+						translate.log(logPrefix+' 参数异常：fanyiLangs 不是数组');
+						return [];
+					}
+					if(typeof(data.translateHashArray) != 'object' || data.translateHashArray == null){
+						translate.log(logPrefix+' 参数异常：translateHashArray 不是对象');
+						return [];
+					}
+					if(typeof(data.translateHashArray[data.renderLang]) == 'undefined'){
+						translate.log(logPrefix+' 数据异常：translateHashArray 中不存在 renderLang '+data.renderLang);
+						return [];
+					}
+					if(typeof(translate.nodeQueue[data.uuid]) == 'undefined' || translate.nodeQueue[data.uuid] == null || typeof(translate.nodeQueue[data.uuid]['list']) == 'undefined'){
+						translate.log(logPrefix+' 数据异常：nodeQueue 中不存在 uuid '+data.uuid);
+						return [];
+					}
+
+					var buildIndexElements = function(lang, itemIndex){
+						var resultElements = [];
+						var elementMap = new Map();
+						if(typeof(data.translateHashArray[lang]) == 'undefined' || typeof(data.translateHashArray[lang][itemIndex]) == 'undefined'){
+							translate.log(logPrefix+' 数据异常：未找到 translateHashArray，uuid:'+data.uuid+', lang:'+lang+', index:'+itemIndex);
+							return resultElements;
+						}
+						var hash = data.translateHashArray[lang][itemIndex];
+						if(typeof(translate.nodeQueue[data.uuid]['list'][lang]) == 'undefined'
+							|| typeof(translate.nodeQueue[data.uuid]['list'][lang][hash]) == 'undefined'
+							|| typeof(translate.nodeQueue[data.uuid]['list'][lang][hash].nodes) == 'undefined'){
+							translate.log(logPrefix+' 数据异常：未找到渲染 index 对应的 nodeQueue，uuid:'+data.uuid+', lang:'+lang+', index:'+itemIndex);
+							return resultElements;
+						}
+						var nodes = translate.nodeQueue[data.uuid]['list'][lang][hash].nodes;
+						for(var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++){
+							if(typeof(nodes[nodeIndex]) != 'object' || nodes[nodeIndex] == null || typeof(nodes[nodeIndex].node) == 'undefined' || nodes[nodeIndex].node == null){
+								continue;
+							}
+							var elements = translate.element.nodeToElement([nodes[nodeIndex].node]);
+							for(var elementIndex = 0; elementIndex < elements.length; elementIndex++){
+								elementMap.set(elements[elementIndex], elements[elementIndex]);
+							}
+						}
+						for(let element of elementMap.keys()){
+							resultElements.push(element);
+						}
+						return resultElements;
+					};
+
+					if(state.initialized !== true){
+						state.elementPendingMap = new Map();
+						state.indexElementMap = {};
+						state.renderedIndexMap = {};
+						for(var langIndex = 0; langIndex < data.fanyiLangs.length; langIndex++){
+							var lang = data.fanyiLangs[langIndex];
+							if(typeof(lang) != 'string' || lang.length < 1){
+								continue;
+							}
+							if(typeof(data.translateHashArray[lang]) == 'undefined'){
+								translate.log(logPrefix+' 数据异常：初始化时 translateHashArray 中不存在 lang '+lang);
+								continue;
+							}
+							state.indexElementMap[lang] = [];
+							for(var itemIndex = 0; itemIndex < data.translateHashArray[lang].length; itemIndex++){
+								var indexElements = buildIndexElements(lang, itemIndex);
+								state.indexElementMap[lang][itemIndex] = indexElements;
+								for(var elementIndex = 0; elementIndex < indexElements.length; elementIndex++){
+									var pending = state.elementPendingMap.get(indexElements[elementIndex]);
+									state.elementPendingMap.set(indexElements[elementIndex], typeof(pending) == 'number' ? pending + 1 : 1);
+								}
+							}
+						}
+						state.initialized = true;
+					}
+
+					if(state.elementPendingMap == null || typeof(state.elementPendingMap.get) != 'function'){
+						translate.log(logPrefix+' 状态异常：elementPendingMap 不存在');
+						return [];
+					}
+					if(typeof(state.indexElementMap) != 'object' || state.indexElementMap == null){
+						translate.log(logPrefix+' 状态异常：indexElementMap 不存在');
+						return [];
+					}
+					if(typeof(state.renderedIndexMap) != 'object' || state.renderedIndexMap == null){
+						state.renderedIndexMap = {};
+					}
+
+					var safeElementMap = new Map();
+					var renderedIndexMap = {};
+					for(var renderedIndex = 0; renderedIndex < data.renderedIndexes.length; renderedIndex++){
+						var itemIndex = parseInt(data.renderedIndexes[renderedIndex], 10);
+						if(isNaN(itemIndex) || itemIndex < 0){
+							translate.log(logPrefix+' 参数异常：renderedIndexes 中存在非法 index，uuid:'+data.uuid+', lang:'+data.renderLang+', index:'+data.renderedIndexes[renderedIndex]);
+							continue;
+						}
+						if(renderedIndexMap[itemIndex] === 1){
+							continue;
+						}
+						renderedIndexMap[itemIndex] = 1;
+
+						var renderedKey = data.renderLang+'_'+itemIndex;
+						if(state.renderedIndexMap[renderedKey] === 1){
+							continue;
+						}
+						state.renderedIndexMap[renderedKey] = 1;
+
+						if(typeof(state.indexElementMap[data.renderLang]) == 'undefined' || typeof(state.indexElementMap[data.renderLang][itemIndex]) == 'undefined'){
+							translate.log(logPrefix+' 状态异常：未找到 indexElementMap，uuid:'+data.uuid+', lang:'+data.renderLang+', index:'+itemIndex);
+							continue;
+						}
+						var indexElements = state.indexElementMap[data.renderLang][itemIndex];
+						for(var elementIndex = 0; elementIndex < indexElements.length; elementIndex++){
+							var pending = state.elementPendingMap.get(indexElements[elementIndex]);
+							if(typeof(pending) != 'number'){
+								translate.log(logPrefix+' 状态异常：elementPendingMap 中未找到元素 pending，uuid:'+data.uuid+', lang:'+data.renderLang+', index:'+itemIndex);
+								continue;
+							}
+							pending--;
+							if(pending > 0){
+								state.elementPendingMap.set(indexElements[elementIndex], pending);
+							}else{
+								state.elementPendingMap.delete(indexElements[elementIndex]);
+								safeElementMap.set(indexElements[elementIndex], indexElements[elementIndex]);
+							}
+						}
+					}
+
+					var safeElements = [];
+					for(let element of safeElementMap.keys()){
+						safeElements.push(element);
+					}
+					return safeElements;
+				}catch(e){
+					translate.log(logPrefix+' 执行异常：'+e.message);
+					return [];
 				}
 			},
 			/**

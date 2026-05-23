@@ -9356,11 +9356,40 @@ var translate = {
 					data:data,
 					requestURL:url,
 					status:0,
-					responseText:''
+					readyState:0,
+					responseText:'',
+					response:'',
+					// SSE 没有原生 XMLHttpRequest 对象。这里仅标记当前是 SSE 最小兼容响应对象，
+					// 供 translate.request.response(xhr) 的旧扩展代码识别来源，避免误认为它是完整 XHR。
+					sse:true
 				};
 				var hasEvent = false;
 				var finished = false;
 				var fallbacked = false;
+				var responseTriggered = false;
+				var triggerResponse = function(responseData){
+					if(responseTriggered){
+						return;
+					}
+					responseTriggered = true;
+					requestState.readyState = 4;
+					if(typeof(responseData) != 'undefined'){
+						try{
+							// 保持与普通 translate.json 尽量接近：最终 done/error 的 data 作为响应正文。
+							// batch/item 只是流式中间结果，不写入 responseText，也不触发 response 回调。
+							requestState.responseText = typeof(responseData) == 'string' ? responseData : JSON.stringify(responseData);
+						}catch(e){
+							requestState.responseText = '';
+						}
+						requestState.response = requestState.responseText;
+					}
+					try{
+						translate.request.response(requestState);
+					}catch(e){
+						// 用户自定义 response 回调不能影响 SSE 网络状态，否则 Promise catch 会误判为请求失败。
+						translate.log('translate.request.response SSE callback error: '+e.message);
+					}
+				};
 				var callFallback = function(){
 					if(fallbacked){
 						return;
@@ -9371,8 +9400,9 @@ var translate = {
 					}
 				};
 				var callAbnormal = function(info){
+					requestState.info = info;
+					triggerResponse();
 					if(typeof(abnormalFunc) == 'function'){
-						requestState.info = info;
 						abnormalFunc(requestState);
 					}
 				};
@@ -9413,12 +9443,19 @@ var translate = {
 						}
 						hasEvent = true;
 						var event = translate.request.sse.parseEventBlock(block);
-						translate.request.sse.triggerEvent(event.name, event.data, data, sseCallbacks);
 						if(event.name == 'done'){
 							finished = true;
-							func(event.data, data, requestState);
+							requestState.sseEventName = event.name;
+							triggerResponse(event.data);
 						}else if(event.name == 'error'){
 							finished = true;
+							requestState.sseEventName = event.name;
+							triggerResponse(event.data);
+						}
+						translate.request.sse.triggerEvent(event.name, event.data, data, sseCallbacks);
+						if(event.name == 'done'){
+							func(event.data, data, requestState);
+						}else if(event.name == 'error'){
 							func(event.data, data, requestState);
 						}
 					};
@@ -9576,9 +9613,12 @@ var translate = {
 		},
 		/*
 			请求后端接口的响应。无论是否成功，都会触发此处。
-			另外当 xhr.readyState==4 的状态时才会触发。
+			普通 XHR 请求会在 xhr.readyState==4 的状态时触发。
+			如果 translate.json 启用了 SSE 并由 SSE 成功接管请求，这里会传入一个最小兼容响应对象，
+			它不是原生 XMLHttpRequest，但会保留 status、readyState、responseText、response、data、requestURL 等常用字段，
+			并通过 sse:true 标记来源，方便旧扩展代码兼容判断。
 			此处会在接口请求响应后、且在translate.js处理前就会触发
-			@param xhr XMLHttpRequest 接口请求
+			@param xhr XMLHttpRequest 接口请求；SSE 请求为最小兼容响应对象
 			
 		*/
 		response:function(xhr){

@@ -4238,6 +4238,10 @@ var translate = {
 			// 记录当前这一次 translate.json 请求中已经通过 SSE 提前渲染过的原始 text 下标。
 			// done 事件仍然会返回完整结果，这里用于跳过已渲染下标，避免同一段 DOM 被重复替换。
 			let sseRenderedIndexMap = {};
+			// SSE 增量渲染的目标节点索引，只在当前 translate.execute() 闭包内生效。
+			// 以前每个 item/batch 都会反向扫描整批待翻译文本，文本上千且并发较高时会产生大量重复遍历。
+			// 这里按语种预先记录“原始 text 下标 -> 它会影响哪些 node+attribute”，后续只看当前下标涉及的目标，避免跨请求共享状态。
+			let sseRenderTargetStateMap = {};
 			let isTranslateNodeQueueAvailable = function(){
 				if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
 					translate.log('提示：你很可能多次引入了 translate.js 所以造成了翻译本身的数据错乱，这只是个提示，它还是会给你正常翻译的，但是你最好不要重复引入太多次 translate.js ，正常情况下只需要引入一次 translate.js 就可以了。太多的话很可能会导致你页面卡顿');
@@ -4259,59 +4263,141 @@ var translate = {
 				}
 				return responseData;
 			};
-			let isSameTranslateRenderNode = function(leftNodeData, rightNodeData){
-				if(typeof(leftNodeData) != 'object' || leftNodeData == null || typeof(rightNodeData) != 'object' || rightNodeData == null){
-					return false;
+			let getSseRenderTargetState = function(renderLang){
+				if(typeof(sseRenderTargetStateMap[renderLang]) != 'undefined'){
+					return sseRenderTargetStateMap[renderLang];
 				}
-				if(typeof(leftNodeData.node) == 'undefined' || leftNodeData.node == null || typeof(rightNodeData.node) == 'undefined' || rightNodeData.node == null){
-					return false;
+				var state = {
+					// targetMap 使用 DOM node 作为第一层 key，attribute 作为第二层 key，避免把 DOM 对象拼成字符串造成误判。
+					targetMap:new Map(),
+					// indexTargets[index] 保存这个原始 text 下标会影响的目标集合，用于后续 O(当前节点数) 判断。
+					indexTargets:[],
+					batchToken:0
+				};
+				if(typeof(translateHashArray[renderLang]) == 'undefined'){
+					sseRenderTargetStateMap[renderLang] = state;
+					return state;
 				}
-				var leftAttribute = typeof(leftNodeData.attribute) == 'string' ? leftNodeData.attribute : '';
-				var rightAttribute = typeof(rightNodeData.attribute) == 'string' ? rightNodeData.attribute : '';
-				if(leftAttribute != rightAttribute){
-					return false;
+
+				for(var itemIndex = 0; itemIndex < translateHashArray[renderLang].length; itemIndex++){
+					var indexTargets = [];
+					state.indexTargets[itemIndex] = indexTargets;
+					var hash = translateHashArray[renderLang][itemIndex];
+					if(typeof(hash) == 'undefined'
+						|| typeof(translate.nodeQueue[uuid]['list']) == 'undefined'
+						|| typeof(translate.nodeQueue[uuid]['list'][renderLang]) == 'undefined'
+						|| typeof(translate.nodeQueue[uuid]['list'][renderLang][hash]) == 'undefined'
+						|| typeof(translate.nodeQueue[uuid]['list'][renderLang][hash].nodes) == 'undefined'){
+						continue;
+					}
+
+					var nodes = translate.nodeQueue[uuid]['list'][renderLang][hash].nodes;
+					for(var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++){
+						if(typeof(nodes[nodeIndex]) != 'object' || nodes[nodeIndex] == null || typeof(nodes[nodeIndex].node) == 'undefined' || nodes[nodeIndex].node == null){
+							continue;
+						}
+						var attribute = typeof(nodes[nodeIndex].attribute) == 'string' ? nodes[nodeIndex].attribute : '';
+						var attributeMap = state.targetMap.get(nodes[nodeIndex].node);
+						if(attributeMap == null){
+							attributeMap = new Map();
+							state.targetMap.set(nodes[nodeIndex].node, attributeMap);
+						}
+						var targetState = attributeMap.get(attribute);
+						if(targetState == null){
+							targetState = {
+								pending:0,
+								batchToken:0,
+								batchCount:0
+							};
+							attributeMap.set(attribute, targetState);
+						}
+
+						var alreadyInIndex = false;
+						for(var targetIndex = 0; targetIndex < indexTargets.length; targetIndex++){
+							if(indexTargets[targetIndex] === targetState){
+								alreadyInIndex = true;
+								break;
+							}
+						}
+						if(alreadyInIndex){
+							continue;
+						}
+						// pending 代表这个 node+attribute 还有多少原始 text 下标没有被 SSE 提前渲染。
+						// 后续判断只需要看当前事件是否覆盖了这些 pending 下标，不再全量扫描 translateHashArray。
+						targetState.pending++;
+						indexTargets.push(targetState);
+					}
 				}
-				if(typeof(leftNodeData.node.isSameNode) == 'function'){
-					return leftNodeData.node.isSameNode(rightNodeData.node);
-				}
-				return leftNodeData.node === rightNodeData.node;
+				sseRenderTargetStateMap[renderLang] = state;
+				return state;
 			};
-			let canRenderSseItemNow = function(renderLang, itemIndex, currentIndexMap, isSsePartial){
+			let prepareSseRenderBatchState = function(renderLang, currentIndexMap, isSsePartial){
+				if(isSsePartial !== true){
+					return null;
+				}
+				var state = getSseRenderTargetState(renderLang);
+				state.batchToken++;
+				for(var itemIndexKey in currentIndexMap){
+					if(!currentIndexMap.hasOwnProperty(itemIndexKey)){
+						continue;
+					}
+					var itemIndex = parseInt(itemIndexKey, 10);
+					if(isNaN(itemIndex) || sseRenderedIndexMap[itemIndex] === 1){
+						continue;
+					}
+					var indexTargets = state.indexTargets[itemIndex];
+					if(typeof(indexTargets) == 'undefined' || indexTargets == null){
+						continue;
+					}
+					for(var targetIndex = 0; targetIndex < indexTargets.length; targetIndex++){
+						var targetState = indexTargets[targetIndex];
+						if(targetState.batchToken != state.batchToken){
+							targetState.batchToken = state.batchToken;
+							targetState.batchCount = 0;
+						}
+						// batchCount 只统计当前这次 SSE 事件中覆盖到的 pending 下标。
+						// 如果某个目标还有未包含在本事件里的文本，就继续等 done 兜底，避免提前替换打断长文本匹配。
+						targetState.batchCount++;
+					}
+				}
+				return state;
+			};
+			let canRenderSseItemNow = function(renderLang, itemIndex, isSsePartial, batchState){
 				if(isSsePartial !== true){
 					return true;
 				}
-				if(typeof(translateHashArray[renderLang]) == 'undefined' || typeof(translateHashArray[renderLang][itemIndex]) == 'undefined'){
+				if(typeof(translateHashArray[renderLang]) == 'undefined' || typeof(translateHashArray[renderLang][itemIndex]) == 'undefined' || batchState == null){
 					return false;
 				}
-				var hash = translateHashArray[renderLang][itemIndex];
-				if(typeof(translate.nodeQueue[uuid]['list']) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang]) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang][hash]) == 'undefined'){
+				var indexTargets = batchState.indexTargets[itemIndex];
+				if(typeof(indexTargets) == 'undefined' || indexTargets == null || indexTargets.length < 1){
 					return false;
 				}
-				var queueItem = translate.nodeQueue[uuid]['list'][renderLang][hash];
-				if(typeof(queueItem.nodes) == 'undefined' || queueItem.nodes == null){
-					return false;
-				}
-
 				// SSE 的 batch/item 会比 done 更早渲染。若同一个 DOM 节点里还有未返回的文本，
 				// 提前替换其中一段可能破坏后续长文本匹配；这种情况交给 done 统一兜底渲染。
-				for(var otherIndex = 0; otherIndex < translateHashArray[renderLang].length; otherIndex++){
-					if(otherIndex == itemIndex || currentIndexMap[otherIndex] === 1 || sseRenderedIndexMap[otherIndex] === 1){
-						continue;
-					}
-					var otherHash = translateHashArray[renderLang][otherIndex];
-					if(typeof(translate.nodeQueue[uuid]['list'][renderLang][otherHash]) == 'undefined' || typeof(translate.nodeQueue[uuid]['list'][renderLang][otherHash].nodes) == 'undefined'){
-						continue;
-					}
-					var otherNodes = translate.nodeQueue[uuid]['list'][renderLang][otherHash].nodes;
-					for(var nodeIndex = 0; nodeIndex < queueItem.nodes.length; nodeIndex++){
-						for(var otherNodeIndex = 0; otherNodeIndex < otherNodes.length; otherNodeIndex++){
-							if(isSameTranslateRenderNode(queueItem.nodes[nodeIndex], otherNodes[otherNodeIndex])){
-								return false;
-							}
-						}
+				for(var targetIndex = 0; targetIndex < indexTargets.length; targetIndex++){
+					var targetState = indexTargets[targetIndex];
+					var currentBatchCount = targetState.batchToken == batchState.batchToken ? targetState.batchCount : 0;
+					if(targetState.pending - currentBatchCount > 0){
+						return false;
 					}
 				}
 				return true;
+			};
+			let markSseItemRendered = function(renderLang, itemIndex, isSsePartial, batchState){
+				sseRenderedIndexMap[itemIndex] = 1;
+				if(isSsePartial !== true || batchState == null){
+					return;
+				}
+				var indexTargets = batchState.indexTargets[itemIndex];
+				if(typeof(indexTargets) == 'undefined' || indexTargets == null){
+					return;
+				}
+				for(var targetIndex = 0; targetIndex < indexTargets.length; targetIndex++){
+					if(indexTargets[targetIndex].pending > 0){
+						indexTargets[targetIndex].pending--;
+					}
+				}
 			};
 			let renderTranslateResultItems = function(responseData, requestData, items, isSsePartial){
 				if(!isTranslateNodeQueueAvailable()){
@@ -4363,6 +4449,7 @@ var translate = {
 						currentIndexMap[fullIndex] = 1;
 					}
 				}
+				var sseRenderBatchState = prepareSseRenderBatchState(renderLang, currentIndexMap, isSsePartial);
 
 				let task = new translate.renderTask();
 				var renderNumber = 0;
@@ -4371,7 +4458,7 @@ var translate = {
 					if(sseRenderedIndexMap[i] === 1){
 						continue;
 					}
-					if(!canRenderSseItemNow(renderLang, i, currentIndexMap, isSsePartial)){
+					if(!canRenderSseItemNow(renderLang, i, isSsePartial, sseRenderBatchState)){
 						continue;
 					}
 
@@ -4416,7 +4503,7 @@ var translate = {
 					if(translate.offline.fullExtract.isUse){
 						translate.offline.fullExtract.set(hash, originalWord, renderTo, text);
 					}
-					sseRenderedIndexMap[i] = 1;
+					markSseItemRendered(renderLang, i, isSsePartial, sseRenderBatchState);
 					renderNumber++;
 				}
 				if(renderNumber > 0){

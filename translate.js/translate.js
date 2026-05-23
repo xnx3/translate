@@ -2967,7 +2967,13 @@ var translate = {
 			//console.log('---listen');
 
 			//监听 - 增加到翻译历史里面 nodeHistory
-			if(typeof(this.taskQueue) != 'undefined' && Object.keys(this.taskQueue).length > 0){
+			var taskQueueSize = 0;
+			if(typeof(this.taskQueue) != 'undefined' && this.taskQueue != null){
+				// taskQueue 当前是 Map，必须使用 size 判断任务数量；保留 Object.keys 兜底，
+				// 避免后续扩展把 taskQueue 换成普通对象时影响 renderTaskFinish 的触发。
+				taskQueueSize = typeof(this.taskQueue.size) == 'number' ? this.taskQueue.size : Object.keys(this.taskQueue).length;
+			}
+			if(taskQueueSize > 0){
 				//50毫秒后执行，以便页面渲染完毕
 				var renderTask = this;
 				setTimeout(function() {

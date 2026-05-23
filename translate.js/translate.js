@@ -9363,26 +9363,37 @@ var translate = {
 			 * 解析一段完整的 SSE 事件文本块。
 			 *
 			 * @param block 不包含空行分隔符的 SSE 文本块
-			 * @return {name, data, dataText}
+			 * @return {name, data, dataText, dispatch}
 			 */
 			parseEventBlock:function(block){
 				var eventName = 'message';
 				var dataLines = [];
+				var hasDataField = false;
 				var lines = block.split('\n');
 				for(var i = 0; i < lines.length; i++){
 					var line = lines[i];
-					if(line.length == 0 || line.indexOf(':') < 0){
+					if(line.length == 0){
+						continue;
+					}
+					if(line.indexOf(':') == 0){
+						// SSE 允许服务端发送 ": xxx" 注释行作为心跳；注释不属于业务事件，必须忽略。
 						continue;
 					}
 					var separatorIndex = line.indexOf(':');
-					var field = line.substring(0, separatorIndex);
-					var value = line.substring(separatorIndex+1);
-					if(value.indexOf(' ') == 0){
-						value = value.substring(1);
+					var field = line;
+					var value = '';
+					if(separatorIndex > -1){
+						field = line.substring(0, separatorIndex);
+						value = line.substring(separatorIndex+1);
+						if(value.indexOf(' ') == 0){
+							// SSE 规范只剥离冒号后的一个前导空格，避免破坏 data 正文中的有效空格。
+							value = value.substring(1);
+						}
 					}
 					if(field == 'event'){
 						eventName = value;
 					}else if(field == 'data'){
+						hasDataField = true;
 						dataLines.push(value);
 					}
 				}
@@ -9397,9 +9408,12 @@ var translate = {
 					}
 				}
 				return {
-					name:eventName,
+					// event: 为空时按 SSE 规范回落为 message，避免空事件名阻断统一 onEvent 监听。
+					name:eventName.length > 0 ? eventName : 'message',
 					data:data,
-					dataText:dataText
+					dataText:dataText,
+					// 只有包含 data 字段的事件才应该派发；纯心跳、id、retry 等控制块不能触发业务回调。
+					dispatch:hasDataField
 				};
 			},
 			/**
@@ -9548,8 +9562,13 @@ var translate = {
 						if(block == null || block.length < 1){
 							return;
 						}
-						hasEvent = true;
 						var event = translate.request.sse.parseEventBlock(block);
+						if(event.dispatch !== true){
+							// 注释心跳、id、retry 等 SSE 控制块不代表服务端已经返回业务数据，
+							// 不能把 hasEvent 提前置为 true，否则后续断流时会阻断原 JSON 请求降级。
+							return;
+						}
+						hasEvent = true;
 						if(event.name == 'done'){
 							finished = true;
 							requestState.sseEventName = event.name;

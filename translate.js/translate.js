@@ -11307,6 +11307,24 @@ var translate = {
 				}
 				node.className = node.className.replace(/translate_api_in_progress/g, '');
 			},
+			// 移除指定元素上的翻译中 UI 提示。
+			// 这里保持原有 className 字符串替换方式，避免第一步抽公共能力时改变旧浏览器或特殊元素的行为。
+			removeUITipByElements:function(elements){
+				if(typeof(elements) == 'undefined' || elements == null){
+					return;
+				}
+				for(var r = 0; r<elements.length; r++){
+					if(typeof(elements[r]) == 'undefined' || elements[r] == null || typeof(elements[r].className) !== 'string'){
+						continue;
+					}
+					if(elements[r].className.indexOf('translatejs-text-element-hidden') > -1){
+						elements[r].className = elements[r].className.replace(/translatejs-text-element-hidden/g, '');
+					}
+					if(elements[r].className.indexOf('translate_api_in_progress') > -1){
+						elements[r].className = elements[r].className.replace(/translate_api_in_progress/g, '');
+					}
+				}
+			},
 			
 			/*
 				config: 可设置的一些参数
@@ -11412,17 +11430,7 @@ var translate = {
 					translate.lifecycle.execute.translateNetworkAfter.push(function(data){
 						//取出当前变动的node，对应的元素
 						var elements = translate.element.nodeToElement(data.nodes);
-				    	
-				    	for(var r = 0; r<elements.length; r++){
-				    		if(typeof(elements[r].className) === 'string'){
-				    			if(elements[r].className.indexOf('translatejs-text-element-hidden') > -1){
-				    				elements[r].className = elements[r].className.replace(/translatejs-text-element-hidden/g, '');
-				    			}
-				    			if(elements[r].className.indexOf('translate_api_in_progress') > -1){
-									elements[r].className = elements[r].className.replace(/translate_api_in_progress/g, '');	
-								}
-				    		}
-				    	}
+						translate.progress.api.removeUITipByElements(elements);
 						
 						
 					});

@@ -9461,6 +9461,8 @@ var translate = {
 			 * 使用 fetch + ReadableStream 发起 translate.json SSE POST 请求。
 			 * <p>返回 true 表示请求已经由 SSE 接管；如果浏览器不支持流式读取会返回 false，让调用方继续走 XHR。
 			 * 如果 fetch 在收到任何 SSE 事件前失败，会调用 fallbackFunc 降级到原 JSON 请求。</p>
+			 * <p>如果服务端返回 200 但不是 text/event-stream，说明服务端按普通 translate.json 响应了；
+			 * 此时直接消费当前响应，避免同一批大文本再发起一次 XHR 请求。</p>
 			 */
 			post:function(path, data, func, abnormalFunc, fallbackFunc, sseCallbacks){
 				if(!translate.request.sse.isSupport()){
@@ -9527,6 +9529,33 @@ var translate = {
 						abnormalFunc(requestState);
 					}
 				};
+				var handleNormalResponse = function(response){
+					return response.text().then(function(responseText){
+						// 这里代表 translate.json 已经返回了完整普通响应，不再触发 fallback 重复请求。
+						// 后续若用户回调自身抛错，也应按已收到业务响应处理，而不是误判为 fetch 失败后再发 XHR。
+						hasEvent = true;
+						triggerResponse(responseText);
+
+						var json = null;
+						if(typeof(responseText) == 'undefined' || responseText == null){
+							// 与 XHR 旧逻辑保持一致：空响应不解析 JSON，直接把原始内容交给调用方。
+						}else{
+							if(responseText.indexOf('{') > -1 && responseText.indexOf('}') > -1){
+								try{
+									json = JSON.parse(responseText);
+								}catch(e){
+									translate.log(e);
+								}
+							}
+						}
+
+						if(json === null){
+							func(responseText);
+						}else{
+							func(json, data, requestState);
+						}
+					});
+				};
 
 				window.fetch(url, {
 					method:'POST',
@@ -9547,8 +9576,7 @@ var translate = {
 						contentType = response.headers.get('content-type') || '';
 					}
 					if(contentType.toLowerCase().indexOf('text/event-stream') < 0){
-						callFallback();
-						return null;
+						return handleNormalResponse(response);
 					}
 					if(typeof(response.body) == 'undefined' || response.body == null || typeof(response.body.getReader) != 'function'){
 						callFallback();

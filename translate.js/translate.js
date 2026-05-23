@@ -9254,12 +9254,23 @@ var translate = {
 			 * 判断当前浏览器是否具备 POST SSE 所需的基础能力。
 			 * <p>EventSource 只适合 GET，不适合当前 translate.json 的 POST 表单请求；这里必须依赖
 			 * fetch + ReadableStream 主动读取 text/event-stream。</p>
+			 * <p>这里仅做浏览器能力的同步判断，不判断服务端是否真的返回 text/event-stream；
+			 * 服务端响应类型仍由 translate.request.sse.post() 收到 response 后再兜底校验。</p>
 			 */
 			isSupport:function(){
-				return typeof(window) != 'undefined'
-					&& typeof(window.fetch) == 'function'
-					&& typeof(window.TextDecoder) == 'function'
-					&& typeof(Promise) == 'function';
+				if(typeof(window) == 'undefined'
+					|| typeof(window.fetch) != 'function'
+					|| typeof(window.TextDecoder) != 'function'
+					|| typeof(window.Promise) != 'function'
+					|| typeof(window.Response) != 'function'){
+					return false;
+				}
+				try{
+					var response = new window.Response('');
+					return response.body != null && typeof(response.body.getReader) == 'function';
+				}catch(e){
+					return false;
+				}
 			},
 			/**
 			 * 解析一段完整的 SSE 事件文本块。

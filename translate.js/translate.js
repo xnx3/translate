@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.0.5.20260520',
+	version: '4.1.0.20260526',
 	
 	/*js translate.config start*/
 	/*

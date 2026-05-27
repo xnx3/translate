@@ -2216,10 +2216,20 @@ var translate = {
 				const blob = new Blob([text], { type: "text/plain" });
 				const url = URL.createObjectURL(blob);
 				const link = document.createElement("a");
-				link.href = url;
-				link.download = to+".txt";
-				link.click();
-				URL.revokeObjectURL(url);
+				try{
+					link.href = url;
+					link.download = to+".txt";
+					link.style.display = "none";
+					(document.body || document.documentElement).appendChild(link);
+					link.click();
+				}finally{
+					setTimeout(function(){
+						if(link.parentNode){
+							link.parentNode.removeChild(link);
+						}
+						URL.revokeObjectURL(url);
+					}, 100);
+				}
 			},
 			/*js translate.offline.fullExtract.export end*/
 

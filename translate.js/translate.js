@@ -11336,6 +11336,12 @@ var translate = {
 			}, null);
 		},
 		start:function () {
+			// start() 是公开方法，可能被用户代码直接多次调用。
+			// 已启动时直接返回，避免重复创建 tooltip 节点以及重复绑定 document 事件。
+			if(translate.selectionTranslate.use === true){
+				return;
+			}
+
 			translate.selectionTranslate.use = true;
 
 			//新建一个tooltip元素节点用于显示翻译

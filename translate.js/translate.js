@@ -10721,6 +10721,9 @@ var translate = {
 			isStart:false,
 			//用户的代码里是否启用了 translate.request.listener.start() ，true：启用
 			use:false, 
+			// request listener 启动后创建的资源，保存引用便于 reset() 释放。
+			intervalId:null,
+			observer:null,
 			minIntervalTime:800, // 两次触发的最小间隔时间，单位是毫秒，这里默认是800毫秒。最小填写时间为 200毫秒
 			lasttime:0,// 最后一次触发执行 translate.execute() 的时间，进行执行的那一刻，而不是执行完。13位时间戳
 			/*
@@ -10785,6 +10788,19 @@ var translate = {
 			start:function(){
 				translate.request.listener.use = true;
 			},
+
+			reset:function(){
+				if(translate.request.listener.intervalId !== null){
+					clearInterval(translate.request.listener.intervalId);
+					translate.request.listener.intervalId = null;
+				}
+				if(translate.request.listener.observer !== null){
+					translate.request.listener.observer.disconnect();
+					translate.request.listener.observer = null;
+				}
+				translate.request.listener.isStart = false;
+				translate.request.listener.executetime = 0;
+			},
 			/*js translate.request.listener.start end*/
 
 			// 当 translate.execute() 触发时，也就是触发了生命周期的 start 时，才会启动这里。这里要在翻译进行后才能触发，不然提前出发会导致跟用户设置的启动时间不相符造成异常
@@ -10802,7 +10818,7 @@ var translate = {
 				}
 
 				//增加一个没100毫秒检查一次执行任务的线程
-				setInterval(function(){
+				translate.request.listener.intervalId = setInterval(function(){
 					var currentTime = Date.now();
 					//console.log(translate.request.listener.executetime)
 					if(translate.request.listener.executetime > 1 && currentTime > translate.request.listener.executetime+translate.request.listener.delayExecuteTime){
@@ -10821,6 +10837,7 @@ var translate = {
 
 				if(typeof(PerformanceObserver) == 'undefined'){
 					translate.log('因浏览器版本较低， translate.request.listener.start() 中 PerformanceObserver 对象不存在，浏览器不支持，所以 translate.request.listener.start() 未生效。');
+					translate.request.listener.reset();
 					return;
 				}
 
@@ -10874,6 +10891,7 @@ var translate = {
 				    	translate.request.listener.addExecute();
 				    }
 				});
+				translate.request.listener.observer = observer;
 
 				//v3.15.14.20250617 增加
 				// 优先使用 entryTypes  兼容 ES5 的写法
@@ -10904,6 +10922,7 @@ var translate = {
 					translate.log("使用 PerformanceObserver type");
 				} catch (e) {
 					translate.log("当前浏览器不支持 PerformanceObserver 的任何参数, translate.request.listener.start() 未启动");
+					translate.request.listener.reset();
 				}
 
 			}

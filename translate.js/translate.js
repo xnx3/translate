@@ -13160,6 +13160,11 @@ var translate = {
 			 	}
 		 */
 		webPageLoadTranslateBeforeHiddenText:function(config){
+			// 该能力只需要在页面加载阶段启用一次，重复调用会重复注册生命周期回调。
+			if(translate.visual.webPageLoadTranslateBeforeHiddenText_use === true){
+				return;
+			}
+
 			if(typeof(config) == 'undefined'){
 				config = {};
 			}

@@ -11563,6 +11563,11 @@ var translate = {
 				
 			*/
 			startUITip:function(config){
+				// 进度提示只需要启用一次，重复调用会重复注册生命周期回调。
+				if(translate.progress.api.use === true){
+					return;
+				}
+
 				translate.progress.api.use = true;
 
 				if(typeof(config) === 'undefined'){

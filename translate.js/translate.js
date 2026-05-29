@@ -13453,7 +13453,8 @@ var translate = {
 			*/
 			use:function(){
 				if(translate.faultTolerance.documentCreateTextNode.node == null){
-					translate.faultTolerance.documentCreateTextNode.node = new Map();
+					// 文本节点可能被页面动态移除，使用 WeakMap 避免缓存强引用导致节点无法释放。
+					translate.faultTolerance.documentCreateTextNode.node = new WeakMap();
 				}
 
 				//当用户点击切换语言时触发

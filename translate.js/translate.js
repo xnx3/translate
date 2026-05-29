@@ -5369,7 +5369,8 @@ var translate = {
 					addLoad: true  如果没有添加 load 的事件，这里是空的，也就是通过判断 typeof(iframeMap.get(iframe).addLoad) === 'boolean' && iframeMap.get(iframe).addLoad === true 来判断是否已经添加 load 事件了
 					isTranslate: true 是否已经触发过 ifr.injectJs(); 翻译了， 如果已经触发过，则是true 也就是通过判断 typeof(iframeMap.get(iframe).isTranslate) === 'boolean' && iframeMap.get(iframe).isTranslate === true 来判断是否已经触发过
 			*/
-			iframeMap: new Map(),
+			// iframe 节点可能被页面动态移除，使用 WeakMap 避免缓存强引用导致节点无法释放。
+			iframeMap: new WeakMap(),
 			
 			/**
 			 * 通过URL判断iframe是否未跨域（true=未跨域，false=跨域）
@@ -5510,14 +5511,15 @@ var translate = {
 				if(translate.element.iframe.isUse === false){
 					return;
 				}
-				if(translate.element.iframe.iframeMap.get(iframeTag) === null || typeof(translate.element.iframe.iframeMap.get(iframeTag)) === 'undefined'){
-					translate.element.iframe.iframeMap.set(iframeTag, {});
-				}
-				
+
 				if(!translate.element.iframe.isIframeSameOrigin(iframeTag)){
 					//console.log('iframe跨域，忽略 - ');
 					//console.log(this.iframeTag);
 					return;
+				}
+
+				if(translate.element.iframe.iframeMap.get(iframeTag) === null || typeof(translate.element.iframe.iframeMap.get(iframeTag)) === 'undefined'){
+					translate.element.iframe.iframeMap.set(iframeTag, {});
 				}
 				
 				if(typeof(iframeTag.src) === 'string' && iframeTag.src.trim().length > 0){

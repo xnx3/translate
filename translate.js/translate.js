@@ -13483,10 +13483,12 @@ var translate = {
 				如果触发此启用，那么会根据用户切换语言及设置，自动进行判定是否介入
 			*/
 			use:function(){
-				if(translate.faultTolerance.documentCreateTextNode.node == null){
-					// 文本节点可能被页面动态移除，使用 WeakMap 避免缓存强引用导致节点无法释放。
-					translate.faultTolerance.documentCreateTextNode.node = new WeakMap();
+				// use() 只需要注册一次生命周期回调，重复调用会导致同一套容错逻辑重复执行。
+				if(translate.faultTolerance.documentCreateTextNode.node != null){
+					return;
 				}
+				// 文本节点可能被页面动态移除，使用 WeakMap 避免缓存强引用导致节点无法释放。
+				translate.faultTolerance.documentCreateTextNode.node = new WeakMap();
 
 				//当用户点击切换语言时触发
 				translate.lifecycle.changeLanguage.push(function(to){

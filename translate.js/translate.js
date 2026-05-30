@@ -13328,8 +13328,10 @@ var translate = {
 				if(translate.time.execute.isUse){
 					//已经启动过了，不需要再启动了
 					translate.log('translate.time.execute.start() 已经启动过了，不需要再启动了');
+					return;
 				}
 
+				translate.time.execute.isUse = true;
 				translate.time.execute.data.isUse = true;
 
 				//翻译开始

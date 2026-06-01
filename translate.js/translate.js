@@ -508,7 +508,7 @@ var translate = {
 				if(typeof(translate.selectLanguageTag.supportLanguageMap) == 'undefined'){
 					translate.selectLanguageTag.supportLanguageMap = new Map();
 					for(var si = 0; si<languageList.length; si++){
-						if(typeof(languageList[si]) != 'undefined' && typeof(languageList[si].id)){
+						if(languageList[si] != null && typeof(languageList[si].id) === 'string'){
 							translate.selectLanguageTag.supportLanguageMap.set(languageList[si].id, languageList[si]);
 						}
 					}

@@ -772,6 +772,11 @@ var translate = {
 		initialized: false,
 
 		/**
+		 * message 监听函数引用，用于 reset() 时移除监听器。
+		 */
+		_messageHandler: null,
+
+		/**
 		 * 允许接收的跨域消息来源。
 		 * 默认不设置时，允许所有网站来源的消息。
 		 * 如需限制来源，可显式配置允许的 origin 数组。
@@ -950,9 +955,18 @@ var translate = {
 			this.initialized = true;
 
 			var self = this;
-			window.addEventListener('message', function(event){
+			this._messageHandler = function(event){
 				self.handleMessage(event);
-			}, false);
+			};
+			window.addEventListener('message', this._messageHandler, false);
+		},
+
+		reset: function(){
+			if(this._messageHandler !== null){
+				window.removeEventListener('message', this._messageHandler, false);
+				this._messageHandler = null;
+			}
+			this.initialized = false;
 		},
 
 		/**

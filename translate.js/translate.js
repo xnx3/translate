@@ -12130,7 +12130,7 @@ var translate = {
 			    const rule = translate.network.rules[i];
 			    
 			    // 检查 URL 是否匹配
-			    if(typeof(rule.url) == 'undefined' && rule.url == ''){
+			    if(typeof(rule.url) == 'undefined' || rule.url == ''){
 			    	translate.log('WARINNG : translate.network.rule find url is null:');
 			    	translate.log(rule);
 			    	continue;

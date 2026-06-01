@@ -2218,7 +2218,7 @@ var translate = {
 					//text = text + '\n' + originalText + '='+data[i].value.english.replace(/\n/g, "\\n").replace(/\t/g, "\\t");
 
 			    	//如果翻译结果不存在，可能是同语种本身就没有翻译，忽略就好了 （因为有个本地语种也强制翻译的能力，所以同语种也放行，在这里进行一次结果判断，免得遗漏同语种也翻译的情况）
-					if(typeof(data[i].value) === 'undefined' || typeof(data[i].value[to]) === 'undefined' || data[i].value[to] === null || data[i].value[to].trim().length === 0){
+					if(data[i].value == null || typeof(data[i].value[to]) !== 'string' || data[i].value[to].trim().length === 0){
 						continue;
 					}
 

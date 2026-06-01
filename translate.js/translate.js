@@ -12225,7 +12225,7 @@ var translate = {
 	        async handleGet(url, rule) {
 	        	//console.log(url);
 	        	//console.log(rule);
-	        	if(typeof(rule.params) == 'undefined' && typeof(rule.params.length) == 'undefined' && rule.params.length < 1){
+				if(!Array.isArray(rule.params) || rule.params.length < 1){
 	        		translate.log('WARINNG: rule not find params , rule : ');
 	        		translate.log(rule);
 	        		rule.params = [];

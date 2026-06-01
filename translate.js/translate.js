@@ -11256,7 +11256,7 @@ var translate = {
 
 		/** 使用基于 translate.node 的还原 **/
 		for (let key of translate.node.data.keys()) {
-			if (!translate.node.get(key) == null) {
+			if (translate.node.get(key) == null) {
 	    		continue;
 	    	}
 			//for(var attr in translate.node.get(key)){

@@ -2184,7 +2184,7 @@ var translate = {
 					return;
 				}
 				var obj = await translate.storage.IndexedDB.get('hash_'+hash);
-				if(typeof(obj) == 'undefined' && obj == null){
+				if(typeof(obj) == 'undefined' || obj == null){
 					obj = {
 						originalText:originalText
 					};

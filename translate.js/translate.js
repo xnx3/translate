@@ -270,7 +270,7 @@ var translate = {
 			if(typeof(language.autoDiscriminateLocalLanguage) === 'boolean' && language.autoDiscriminateLocalLanguage === true){
 				translate.setAutoDiscriminateLocalLanguage();
 			}
-			if(typeof(language.range) === 'object' && language.range.length > 0){
+			if(language.range != null && typeof(language.range) === 'object' && language.range.length > 0){
 				translate.language.translateLanguagesRange = language.range;
 			}
 			if(typeof(languageUrlParamControl.use) === 'boolean'){

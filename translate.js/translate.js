@@ -312,13 +312,13 @@ var translate = {
 			if(typeof(whole.enableAll) === 'boolean'){
 				translate.whole.isEnableAll = whole.enableAll;
 			}
-			if(typeof(whole.class) === 'object'){
+			if(whole.class != null && typeof(whole.class) === 'object'){
 				translate.whole.class = whole.class;
 			}
-			if(typeof(whole.tag) === 'object'){
+			if(whole.tag != null && typeof(whole.tag) === 'object'){
 				translate.whole.tag = whole.tag;
 			}
-			if(typeof(whole.id) === 'object'){
+			if(whole.id != null && typeof(whole.id) === 'object'){
 				translate.whole.id = whole.id;
 			}
 			if(typeof(selectionTranslate.use) === 'boolean' && selectionTranslate.use === true){

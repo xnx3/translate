@@ -545,6 +545,9 @@ var translate = {
 
 
 			for(var i = 0; i<languageList.length; i++){
+				if(languageList[i] == null || typeof(languageList[i].id) !== 'string' || typeof(languageList[i].name) !== 'string'){
+					continue;
+				}
 				var option = document.createElement("option"); 
 			    option.setAttribute("value",languageList[i].id);
 

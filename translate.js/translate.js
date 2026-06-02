@@ -373,7 +373,7 @@ var translate = {
 			if(typeof(progress.style) === 'string'){
 				translate.progress.style = progress.style;
 			}
-			if(typeof(network.rules) === 'object'){
+			if(network.rules != null && typeof(network.rules) === 'object'){
 				translate.network.rules = network.rules;
 			}
 			if(typeof(network.use) === 'boolean' && network.use === true){

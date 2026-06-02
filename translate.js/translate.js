@@ -362,7 +362,7 @@ var translate = {
 			if(typeof(request.waitingExecute) === 'boolean'){
 				translate.waitingExecute.use = request.waitingExecute;
 			}
-			if(typeof(element.tagAttribute) === 'object'){
+			if(element.tagAttribute != null && typeof(element.tagAttribute) === 'object'){
 				translate.element.tagAttribute = element.tagAttribute;
 			}
 			if(typeof(progressApi.use) === 'boolean' && progressApi.use === true){

@@ -326,7 +326,7 @@ var translate = {
 					translate.selectionTranslate.start();
 				}
 			}
-			if(typeof(requestApi.host) === 'object'){
+			if(requestApi.host != null && typeof(requestApi.host) === 'object'){
 				translate.request.api.host = requestApi.host;
 			}
 			if(typeof(requestApi.language) === 'string'){

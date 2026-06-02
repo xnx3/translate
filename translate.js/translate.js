@@ -619,7 +619,7 @@ var translate = {
 					translate.request.api.language = responseData.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
 					translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(responseData.list));
 				}, null);
-			}else if(typeof(translate.request.api.language) == 'object'){
+			}else if(translate.request.api.language != null && typeof(translate.request.api.language) == 'object'){
 				//无网络环境下，自定义显示语种
 				translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(translate.request.api.language));
 			}

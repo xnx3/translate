@@ -12007,7 +12007,7 @@ var translate = {
 			}
 		*/
 		objToString:function(obj, formatSupplementaryCharLength){
-			if(typeof(obj) === 'object'){
+			if(obj != null && typeof(obj) === 'object'){
 				if(typeof(obj.jsObject) === 'object'){
 					//是 2025.10.10 以后的新版本
 				}else{

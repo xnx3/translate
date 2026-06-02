@@ -291,19 +291,19 @@ var translate = {
 			if(typeof(listener.use) === 'boolean'){
 				translate.listener.use = listener.use;
 			}
-			if(typeof(ignore.text) === 'object'){
+			if(ignore.text != null && typeof(ignore.text) === 'object'){
 				translate.ignore.text = ignore.text;
 			}
-			if(typeof(ignore.textRegex) === 'object'){
+			if(ignore.textRegex != null && typeof(ignore.textRegex) === 'object'){
 				translate.ignore.textRegex = ignore.textRegex;
 			}
-			if(typeof(ignore.id) === 'object'){
+			if(ignore.id != null && typeof(ignore.id) === 'object'){
 				translate.ignore.id = ignore.id;
 			}
-			if(typeof(ignore.class) === 'object'){
+			if(ignore.class != null && typeof(ignore.class) === 'object'){
 				translate.ignore.class = ignore.class;
 			}
-			if(typeof(ignore.tag) === 'object'){
+			if(ignore.tag != null && typeof(ignore.tag) === 'object'){
 				translate.ignore.tag = ignore.tag;
 			}
 			if(typeof(data.service) === 'string' && data.service.trim().length > 0){

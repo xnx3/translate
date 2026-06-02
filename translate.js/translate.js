@@ -282,10 +282,10 @@ var translate = {
 			if(typeof(language.translateLocal) === 'boolean'){
 				translate.language.translateLocal = language.translateLocal;
 			}
-			if(typeof(data.images) === 'object'){
+			if(data.images != null && typeof(data.images) === 'object'){
 				translate.images.queues = data.images;
 			}
-			if(typeof(data.nomenclature) === 'object'){
+			if(data.nomenclature != null && typeof(data.nomenclature) === 'object'){
 				translate.nomenclature.data = data.nomenclature;
 			}
 			if(typeof(listener.use) === 'boolean'){
@@ -350,10 +350,10 @@ var translate = {
 			if(typeof(requestListener.minIntervalTime) === 'number'){
 				translate.request.listener.minIntervalTime = requestListener.minIntervalTime;
 			}
-			if(typeof(request.appendParams) === 'object'){
+			if(request.appendParams != null && typeof(request.appendParams) === 'object'){
 				translate.request.appendParams = request.appendParams;
 			}
-			if(typeof(request.appendHeaders) === 'object'){
+			if(request.appendHeaders != null && typeof(request.appendHeaders) === 'object'){
 				translate.request.appendHeaders = request.appendHeaders;
 			}
 			if(typeof(requestSse.use) === 'boolean'){

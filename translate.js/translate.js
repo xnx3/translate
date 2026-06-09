@@ -96,6 +96,11 @@ var translate = {
 				class:[],
 				tag:[],
 				id:[],
+				// whole 行内上下文分段翻译开关。默认关闭，避免旧 translate.json 接口无法处理数组分段请求。
+				context:{
+					// 对应的数据 translate.whole.context.is_use
+					use:false
+				},
 			};
 			//鼠标划词翻译 https://translate.zvo.cn/4072.html
 			selectionTranslate = {
@@ -197,6 +202,7 @@ var translate = {
 			data.whole.class = translate.whole.class;
 			data.whole.tag = translate.whole.tag;
 			data.whole.id = translate.whole.id;
+			data.whole.context.use = translate.whole.context.isUse();
 			data.selectionTranslate.use = translate.selectionTranslate.use;
 			data.request.api.host = translate.request.api.host;
 			data.request.api.language = translate.request.api.language;
@@ -237,6 +243,7 @@ var translate = {
 			var listener = (typeof(data.listener) === 'object' && data.listener !== null) ? data.listener : {};
 			var ignore = (typeof(data.ignore) === 'object' && data.ignore !== null) ? data.ignore : {};
 			var whole = (typeof(data.whole) === 'object' && data.whole !== null) ? data.whole : {};
+			var wholeContext = (typeof(whole.context) === 'object' && whole.context !== null) ? whole.context : {};
 			var selectionTranslate = (typeof(data.selectionTranslate) === 'object' && data.selectionTranslate !== null) ? data.selectionTranslate : {};
 			var request = (typeof(data.request) === 'object' && data.request !== null) ? data.request : {};
 			var requestApi = (typeof(request.api) === 'object' && request.api !== null) ? request.api : {};
@@ -320,6 +327,9 @@ var translate = {
 			}
 			if(whole.id != null && typeof(whole.id) === 'object'){
 				translate.whole.id = whole.id;
+			}
+			if(typeof(wholeContext.use) === 'boolean'){
+				translate.whole.context.is_use = wholeContext.use;
 			}
 			if(typeof(selectionTranslate.use) === 'boolean' && selectionTranslate.use === true){
 				if(translate.selectionTranslate.use === false){ //没有启动，才会启动
@@ -6434,6 +6444,28 @@ var translate = {
 		class:[],
 		tag:[],
 		id:[],
+
+		/*
+			whole 行内上下文分段翻译的根开关。
+
+			默认关闭：
+			1. 旧用户即使已经使用 translate.whole，也不会自动进入新的分段上下文请求。
+			2. 只有明确调用 translate.whole.context.use() 后，后续 wholeContext 收集才允许生效。
+			3. 这里不直接触发扫描、入队或请求，只作为后续能力的兼容性开关。
+		*/
+		context:{
+			is_use:false,
+
+			// 开启 whole 行内上下文分段翻译能力；只设置开关，不立即扫描或发起请求。
+			use:function(){
+				translate.whole.context.is_use = true;
+			},
+
+			// 判断 whole 行内上下文分段翻译能力是否已启用，供后续扫描、入队、请求逻辑统一使用。
+			isUse:function(){
+				return translate.whole.context.is_use === true;
+			}
+		},
 
 		//运行时出现自检并在浏览器控制台提示性文本。 
 		//在执行翻译，也就是 execute() 时，会调用此方法。

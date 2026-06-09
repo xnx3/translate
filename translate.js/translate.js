@@ -6464,6 +6464,48 @@ var translate = {
 			// 判断 whole 行内上下文分段翻译能力是否已启用，供后续扫描、入队、请求逻辑统一使用。
 			isUse:function(){
 				return translate.whole.context.is_use === true;
+			},
+
+			/*
+				只判断当前元素自身是否命中 translate.whole.tag/class/id。
+				不能复用 translate.whole.isWhole()，因为 isWhole() 会向父级追溯；
+				wholeContext 的收集根必须只认当前元素，否则子元素会重复触发收集。
+				这里不接入 translate.whole.isEnableAll，避免全页面级上下文收集过大。
+			*/
+			isRootElement:function(ele){
+				if(!translate.whole.context.isUse()){
+					return false;
+				}
+				if(ele == null || typeof(ele) == 'undefined' || ele.nodeType !== 1){
+					return false;
+				}
+
+				var nodename = translate.element.getNodeName(ele).toLowerCase();
+				if(nodename.length == 0 || nodename === 'html'){
+					return false;
+				}
+
+				if(translate.whole.tag.length > 0 && translate.whole.tag.indexOf(nodename) > -1){
+					return true;
+				}
+
+				if(translate.whole.id.length > 0 && typeof(ele.id) === 'string' && ele.id.length > 0 && translate.whole.id.indexOf(ele.id) > -1){
+					return true;
+				}
+
+				if(translate.whole.class.length > 0 && typeof(ele.className) === 'string'){
+					var className = ele.className.trim();
+					if(className.length > 0){
+						var classNames = className.split(/\s+/);
+						for(var i = 0; i < classNames.length; i++){
+							if(translate.whole.class.indexOf(classNames[i]) > -1){
+								return true;
+							}
+						}
+					}
+				}
+
+				return false;
 			}
 		},
 

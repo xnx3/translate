@@ -6506,6 +6506,127 @@ var translate = {
 				}
 
 				return false;
+			},
+
+			/*
+				判断元素是否应切断 wholeContext 行内文本流。
+
+				这个方法服务于后续的 wholeContext 收集函数：当一个 translate.whole
+				容器中同时存在 TextNode、a、span 等行内节点时，收集函数会尽量把
+				连续的行内文本组成一个上下文翻译组；但遇到 br、块级元素、code、
+				ignore、translate="no" 等边界时，必须结束当前组，避免把不应该共用
+				上下文的文本强行合并。
+
+				示例：
+				<p>
+					Please <a>read the docs</a><br><code>npm install</code> before use.
+				</p>
+
+				后续收集 p 的子节点时：
+				1. "Please " 和 a 中的 "read the docs" 可以归入同一个行内上下文组。
+				2. br 会让本方法返回 true，从而结束当前组。
+				3. code 也会返回 true，代码内容不参与翻译，也不跨 code 合并上下文。
+				4. " before use." 会在边界之后作为新的文本流重新开始判断。
+
+				这里故意只做静态、保守的边界判断，不读取 getComputedStyle()。
+				原因是 DOM 扫描阶段可能会频繁调用本方法，如果读取运行时样式，
+				浏览器可能触发布局计算，增加页面翻译时的性能成本。第一版先用
+				明确的标签、属性、class 和 translate.ignore 规则保证行为可控。
+
+				translate.ignore.isIgnore(ele) 会向父级追溯并执行用户自定义 ignore
+				函数，成本比普通标签和属性判断更高，所以放在最后执行。
+			*/
+			isBreakElement:function(ele){
+				if(ele == null || typeof(ele) == 'undefined' || ele.nodeType !== 1){
+					return true;
+				}
+
+				var nodename = translate.element.getNodeName(ele).toLowerCase();
+				switch(nodename){
+					case 'br':
+					case 'hr':
+					case 'pre':
+					case 'code':
+					case 'script':
+					case 'style':
+					case 'template':
+					case 'noscript':
+					case 'iframe':
+					case 'canvas':
+					case 'svg':
+					case 'math':
+					case 'div':
+					case 'p':
+					case 'section':
+					case 'article':
+					case 'header':
+					case 'footer':
+					case 'main':
+					case 'nav':
+					case 'aside':
+					case 'blockquote':
+					case 'h1':
+					case 'h2':
+					case 'h3':
+					case 'h4':
+					case 'h5':
+					case 'h6':
+					case 'table':
+					case 'thead':
+					case 'tbody':
+					case 'tfoot':
+					case 'tr':
+					case 'td':
+					case 'th':
+					case 'ul':
+					case 'ol':
+					case 'li':
+					case 'dl':
+					case 'dt':
+					case 'dd':
+					case 'figure':
+					case 'figcaption':
+					case 'form':
+					case 'input':
+					case 'textarea':
+					case 'select':
+					case 'option':
+					case 'button':
+						return true;
+				}
+
+				if(ele.hidden === true || (ele.getAttribute && ele.getAttribute('hidden') !== null)){
+					return true;
+				}
+
+				if(ele.getAttribute){
+					var translateAttr = ele.getAttribute('translate');
+					if(typeof(translateAttr) === 'string' && translateAttr.toLowerCase() === 'no'){
+						return true;
+					}
+				}
+
+				if(ele.isContentEditable === true){
+					return true;
+				}
+
+				if(typeof(ele.className) === 'string'){
+					var className = ele.className.trim();
+					if(className.length > 0){
+						var classNames = className.split(/\s+/);
+						for(var i = 0; i < classNames.length; i++){
+							if(classNames[i] === 'notranslate'){
+								return true;
+							}
+						}
+					}
+				}
+
+				if(translate.ignore.isIgnore(ele)){
+					return true;
+				}
+
+				return false;
 			}
 		},
 

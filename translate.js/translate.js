@@ -6627,6 +6627,112 @@ var translate = {
 				}
 
 				return false;
+			},
+
+			/*
+				收集 wholeContext 根元素内连续的行内 TextNode。
+
+				返回值只是一组临时扫描结果：
+				[
+					{
+						nodes: [textNode1, textNode2],
+						texts: ["Please read ", "the docs"]
+					}
+				]
+
+				这里不标记 TextNode，也不加入 nodeQueue；后续接入入队能力时，
+				再决定哪些 group 需要真正进入翻译队列。这样可以避免当前提交
+				因为半成品逻辑跳过旧翻译流程。
+
+				注意：
+				1. 从 root.childNodes 开始遍历，而不是直接 walk(root)。root 本身
+				   通常是 p、div 等 whole 容器，如果把 root 交给 isBreakElement(root)，
+				   会被块级规则直接切断，导致完全收集不到内容。
+				2. 参与收集的 TextNode 必须先通过 nodeAnalyse.gets(node) 和
+				   translate.ignore.isIgnore(...) 这两层旧流程判断；wholeContext 只改变
+				   上下文组织方式，不新增旧流程不翻译的节点。
+				3. 空白、换行、缩进 TextNode 按旧流程视为空文本，不参与 wholeContext。
+				   如果多个 segment 之间需要空格辅助翻译，应由后端 segment-aware 接口
+				   根据语言和标点在内部处理，前端不在 DOM 结构外主动补空格。
+				4. 只有跨多个有效 TextNode 的文本流才返回 group；单个 TextNode 继续走旧流程。
+			*/
+			collectInlineTextGroups:function(root){
+				var groups = [];
+				if(!translate.whole.context.isRootElement(root)){
+					return groups;
+				}
+
+				var currentGroup = {nodes:[], texts:[]};
+
+				var flushGroup = function(){
+					if(currentGroup.nodes.length > 1){
+						groups.push(currentGroup);
+					}
+					currentGroup = {nodes:[], texts:[]};
+				};
+
+				var appendTextNode = function(node){
+					/*
+						必须复用旧流程的 nodeAnalyse.gets(node)，不能直接读取 node.nodeValue。
+						这样 wholeContext 只改变“多个 TextNode 如何组成上下文”，不改变
+						“哪些 TextNode 有资格参与翻译”的根规则。
+					*/
+					var nodeAnalyChild = translate.element.nodeAnalyse.gets(node);
+					for(var nci = 0; nci < nodeAnalyChild.length; nci++){
+						if(nodeAnalyChild[nci].attribute !== '' || nodeAnalyChild[nci].node !== node){
+							continue;
+						}
+
+						if(translate.ignore.isIgnore(node, {node: nodeAnalyChild[nci].node, attribute: nodeAnalyChild[nci].attribute})){
+							flushGroup();
+							return;
+						}
+
+						currentGroup.nodes.push(nodeAnalyChild[nci].node);
+						currentGroup.texts.push(nodeAnalyChild[nci].text);
+					}
+				};
+
+				var walk = function(node){
+					if(node == null || typeof(node) == 'undefined'){
+						flushGroup();
+						return;
+					}
+
+					if(node.nodeType === 3){
+						appendTextNode(node);
+						return;
+					}
+
+					if(node.nodeType !== 1){
+						flushGroup();
+						return;
+					}
+
+					if(translate.whole.context.isBreakElement(node)){
+						flushGroup();
+						return;
+					}
+
+					var childNodes = node.childNodes;
+					if(childNodes == null || typeof(childNodes) == 'undefined'){
+						return;
+					}
+					for(var i = 0; i < childNodes.length; i++){
+						walk(childNodes[i]);
+					}
+				};
+
+				var childNodes = root.childNodes;
+				if(childNodes == null || typeof(childNodes) == 'undefined'){
+					return groups;
+				}
+				for(var i = 0; i < childNodes.length; i++){
+					walk(childNodes[i]);
+				}
+				flushGroup();
+
+				return groups;
 			}
 		},
 

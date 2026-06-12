@@ -6430,6 +6430,121 @@ var translate = {
 		
 	},
 
+	/*
+		将 wholeContext 行内文本组加入 translate.nodeQueue。
+
+		这个方法只创建一种受控的 wholeContext queue item，不在本提交中接入扫描、
+		请求、缓存或回填流程。普通 nodeQueue item 的结构保持不变；wholeContext
+		item 只通过 type:'wholeContext' 明确标记自己的特殊语义。
+
+		普通 item 的 nodes 表示“多个 DOM 节点共享同一个字符串译文”。
+		wholeContext item 的 nodes 表示“同一个上下文翻译组里的多个分段回填目标”，
+		因此必须满足：
+
+			translateText[i] 对应 nodes[i].node
+
+		这里不复用 addNodeQueueItem(...)，因为 addNodeQueueItem(...) 会按字符串
+		hash 合并相同文本节点；wholeContext 第一版必须让一个 group 对应一个独立
+		item，避免两个相同 group 共用 nodes 数组后破坏下标映射。
+
+		hash 使用 wholeContext 独立命名空间，并加入当前 execute uuid 和随机 uuid：
+		1. 避免 ["Please read ", "the docs"] 与普通 "Please read the docs" 混用同一个 hash。
+		2. 避免两个文本完全相同的 wholeContext group 合并到同一个 item。
+		3. 第一版不做 wholeContext 去重和缓存，避免引入 nodeGroups 等复杂结构。
+	*/
+	addWholeContextToQueue:function(uuid, group){
+		if(!translate.whole.context.isUse()){
+			return null;
+		}
+		if(group == null || typeof(group) == 'undefined'
+			|| typeof(group.nodes) == 'undefined'
+			|| typeof(group.texts) == 'undefined'
+			|| typeof(group.nodes.length) == 'undefined'
+			|| typeof(group.texts.length) == 'undefined'){
+			return null;
+		}
+		if(group.nodes.length < 2 || group.nodes.length !== group.texts.length){
+			return null;
+		}
+
+		for(var i = 0; i < group.texts.length; i++){
+			if(group.nodes[i] == null || typeof(group.nodes[i]) == 'undefined'){
+				return null;
+			}
+			if(typeof(group.texts[i]) !== 'string' || group.texts[i].trim().length == 0){
+				return null;
+			}
+
+			/*
+				普通 addNodeToQueue(...) 会用 originalText 判断节点是否已经入队。
+				wholeContext 后续接入扫描时也必须遵守这个根规则：如果某个 TextNode
+				已经被旧流程记录过，就不能再加入 wholeContext，避免同一节点重复进入
+				普通 item 和 wholeContext item。
+			*/
+			var nodeData = translate.node.get(group.nodes[i]);
+			if(nodeData != null && typeof(nodeData.originalText) === 'string'){
+				return null;
+			}
+		}
+
+		var contextText = group.texts.join('');
+		if(typeof(contextText) !== 'string' || contextText.trim().length == 0){
+			return null;
+		}
+
+		var textRecognition = translate.language.recognition(contextText);
+		var lang = translate.language.recognition_languageName_force(textRecognition);
+		if(typeof(lang) !== 'string' || lang.length == 0){
+			return null;
+		}
+
+		if(typeof(translate.nodeQueue[uuid]) == 'undefined' || translate.nodeQueue[uuid] == null){
+			translate.nodeQueue[uuid] = new Array();
+			translate.nodeQueue[uuid]['expireTime'] = Date.now() + 120*1000;
+			translate.nodeQueue[uuid]['list'] = new Array();
+		}
+		if(translate.nodeQueue[uuid]['list'][lang] == null || typeof(translate.nodeQueue[uuid]['list'][lang]) == 'undefined'){
+			translate.nodeQueue[uuid]['list'][lang] = new Array();
+		}
+
+		var hashSeed = 'wholeContext:'+uuid+':'+translate.util.uuid()+':'+JSON.stringify(group.texts);
+		var hash = translate.util.hash(hashSeed);
+		if(translate.nodeQueue[uuid]['list'][lang][hash] != null && typeof(translate.nodeQueue[uuid]['list'][lang][hash]) != 'undefined'){
+			// 理论上随机 uuid 已经足够避免冲突；这里保守跳过，避免覆盖已有队列项。
+			return null;
+		}
+
+		translate.nodeQueue[uuid]['list'][lang][hash] = new Array();
+		translate.nodeQueue[uuid]['list'][lang][hash]['type'] = 'wholeContext';
+		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
+		translate.nodeQueue[uuid]['list'][lang][hash]['original'] = contextText;
+		translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = group.texts.slice(0);
+
+		for(var nodeIndex = 0; nodeIndex < group.nodes.length; nodeIndex++){
+			var node = group.nodes[nodeIndex];
+			var text = group.texts[nodeIndex];
+
+			if(translate.node.get(node) == null){
+				translate.node.set(node, {});
+			}
+			translate.node.get(node).attribute = '';
+			translate.node.get(node).originalText = text;
+			translate.node.get(node).whole = true;
+			if(typeof(translate.node.get(node).translateTexts) === 'undefined'){
+				translate.node.get(node).translateTexts = {};
+			}
+			translate.node.get(node).translateTexts[text] = null;
+
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodeIndex] = new Array();
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodeIndex]['node'] = node;
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodeIndex]['attribute'] = '';
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodeIndex]['beforeText'] = '';
+			translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][nodeIndex]['afterText'] = '';
+		}
+
+		return translate.nodeQueue[uuid]['list'][lang][hash];
+	},
+
 	//全部翻译，node内容全部翻译，而不是进行语种提取，直接对node本身的全部内容拿出来进行直接全部翻译
 	whole:{
 		isEnableAll:false, //是否开启对整个html页面的整体翻译，也就是整个页面上所有存在的能被翻译的全部会采用整体翻译的方式。默认是 false不开启		

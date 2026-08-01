@@ -224,7 +224,8 @@ Hunyuan-MT ...) 转为统一的文本翻译API输出。
 # 结构图示
 [![](https://cdn.weiunity.com/site/1144/news/70a5b291d9af484999cbee5735f5cd10.png)](http://doc.zvo.cn/translate.js/home.html)
 
-# 优秀开源项目及社区推荐
+# 优秀产品及开源项目推荐
+[BizBot](http://bizbot.zvo.cn) BizBot AI - 全自动营销推广机器人
 [Featbit](https://github.com/featbit/featbit) 一个100%开源的 Feature flags / Feature Management 平台工具  
 [IoTSharp](https://gitee.com/IoTSharp) IoTSharp 是一个 基于.Net Core 开源的物联网基础平台， 支持 HTTP、MQTT 、CoAp 协议    
 [流之云](https://gitee.com/ntdgg) 信息化、数字化服务提供商    

@@ -266,9 +266,10 @@ Hunyuan-MT ...) 转为统一的文本翻译API输出。
 | Java打印及预览的工具类 | ![](https://gitee.com/leimingyun/printJframe/badge/star.svg?theme=white ) | https://gitee.com/leimingyun/printJframe |
 …………
 
-# 交流
+# 联系
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
 微信公众号：wangmarket  
+X.com：https://x.com/leimingguan  
 作者邮箱：921153866@qq.com  
 微信公众号：wangmarket  
 作者微信：xnx3com（使用交流可关注微信公众号或者 Twitter，我看微信很不及时）  

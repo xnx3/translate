@@ -268,16 +268,10 @@ Hunyuan-MT ...) 转为统一的文本翻译API输出。
 
 # 交流
 如果您在使用过程中遇到任何异常情况，请详细说一下您遇到的问题。如果可以，请写下您的网站，以便我们可以更全面地测试，以便快速找到问题所在  
-作者微信：xnx3com（使用交流可加QQ群进行，我看微信很不及时）    
-Telegram : [untran](https://t.me/untran)  
-交流QQ群:181781514(已满)  
-交流QQ群:641047127(已满)  
-交流QQ群:240567964(已满)  
-交流QQ群:1034085260(已满)  
-交流QQ群:1017938586  
-交流QQ群:749330213  
+微信公众号：wangmarket  
 作者邮箱：921153866@qq.com  
 微信公众号：wangmarket  
+作者微信：xnx3com（使用交流可关注微信公众号或者 Twitter，我看微信很不及时）  
 github: [https://github.com/xnx3/translate](https://github.com/xnx3/translate)  
 gitee:  [https://gitee.com/mail_osc/translate](https://gitee.com/mail_osc/translate)  
 

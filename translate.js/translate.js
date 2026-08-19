@@ -8071,11 +8071,11 @@ var translate = {
 		//是否包含 罗马尼亚语
 		romanian:function(str) {
 			/*
-				U+00C0–U+00FF：Latin-1 Supplement （包含带变音符号的字母，如 Ă/ă 的部分形式）
+				U+00C0–U+00FF：Latin-1 Supplement，排除 U+00D7（×）和 U+00F7（÷）
 				U+0100–U+017F：Latin Extended-A （包含罗马尼亚语特有字母 Ă/ă、Â/â、Î/î 等）；
 				U+0218–U+021B：Latin Extended-B （包含 Ș/ș 和 Ț/ț，这是罗马尼亚语标志性字母）
 			*/
-		    return /^[\u00C0-\u00FF\u0100-\u017F\u0218-\u021B]$/.test(str);
+		    return /^[\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0100-\u017F\u0218-\u021B]$/.test(str);
 		},
 		//是否包含希腊语
 		greek:function(str){
@@ -8186,6 +8186,16 @@ var translate = {
 			//如：与ANSI对应的全角字符
 			if(/.*[\uFF00-\uFF5E]+.*$/.test(str)){ 
 				return true
+			}
+
+			/*
+				U+00D7 ×：乘号
+				U+00F7 ÷：除号
+				这两个字符属于数学运算符，不属于罗马尼亚语字母，必须作为特殊字符处理，
+				避免计算表达式被错误加入罗马尼亚语翻译队列。
+			*/
+			if(/.*[\u00D7\u00F7]+.*$/.test(str)){
+				return true;
 			}
 
 			//其它特殊符号

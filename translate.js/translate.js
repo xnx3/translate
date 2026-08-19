@@ -8285,7 +8285,7 @@ var translate = {
             translateResult: 翻译的某个词或句，在翻译之后的文本，翻译结果
             language: 显示的语种，这里是对应的 translateResult 这个文本的语种。 也就是最终替换之后要显示给用户的语种。比如将中文翻译为英文，这里也就是英文。 这里会根据显示的语种不同，来自主决定是否前后加空格进行分割。 另外这里传入的语种也是 translate.js 的语种标识
         	
-        	(注意，如果 translateResult 中发现 translateOriginal 的存在，将不进行任何处理，因为没必要了，还会造成死循环。直接将 text 返回)
+			(注意，如果 translateResult 与 translateOriginal 完全相同，则不进行空格和标点格式化，直接将 text 返回)
 			
 			使用此方法：
 			var text = '你世好word世界';
@@ -8475,6 +8475,11 @@ var translate = {
         	if(text == translateOriginal){
         		return translateResult;
         	}
+
+			// 翻译结果与原文完全相同，不执行额外的空格或标点处理，避免破坏原始文本格式。
+			if(translateOriginal === translateResult){
+				return text;
+			}
         	
         	//console.log('participles ---- 处理');
         	//console.log(participles);

@@ -8,7 +8,7 @@ const https = require('https');
 const http = require('http');
 
 /*
- * translate-js-connector
+ * translatejsconnector
  * ----------------------------------------------------------------------------
  * 一个零依赖的 WorkBuddy / MCP 连接器，用于把 zvo.cn 的 translate.js 多语言
  * 切换插件快速接入到用户自己的网站或系统中。
@@ -19,9 +19,9 @@ const http = require('http');
  * 使用方式（在 WorkBuddy 的 ~/.workbuddy/mcp.json 中追加）：
  *   {
  *     "mcpServers": {
- *       "translate-js": {
+ *       "translatejs": {
  *         "command": "node",
- *         "args": ["/绝对路径/translate-js-connector/index.js"]
+ *         "args": ["/绝对路径/translatejsconnector/index.js"]
  *       }
  *     }
  *   }
@@ -947,7 +947,7 @@ function handleMessage(line) {
       result: {
         protocolVersion: (msg.params && msg.params.protocolVersion) || '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'translate-js-connector', version: '1.2.0' }
+        serverInfo: { name: 'translatejsconnector', version: '1.2.0' }
       }
     });
   } else if (msg.method === 'tools/list') {

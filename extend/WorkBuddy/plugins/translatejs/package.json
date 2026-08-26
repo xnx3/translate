@@ -1,10 +1,10 @@
 {
-  "name": "translate-js-connector",
+  "name": "translatejsconnector",
   "version": "1.2.0",
   "description": "translate.js 多语言切换自动接入，自动接入到您的网站或管理系统 。 WorkBuddy / MCP 连接器",
   "main": "index.js",
   "bin": {
-    "translate-js-connector": "index.js"
+    "translatejsconnector": "index.js"
   },
   "scripts": {
     "start": "node index.js"

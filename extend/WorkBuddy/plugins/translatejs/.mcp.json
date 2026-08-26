@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "translate-js": {
+    "translatejs": {
       "command": "node",
       "args": [
         "${CODEBUDDY_PLUGIN_ROOT}/index.js"

@@ -1,4 +1,4 @@
-# translate-js-connector
+# translatejsconnector
 
 一个**零依赖**的 WorkBuddy / MCP 连接器，用来把 [translate.zvo.cn](https://translate.zvo.cn/) 的
 **translate.js** 多语言切换插件，快速接入到用户自己的网站或系统中。
@@ -17,24 +17,24 @@
 
 ## 一、给用户（安装方式）
 
-把整个 `translate-js-connector` 文件夹发给用户，让用户在 WorkBuddy 的配置文件
+把整个 `translatejsconnector` 文件夹发给用户，让用户在 WorkBuddy 的配置文件
 `~/.workbuddy/mcp.json` 中追加一段（如文件不存在则新建）：
 
 ```json
 {
   "mcpServers": {
-    "translate-js": {
+    "translatejs": {
       "command": "node",
-      "args": ["/这里换成绝对路径/translate-js-connector/index.js"]
+      "args": ["/这里换成绝对路径/translatejsconnector/index.js"]
     }
   }
 }
 ```
 
-保存后，重启 WorkBuddy 并在连接器管理里**信任/启用** `translate-js`，即可在对话中调用。
+保存后，重启 WorkBuddy 并在连接器管理里**信任/启用** `translatejs`，即可在对话中调用。
 
 > Windows 用户：`args` 里的路径用正斜杠或双反斜杠，例如
-> `C:/Users/用户名/translate-js-connector/index.js`。
+> `C:/Users/用户名/translatejsconnector/index.js`。
 
 ---
 
@@ -208,17 +208,17 @@ translate.js 有非常丰富的微调指令（完整列表见 https://translate.
 
 ## 十、作为插件市场发布（让其他 WorkBuddy 用户直接可选）
 
-本目录已按 WorkBuddy 的**插件市场**格式组织好（根目录 `marketplace.json` + `plugins/translate-js/`），
-其结构与官方市场里的 `github`、`context7` 等 MCP 连接器一致。其他用户安装市场里的 `translate-js` 插件后，
+本目录已按 WorkBuddy 的**插件市场**格式组织好（根目录 `marketplace.json` + `plugins/translatejs/`），
+其结构与官方市场里的 `github`、`context7` 等 MCP 连接器一致。其他用户安装市场里的 `translatejs` 插件后，
 WorkBuddy 会自动读取 `.mcp.json` 把它注册成一个连接器，用户在连接器列表里**信任/启用**即可使用——也就是你想要的「别人直接选就能用」。
 
 ### 目录结构（已是标准市场布局，可直接发布）
 
 ```
-translate-js-connector/            ← 这就是一个「市场」
+translatejsconnector/            ← 这就是一个「市场」
 ├─ marketplace.json                ← 市场清单，列出本市场提供的插件
 └─ plugins/
-   └─ translate-js/                ← 单个插件
+   └─ translatejs/                ← 单个插件
       ├─ .mcp.json                 ← MCP 服务端配置（用 ${CODEBUDDY_PLUGIN_ROOT} 变量指向 index.js）
       ├─ .codebuddy-plugin/
       │  └─ plugin.json            ← 插件元数据（名称/描述/作者/许可证）
@@ -232,14 +232,14 @@ translate-js-connector/            ← 这就是一个「市场」
 
 官方市场仓库：**https://github.com/masx200/codebuddy-plugins-official**
 （README 明确"欢迎提交 PR 贡献新的插件"。合入后所有用户可
-`/plugin install translate-js@codebuddy-plugins-official` 一键安装。）
+`/plugin install translatejs@codebuddy-plugins-official` 一键安装。）
 
 我已经把**可直接提 PR** 的提交包做好了，放在仓库根目录的
-`codebuddy-plugins-official-submission/`（与 `translate-js-connector/` 同级）：
+`codebuddy-plugins-official-submission/`（与 `translatejsconnector/` 同级）：
 
 ```
 codebuddy-plugins-official-submission/
-├─ external_plugins/translate-js/   # 整个目录复制到官方仓库根
+├─ external_plugins/translatejs/   # 整个目录复制到官方仓库根
 ├─ marketplace-entry.json           # 追加到官方仓库 .codebuddy-plugin/marketplace.json 的 plugins 数组
 ├─ PR_DESCRIPTION.md                # PR 标题与正文，直接复制
 └─ SUBMIT.md                        # 分步提交指南
@@ -247,7 +247,7 @@ codebuddy-plugins-official-submission/
 
 提交三步（详见 `codebuddy-plugins-official-submission/SUBMIT.md`）：
 
-1. Fork 官方仓库 → 把 `external_plugins/translate-js/` 复制到 fork 根目录；
+1. Fork 官方仓库 → 把 `external_plugins/translatejs/` 复制到 fork 根目录；
 2. 在 fork 的 `.codebuddy-plugin/marketplace.json` 的 `plugins` 数组里追加 `marketplace-entry.json` 内容
    （把 `<你的 GitHub 用户名>` 替换为真实用户名，plugin.json 与 entry 两处都要改）；
 3. 推送并发起 PR（标题/正文见 `PR_DESCRIPTION.md`），通过基础安全审查即合入。
@@ -257,10 +257,10 @@ codebuddy-plugins-official-submission/
 
 ### 路线 B：自建市场（立即可用，你完全掌控）
 
-1. 把 `translate-js-connector` 整个目录推送到一个公开 Git 仓库（GitHub / Gitee / CNB 均可）。
+1. 把 `translatejsconnector` 整个目录推送到一个公开 Git 仓库（GitHub / Gitee / CNB 均可）。
 2. 其他用户在 WorkBuddy 的**连接器市场**里「添加市场源」，指向该仓库（目录型市场）。
-3. 他们在市场里找到 `translate-js` 插件 → 安装。WorkBuddy 会自动把 `.mcp.json` 里的
-   `translate-js` 连接器注册好，用户只需在连接器列表点击**信任/启用**，即可在对话中调用。
+3. 他们在市场里找到 `translatejs` 插件 → 安装。WorkBuddy 会自动把 `.mcp.json` 里的
+   `translatejs` 连接器注册好，用户只需在连接器列表点击**信任/启用**，即可在对话中调用。
 
 ### 注意事项
 
@@ -268,6 +268,6 @@ codebuddy-plugins-official-submission/
   **要求用户机器上 `node` 在 PATH 中**（Node.js ≥ 18）。与官方 `context7`/`serena` 等插件的约定一致。
 - 路径变量：`${CODEBUDDY_PLUGIN_ROOT}` 是 WorkBuddy 在插件安装时注入的插件根目录绝对路径，
   因此发布版无需写死任何机器路径，换机器也能用。
-- 本地开发时可直接在 `~/.workbuddy/mcp.json` 里指向 `plugins/translate-js/index.js`
+- 本地开发时可直接在 `~/.workbuddy/mcp.json` 里指向 `plugins/translatejs/index.js`
   （本机已按此方式配置好，重启 WorkBuddy 后即可使用）。
 

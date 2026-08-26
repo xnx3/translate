@@ -1,0 +1,20 @@
+{
+  "name": "translate-js",
+  "description": "translate.js 多语言切换接入助手：一键为任意网站生成 zvo.cn translate.js 接入代码、下载最新源码、用真实浏览器验证集成效果。纯前端、零依赖、支持全技术栈网页。",
+  "version": "1.2.0",
+  "author": {
+    "name": "translate.js (zvo.cn)",
+    "url": "https://translate.zvo.cn/"
+  },
+  "homepage": "https://translate.zvo.cn/",
+  "repository": "https://github.com/xnx3/translate",
+  "keywords": [
+    "translate.js",
+    "i18n",
+    "多语言",
+    "翻译",
+    "mcp",
+    "zvo.cn"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云栖科技 - 让数据产生价值</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2937; line-height: 1.6; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #0f172a; color: #fff; }
+    header nav a { color: #cbd5e1; margin-left: 24px; text-decoration: none; }
+    header nav a:hover { color: #fff; }
+    .hero { padding: 80px 40px; text-align: center; background: linear-gradient(135deg, #1e3a8a, #0ea5e9); color: #fff; }
+    .hero h1 { font-size: 42px; margin-bottom: 16px; }
+    .hero p { font-size: 18px; max-width: 640px; margin: 0 auto 28px; opacity: .92; }
+    .btn { display: inline-block; padding: 12px 28px; background: #fff; color: #0ea5e9; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    .section { padding: 60px 40px; max-width: 1080px; margin: 0 auto; }
+    .section h2 { font-size: 28px; margin-bottom: 24px; text-align: center; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
+    .card h3 { font-size: 18px; margin-bottom: 10px; }
+    .price { padding: 60px 40px; background: #f8fafc; }
+    .price table { width: 100%; max-width: 720px; margin: 0 auto; border-collapse: collapse; }
+    .price td, .price th { border: 1px solid #e5e7eb; padding: 12px 16px; text-align: left; }
+    footer { padding: 32px 40px; background: #0f172a; color: #94a3b8; text-align: center; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">云栖科技</div>
+    <nav>
+      <a href="#home">首页</a>
+      <a href="#products">产品</a>
+      <a href="#price">价格</a>
+      <a href="#about">关于我们</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="home">
+    <h1>让每一份数据都产生价值</h1>
+    <p>云栖科技提供一站式数据中台与智能分析服务，帮助企业在多云环境下安全、高效地打通数据孤岛，实现业务增长。</p>
+    <a class="btn" href="#products">了解产品</a>
+  </section>
+
+  <section class="section" id="products">
+    <h2>我们的产品</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>数据集成</h3>
+        <p>支持百种数据源接入，分钟级完成同步，无需编写复杂脚本。</p>
+      </div>
+      <div class="card">
+        <h3>智能分析</h3>
+        <p>内置机器学习模型，自动发现业务异常与增长机会。</p>
+      </div>
+      <div class="card">
+        <h3>可视化大屏</h3>
+        <p>拖拽即可生成炫酷大屏，让经营状况一目了然。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="price" id="price">
+    <h2 style="text-align:center;margin-bottom:24px;">价格方案</h2>
+    <table>
+      <tr><th>方案</th><th>适合对象</th><th>价格</th></tr>
+      <tr><td>基础版</td><td>初创团队</td><td>免费</td></tr>
+      <tr><td>专业版</td><td>成长型企业</td><td>¥999/月</td></tr>
+      <tr><td>旗舰版</td><td>大型集团</td><td>联系商务</td></tr>
+    </table>
+  </section>
+
+  <footer id="about">
+    <p>© 2026 云栖科技 · 让数据产生价值</p>
+  </footer>
+</body>
+</html>

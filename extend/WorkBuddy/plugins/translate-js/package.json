@@ -1,0 +1,19 @@
+{
+  "name": "translate-js-connector",
+  "version": "1.2.0",
+  "description": "translate.js 多语言切换自动接入，自动接入到您的网站或管理系统 。 WorkBuddy / MCP 连接器",
+  "main": "index.js",
+  "bin": {
+    "translate-js-connector": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["translate.js", "i18n", "mcp", "workbuddy", "zvo.cn", "多语言", "翻译"],
+  "author": "translate.zvo.cn",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,16 @@
+{
+  "name": "translate-zvo",
+  "description": "translate.js 官方 WorkBuddy 连接器市场：一键为任意网站接入 translate.js 多语言切换能力。",
+  "owner": {
+    "name": "translate.js (zvo.cn)"
+  },
+  "plugins": [
+    {
+      "name": "translate-js",
+      "description": "translate.js 多语言切换接入助手：一键为任意网站生成 zvo.cn translate.js 接入代码、下载最新源码、用真实浏览器验证集成效果。纯前端、零依赖、支持全技术栈网页。",
+      "version": "1.2.0",
+      "source": "./extend/WorkBuddy/plugins/translate-js",
+      "license": "MIT"
+    }
+  ]
+}

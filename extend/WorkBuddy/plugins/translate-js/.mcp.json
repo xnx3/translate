@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "translate-js": {
+      "command": "node",
+      "args": [
+        "${CODEBUDDY_PLUGIN_ROOT}/index.js"
+      ],
+      "description": "translate.js 多语言切换接入助手：一键生成 translate.js 接入代码、下载最新源码、用真实浏览器验证集成（零依赖、支持任意 HTML 页面）。"
+    }
+  }
+}

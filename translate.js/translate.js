@@ -3702,11 +3702,31 @@ var translate = {
 		}
 
 
-		translate.time.log('开始扫描要翻译区域的元素');
-		//检索目标内的node元素
-		for(var i = 0; i< all.length & i < 15000; i++){
-			var node = all[i];
-			translate.element.whileNodes(uuid, node);	
+	translate.time.log('开始扫描要翻译区域的元素');
+	//检索目标内的node元素
+	for(var i = 0; i< all.length & i < 15000; i++){
+        var node = all[i];
+
+        // wholeContext：先把同一文本流中的多个 TextNode
+        // 组织成一个上下文翻译任务。
+        if(translate.whole.context.isUse()){
+                var wholeContextGroups = 
+                        translate.element.collectInlineTextGroups(node);
+
+                for(var wholeContextIndex = 0; 
+                    wholeContextIndex < wholeContextGroups.length; 
+                    wholeContextIndex++){
+                        translate.whole.context.addWholeContextToQueue(
+                                uuid,
+                                wholeContextGroups[wholeContextIndex]
+                        );
+                }
+        }
+
+        // 原有扫描流程保持不变。
+        // 已经被 wholeContext 标记的 TextNode 会由旧流程自己的
+        // originalText 判断跳过，不重复加入普通翻译队列。
+        translate.element.whileNodes(uuid, node);
 		}
 		translate.time.log('扫描要翻译区域的元素完成');
 
@@ -3897,13 +3917,60 @@ var translate = {
 								if (!translateNodeData.translateTexts.hasOwnProperty(translateText_original)) {
 						    		continue;
 						    	}
+								var wholeContextCacheNodeTexts = null;
+
+if(translate.nodeQueue[uuid]['list'][lang][hash]['type'] == 'wholeContext'){
+        var contextMarkers = translate.nodeQueue[uuid]['list'][lang][hash]['contextMarkers'];
+        var contextTexts = translate.nodeQueue[uuid]['list'][lang][hash]['contextTexts'];
+
+        if(typeof(contextMarkers) != 'undefined' &&
+           typeof(contextTexts) != 'undefined' &&
+           contextTexts.length == translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length){
+
+                var remainingCacheText = cache;
+                var splitCacheTexts = new Array();
+                var validCacheContext = true;
+
+                for(var contextMarkerIndex = 0; contextMarkerIndex < contextMarkers.length; contextMarkerIndex++){
+                        var marker = contextMarkers[contextMarkerIndex];
+                        var markerPosition = remainingCacheText.indexOf(marker);
+
+                        if(markerPosition == -1){
+                                validCacheContext = false;
+                                break;
+                        }
+
+                        splitCacheTexts.push(
+                                remainingCacheText.substring(0, markerPosition)
+                        );
+
+                        remainingCacheText = remainingCacheText.substring(
+                                markerPosition + marker.length
+                        );
+                }
+
+                if(validCacheContext){
+                        splitCacheTexts.push(remainingCacheText);
+
+                        if(splitCacheTexts.length == contextTexts.length){
+                                wholeContextCacheNodeTexts = splitCacheTexts;
+                        }
+                }
+        }
+}
 						    	participles.push(translateText_original);
 						    }
 						}
 						
 						
 						//翻译结果的文本，包含了before  、 after 了
-						var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+cache+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
+						var nodeCacheText = cache;
+
+if(wholeContextCacheNodeTexts != null){
+        nodeCacheText = wholeContextCacheNodeTexts[node_index];
+}
+
+var translateResultText = translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+nodeCacheText+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'];
 						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translateResultText, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute'], participles);
 						//this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue = this.nodeQueue[lang][hash]['nodes'][node_index].nodeValue.replace(new RegExp(originalWord,'g'), cache);
 						//console.log(translateResultText);
@@ -4534,9 +4601,59 @@ var translate = {
 						translate.log(e);
 						continue;
 					}
+					var wholeContextNodeTexts = null;
 
+		if(translate.nodeQueue[uuid]['list'][lang][hash]['type'] == 'wholeContext'){
+        var contextMarkers = translate.nodeQueue[uuid]['list'][lang][hash]['contextMarkers'];
+        var contextTexts = translate.nodeQueue[uuid]['list'][lang][hash]['contextTexts'];
+
+        if(typeof(contextMarkers) != 'undefined' &&
+           typeof(contextTexts) != 'undefined' &&
+           contextTexts.length == translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length){
+
+                var remainingText = text;
+                var splitTexts = new Array();
+                var validContext = true;
+
+                for(var contextMarkerIndex = 0; contextMarkerIndex < contextMarkers.length; contextMarkerIndex++){
+                        var marker = contextMarkers[contextMarkerIndex];
+                        var markerPosition = remainingText.indexOf(marker);
+
+                        if(markerPosition == -1){
+                                validContext = false;
+                                break;
+                        }
+
+                        splitTexts.push(remainingText.substring(0, markerPosition));
+                        remainingText = remainingText.substring(
+                                markerPosition + marker.length
+                        );
+                }
+
+                if(validContext){
+                        splitTexts.push(remainingText);
+
+                        if(splitTexts.length == contextTexts.length){
+                                wholeContextNodeTexts = splitTexts;
+                        }
+                }
+        }
+	}
 					for(var node_index = 0; node_index < translate.nodeQueue[uuid]['list'][lang][hash]['nodes'].length; node_index++){
-						task.add(translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'], originalWord, translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText']+text+translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'], translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']);
+						var nodeTranslateText = text;
+
+if(wholeContextNodeTexts != null){
+        nodeTranslateText = wholeContextNodeTexts[node_index];
+}
+
+task.add(
+        translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['node'],
+        originalWord,
+        translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['beforeText'] +
+        nodeTranslateText +
+        translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['afterText'],
+        translate.nodeQueue[uuid]['list'][lang][hash]['nodes'][node_index]['attribute']
+);
 					}
 
 					//将翻译结果写入浏览器缓存；SSE 提前渲染和 done 兜底渲染共用同一缓存规则。
@@ -6518,7 +6635,25 @@ var translate = {
 		translate.nodeQueue[uuid]['list'][lang][hash]['type'] = 'wholeContext';
 		translate.nodeQueue[uuid]['list'][lang][hash]['nodes'] = new Array();
 		translate.nodeQueue[uuid]['list'][lang][hash]['original'] = contextText;
-		translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = group.texts.slice(0);
+		translate.nodeQueue[uuid]['list'][lang][hash]['contextTexts'] = group.texts.slice(0);
+
+		var contextMarkers = new Array();
+		var contextRequestText = '';
+
+		for(var contextTextIndex = 0; contextTextIndex < group.texts.length; contextTextIndex++){
+		        if(contextTextIndex > 0){
+		                var contextMarker =
+		                        '[[[TRANSLATEJS_CTX_' + (contextTextIndex - 1) + ']]]';
+				
+		                contextMarkers.push(contextMarker);
+		                contextRequestText = contextRequestText + contextMarker;
+		        }
+			
+		        contextRequestText = contextRequestText + group.texts[contextTextIndex];
+		}
+
+		translate.nodeQueue[uuid]['list'][lang][hash]['contextMarkers'] = contextMarkers;
+		translate.nodeQueue[uuid]['list'][lang][hash]['translateText'] = contextRequestText;
 
 		for(var nodeIndex = 0; nodeIndex < group.nodes.length; nodeIndex++){
 			var node = group.nodes[nodeIndex];

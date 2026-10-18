@@ -7306,6 +7306,19 @@ var translate = {
 			var upLangs = []; //上一个字符的语种是什么，当前字符向上数第一个字符。格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。 
 			var upLangsTwo = []; //上二个字符的语种是什么 ，当前字符向上数第二个字符。 格式如 ['language']='english', ['chatstr']='a', ['storage_language']='english'  这里面有3个参数，分别代表这个字符属于那个语种，其字符是什么、存入了哪种语种的队列。因为像是逗号，句号，一般是存入本身语种中，而不是存入特殊符号中。
 			
+			/*
+				网址（如 https://example.com/a?b=1 ）保持完整，不被拆开。
+				否则网址中的 // ? = & 等会被识别为特殊字符，把一句话从网址处切成两段分别翻译，翻译后网址可能被打乱。
+				Keep URLs whole: otherwise "//" and characters like ? = & are treated as special characters,
+				the sentence is cut in two at the link, and the link can come back broken after translation.
+			*/
+			var urlRanges = [];
+			var urlRegex = /(https?|ftp):\/\/[^\s<>"']+/gi;
+			var urlMatch;
+			while((urlMatch = urlRegex.exec(str)) !== null){
+				urlRanges.push([urlMatch.index, urlMatch.index + urlMatch[0].length]);
+			}
+
 			//var upLangs = ''; //上一个字符的语种是什么，格式如 english
 			for(var i=0; i<str.length; i++){
 				var charstr = str.charAt(i);
@@ -7315,6 +7328,15 @@ var translate = {
 					//未获取到，未发现是什么语言
 					//continue;
 					lang = 'unidentification';
+				}
+				//网址内部的字符（第一个字符之后），跟随网址开头所在的语种，保持网址完整
+				if(urlRanges.length > 0 && typeof(upLangs['storage_language']) != 'undefined'){
+					for(var ui = 0; ui < urlRanges.length; ui++){
+						if(i > urlRanges[ui][0] && i < urlRanges[ui][1]){
+							lang = upLangs['storage_language'];
+							break;
+						}
+					}
 				}
 				var result = translate.language.analyse(lang, langStrs, upLangs, upLangsTwo, charstr);
 				//console.log(result)

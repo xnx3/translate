@@ -5486,7 +5486,7 @@ var translate = {
 						script.onload = function() {
 							//console.log('✅ JS 注入成功');
 
-							var parentConfigData = parent.translate.config.get();
+							var parentConfigData = translate.config.get();
 							iframeContentWindow.translate.config.set(parentConfigData);
 							iframeContentWindow.translate.to = iframeContentWindow.translate.language.getCurrent();
 							//iframeContentWindow.translate.time.use = true;

@@ -1,0 +1,131 @@
+PASS  static translation  — title="Hello world", p1="This is a test.", p2="Second paragraph: more content."
+PASS  language selector rendered  — options=chinese_simplified,english,spanish,arabic
+PASS  no page or console errors on baseline flow
+PASS  translation request sent to mocked API  — requests=1
+PASS  ignore class/id/tag/text  — {"cls":"忽略我","id":"忽略我ID","code":"忽略我CODE","text":"忽略我TEXT","placeholder":"Please enter","title":"Title","alt":"Image description","value":"按钮"}
+PASS  attributes translated by default  — {"cls":"忽略我","id":"忽略我ID","code":"忽略我CODE","text":"忽略我TEXT","placeholder":"Please enter","title":"Title","alt":"Image description","value":"按钮"}
+PASS  input value is not translated by default  — value="按钮"
+PASS  input value translated through tagAttribute  — value="Button"
+PASS  dynamic childList insertion translated  — text="Dynamic content"
+PASS  dynamic characterData change translated  — text="Dynamic content"
+PASS  switch to Spanish  — title="Hola mundo"
+PASS  switch does not reload the page  — window.__alive=true
+PASS  translation cache written  — keys=6
+PASS  cache hit avoids translate.json on reload  — apiCalls=0
+PASS  quota error handled gracefully  — dynamic text="Dynamic content", errors=
+PASS  storage disabled handled gracefully  — title="Hello world", errors=
+PASS  same-origin iframe injection  — frame=true, title="Hello world"
+PASS  nested iframe injection (middle -> inner)  — middleTitle="Hello world", innerTitle="Hello world", errors=
+PASS  cross-origin postMessage accepted by default (security finding)  — initial="Hello world", after="Hola mundo", errors=
+FAIL  Shadow DOM translation  — before="动态内容", after="动态内容" (known gap)
+PASS  public clear-translation-cache API  — {"clearTranslationCache":true,"clearLanguageCache":true,"storageRemove":true,"storageClear":false}
+
+SUMMARY: 20/21 checks passed
+Screenshots: /Users/luchop/PROYECTOS IA/translate/dev/e2e/report/screenshots
+[
+  {
+    "name": "static translation",
+    "pass": true,
+    "detail": "title=\"Hello world\", p1=\"This is a test.\", p2=\"Second paragraph: more content.\""
+  },
+  {
+    "name": "language selector rendered",
+    "pass": true,
+    "detail": "options=chinese_simplified,english,spanish,arabic"
+  },
+  {
+    "name": "no page or console errors on baseline flow",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "name": "translation request sent to mocked API",
+    "pass": true,
+    "detail": "requests=1"
+  },
+  {
+    "name": "ignore class/id/tag/text",
+    "pass": true,
+    "detail": "{\"cls\":\"忽略我\",\"id\":\"忽略我ID\",\"code\":\"忽略我CODE\",\"text\":\"忽略我TEXT\",\"placeholder\":\"Please enter\",\"title\":\"Title\",\"alt\":\"Image description\",\"value\":\"按钮\"}"
+  },
+  {
+    "name": "attributes translated by default",
+    "pass": true,
+    "detail": "{\"cls\":\"忽略我\",\"id\":\"忽略我ID\",\"code\":\"忽略我CODE\",\"text\":\"忽略我TEXT\",\"placeholder\":\"Please enter\",\"title\":\"Title\",\"alt\":\"Image description\",\"value\":\"按钮\"}"
+  },
+  {
+    "name": "input value is not translated by default",
+    "pass": true,
+    "detail": "value=\"按钮\""
+  },
+  {
+    "name": "input value translated through tagAttribute",
+    "pass": true,
+    "detail": "value=\"Button\""
+  },
+  {
+    "name": "dynamic childList insertion translated",
+    "pass": true,
+    "detail": "text=\"Dynamic content\""
+  },
+  {
+    "name": "dynamic characterData change translated",
+    "pass": true,
+    "detail": "text=\"Dynamic content\""
+  },
+  {
+    "name": "switch to Spanish",
+    "pass": true,
+    "detail": "title=\"Hola mundo\""
+  },
+  {
+    "name": "switch does not reload the page",
+    "pass": true,
+    "detail": "window.__alive=true"
+  },
+  {
+    "name": "translation cache written",
+    "pass": true,
+    "detail": "keys=6"
+  },
+  {
+    "name": "cache hit avoids translate.json on reload",
+    "pass": true,
+    "detail": "apiCalls=0"
+  },
+  {
+    "name": "quota error handled gracefully",
+    "pass": true,
+    "detail": "dynamic text=\"Dynamic content\", errors="
+  },
+  {
+    "name": "storage disabled handled gracefully",
+    "pass": true,
+    "detail": "title=\"Hello world\", errors="
+  },
+  {
+    "name": "same-origin iframe injection",
+    "pass": true,
+    "detail": "frame=true, title=\"Hello world\""
+  },
+  {
+    "name": "nested iframe injection (middle -> inner)",
+    "pass": true,
+    "detail": "middleTitle=\"Hello world\", innerTitle=\"Hello world\", errors="
+  },
+  {
+    "name": "cross-origin postMessage accepted by default (security finding)",
+    "pass": true,
+    "detail": "initial=\"Hello world\", after=\"Hola mundo\", errors="
+  },
+  {
+    "name": "Shadow DOM translation",
+    "pass": false,
+    "detail": "before=\"动态内容\", after=\"动态内容\" (known gap)"
+  },
+  {
+    "name": "public clear-translation-cache API",
+    "pass": true,
+    "detail": "{\"clearTranslationCache\":true,\"clearLanguageCache\":true,\"storageRemove\":true,\"storageClear\":false}"
+  }
+]

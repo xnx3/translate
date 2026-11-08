@@ -1,0 +1,13 @@
+{
+  "name": "translatejs-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Deterministic Playwright checks for translate.js DOM behavior",
+  "scripts": {
+    "test": "node run.js",
+    "test:strict": "node run.js --strict"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}

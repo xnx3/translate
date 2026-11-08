@@ -13,3 +13,6 @@ pnpm-lock.yaml
 # dist
 extend/vant/vue3/demo/node_modules/*
 
+# e2e harness
+dev/e2e/node_modules/
+

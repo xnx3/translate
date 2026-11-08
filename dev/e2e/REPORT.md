@@ -6,7 +6,7 @@ Method: local Playwright fixtures + mocked `translate.json` / `language.json`; n
 
 ## Result
 
-**Baseline: 16/21 checks pass.** The core translation path is solid; the failures are in storage resilience, nested iframes, Shadow DOM and cache control. A cross-origin `postMessage` behavior is also documented as a security finding.
+**Baseline: 16/21 checks pass; with #112 and #113 applied: 20/21 (Shadow DOM remains open).** The core translation path is solid; the failures are in storage resilience, nested iframes, Shadow DOM and cache control. A cross-origin `postMessage` behavior is also documented as a security finding.
 
 | Check | Baseline | Fixed by |
 |---|---|---|
@@ -14,11 +14,11 @@ Method: local Playwright fixtures + mocked `translate.json` / `language.json`; n
 | Dynamic `childList` and `characterData` updates | PASS | — |
 | Language switch and cache hit on reload | PASS | — |
 | Same-origin iframe injection | PASS | — |
-| `localStorage` quota | FAIL | PR #TBD (storage resilience) |
-| `localStorage` disabled | FAIL | PR #TBD (storage resilience) |
-| Nested iframe injection | FAIL | PR #TBD (nested iframe) |
+| `localStorage` quota | FAIL -> PASS | #113 (storage resilience) |
+| `localStorage` disabled | FAIL -> PASS | #113 (storage resilience) |
+| Nested iframe injection | FAIL -> PASS | #112 (nested iframe) |
 | Shadow DOM | FAIL | Not fixed; tracked in issue #101 |
-| Clear translation cache API | FAIL | PR #TBD (storage resilience) |
+| Clear translation cache API | FAIL -> PASS | #113 (storage resilience) |
 | Cross-origin `postMessage` accepted | SECURITY FINDING | Needs maintainer decision |
 
 Run `npm test` in `dev/e2e/` to reproduce. Use `npm run test:strict` after the fixes land.
@@ -90,9 +90,9 @@ A page on `127.0.0.1:8123` changed the language of an iframe on `127.0.0.1:8124`
 
 | PR | Branch | What it changes | Evidence |
 |---|---|---|---|
-| #TBD | `test/e2e-dom-harness` | Adds the Playwright harness, mocked API, fixtures, screenshots and this report. No core behavior change. | Baseline 16/21 |
-| #TBD | `fix/nested-iframe-config` | One-line fix in `translate.js:5489`; nested iframe test turns green. | `05-nested-iframe-*` |
-| #TBD | `fix/storage-resilience` | Guards `localStorage`, adds in-memory fallback, `remove()` and `clearCache()`. | `03-*`, `04-*` |
+| #111 | `test/e2e-dom-harness` | Adds the Playwright harness, mocked API, fixtures, screenshots and this report. No core behavior change. | Baseline 16/21 |
+| #112 | `fix/nested-iframe-config` | One-line fix in `translate.js:5489`; nested iframe test turns green. | `05-nested-iframe-*` |
+| #113 | `fix/storage-resilience` | Guards `localStorage`, adds in-memory fallback, `remove()` and `clearCache()`. | `03-*`, `04-*` |
 
 The nested iframe and storage fixes are independent; both rely on the harness in the first PR for regression coverage.
 

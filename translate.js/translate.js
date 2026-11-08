@@ -11486,11 +11486,80 @@ var translate = {
 		},
 		/*js translate.storage.IndexedDB end*/
 
+		//localStorage 不可用时（隐私模式、禁用存储、quota 满等）的内存兜底缓存
+		_memory:{},
+		_fallbackWarned:false,
+
 		set:function(key,value){
-			localStorage.setItem(key,value);
+			translate.storage._memory[key] = value;
+			try{
+				localStorage.setItem(key,value);
+			}catch(e){
+				if(translate.storage._fallbackWarned !== true){
+					translate.storage._fallbackWarned = true;
+					translate.log('translate.storage.set: localStorage unavailable, using memory cache. '+(e && e.message ? e.message : e));
+				}
+			}
 		},
 		get:function(key){
-			return localStorage.getItem(key);
+			try{
+				var value = localStorage.getItem(key);
+				if(value !== null && typeof(value) !== 'undefined'){
+					return value;
+				}
+			}catch(e){
+				if(translate.storage._fallbackWarned !== true){
+					translate.storage._fallbackWarned = true;
+					translate.log('translate.storage.get: localStorage unavailable, using memory cache. '+(e && e.message ? e.message : e));
+				}
+			}
+			if(Object.prototype.hasOwnProperty.call(translate.storage._memory,key)){
+				return translate.storage._memory[key];
+			}
+			return null;
+		},
+		remove:function(key){
+			delete translate.storage._memory[key];
+			try{
+				localStorage.removeItem(key);
+			}catch(e){
+				if(translate.storage._fallbackWarned !== true){
+					translate.storage._fallbackWarned = true;
+					translate.log('translate.storage.remove: localStorage unavailable, using memory cache. '+(e && e.message ? e.message : e));
+				}
+			}
+		},
+		/*
+			清除翻译缓存（仅清理 hash_ 开头的 key），保留当前语种及节点测速等配置。
+			返回实际清理的 localStorage key 数量；localStorage 不可用时清理内存缓存。
+		*/
+		clearCache:function(){
+			var removed = 0;
+			for(var memoryKey in translate.storage._memory){
+				if(Object.prototype.hasOwnProperty.call(translate.storage._memory,memoryKey) && memoryKey.indexOf('hash_') === 0){
+					delete translate.storage._memory[memoryKey];
+					removed++;
+				}
+			}
+			try{
+				var keys = [];
+				for(var i = 0; i < localStorage.length; i++){
+					var key = localStorage.key(i);
+					if(typeof(key) === 'string' && key.indexOf('hash_') === 0){
+						keys.push(key);
+					}
+				}
+				for(var ki = 0; ki < keys.length; ki++){
+					localStorage.removeItem(keys[ki]);
+					removed++;
+				}
+			}catch(e){
+				if(translate.storage._fallbackWarned !== true){
+					translate.storage._fallbackWarned = true;
+					translate.log('translate.storage.clearCache: localStorage unavailable, cleared memory cache. '+(e && e.message ? e.message : e));
+				}
+			}
+			return removed;
 		}
 
 	},

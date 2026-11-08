@@ -90,9 +90,9 @@ A page on `127.0.0.1:8123` changed the language of an iframe on `127.0.0.1:8124`
 
 | PR | Branch | What it changes | Evidence |
 |---|---|---|---|
-| #111 | `test/e2e-dom-harness` | Adds the Playwright harness, mocked API, fixtures, screenshots and this report. No core behavior change. | Baseline 16/21 |
-| #112 | `fix/nested-iframe-config` | One-line fix in `translate.js:5489`; nested iframe test turns green. | `05-nested-iframe-*` |
-| #113 | `fix/storage-resilience` | Guards `localStorage`, adds in-memory fallback, `remove()` and `clearCache()`. | `03-*`, `04-*` |
+| [#111](https://github.com/xnx3/translate/pull/111) | `test/e2e-dom-harness` | Adds the Playwright harness, mocked API, fixtures, screenshots and this report. No core behavior change. | Baseline 16/21 |
+| [#112](https://github.com/xnx3/translate/pull/112) | `fix/nested-iframe-config` | One-line fix in `translate.js:5489`; nested iframe test turns green. | `05-nested-iframe-*` |
+| [#113](https://github.com/xnx3/translate/pull/113) | `fix/storage-resilience` | Guards `localStorage`, adds in-memory fallback, `remove()` and `clearCache()`. | `03-*`, `04-*` |
 
 The nested iframe and storage fixes are independent; both rely on the harness in the first PR for regression coverage.
 

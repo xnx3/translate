@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "version": "node dev/update-version.js",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "test:e2e": "npm --prefix dev/e2e test"
   },
   "keywords": [
     "i18n",

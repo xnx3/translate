@@ -13,3 +13,10 @@ pnpm-lock.yaml
 # dist
 extend/vant/vue3/demo/node_modules/*
 
+# e2e harness
+dev/e2e/node_modules/
+dev/e2e/test-results/
+dev/e2e/playwright-report/
+dev/e2e/report/results.json
+!/dev/e2e/package-lock.json
+

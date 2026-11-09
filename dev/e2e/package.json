@@ -1,0 +1,16 @@
+{
+  "name": "translatejs-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Deterministic Playwright checks for translate.js DOM behavior",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test --project=chromium",
+    "test:strict": "playwright test --project=strict"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

@@ -20,6 +20,24 @@ browser's operating-system dependencies too.
 
 ## Run
 
+On Windows, double-click `translate.js/test.bat` from this checkout. It prepares
+missing test dependencies, selects a usable headless Chromium (or downloads one
+if necessary), runs the tests and keeps the result window open. It requires
+Node.js 20 or newer; the first setup may need an internet connection. The launcher
+prints the exact `translate.js` file being tested, and separately counts normal
+passes, known failures, skips and unexpected failures. A cached browser that
+differs from the pinned version is identified in the output.
+
+The comments at the top of `translate.js/test.bat` contain the Windows environment
+checklist and Node.js installation commands for people or AI assistants setting
+up a fresh checkout. Node.js and npm must be installed first; the launcher does
+not install or upgrade the system Node.js runtime itself.
+
+For scripts that should not wait for a key press, use `test.bat --no-pause`.
+The batch file preserves the test command's exit code.
+
+To run from a terminal after setup:
+
 ```bash
 npm test
 ```

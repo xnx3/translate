@@ -11486,11 +11486,38 @@ var translate = {
 		},
 		/*js translate.storage.IndexedDB end*/
 
-		set:function(key,value){
-			localStorage.setItem(key,value);
+		//浏览器环境下的存储实现
+		browser:{
+			/*
+				基于浏览器 localStorage 的默认存储实现。
+				translate.storage.get/set 是统一入口，默认委托到这里执行读写。
+				数据保存在当前页面所属的同源 localStorage 中，可在刷新后继续读取，
+				与同源网站的其他代码共享存储空间，键名沿用原有规则：
+					to 保存目标语种；hash_<目标语种>_<hash> 保存译文缓存。
+				读写均为同步操作；存储被禁用或空间不足等异常会向调用方抛出。
+				自定义存储时，可配套覆盖 translate.storage.get 和 translate.storage.set，
+				保持 set 无返回值、get 同步返回字符串或 null 的约定。
+			*/
+			storage:{
+				//同步写入，返回 undefined。key、value 按 localStorage 规则转换为字符串。
+				//保存对象等结构化数据时，由调用方先使用 JSON.stringify 序列化。
+				set:function(key,value){
+					localStorage.setItem(key,value);
+				},
+				//同步读取，返回字符串；键不存在时返回 null，空字符串仍返回空字符串。
+				//本方法直接返回存储结果，不自动执行 JSON.parse 等反序列化操作。
+				get:function(key){
+					return localStorage.getItem(key);
+				}
+			}
 		},
+		//统一写入入口，默认使用浏览器存储；可按需覆盖为自定义存储。
+		set:function(key,value){
+			translate.storage.browser.storage.set(key,value);
+		},
+		//统一读取入口，自定义时应与上面的 set 配套，保持同步返回。
 		get:function(key){
-			return localStorage.getItem(key);
+			return translate.storage.browser.storage.get(key);
 		}
 
 	},

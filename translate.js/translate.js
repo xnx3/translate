@@ -11489,6 +11489,29 @@ var translate = {
 		//浏览器环境下的存储实现
 		browser:{
 			/*
+				当前页面的内存键值存储，独立于 localStorage，不写入浏览器持久存储。
+				数据仅保存在当前 translate 实例中，页面刷新或关闭后丢失，不与其他实例共享。
+				key、value 使用 String(...) 转换；对象等结构化数据需调用方先 JSON.stringify。
+				读写均同步执行，set 返回 undefined，get 返回字符串或 null。
+				使用方式：
+					translate.storage.browser.memory.set('key', 'value');
+					var value = translate.storage.browser.memory.get('key');
+				统一入口 translate.storage.get/set 默认仍使用 browser.storage，
+				本内存实现需显式调用，不会自动接管 localStorage 的读写异常。
+			*/
+			memory:{
+				//Map 保存字符串键值，避免 __proto__ 等键与对象原型发生冲突。
+				_data:new Map(),
+				set:function(key,value){
+					this._data.set(String(key),String(value));
+				},
+				//键不存在返回 null；已存入的空字符串仍返回空字符串。
+				get:function(key){
+					key = String(key);
+					return this._data.has(key) ? this._data.get(key) : null;
+				}
+			},
+			/*
 				基于浏览器 localStorage 的默认存储实现。
 				translate.storage.get/set 是统一入口，默认委托到这里执行读写。
 				数据保存在当前页面所属的同源 localStorage 中，可在刷新后继续读取，

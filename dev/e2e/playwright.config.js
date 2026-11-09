@@ -27,8 +27,26 @@ module.exports = defineConfig({
     launchOptions: executablePath ? { executablePath } : {}
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-    { name: 'strict', use: { browserName: 'chromium' } }
+    {
+      name: 'chromium',
+      metadata: { build: 'translate.js', strict: false },
+      use: { browserName: 'chromium', extraHTTPHeaders: { 'x-translate-build': 'translate.js' } }
+    },
+    {
+      name: 'chromium-minified',
+      metadata: { build: 'translate.min.js', strict: false },
+      use: { browserName: 'chromium', extraHTTPHeaders: { 'x-translate-build': 'translate.min.js' } }
+    },
+    {
+      name: 'strict',
+      metadata: { build: 'translate.js', strict: true },
+      use: { browserName: 'chromium', extraHTTPHeaders: { 'x-translate-build': 'translate.js' } }
+    },
+    {
+      name: 'strict-minified',
+      metadata: { build: 'translate.min.js', strict: true },
+      use: { browserName: 'chromium', extraHTTPHeaders: { 'x-translate-build': 'translate.min.js' } }
+    }
   ],
   webServer: [
     {

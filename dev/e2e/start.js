@@ -110,19 +110,27 @@ function printSummary() {
   }
   const report = JSON.parse(fs.readFileSync(REPORT, 'utf8'));
   const counts = { passed: 0, known: 0, skipped: 0, failed: 0 };
+  const projects = new Map(report.config.projects.map((project) => [project.name, project.metadata.build]));
+  const builds = new Map();
   function visit(suite) {
     for (const spec of suite.specs || []) {
       for (const test of spec.tests || []) {
-        if (test.status === 'skipped') counts.skipped++;
-        else if (test.status === 'unexpected' || test.status === 'flaky') counts.failed++;
-        else if (test.expectedStatus === 'failed') counts.known++;
-        else counts.passed++;
+        const build = projects.get(test.projectName) || test.projectName;
+        if (!builds.has(build)) builds.set(build, { passed: 0, known: 0, skipped: 0, failed: 0 });
+        const result = test.status === 'skipped' ? 'skipped' :
+          test.status === 'unexpected' || test.status === 'flaky' ? 'failed' :
+          test.expectedStatus === 'failed' ? 'known' : 'passed';
+        counts[result]++;
+        builds.get(build)[result]++;
       }
     }
     for (const child of suite.suites || []) visit(child);
   }
   visit(report);
-  console.log(`\n测试统计：正常通过 ${counts.passed}，已知失败 ${counts.known}，跳过 ${counts.skipped}，意外失败 ${counts.failed}。`);
+  for (const [build, result] of builds) {
+    console.log(`\n[${build}] 正常通过 ${result.passed}，已知失败 ${result.known}，跳过 ${result.skipped}，意外失败 ${result.failed}。`);
+  }
+  console.log(`\n两份文件合计：正常通过 ${counts.passed}，已知失败 ${counts.known}，跳过 ${counts.skipped}，意外失败 ${counts.failed}。`);
   if (counts.known) console.log('“已知失败”仍是未修复的问题；本次运行只豁免了符合已记录特征的故障。');
   console.log('详细报告：' + REPORT);
 }
@@ -138,9 +146,13 @@ async function main() {
   const args = process.argv.slice(2).filter((arg) => arg !== '--no-pause');
   const strict = args.includes('--strict');
   const forwarded = args.filter((arg) => arg !== '--strict');
-  console.log('\n开始测试当前目录中的 translate.js：' + path.resolve(ROOT, '../../translate.js/translate.js'));
+  console.log('\n将分别测试以下两个发布文件：');
+  for (const build of ['translate.js', 'translate.min.js']) {
+    console.log('  ' + path.resolve(ROOT, '../../translate.js', build));
+  }
+  const projects = strict ? ['strict', 'strict-minified'] : ['chromium', 'chromium-minified'];
   const code = run(process.execPath, [path.join(ROOT, 'node_modules', '@playwright', 'test', 'cli.js'),
-    'test', '--project=' + (strict ? 'strict' : 'chromium'), ...forwarded],
+    'test', ...projects.map((project) => '--project=' + project), ...forwarded],
   { ...process.env, ...(executablePath ? { PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: executablePath } : {}) });
   printSummary();
   process.exitCode = code;

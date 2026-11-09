@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CORE = path.resolve(__dirname, '../../translate.js/translate.js');
+const MINIFIED = path.resolve(__dirname, '../../translate.js/translate.min.js');
 const DEFAULT_PORT = 8123;
 const CROSS_ORIGIN_PORT = 8124;
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -75,8 +76,8 @@ function readBody(req) {
   });
 }
 
-function baseConfig(port) {
-  return `<script src="/translate.js"></script>
+function baseConfig(port, build = 'translate.js') {
+  return `<script src="/${build}"></script>
 <script>
   translate.request.api.host = ['http://127.0.0.1:${port}/'];
   translate.request.api.connectTest = '';
@@ -88,7 +89,7 @@ function baseConfig(port) {
 </script>`;
 }
 
-function fixture(port) {
+function fixture(port, build) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -129,7 +130,7 @@ function fixture(port) {
 
 <div id="shadow-host"></div>
 
-${baseConfig(port)}
+${baseConfig(port, build)}
 <script>
   translate.ignore.id.push('ignore-id');
   translate.ignore.text.push('忽略我TEXT');
@@ -164,16 +165,16 @@ function iframeBlank() {
 </html>`;
 }
 
-function iframeParent(port) {
+function iframeParent(port, build) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><title>iframe parent</title></head>
 <body>
 <h1 id="parent-title">中文段落。</h1>
 <div id="iframe-host"></div>
-${baseConfig(port)}
+${baseConfig(port, build)}
 <script>
-  translate.element.iframe.use('/translate.js');
+  translate.element.iframe.use('/${build}');
   translate.listener.start();
   translate.execute();
   setTimeout(function() {
@@ -200,16 +201,16 @@ function nestedTop() {
 </html>`;
 }
 
-function nestedMiddle(port) {
+function nestedMiddle(port, build) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><title>nested middle</title></head>
 <body>
 <h1 id="middle-title">你好世界</h1>
 <div id="inner-host"></div>
-${baseConfig(port)}
+${baseConfig(port, build)}
 <script>
-  translate.element.iframe.use('/translate.js');
+  translate.element.iframe.use('/${build}');
   translate.listener.start();
   translate.execute();
   setTimeout(function() {
@@ -236,7 +237,7 @@ function crossOriginParent() {
 </html>`;
 }
 
-function crossOriginIframe(port) {
+function crossOriginIframe(port, build) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><title>cross-origin iframe</title></head>
@@ -244,7 +245,7 @@ function crossOriginIframe(port) {
 <div id="translate"></div>
 <h1 id="iframe-title">你好世界</h1>
 <p id="iframe-p">这是一个测试。</p>
-${baseConfig(port)}
+${baseConfig(port, build)}
 <script>
   translate.execute();
 </script>
@@ -259,30 +260,37 @@ function createServer(port) {
   const handleRequest = async (req, res) => {
     const url = new URL(req.url, origin);
     const pathname = url.pathname;
+    const build = req.headers['x-translate-build'] || 'translate.js';
+    if (build !== 'translate.js' && build !== 'translate.min.js') {
+      return send(res, 400, 'unsupported translate build');
+    }
 
     if (pathname === '/' || pathname === '/fixture.html') {
-      return send(res, 200, fixture(port), 'text/html; charset=utf-8');
+      return send(res, 200, fixture(port, build), 'text/html; charset=utf-8');
     }
     if (pathname === '/iframe-parent.html') {
-      return send(res, 200, iframeParent(port), 'text/html; charset=utf-8');
+      return send(res, 200, iframeParent(port, build), 'text/html; charset=utf-8');
     }
     if (pathname === '/iframe-blank.html') {
       return send(res, 200, iframeBlank(), 'text/html; charset=utf-8');
     }
     if (pathname === '/iframe.html') {
-      return send(res, 200, crossOriginIframe(port), 'text/html; charset=utf-8');
+      return send(res, 200, crossOriginIframe(port, build), 'text/html; charset=utf-8');
     }
     if (pathname === '/nested-top.html') {
       return send(res, 200, nestedTop(), 'text/html; charset=utf-8');
     }
     if (pathname === '/nested-middle.html') {
-      return send(res, 200, nestedMiddle(port), 'text/html; charset=utf-8');
+      return send(res, 200, nestedMiddle(port, build), 'text/html; charset=utf-8');
     }
     if (pathname === '/cross-origin-parent.html') {
       return send(res, 200, crossOriginParent(), 'text/html; charset=utf-8');
     }
     if (pathname === '/translate.js') {
       return send(res, 200, fs.readFileSync(CORE, 'utf8'), 'application/javascript; charset=utf-8');
+    }
+    if (pathname === '/translate.min.js') {
+      return send(res, 200, fs.readFileSync(MINIFIED, 'utf8'), 'application/javascript; charset=utf-8');
     }
     if (pathname === '/language.json') {
       return send(res, 200, JSON.stringify({
@@ -372,6 +380,7 @@ if (require.main === module) {
 
 module.exports = {
   CORE,
+  MINIFIED,
   DEFAULT_PORT,
   CROSS_ORIGIN_PORT,
   startServer

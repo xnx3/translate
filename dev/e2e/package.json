@@ -7,8 +7,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "playwright test --project=chromium",
-    "test:strict": "playwright test --project=strict"
+    "test": "playwright test --project=chromium --project=chromium-minified",
+    "test:strict": "playwright test --project=strict --project=strict-minified"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0"

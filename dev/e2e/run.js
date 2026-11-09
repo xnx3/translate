@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const { createHash } = require('crypto');
 const { test: base, expect } = require('@playwright/test');
 const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('./server');
 
@@ -18,7 +21,7 @@ const test = base.extend({
     const known = knownFailures.get(testInfo);
     // Classify after hooks so that a second assertion or a late browser error
     // cannot hide behind an otherwise expected failure.
-    if (known && testInfo.project.name !== 'strict' && testInfo.errors.length === 1 &&
+    if (known && !testInfo.project.metadata.strict && testInfo.errors.length === 1 &&
         JSON.stringify(errors) === JSON.stringify(known.errors)) {
       test.fail(true, known.reason);
     }
@@ -63,8 +66,18 @@ async function knownIssue(testInfo, errors, reason, assertion, matchesFailure) {
   }
 }
 
-test('static translation, language selector and local API request', async ({ page, request }) => {
-  await gotoFixture(page);
+test('static translation, language selector and local API request', async ({ page, request }, testInfo) => {
+  const build = testInfo.project.metadata.build;
+  expect(['translate.js', 'translate.min.js']).toContain(build);
+  const [script] = await Promise.all([
+    page.waitForResponse((response) => new URL(response.url()).pathname === '/' + build),
+    gotoFixture(page)
+  ]);
+  expect(script.status()).toBe(200);
+  await expect(page.locator(`script[src="/${build}"]`)).toHaveCount(1);
+  const expected = fs.readFileSync(path.resolve(__dirname, '../../translate.js', build));
+  expect(createHash('sha256').update(await script.body()).digest('hex'), 'The browser must load the selected artifact bytes')
+    .toBe(createHash('sha256').update(expected).digest('hex'));
   await expect(page.locator('#p1')).toHaveText('This is a test.');
   await expect(page.locator('#p2')).toHaveText('Second paragraph: more content.');
   for (const language of ['chinese_simplified', 'english', 'spanish']) {

@@ -1,344 +1,313 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const { chromium } = require('playwright');
-const { startServer, DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('./server');
+const { test: base, expect } = require('@playwright/test');
+const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('./server');
 
 const BASE = `http://127.0.0.1:${DEFAULT_PORT}`;
-const SHOTS = path.join(__dirname, 'report', 'screenshots');
-const STRICT = process.argv.includes('--strict');
-const results = [];
+const CROSS_ORIGIN = `http://127.0.0.1:${CROSS_ORIGIN_PORT}`;
+const knownFailures = new WeakMap();
 
-function record(name, pass, detail) {
-  results.push({ name, pass, detail: detail || '' });
-  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`);
+const test = base.extend({
+  runtimeErrors: [async ({ page }, use, testInfo) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push('PAGEERROR: ' + error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push('CONSOLE: ' + message.text());
+    });
+    await use(errors);
+    const known = knownFailures.get(testInfo);
+    // Classify after hooks so that a second assertion or a late browser error
+    // cannot hide behind an otherwise expected failure.
+    if (known && testInfo.project.name !== 'strict' && testInfo.errors.length === 1 &&
+        JSON.stringify(errors) === JSON.stringify(known.errors)) {
+      test.fail(true, known.reason);
+    }
+  }, { auto: true }]
+});
+
+test.beforeEach(async ({ request }) => {
+  expect((await request.get(BASE + '/__reset')).ok()).toBe(true);
+  expect((await request.get(CROSS_ORIGIN + '/__reset')).ok()).toBe(true);
+});
+
+test.afterEach(async ({ runtimeErrors }, testInfo) => {
+  const known = knownFailures.get(testInfo);
+  expect(runtimeErrors, 'Unexpected browser errors').toEqual(known ? known.errors : []);
+});
+
+async function gotoFixture(page) {
+  await page.goto('/');
+  await expect(page.locator('#title')).toHaveText('Hello world');
 }
 
-async function resetRequests(port) {
-  await fetch(`http://127.0.0.1:${port}/__reset`);
+async function requests(request, origin = BASE) {
+  const response = await request.get(origin + '/__requests');
+  expect(response.ok()).toBe(true);
+  return response.json();
 }
 
-async function getRequests(port) {
-  return await (await fetch(`http://127.0.0.1:${port}/__requests`)).json();
+function onlyKnownErrors(errors, message) {
+  return errors.length > 0 && errors.every((error) => error === 'PAGEERROR: ' + message);
 }
 
-async function addBanner(page, kind, text) {
-  await page.evaluate(({ kind, text }) => {
-    document.querySelectorAll('.harness-banner').forEach((node) => node.remove());
-    const banner = document.createElement('div');
-    banner.className = 'harness-banner ' + kind + ' ignore';
-    banner.textContent = text;
-    document.body.prepend(banner);
-    document.body.classList.add('harness-has-banner');
-  }, { kind, text });
-}
-
-async function screenshot(page, name) {
-  await page.screenshot({ path: path.join(SHOTS, name), fullPage: true });
-}
-
-async function newPage(browser, initScript) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  if (initScript) await context.addInitScript(initScript);
-  const page = await context.newPage();
-  const errors = [];
-  page.on('pageerror', (error) => errors.push('PAGEERROR: ' + error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push('CONSOLE: ' + message.text());
-  });
-  return { context, page, errors };
-}
-
-async function gotoFixture(browser, initScript) {
-  const session = await newPage(browser, initScript);
-  await session.page.goto(BASE + '/', { waitUntil: 'load', timeout: 30000 });
-  await session.page.waitForFunction(() => window.translate && window.translate.version, null, { timeout: 10000 });
-  await session.page.waitForFunction(() => {
-    const title = document.querySelector('#title');
-    return title && title.textContent.trim() === 'Hello world';
-  }, null, { timeout: 15000 });
-  return session;
-}
-
-async function main() {
-  fs.mkdirSync(SHOTS, { recursive: true });
-
-  const serverA = await startServer(DEFAULT_PORT);
-  const serverB = await startServer(CROSS_ORIGIN_PORT);
-  let browser;
-
+// Only the reproduced failure signature is expected. Setup errors, other browser
+// errors and different assertion failures must still fail the command.
+async function knownIssue(testInfo, errors, reason, assertion, matchesFailure) {
   try {
-    try {
-      browser = await chromium.launch({ headless: true });
-    } catch (error) {
-      throw new Error(
-        'Chromium is not installed. Run `npx playwright install chromium` in dev/e2e first.\n' +
-        error.message
-      );
+    await assertion();
+  } catch (error) {
+    if (error.matcherResult && await matchesFailure()) {
+      knownFailures.set(testInfo, { reason, errors: [...errors] });
     }
-
-    // 1. Baseline translation and selector.
-    {
-      await resetRequests(DEFAULT_PORT);
-      const { context, page, errors } = await gotoFixture(browser);
-      const title = await page.locator('#title').innerText();
-      const p1 = await page.locator('#p1').innerText();
-      const p2 = await page.locator('#p2').innerText();
-      const options = await page.$$eval('select.translateSelectLanguage option', (items) => items.map((item) => item.value));
-      const requests = await getRequests(DEFAULT_PORT);
-
-      record('static translation', title === 'Hello world' && p1 === 'This is a test.' && p2 === 'Second paragraph: more content.',
-        `title=${JSON.stringify(title)}, p1=${JSON.stringify(p1)}, p2=${JSON.stringify(p2)}`);
-      record('language selector rendered', options.includes('english') && options.includes('spanish'), `options=${options.join(',')}`);
-      record('no page or console errors on baseline flow', errors.length === 0, errors.slice(0, 3).join(' | '));
-      record('translation request sent to mocked API', requests.some((request) => request.to === 'english'), `requests=${requests.length}`);
-
-      await addBanner(page, 'pass', 'PASS — static DOM translated (zh -> en); selector rendered; 0 console errors');
-      await screenshot(page, '01-static-translation-pass.png');
-      await context.close();
-    }
-
-    // 2. Ignore rules, attributes and input value.
-    {
-      const { context, page } = await gotoFixture(browser);
-      const values = await page.evaluate(() => ({
-        cls: document.querySelector('#ignore-class').textContent,
-        id: document.querySelector('#ignore-id').textContent,
-        code: document.querySelector('#ignore-code').textContent,
-        text: document.querySelector('#ignore-text').textContent,
-        placeholder: document.querySelector('#inp').getAttribute('placeholder'),
-        title: document.querySelector('#inp').getAttribute('title'),
-        alt: document.querySelector('#img').getAttribute('alt'),
-        value: document.querySelector('#inp').value
-      }));
-      const requests = await getRequests(DEFAULT_PORT);
-      const sent = requests.flatMap((request) => request.texts);
-      const ignored = ['忽略我', '忽略我ID', '忽略我CODE', '忽略我TEXT'];
-      const untouched = values.cls === '忽略我' && values.id === '忽略我ID' && values.code === '忽略我CODE' && values.text === '忽略我TEXT';
-      const notSent = ignored.every((text) => !sent.includes(text));
-      record('ignore class/id/tag/text', untouched && notSent, JSON.stringify(values));
-      record('attributes translated by default', values.placeholder === 'Please enter' && values.title === 'Title' && values.alt === 'Image description', JSON.stringify(values));
-      record('input value is not translated by default', values.value === '按钮', `value=${JSON.stringify(values.value)}`);
-
-      await page.evaluate(() => {
-        translate.element.tagAttribute['input'] = { attribute: ['value'], condition: () => true };
-        translate.execute();
-      });
-      await page.waitForFunction(() => document.querySelector('#inp').value === 'Button', null, { timeout: 10000 }).catch(() => {});
-      const valueAfter = await page.locator('#inp').inputValue();
-      record('input value translated through tagAttribute', valueAfter === 'Button', `value=${JSON.stringify(valueAfter)}`);
-      await context.close();
-    }
-
-    // 3. Dynamic DOM: childList and characterData.
-    {
-      const { context, page } = await gotoFixture(browser);
-      await page.click('#add-dynamic');
-      await page.waitForFunction(() => {
-        const node = document.querySelector('#dynamic-p');
-        return node && node.textContent.trim() === 'Dynamic content';
-      }, null, { timeout: 10000 }).catch(() => {});
-      const added = await page.locator('#dynamic-p').innerText().catch(() => '');
-
-      await page.click('#change-text');
-      await page.waitForFunction(() => document.querySelector('#p1').textContent.trim() === 'Dynamic content', null, { timeout: 10000 }).catch(() => {});
-      const changed = await page.locator('#p1').innerText();
-
-      record('dynamic childList insertion translated', added === 'Dynamic content', `text=${JSON.stringify(added)}`);
-      record('dynamic characterData change translated', changed === 'Dynamic content', `text=${JSON.stringify(changed)}`);
-
-      await addBanner(page, 'pass', 'PASS — dynamic DOM translated: appended node + changed text node');
-      await screenshot(page, '02-dynamic-dom-pass.png');
-      await context.close();
-    }
-
-    // 4. Language switch and cache behavior.
-    {
-      const { context, page } = await gotoFixture(browser);
-      await page.evaluate(() => {
-        window.__alive = true;
-        translate.changeLanguage('spanish');
-      });
-      await page.waitForFunction(() => document.querySelector('#title').textContent.trim() === 'Hola mundo', null, { timeout: 15000 }).catch(() => {});
-      const titleEs = await page.locator('#title').innerText();
-      const alive = await page.evaluate(() => window.__alive === true);
-      record('switch to Spanish', titleEs === 'Hola mundo', `title=${JSON.stringify(titleEs)}`);
-      record('switch does not reload the page', alive, `window.__alive=${alive}`);
-
-      await page.evaluate(() => translate.changeLanguage('english'));
-      await page.waitForFunction(() => document.querySelector('#title').textContent.trim() === 'Hello world', null, { timeout: 15000 }).catch(() => {});
-
-      const keys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hash_english_')));
-      record('translation cache written', keys.length > 0, `keys=${keys.length}`);
-
-      await resetRequests(DEFAULT_PORT);
-      await page.reload({ waitUntil: 'load' });
-      await page.waitForFunction(() => document.querySelector('#title').textContent.trim() === 'Hello world', null, { timeout: 15000 }).catch(() => {});
-      await page.waitForTimeout(800);
-      const requests = await getRequests(DEFAULT_PORT);
-      const apiCalls = requests.filter((request) => request.to === 'english' || request.to === 'spanish');
-      record('cache hit avoids translate.json on reload', apiCalls.length === 0, `apiCalls=${apiCalls.length}`);
-      await context.close();
-    }
-
-    // 5. localStorage quota.
-    {
-      const { context, page, errors } = await gotoFixture(browser);
-      await page.evaluate(() => {
-        const original = Storage.prototype.setItem;
-        Storage.prototype.setItem = function (key, value) {
-          if (String(key).startsWith('hash_')) throw new DOMException('Quota exceeded', 'QuotaExceededError');
-          return original.call(this, key, value);
-        };
-      });
-      await page.click('#add-dynamic');
-      await page.waitForTimeout(2500);
-      const text = await page.locator('#dynamic-p').innerText().catch(() => '');
-      record('quota error handled gracefully', text === 'Dynamic content',
-        `dynamic text=${JSON.stringify(text)}, errors=${errors.slice(0, 2).join(' | ')}`);
-
-      if (text === 'Dynamic content') {
-        await addBanner(page, 'pass', 'PASS — localStorage quota error fell back to memory cache; appended text was translated');
-        await screenshot(page, '03-quota-pass.png');
-      } else {
-        await addBanner(page, 'fail', 'FAIL — localStorage quota: appended text stays Chinese. ' + (errors[0] || ''));
-        await screenshot(page, '03-quota-fail.png');
-      }
-      await context.close();
-    }
-
-    // 6. localStorage disabled.
-    {
-      const { context, page, errors } = await newPage(browser, () => {
-        Storage.prototype.setItem = function () {
-          throw new DOMException('Storage disabled', 'SecurityError');
-        };
-      });
-      await page.goto(BASE + '/', { waitUntil: 'load', timeout: 30000 });
-      await page.waitForTimeout(2500);
-      const title = await page.locator('#title').innerText().catch(() => '');
-      record('storage disabled handled gracefully', title === 'Hello world',
-        `title=${JSON.stringify(title)}, errors=${errors.slice(0, 2).join(' | ')}`);
-
-      if (title === 'Hello world') {
-        await addBanner(page, 'pass', 'PASS — storage disabled: translation continued with in-memory cache');
-        await screenshot(page, '04-storage-disabled-pass.png');
-      } else {
-        await addBanner(page, 'fail', 'FAIL — storage disabled: page never translates. ' + (errors[0] || ''));
-        await screenshot(page, '04-storage-disabled-fail.png');
-      }
-      await context.close();
-    }
-
-    // 7. Same-origin iframe injection.
-    {
-      const { context, page } = await newPage(browser);
-      await page.goto(BASE + '/iframe-parent.html', { waitUntil: 'load', timeout: 30000 });
-      await page.waitForTimeout(4000);
-      const frame = page.frames().find((item) => item.url().includes('/iframe-blank.html'));
-      const childTitle = frame ? await frame.locator('#blank-title').innerText().catch(() => '') : '';
-      record('same-origin iframe injection', childTitle === 'Hello world',
-        `frame=${Boolean(frame)}, title=${JSON.stringify(childTitle)}`);
-      await context.close();
-    }
-
-    // 8. Nested iframe injection.
-    {
-      const { context, page, errors } = await newPage(browser);
-      await page.goto(BASE + '/nested-top.html', { waitUntil: 'load', timeout: 30000 });
-      await page.waitForTimeout(5000);
-      const middle = page.frames().find((item) => item.url().includes('/nested-middle.html'));
-      const inner = page.frames().find((item) => item.url().includes('/iframe-blank.html'));
-      const middleTitle = middle ? await middle.locator('#middle-title').innerText().catch(() => '') : '';
-      const innerTitle = inner ? await inner.locator('#blank-title').innerText().catch(() => '') : '';
-      record('nested iframe injection (middle -> inner)', innerTitle === 'Hello world',
-        `middleTitle=${JSON.stringify(middleTitle)}, innerTitle=${JSON.stringify(innerTitle)}, errors=${errors.slice(0, 3).join(' | ')}`);
-
-      if (innerTitle === 'Hello world') {
-        await addBanner(page, 'pass', 'PASS — nested iframe translated (middle -> inner)');
-        await screenshot(page, '05-nested-iframe-pass.png');
-      } else {
-        await addBanner(page, 'fail', 'FAIL — nested iframe stays Chinese. ' + (errors[0] || ''));
-        await screenshot(page, '05-nested-iframe-fail.png');
-      }
-      await context.close();
-    }
-
-    // 9. Cross-origin postMessage origin policy.
-    {
-      const { context, page, errors } = await newPage(browser);
-      await page.goto(BASE + '/cross-origin-parent.html', { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForTimeout(4000);
-      const child = page.frames().find((item) => item.url().includes(`127.0.0.1:${CROSS_ORIGIN_PORT}/iframe.html`));
-      const initial = child ? await child.locator('#iframe-title').innerText().catch(() => '') : '';
-
-      await addBanner(page, 'warn', 'BEFORE — cross-origin iframe language: ' + initial);
-      await screenshot(page, '07-cross-origin-postmessage-before.png');
-
-      await page.evaluate(() => {
-        const iframe = document.getElementById('child');
-        iframe.contentWindow.postMessage({ type: 'translate-js-iframe-changeLanguage', language: 'spanish' }, '*');
-      });
-      await page.waitForTimeout(2500);
-      const after = child ? await child.locator('#iframe-title').innerText().catch(() => '') : '';
-
-      record('cross-origin postMessage accepted by default (security finding)', initial === 'Hello world' && after === 'Hola mundo',
-        `initial=${JSON.stringify(initial)}, after=${JSON.stringify(after)}, errors=${errors.slice(0, 2).join(' | ')}`);
-
-      await addBanner(page, 'warn', 'AFTER — a message from 127.0.0.1:8123 changed this 8124 iframe to Spanish: ' + after);
-      await screenshot(page, '08-cross-origin-postmessage-after.png');
-      await context.close();
-    }
-
-    // 10. Shadow DOM.
-    {
-      const { context, page } = await gotoFixture(browser);
-      const before = await page.evaluate(() => document.getElementById('shadow-host').shadowRoot.getElementById('shadow-p').textContent);
-      await page.evaluate(() => {
-        const node = document.createElement('p');
-        node.textContent = '动态内容';
-        document.getElementById('shadow-host').shadowRoot.appendChild(node);
-      });
-      await page.waitForTimeout(1500);
-      const after = await page.evaluate(() => document.getElementById('shadow-host').shadowRoot.getElementById('shadow-p').textContent);
-      record('Shadow DOM translation', before === 'Dynamic content' && after === 'Dynamic content',
-        `before=${JSON.stringify(before)}, after=${JSON.stringify(after)} (known gap)`);
-
-      await addBanner(page, 'fail', 'FAIL — Shadow DOM text stays Chinese: ' + JSON.stringify(before));
-      await screenshot(page, '06-shadow-dom-fail.png');
-      await context.close();
-    }
-
-    // 11. Public cache API.
-    {
-      const { context, page } = await gotoFixture(browser);
-      const api = await page.evaluate(() => ({
-        clearTranslationCache: typeof translate.storage.clearCache === 'function',
-        clearLanguageCache: typeof translate.language.clearCacheLanguage === 'function',
-        storageRemove: typeof translate.storage.remove === 'function',
-        storageClear: typeof translate.storage.clear === 'function'
-      }));
-      record('public clear-translation-cache API', api.clearTranslationCache || api.storageRemove || api.storageClear, JSON.stringify(api));
-      await context.close();
-    }
-  } finally {
-    if (browser) await browser.close();
-    await new Promise((resolve) => serverA.close(resolve));
-    await new Promise((resolve) => serverB.close(resolve));
-  }
-
-  const passed = results.filter((result) => result.pass).length;
-  console.log(`\nSUMMARY: ${passed}/${results.length} checks passed`);
-  console.log(`Screenshots: ${SHOTS}`);
-  console.log(JSON.stringify(results, null, 2));
-
-  if (STRICT && passed !== results.length) {
-    process.exitCode = 1;
+    throw error;
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+test('static translation, language selector and local API request', async ({ page, request }) => {
+  await gotoFixture(page);
+  await expect(page.locator('#p1')).toHaveText('This is a test.');
+  await expect(page.locator('#p2')).toHaveText('Second paragraph: more content.');
+  for (const language of ['chinese_simplified', 'english', 'spanish']) {
+    await expect(page.locator(`select.translateSelectLanguage option[value="${language}"]`)).toHaveCount(1);
+  }
+  expect(await requests(request)).toEqual(expect.arrayContaining([
+    expect.objectContaining({ to: 'english', texts: expect.arrayContaining(['你好世界']) })
+  ]));
+});
+
+test('ignore rules and default attribute translation', async ({ page, request }) => {
+  await gotoFixture(page);
+  const ignored = [
+    ['#ignore-class', '忽略我'],
+    ['#ignore-id', '忽略我ID'],
+    ['#ignore-code', '忽略我CODE'],
+    ['#ignore-text', '忽略我TEXT']
+  ];
+  for (const [selector, text] of ignored) {
+    await expect(page.locator(selector)).toHaveText(text);
+  }
+  await expect(page.locator('#inp')).toHaveAttribute('placeholder', 'Please enter');
+  await expect(page.locator('#inp')).toHaveAttribute('title', 'Title');
+  await expect(page.locator('#img')).toHaveAttribute('alt', 'Image description');
+  await expect(page.locator('#inp')).toHaveValue('按钮');
+  const sent = (await requests(request)).flatMap((request) => request.texts);
+  for (const [, text] of ignored) expect(sent).not.toContain(text);
+});
+
+test('input value translation can be enabled through tagAttribute', async ({ page }) => {
+  await gotoFixture(page);
+  await page.evaluate(() => {
+    translate.element.tagAttribute.input = { attribute: ['value'], condition: () => true };
+    translate.execute();
+  });
+  await expect(page.locator('#inp')).toHaveValue('Button');
+});
+
+test('dynamic childList insertion is translated', async ({ page }) => {
+  await gotoFixture(page);
+  await page.locator('#add-dynamic').click();
+  await expect(page.locator('#dynamic-p')).toHaveText('Dynamic content');
+});
+
+test('dynamic characterData changes are translated', async ({ page }) => {
+  await gotoFixture(page);
+  await page.locator('#change-text').click();
+  await expect(page.locator('#p1')).toHaveText('Dynamic content');
+});
+
+test('language switches to Spanish and back without reloading', async ({ page }) => {
+  await gotoFixture(page);
+  await page.evaluate(() => {
+    window.__alive = true;
+    translate.changeLanguage('spanish');
+  });
+  await expect(page.locator('#title')).toHaveText('Hola mundo');
+  expect(await page.evaluate(() => window.__alive)).toBe(true);
+  await page.evaluate(() => translate.changeLanguage('english'));
+  await expect(page.locator('#title')).toHaveText('Hello world');
+  await expect(page.locator('#p1')).toHaveText('This is a test.');
+  expect(await page.evaluate(() => window.__alive)).toBe(true);
+});
+
+test('cache reload restores translated content without a translation request', async ({ page, request }) => {
+  await gotoFixture(page);
+  await expect(page.locator('#p1')).toHaveText('This is a test.');
+  await expect(page.locator('#p2')).toHaveText('Second paragraph: more content.');
+  const keys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hash_english_')));
+  expect(keys.length).toBeGreaterThan(0);
+
+  await request.get(BASE + '/__reset');
+  await page.reload();
+  // No requests alone is not a cache hit: the translated DOM must be correct.
+  await expect(page.locator('#title')).toHaveText('Hello world');
+  await expect(page.locator('#p1')).toHaveText('This is a test.');
+  await expect(page.locator('#p2')).toHaveText('Second paragraph: more content.');
+  await expect(page.locator('#inp')).toHaveAttribute('placeholder', 'Please enter');
+  await expect(page.locator('#img')).toHaveAttribute('alt', 'Image description');
+  expect(await requests(request)).toEqual([]);
+});
+
+test('translation continues when localStorage quota is exhausted', async ({ page, runtimeErrors }, testInfo) => {
+  await gotoFixture(page);
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    window.__quotaHits = 0;
+    Storage.prototype.setItem = function (key, value) {
+      if (String(key).startsWith('hash_')) {
+        window.__quotaHits++;
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      }
+      return original.call(this, key, value);
+    };
+  });
+  await page.locator('#add-dynamic').click();
+  await knownIssue(testInfo, runtimeErrors, 'Core storage.set does not guard QuotaExceededError',
+    () => expect(page.locator('#dynamic-p')).toHaveText('Dynamic content'),
+    async () => onlyKnownErrors(runtimeErrors, 'Quota exceeded') &&
+      await page.evaluate(() => window.__quotaHits > 0 && document.querySelector('#dynamic-p').textContent === '动态内容')
+  );
+});
+
+for (const operation of ['write', 'read', 'access']) {
+  test(`translation continues when localStorage ${operation} is disabled`, async ({ page, runtimeErrors }, testInfo) => {
+    await page.addInitScript((operation) => {
+      window.__storageFaultHits = 0;
+      const fail = () => {
+        window.__storageFaultHits++;
+        throw new DOMException(`Storage ${operation} disabled`, 'SecurityError');
+      };
+      if (operation === 'access') {
+        Object.defineProperty(window, 'localStorage', { configurable: true, get: fail });
+      } else {
+        Storage.prototype[operation === 'write' ? 'setItem' : 'getItem'] = fail;
+      }
+    }, operation);
+    await page.goto('/');
+    await knownIssue(testInfo, runtimeErrors, `Core does not guard localStorage ${operation} failures`,
+      () => expect(page.locator('#title')).toHaveText('Hello world'),
+      async () => onlyKnownErrors(runtimeErrors, `Storage ${operation} disabled`) &&
+        await page.evaluate(() => window.__storageFaultHits > 0 && document.querySelector('#title').textContent === '你好世界')
+    );
+  });
+}
+
+test('same-origin iframe content is injected and translated', async ({ page }) => {
+  await page.goto('/iframe-parent.html');
+  const child = page.frameLocator('#child');
+  await expect(child.locator('#blank-title')).toHaveText('Hello world');
+  await expect(child.locator('#blank-p')).toHaveText('This is a test.');
+});
+
+test('nested iframe is translated when only its middle page loads translate.js', async ({ page, runtimeErrors }, testInfo) => {
+  await page.goto('/nested-top.html');
+  const middle = page.frameLocator('#middle');
+  const innerTitle = middle.frameLocator('#inner').locator('#blank-title');
+  await expect(middle.locator('#middle-title')).toHaveText('Hello world');
+  await knownIssue(testInfo, runtimeErrors, 'Nested injection reads parent.translate.config instead of its own config',
+    () => expect(innerTitle).toHaveText('Hello world'),
+    async () => onlyKnownErrors(runtimeErrors, "Cannot read properties of undefined (reading 'config')") &&
+      await innerTitle.textContent() === '你好世界'
+  );
+});
+
+async function crossOriginChild(page) {
+  await page.goto('/cross-origin-parent.html');
+  const child = page.frameLocator('#child');
+  await expect(child.locator('#iframe-title')).toHaveText('Hello world');
+  return child;
+}
+
+async function sendLanguage(page, language) {
+  await page.evaluate(({ language, origin }) => {
+    document.querySelector('#child').contentWindow.postMessage({
+      type: 'translate-js-iframe-changeLanguage', language
+    }, origin);
+  }, { language, origin: CROSS_ORIGIN });
+}
+
+test('cross-origin language messages follow the documented permissive default', async ({ page }) => {
+  const child = await crossOriginChild(page);
+  await sendLanguage(page, 'spanish');
+  await expect(child.locator('#iframe-title')).toHaveText('Hola mundo');
+});
+
+test('an explicit origin allowlist rejects and permits cross-origin messages', async ({ page }) => {
+  const child = await crossOriginChild(page);
+  const frame = page.frames().find((frame) => frame.url() === CROSS_ORIGIN + '/iframe.html');
+  expect(frame).toBeTruthy();
+  await frame.evaluate(() => {
+    translate.postMessage.allowedOrigins = [location.origin];
+    window.__languageCalls = [];
+    window.__messageReceived = false;
+    const original = translate.changeLanguage;
+    translate.changeLanguage = function (...args) {
+      window.__languageCalls.push(args[0]);
+      return original.apply(this, args);
+    };
+    // This handler runs after the core handler, so rejection is checked after
+    // message delivery, rather than after an arbitrary sleep.
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'translate-js-iframe-changeLanguage') {
+        window.__messageReceived = true;
+      }
+    });
+  });
+  await sendLanguage(page, 'spanish');
+  await expect.poll(() => frame.evaluate(() => window.__messageReceived)).toBe(true);
+  expect(await frame.evaluate(() => window.__languageCalls)).toEqual([]);
+  await expect(child.locator('#iframe-title')).toHaveText('Hello world');
+
+  await frame.evaluate((origin) => { translate.postMessage.allowedOrigins = [origin]; }, BASE);
+  await sendLanguage(page, 'spanish');
+  await expect(child.locator('#iframe-title')).toHaveText('Hola mundo');
+  expect(await frame.evaluate(() => window.__languageCalls)).toContain('spanish');
+});
+
+test('initial open Shadow DOM content is translated', async ({ page, runtimeErrors }, testInfo) => {
+  await gotoFixture(page);
+  const shadowText = page.locator('#shadow-host #shadow-p');
+  await knownIssue(testInfo, runtimeErrors, 'Core DOM traversal does not enter open shadow roots',
+    () => expect(shadowText).toHaveText('Dynamic content'),
+    async () => runtimeErrors.length === 0 && await shadowText.textContent() === '动态内容'
+  );
+});
+
+test('dynamically inserted open Shadow DOM content is translated', async ({ page, runtimeErrors }, testInfo) => {
+  await gotoFixture(page);
+  await page.evaluate(() => {
+    const node = document.createElement('p');
+    node.id = 'shadow-dynamic';
+    node.textContent = '动态内容';
+    document.querySelector('#shadow-host').shadowRoot.appendChild(node);
+  });
+  await page.locator('#add-dynamic').click();
+  await expect(page.locator('#dynamic-p')).toHaveText('Dynamic content');
+  const added = page.locator('#shadow-host #shadow-dynamic');
+  await knownIssue(testInfo, runtimeErrors, 'Core listener does not observe mutations inside open shadow roots',
+    () => expect(added).toHaveText('Dynamic content'),
+    async () => runtimeErrors.length === 0 && await added.textContent() === '动态内容'
+  );
+});
+
+test('optional clearCache removes translation entries and preserves unrelated storage', async ({ page }) => {
+  await gotoFixture(page);
+  const supported = await page.evaluate(() => typeof translate.storage.clearCache === 'function');
+  test.skip(!supported, 'clearCache is a proposed API, not part of the current core contract');
+  const result = await page.evaluate(async () => {
+    localStorage.setItem('__e2e_business_setting', 'keep');
+    localStorage.setItem('hash_english_e2e_sentinel', 'cached');
+    const before = Object.keys(localStorage).filter((key) => key.startsWith('hash_'));
+    const otherEntries = Object.fromEntries(Object.keys(localStorage)
+      .filter((key) => !key.startsWith('hash_')).map((key) => [key, localStorage.getItem(key)]));
+    await translate.storage.clearCache();
+    return {
+      before,
+      remaining: Object.keys(localStorage).filter((key) => key.startsWith('hash_')),
+      otherEntries,
+      afterEntries: Object.fromEntries(Object.keys(otherEntries).map((key) => [key, localStorage.getItem(key)]))
+    };
+  });
+  expect(result.before.length).toBeGreaterThan(0);
+  expect(result.remaining).toEqual([]);
+  expect(result.afterEntries).toEqual(result.otherEntries);
 });

@@ -1,105 +1,89 @@
-# translate.js — DOM runtime review
+# translate.js DOM runtime observations
 
-Date: 2026-11-08  
-Version: `4.1.0.20260526`  
-Method: local Playwright fixtures + mocked `translate.json` / `language.json`; no external translation provider.
+Baseline core: `4.1.0.20260526`
 
-## Result
+Method: local headless Chromium fixtures with mocked translation responses.
 
-**Baseline: 16/21 checks pass; with #112 and #113 applied: 20/21 (Shadow DOM remains open).** The core translation path is solid; the failures are in storage resilience, nested iframes, Shadow DOM and cache control. A cross-origin `postMessage` behavior is also documented as a security finding.
+The original PR #111 runner reported 16/21 checks passing. Its committed
+`report/test-output-after-fixes.txt` records a different run with proposed fixes
+applied. Those counts describe the original runner and do not describe the revised
+tests or establish that PR #112 or #113 is ready to merge.
 
-| Check | Baseline | Fixed by |
-|---|---|---|
-| Static translation, selector, attributes, ignore rules | PASS | — |
-| Dynamic `childList` and `characterData` updates | PASS | — |
-| Language switch and cache hit on reload | PASS | — |
-| Same-origin iframe injection | PASS | — |
-| `localStorage` quota | FAIL -> PASS | #113 (storage resilience) |
-| `localStorage` disabled | FAIL -> PASS | #113 (storage resilience) |
-| Nested iframe injection | FAIL -> PASS | #112 (nested iframe) |
-| Shadow DOM | FAIL | Not fixed; tracked in issue #101 |
-| Clear translation cache API | FAIL -> PASS | #113 (storage resilience) |
-| Cross-origin `postMessage` accepted | SECURITY FINDING | Needs maintainer decision |
+The revised runner uses ordinary assertions, checks for specific known failure
+signatures, and a skipped optional feature check. `npm test` fails on unexpected
+failures; a known scenario becomes an expected failure only when its assertion
+fails and its observed signature matches. A repaired scenario passes normally.
+`npm run test:strict` disables these expected-failure exceptions for evaluating
+fixes. Current results are generated in `report/results.json`; the following
+observations do not substitute for a run.
 
-Run `npm test` in `dev/e2e/` to reproduce. Use `npm run test:strict` after the fixes land.
+## Existing runtime failures
 
-## Evidence
+### Storage quota exhaustion
 
-### 1. `localStorage` quota aborts dynamic rendering
+When writes for `hash_*` translation entries throw `QuotaExceededError`, dynamically
+appended text remains untranslated. The baseline `translate.storage.set()` calls
+`localStorage.setItem()` without guarding the exception. This is an existing core
+problem; the test-only changes do not repair it.
 
-![Quota failure](report/screenshots/03-quota-fail.png)
+The regression test requires the appended content to translate without a page
+error. Expected-failure handling is limited to this scenario.
 
-After the quota is exhausted, a dynamically appended node stays in Chinese and the page throws `PAGEERROR: Quota exceeded`. Root cause: `translate.storage.set()` calls `localStorage.setItem()` without a guard (`translate.js:11490`).
+### Unavailable storage
 
-With the proposed storage fallback, the same scenario renders:
+Throwing from `Storage.prototype.setItem` before initialization prevents the
+baseline fixture from translating. Storage can also be unavailable on reads or
+when accessing `window.localStorage`; these are separate cases and are tested
+separately rather than treating a write-only simulation as complete coverage.
 
-![Quota fixed](report/screenshots/03-quota-pass.png)
+### Nested iframe injection
 
-### 2. Disabled storage prevents translation from starting
+The reproducer's top page does **not** load translate.js. Its middle iframe loads
+the library and injects it into an inner iframe. The middle page translates, but
+the inner page remains in Chinese and the baseline throws
+`Cannot read properties of undefined (reading 'config')`.
 
-![Storage disabled failure](report/screenshots/04-storage-disabled-fail.png)
+The injector reads `parent.translate.config.get()` from the middle window, whose
+parent has no `translate` object. PR #112 proposes a change for this case and
+requires its own review.
 
-When `localStorage` throws on the first write, the page never translates. With the in-memory fallback:
+## Existing limitation: Shadow DOM
 
-![Storage disabled fixed](report/screenshots/04-storage-disabled-pass.png)
+Open Shadow DOM content is not translated by the baseline implementation. The
+tests check the initial node and a separately identified newly appended node.
+Checking the original node again after insertion would not prove that dynamic
+Shadow DOM works. Supporting this requires a separate implementation decision.
 
-### 3. Nested iframe injection fails
+## Optional feature: translation-cache clearing
 
-![Nested iframe failure](report/screenshots/05-nested-iframe-fail.png)
+The baseline has `translate.language.clearCacheLanguage()` but does not provide
+`translate.storage.clearCache()`. This is a missing feature, not a newly introduced
+runtime failure, so its test is skipped while the API is absent.
 
-A page with `translate.js` embeds an iframe whose page also embeds an iframe. The middle page translates; the inner page stays Chinese and throws `Cannot read properties of undefined (reading 'config')`. Root cause: the injector reads `parent.translate.config.get()` (`translate.js:5489`) instead of its own `translate.config.get()`.
+If the API is present, the test calls it and checks the proposed contract:
+`hash_*` localStorage entries are removed while all pre-existing unrelated values
+remain. This checks persisted browser storage, not an in-memory cache or the
+method's return value. Function existence alone, or the presence of
+`storage.remove()`, does not establish correct cache clearing.
 
-With the one-line fix:
+PR #113 proposes storage resilience and additional cache APIs. These tests do not
+approve its implementation or imply that it must be merged with the harness.
 
-![Nested iframe fixed](report/screenshots/05-nested-iframe-pass.png)
+## Existing message-origin policy
 
-### 4. Shadow DOM is not translated
+The baseline defaults `translate.postMessage.allowedOrigins` to `[]` and explicitly
+allows all origins under that configuration. A parent on `127.0.0.1:8123` can
+therefore send a language-change message to an iframe on `127.0.0.1:8124`.
 
-![Shadow DOM failure](report/screenshots/06-shadow-dom-fail.png)
+This reproduces the existing compatibility behavior. It does not demonstrate
+arbitrary code execution or data disclosure. The tests also exercise an explicit
+allowlist, including rejection of a sender outside it. Changing the default
+policy would change compatibility and should be reviewed separately.
 
-Text inside `attachShadow({ mode: 'open' })` stays in Chinese. This is the known limitation tracked in issues #92 and #101; the existing PR #101 should be tested and reviewed before implementation work starts.
+## Scope
 
-### 5. No public cache-clearing API
-
-The baseline exposes `translate.language.clearCacheLanguage()` but no way to clear translation entries (`hash_*`). The storage resilience PR adds `translate.storage.remove(key)` and `translate.storage.clearCache()`, which clears only `hash_*` keys and returns the number removed.
-
-### 6. Cross-origin `postMessage` is accepted by default
-
-![Cross-origin before](report/screenshots/07-cross-origin-postmessage-before.png)
-
-![Cross-origin after](report/screenshots/08-cross-origin-postmessage-after.png)
-
-A page on `127.0.0.1:8123` changed the language of an iframe on `127.0.0.1:8124` with a `translate-js-iframe-changeLanguage` message. `allowedOrigins` defaults to `[]`, and `isOriginAllowed()` returns `true` for every origin in that case (`translate.js:797`, `translate.js:931`). This should be a same-origin/referrer allowlist by default, with wildcard support explicit. It is a behavior change, so it needs a maintainer decision before a PR.
-
-## What works
-
-![Static translation](report/screenshots/01-static-translation-pass.png)
-
-![Dynamic DOM](report/screenshots/02-dynamic-dom-pass.png)
-
-- Static translation and the language selector
-- Ignore rules for class, id, tag and text
-- `placeholder`, `title` and `alt` translation
-- `input.value` translation through `translate.element.tagAttribute`
-- `childList` insertion and `characterData` changes
-- Language switch and switch back without reload
-- Cache hit on reload
-- Same-origin iframe injection
-
-## PR map
-
-| PR | Branch | What it changes | Evidence |
-|---|---|---|---|
-| [#111](https://github.com/xnx3/translate/pull/111) | `test/e2e-dom-harness` | Adds the Playwright harness, mocked API, fixtures, screenshots and this report. No core behavior change. | Baseline 16/21 |
-| [#112](https://github.com/xnx3/translate/pull/112) | `fix/nested-iframe-config` | One-line fix in `translate.js:5489`; nested iframe test turns green. | `05-nested-iframe-*` |
-| [#113](https://github.com/xnx3/translate/pull/113) | `fix/storage-resilience` | Guards `localStorage`, adds in-memory fallback, `remove()` and `clearCache()`. | `03-*`, `04-*` |
-
-The nested iframe and storage fixes are independent; both rely on the harness in the first PR for regression coverage.
-
-## Competitive context
-
-Top npm i18n packages by weekly downloads (Nov 2026): **i18next** 34.7M, **react-i18next** 25.7M, **vue-i18n** 4.9M. They are manual i18n frameworks, not automatic DOM translators. Top direct website-translation services: **Weglot** (110k+ companies), **ConveyThis** (20k+ websites), **GTranslate** (free widget + paid TDN since 2008).
-
-They have things translate.js does not: per-language URLs/hreflang/server-side SEO, visual editor/TMS, analytics, media OCR, RTL, TypeScript/SSR/framework bindings and CMS integrations. translate.js keeps the opposite tradeoff: MIT, self-hosted, zero configuration, no API key, no per-word pricing and automatic DOM translation.
-
-Do not add TMS, analytics, media OCR or SEO routing to the core. Those belong in TCDN, translate.service or separate packages. The highest-value additions are the test harness, storage resilience, TypeScript definitions, official framework adapters and a provider/privacy guide.
+The harness exercises the checked-out core without changing it. Local API mocks
+cover deterministic DOM behavior; translation quality, provider latency, broad
+browser compatibility and all possible website integrations need other checks.
+The retained historical screenshots illustrate the original contribution's
+scenarios and should not be used as evidence that a current checkout passes.

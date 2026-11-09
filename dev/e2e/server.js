@@ -7,6 +7,7 @@ const path = require('path');
 const CORE = path.resolve(__dirname, '../../translate.js/translate.js');
 const DEFAULT_PORT = 8123;
 const CROSS_ORIGIN_PORT = 8124;
+const MAX_BODY_BYTES = 1024 * 1024;
 
 const DICT = {
   '你好世界': { english: 'Hello world', spanish: 'Hola mundo' },
@@ -34,6 +35,7 @@ function mockTranslate(text, to) {
 }
 
 function send(res, status, body, type) {
+  if (res.destroyed || res.writableEnded) return;
   res.writeHead(status, {
     'content-type': type || 'text/plain; charset=utf-8',
     'cache-control': 'no-store'
@@ -42,10 +44,34 @@ function send(res, status, body, type) {
 }
 
 function readBody(req) {
-  return new Promise((resolve) => {
-    let body = '';
-    req.on('data', (chunk) => { body += chunk; });
-    req.on('end', () => resolve(body));
+  return new Promise((resolve, reject) => {
+    let chunks = [];
+    let size = 0;
+    let settled = false;
+    const fail = (message, statusCode) => {
+      if (settled) return;
+      settled = true;
+      chunks = [];
+      reject(Object.assign(new Error(message), { statusCode }));
+    };
+    req.on('data', (chunk) => {
+      if (settled) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        fail('request body is too large', 413);
+        req.resume();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.once('end', () => {
+      if (settled) return;
+      settled = true;
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.once('aborted', () => fail('request aborted', 400));
+    req.once('error', () => fail('request body could not be read', 400));
+    if (req.aborted) fail('request aborted', 400);
   });
 }
 
@@ -107,6 +133,8 @@ ${baseConfig(port)}
 <script>
   translate.ignore.id.push('ignore-id');
   translate.ignore.text.push('忽略我TEXT');
+  const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<p id="shadow-p">动态内容</p>';
   translate.listener.start();
   translate.execute();
 
@@ -120,9 +148,6 @@ ${baseConfig(port)}
   document.getElementById('change-text').addEventListener('click', function() {
     document.getElementById('p1').firstChild.nodeValue = '动态内容';
   });
-
-  const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });
-  shadow.innerHTML = '<p id="shadow-p">动态内容</p>';
 </script>
 </body>
 </html>`;
@@ -231,7 +256,7 @@ function createServer(port) {
   const requests = [];
   const origin = `http://127.0.0.1:${port}/`;
 
-  const server = http.createServer(async (req, res) => {
+  const handleRequest = async (req, res) => {
     const url = new URL(req.url, origin);
     const pathname = url.pathname;
 
@@ -287,6 +312,9 @@ function createServer(port) {
       } catch (e) {
         return send(res, 400, JSON.stringify({ result: 0, info: 'bad text: ' + e.message }), 'application/json');
       }
+      if (!Array.isArray(texts) || !texts.every((text) => typeof text === 'string')) {
+        return send(res, 400, JSON.stringify({ result: 0, info: 'text must be an array of strings' }), 'application/json; charset=utf-8');
+      }
       requests.push({ from, to, texts, at: Date.now() });
       return send(res, 200, JSON.stringify({
         result: 1,
@@ -305,7 +333,19 @@ function createServer(port) {
     if (pathname === '/health') {
       return send(res, 200, 'ok');
     }
+    if (pathname === '/favicon.ico') {
+      return send(res, 204, '');
+    }
     return send(res, 404, 'not found');
+  };
+  const server = http.createServer((req, res) => {
+    handleRequest(req, res).catch((error) => {
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      send(res, error.statusCode || 500, JSON.stringify({ result: 0, info: error.message }), 'application/json; charset=utf-8');
+    });
   });
 
   server.requests = requests;

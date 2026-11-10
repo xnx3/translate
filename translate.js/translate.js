@@ -5486,7 +5486,9 @@ var translate = {
 						script.onload = function() {
 							//console.log('✅ JS 注入成功');
 
-							var parentConfigData = parent.translate.config.get();
+							//onload 回调创建于当前注入窗口，应将该窗口的配置传给目标 iframe。
+							//当前窗口也可能处于 iframe 中，其 parent 可能没有加载本库或使用不同配置。
+							var parentConfigData = translate.config.get();
 							iframeContentWindow.translate.config.set(parentConfigData);
 							iframeContentWindow.translate.to = iframeContentWindow.translate.language.getCurrent();
 							//iframeContentWindow.translate.time.use = true;

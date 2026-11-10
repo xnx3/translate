@@ -57,7 +57,7 @@ The runner starts and stops fixture servers on `127.0.0.1:8123` and
 `127.0.0.1:8124`; both ports must be free. It runs one worker with no retries.
 
 Unexpected assertion failures and runtime errors return a nonzero exit code.
-For each known limitation, `run.js` checks the observed failure signature before
+For each known limitation, the test checks the observed failure signature before
 classifying a failed assertion as expected. A different error or failed setup
 still fails the command. Once the assertion passes, the test passes normally
 without changing its known-failure check.
@@ -103,7 +103,7 @@ version for reproducible results.
 - Language switching without reload and switching back
 - Correct translated content after cache reuse, with no translation request
 - Storage quota exhaustion and unavailable storage operations
-- Same-origin iframe injection and a nested iframe reproducer
+- Iframe discovery, loading, navigation, nesting and configuration inheritance
 - Cross-origin message compatibility and explicit origin allowlist behavior
 - Initial and dynamically inserted Shadow DOM content
 - Removal of `hash_*` localStorage entries and preservation of unrelated values,
@@ -112,3 +112,28 @@ version for reproducible results.
 See [REPORT.md](REPORT.md) for the existing runtime limitations. Browser tests
 cover these scenarios only; they do not establish that every browser, page or
 translation provider works.
+
+## Iframe regression matrix
+
+`iframe.spec.js` adds 22 scenarios using the pages in `iframe-fixtures.js`.
+The fixture server and Playwright config include them in the normal `test.bat`
+run, for both release files. Every scenario verifies the SHA256 of each loaded
+library response against the selected file on disk and checks browser errors.
+
+Coverage includes static and dynamic frames, `about:blank`, `srcdoc`, siblings,
+preloaded libraries, repeated scans, navigation, reload, removal/recreation,
+dynamic content, language switches, multiple nesting levels, different ancestor
+configuration, cross-origin boundaries and sandboxed frames. Negative cases
+exercise discovery rather than relying on a frame never being scanned.
+
+To run the iframe assertions without known-failure exceptions on Windows:
+
+```bat
+translate.js\test.bat --no-pause --strict --grep iframe
+```
+
+The strict command deliberately fails when a covered existing defect is present.
+See [IFRAME_REPORT.md](IFRAME_REPORT.md) for the baseline, exact known failure
+conditions and the distinction between the configuration-source fix and other
+iframe limitations. The matrix covers these cases in Chromium; it cannot prove
+all possible iframe combinations or browser implementations.

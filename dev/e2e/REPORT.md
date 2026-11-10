@@ -49,6 +49,10 @@ The injector reads `parent.translate.config.get()` from the middle window, whose
 parent has no `translate` object. PR #112 proposes a change for this case and
 requires its own review.
 
+The expanded [iframe regression matrix](IFRAME_REPORT.md) records additional
+configuration, discovery, lifecycle and origin-boundary cases against the
+unchanged runtime before evaluating that fix.
+
 ## Existing limitation: Shadow DOM
 
 Open Shadow DOM content is not translated by the baseline implementation. The

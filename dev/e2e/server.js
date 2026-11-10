@@ -3,6 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { renderIframeFixture } = require('./iframe-fixtures');
 
 const CORE = path.resolve(__dirname, '../../translate.js/translate.js');
 const MINIFIED = path.resolve(__dirname, '../../translate.js/translate.min.js');
@@ -263,6 +264,11 @@ function createServer(port) {
     const build = req.headers['x-translate-build'] || 'translate.js';
     if (build !== 'translate.js' && build !== 'translate.min.js') {
       return send(res, 400, 'unsupported translate build');
+    }
+
+    const iframeFixture = renderIframeFixture(url, { port, build });
+    if (iframeFixture !== null) {
+      return send(res, 200, iframeFixture, 'text/html; charset=utf-8');
     }
 
     if (pathname === '/' || pathname === '/fixture.html') {

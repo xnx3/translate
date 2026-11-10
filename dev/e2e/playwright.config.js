@@ -6,7 +6,7 @@ const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: 'run.js',
+  testMatch: ['run.js', 'iframe.spec.js'],
   fullyParallel: false,
   workers: 1,
   retries: 0,

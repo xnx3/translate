@@ -27,6 +27,8 @@ rem
 rem 三、使用方法与结果
 rem   必须保留完整项目目录，不能只复制本 bat 文件到其他位置。
 rem   默认对本文件旁边的 translate.js 和 translate.min.js 分别运行完整测试。
+rem   iframe 场景在 dev/e2e/iframe.spec.js，默认一并执行；无需另开测试入口。
+rem   只看 iframe 的严格检查可执行 test.bat --no-pause --strict --grep iframe。
 rem   与启动时的工作目录无关，两份文件始终直接从当前项目读取。
 rem   测试不会自动压缩生成 translate.min.js；修改源码后请按发布流程更新压缩文件。
 rem   AI 或脚本可执行 test.bat --no-pause，结束后不等待按键，并保留退出码。

@@ -266,6 +266,17 @@ function createServer(port) {
       return send(res, 400, 'unsupported translate build');
     }
 
+    if (pathname === '/iframe-suite-redirect.html') {
+      // A real same-origin URL that redirects across our two local test origins.
+      // Keep the destination fixed so this fixture cannot redirect externally.
+      const destinationPort = port === DEFAULT_PORT ? CROSS_ORIGIN_PORT : DEFAULT_PORT;
+      res.writeHead(302, {
+        location: `http://127.0.0.1:${destinationPort}/iframe-suite-child.html?marker=redirected`,
+        'cache-control': 'no-store'
+      });
+      return res.end();
+    }
+
     const iframeFixture = renderIframeFixture(url, { port, build });
     if (iframeFixture !== null) {
       return send(res, 200, iframeFixture, 'text/html; charset=utf-8');

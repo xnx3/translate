@@ -329,6 +329,62 @@ test('iframe same-origin child can navigate cross-origin without forbidden windo
       await untranslatedSignature(frame, testInfo.project.metadata.build, 0));
 });
 
+test('iframe with a same-origin src that redirects cross-origin is left untouched', async ({ page, iframeEvidence }, testInfo) => {
+  const frame = await addDynamicFrame(page);
+  const redirectPath = '/iframe-suite-redirect.html';
+  const destination = `http://127.0.0.1:${CROSS_ORIGIN_PORT}/iframe-suite-child.html?marker=redirected`;
+  await Promise.all([
+    frame.waitForURL(destination),
+    page.locator('#child').evaluate((iframe, redirectPath) => { iframe.src = redirectPath; }, redirectPath)
+  ]);
+  expect(await page.locator('#child').getAttribute('src')).toBe(redirectPath);
+  expect(new URL(await page.locator('#child').evaluate((iframe) => iframe.src)).port).toBe(String(DEFAULT_PORT));
+  expect(new URL(frame.url()).port).toBe(String(CROSS_ORIGIN_PORT));
+  await expect(frame.locator('#frame-marker')).toHaveText('redirected');
+  await expect(frame.locator('#frame-title')).toHaveText('你好世界');
+  await expect(frame.locator('#frame-p')).toHaveText('这是一个测试。');
+  await expect(frame.locator(`script[src="/${testInfo.project.metadata.build}"]`)).toHaveCount(0);
+  expect(await frame.evaluate(() => typeof window.translate?.version)).toBe('undefined');
+  await knownIssue(testInfo, iframeEvidence.errors, 'The iframe load handler reads a window after a same-origin URL redirects cross-origin',
+    async () => expect(iframeEvidence.errors).toEqual([]),
+    async () => sameErrors(iframeEvidence.errors, [forbiddenAccessError(DEFAULT_PORT)]) &&
+      frame.url() === destination && await page.locator('#child').getAttribute('src') === redirectPath &&
+      await untranslatedSignature(frame, testInfo.project.metadata.build, 0));
+});
+
+test('iframe returns to same-origin after cross-origin navigation and keeps translating', async ({ page, iframeEvidence }, testInfo) => {
+  const frame = await addDynamicFrame(page);
+  const destination = `http://127.0.0.1:${CROSS_ORIGIN_PORT}/iframe-suite-child.html?marker=cross-before-return`;
+  await Promise.all([
+    frame.waitForURL(destination),
+    page.locator('#child').evaluate((iframe, destination) => { iframe.src = destination; }, destination)
+  ]);
+  await expect(frame.locator('#frame-marker')).toHaveText('cross-before-return');
+  await expect(frame.locator('#frame-title')).toHaveText('你好世界');
+  await expect(frame.locator(`script[src="/${testInfo.project.metadata.build}"]`)).toHaveCount(0);
+  expect(await frame.evaluate(() => typeof window.translate?.version)).toBe('undefined');
+
+  await Promise.all([
+    frame.waitForURL('**/iframe-suite-child.html?marker=returned'),
+    page.locator('#child').evaluate((iframe) => { iframe.src = '/iframe-suite-child.html?marker=returned'; })
+  ]);
+  expect(await frameAt(page, '#child')).toBe(frame);
+  expect(new URL(frame.url()).port).toBe(String(DEFAULT_PORT));
+  await expect(frame.locator('#frame-marker')).toHaveText('returned');
+  await translated(frame);
+  await oneScript(frame, testInfo.project.metadata.build);
+  await frame.locator('#add-content').click();
+  await expect(frame.locator('#frame-dynamic')).toHaveText('Dynamic content');
+  await knownIssue(testInfo, iframeEvidence.errors, 'The iframe load handler reports forbidden access during the cross-origin leg of a round trip',
+    async () => expect(iframeEvidence.errors).toEqual([]),
+    async () => sameErrors(iframeEvidence.errors, [forbiddenAccessError(DEFAULT_PORT)]) &&
+      await frame.locator('#frame-marker').textContent() === 'returned' &&
+      await frame.locator('#frame-title').textContent() === 'Hello world' &&
+      await frame.locator('#frame-p').textContent() === 'This is a test.' &&
+      await frame.locator('#frame-dynamic').textContent() === 'Dynamic content' &&
+      await frame.locator(`script[src="/${testInfo.project.metadata.build}"]`).count() === 1);
+});
+
 test('iframe sandbox without same-origin permission is not injected or read as same-origin', async ({ page, iframeEvidence }, testInfo) => {
   await openSuite(page, 'dynamic');
   await page.evaluate(() => {

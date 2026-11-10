@@ -4,16 +4,18 @@ Baseline runtime: `c081148730ce89c428a354e7a79b359c2d0bbe64`.
 The test contribution changes no runtime code. Both checked-out release files
 are exercised in local headless Chromium with mocked translation responses.
 
-`iframe.spec.js` adds 22 scenarios to the existing 21. A complete `test.bat`
-run therefore executes 43 checks per artifact, 86 in total. The normal runner
+The original matrix added 22 scenarios to the existing 21, for 43 checks per
+artifact, 86 in total. Two additional navigation checks now bring a complete
+`test.bat` run to 45 checks per artifact, 90 in total. The normal runner
 reports reproduced known failures separately; they are unresolved defects, not
 successful behavior. `test.bat --no-pause --strict --grep iframe` disables those
-exceptions and runs 24 iframe checks per artifact, including the original two
+exceptions and runs 26 iframe checks per artifact, including the original two
 in `run.js`. The existing two cross-origin message tests also run in the full suite.
 
 ## Baseline results
 
-The source and minified artifacts produced identical results. Before any runtime
+The source and minified artifacts produced identical results in the original
+43-check baseline below. Before any runtime
 fix, each full suite has 29 normal passes, 13 known failures and one optional API
 skip. The new matrix alone has 12 normal passes and 10 known failures per artifact.
 
@@ -72,13 +74,48 @@ The DOM element with `id="translate"` creates a named `window.translate` propert
 even without the library. Negative tests check the library version and script
 elements rather than treating that named DOM property as a loaded library.
 
-## Scope of the proposed configuration-source fix
+## Configuration-source fix
 
-The pending change from `parent.translate.config.get()` to
-`translate.config.get()` should repair the four new configuration-source cases
-and the original nested-frame reproducer. It must be validated with this same
-matrix after the change. It does not address the six other failing iframe
-scenarios or the two Shadow DOM limitations in the full suite.
+Commit `aca3710` changes `parent.translate.config.get()` to
+`translate.config.get()` in both release files. The complete 86-check comparison
+confirmed that the four new configuration-source cases and the original nested
+reproducer became ordinary passes in both files. All previous passes remained
+passes, with no unexpected failures. Each file had 34 normal passes, eight known
+failures and one skip. The remaining failures were six other iframe scenarios
+and two Shadow DOM limitations.
+
+## Iframe load access checks
+
+Two additional cases exercise a same-origin URL that redirects to the other
+local origin and the same iframe navigating same-origin, cross-origin, then
+back to same-origin. The round trip must resume translation, inject exactly one
+script into the replacement document and translate later DOM additions.
+
+These cases assert the actual final frame origin and content. The redirect case
+also confirms that the iframe's `src` still points to the same-origin URL. Both
+classify a known failure only after their DOM assertions pass and exactly one
+recorded forbidden `translate` property-access error is present. Extra errors
+and failed setup remain unexpected failures.
+
+Against `aca3710`, the expanded 90-check baseline produced 34 normal passes,
+10 known failures and one skip per file. The source-only load-handler fix checks
+`iframeTag.contentDocument` before reading the child window's `translate`.
+It skips the current load when the browser cannot expose the document and leaves
+the listener attached so a later same-origin navigation can still translate.
+
+| Artifact | Before: pass / known / skip | After: pass / known / skip |
+| --- | --- | --- |
+| `translate.js` | 34 / 10 / 1 | 38 / 6 / 1 |
+| `translate.min.js` (unchanged) | 34 / 10 / 1 | 34 / 10 / 1 |
+
+Exactly four source cases became normal passes: cross-origin navigation, the
+cross-origin redirect, the round trip and the opaque sandbox. Those four also
+passed in the source `strict` project without known-failure exceptions. All
+previous passes and remaining known-failure signatures stayed unchanged, with
+no unexpected failures. The same test files were used before and after.
+The minified file was deliberately left byte-for-byte unchanged in this step.
+The six remaining source failures are static discovery (two cases), `srcdoc`,
+repeated no-`src` injection and the two Shadow DOM limitations.
 
 No unlimited recursive iframe injection is promised: an actual injector enables
 iframe translation itself. Cross-origin pages and sandbox origins remain separate

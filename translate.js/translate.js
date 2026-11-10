@@ -5560,6 +5560,11 @@ var translate = {
 						//未添加过 load 事件，需要添加
 						translate.element.iframe.iframeMap.get(iframeTag).addLoad = true;
 						iframeTag.addEventListener('load', function() {
+							//iframe 加载后可能已跨域，sandbox 也可能限制同地址页面的访问。
+							//以浏览器实际访问权限为准；文档不可访问时，跳过本次注入。
+							if (!iframeTag.contentDocument) {
+								return;
+							}
 							console.log('----load url: '+iframeTag.src);
 							var iframeWindow = iframeTag.contentWindow;
 							if(typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){

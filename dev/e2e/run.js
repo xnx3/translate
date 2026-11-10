@@ -160,7 +160,7 @@ test('cache reload restores translated content without a translation request', a
   expect(await requests(request)).toEqual([]);
 });
 
-test('translation continues when localStorage quota is exhausted', async ({ page, runtimeErrors }, testInfo) => {
+test('translation continues and reuses page cache when localStorage quota is exhausted', async ({ page, request }) => {
   await gotoFixture(page);
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -174,15 +174,17 @@ test('translation continues when localStorage quota is exhausted', async ({ page
     };
   });
   await page.locator('#add-dynamic').click();
-  await knownIssue(testInfo, runtimeErrors, 'Core storage.set does not guard QuotaExceededError',
-    () => expect(page.locator('#dynamic-p')).toHaveText('Dynamic content'),
-    async () => onlyKnownErrors(runtimeErrors, 'Quota exceeded') &&
-      await page.evaluate(() => window.__quotaHits > 0 && document.querySelector('#dynamic-p').textContent === '动态内容')
-  );
+  await expect(page.locator('#dynamic-p')).toHaveText('Dynamic content');
+  expect(await page.evaluate(() => window.__quotaHits)).toBeGreaterThan(0);
+
+  await request.get(BASE + '/__reset');
+  await page.locator('#change-text').click();
+  await expect(page.locator('#p1')).toHaveText('Dynamic content');
+  expect(await requests(request), 'Failed persistent writes must remain reusable in this page').toEqual([]);
 });
 
 for (const operation of ['write', 'read', 'access']) {
-  test(`translation continues when localStorage ${operation} is disabled`, async ({ page, runtimeErrors }, testInfo) => {
+  test(`translation continues when localStorage ${operation} is disabled`, async ({ page }) => {
     await page.addInitScript((operation) => {
       window.__storageFaultHits = 0;
       const fail = () => {
@@ -195,14 +197,118 @@ for (const operation of ['write', 'read', 'access']) {
         Storage.prototype[operation === 'write' ? 'setItem' : 'getItem'] = fail;
       }
     }, operation);
-    await page.goto('/');
-    await knownIssue(testInfo, runtimeErrors, `Core does not guard localStorage ${operation} failures`,
-      () => expect(page.locator('#title')).toHaveText('Hello world'),
-      async () => onlyKnownErrors(runtimeErrors, `Storage ${operation} disabled`) &&
-        await page.evaluate(() => window.__storageFaultHits > 0 && document.querySelector('#title').textContent === '你好世界')
-    );
+    await gotoFixture(page);
+    expect(await page.evaluate(() => window.__storageFaultHits)).toBeGreaterThan(0);
+    await page.evaluate(() => translate.changeLanguage('spanish'));
+    await expect(page.locator('#title')).toHaveText('Hola mundo');
+    expect(await page.evaluate(() => translate.storage.get('to'))).toBe('spanish');
+    await page.evaluate(() => translate.changeLanguage('english'));
+    await expect(page.locator('#title')).toHaveText('Hello world');
+    await expect(page.locator('#p1')).toHaveText('This is a test.');
+    expect(await page.evaluate(() => translate.storage.get('to'))).toBe('english');
   });
 }
+
+test('failed storage writes override old values and keep this page in memory after recovery', async ({ page }) => {
+  await gotoFixture(page);
+  const result = await page.evaluate(() => {
+    localStorage.setItem('to', 'english');
+    localStorage.setItem('__e2e_business_setting', 'keep');
+    const original = Storage.prototype.setItem;
+    let faultHits = 0;
+    Storage.prototype.setItem = function () {
+      faultHits++;
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    };
+    let failed;
+    try {
+      const setResult = translate.storage.set('to', 'spanish');
+      failed = {
+        returnsUndefined: setResult === undefined,
+        language: translate.storage.get('to'),
+        persistedLanguage: localStorage.getItem('to')
+      };
+    } finally {
+      Storage.prototype.setItem = original;
+    }
+    translate.storage.set('to', 'chinese_simplified');
+    translate.storage.set('__e2e_numeric_setting', 42);
+    return {
+      faultHits,
+      failed,
+      recoveredLanguage: translate.storage.get('to'),
+      persistedLanguage: localStorage.getItem('to'),
+      numeric: translate.storage.get('__e2e_numeric_setting'),
+      missing: translate.storage.get('__e2e_missing_setting'),
+      businessSetting: localStorage.getItem('__e2e_business_setting')
+    };
+  });
+  expect(result).toEqual({
+    faultHits: 1,
+    failed: { returnsUndefined: true, language: 'spanish', persistedLanguage: 'english' },
+    recoveredLanguage: 'chinese_simplified',
+    persistedLanguage: 'english',
+    numeric: '42',
+    missing: null,
+    businessSetting: 'keep'
+  });
+});
+
+test('storage observes external updates and deletions without reviving deleted values after a read failure', async ({ page }) => {
+  await gotoFixture(page);
+  const result = await page.evaluate(() => {
+    const key = '__e2e_external_setting';
+    translate.storage.set(key, 'original');
+    localStorage.setItem(key, 'external');
+    const updated = translate.storage.get(key);
+    localStorage.removeItem(key);
+    const deleted = translate.storage.get(key);
+    const original = Storage.prototype.getItem;
+    let faultHits = 0;
+    Storage.prototype.getItem = function () {
+      faultHits++;
+      throw new DOMException('Storage read disabled', 'SecurityError');
+    };
+    try {
+      return { updated, deleted, fallback: translate.storage.get(key), faultHits };
+    } finally {
+      Storage.prototype.getItem = original;
+    }
+  });
+  expect(result).toEqual({ updated: 'external', deleted: null, fallback: null, faultHits: 1 });
+});
+
+test('storage retries persistence after a page reload', async ({ page }) => {
+  await gotoFixture(page);
+  const beforeReload = await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function () {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    };
+    try {
+      translate.storage.set('__e2e_reload_setting', 'memory only');
+      return {
+        current: translate.storage.get('__e2e_reload_setting'),
+        persisted: localStorage.getItem('__e2e_reload_setting')
+      };
+    } finally {
+      Storage.prototype.setItem = original;
+    }
+  });
+  expect(beforeReload).toEqual({ current: 'memory only', persisted: null });
+  await page.reload();
+  await expect(page.locator('#title')).toHaveText('Hello world');
+  const afterReload = await page.evaluate(() => {
+    const before = translate.storage.get('__e2e_reload_setting');
+    translate.storage.set('__e2e_reload_setting', 'persistent again');
+    return {
+      before,
+      current: translate.storage.get('__e2e_reload_setting'),
+      persisted: localStorage.getItem('__e2e_reload_setting')
+    };
+  });
+  expect(afterReload).toEqual({ before: null, current: 'persistent again', persisted: 'persistent again' });
+});
 
 test('same-origin iframe content is injected and translated', async ({ page }) => {
   await page.goto('/iframe-parent.html');

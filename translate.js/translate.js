@@ -11491,13 +11491,13 @@ var translate = {
 			/*
 				当前页面的内存键值存储，独立于 localStorage，不写入浏览器持久存储。
 				数据仅保存在当前 translate 实例中，页面刷新或关闭后丢失，不与其他实例共享。
+				不自动淘汰键，内存占用随当前实例保存的键值增加。
 				key、value 使用 String(...) 转换；对象等结构化数据需调用方先 JSON.stringify。
 				读写均同步执行，set 返回 undefined，get 返回字符串或 null。
 				使用方式：
 					translate.storage.browser.memory.set('key', 'value');
 					var value = translate.storage.browser.memory.get('key');
-				统一入口 translate.storage.get/set 默认仍使用 browser.storage，
-				本内存实现需显式调用，不会自动接管 localStorage 的读写异常。
+				可显式调用，也供 browser.storage 保存读写副本和发生存储异常时回退使用。
 			*/
 			memory:{
 				//Map 保存字符串键值，避免 __proto__ 等键与对象原型发生冲突。
@@ -11509,28 +11509,69 @@ var translate = {
 				get:function(key){
 					key = String(key);
 					return this._data.has(key) ? this._data.get(key) : null;
+				},
+				//删除内存中的键，无返回值；用于同步持久存储中已删除的值。
+				remove:function(key){
+					this._data.delete(String(key));
 				}
 			},
 			/*
 				基于浏览器 localStorage 的默认存储实现。
 				translate.storage.get/set 是统一入口，默认委托到这里执行读写。
-				数据保存在当前页面所属的同源 localStorage 中，可在刷新后继续读取，
+				正常时数据保存在当前页面所属的同源 localStorage 中，可在刷新后继续读取，
 				与同源网站的其他代码共享存储空间，键名沿用原有规则：
 					to 保存目标语种；hash_<目标语种>_<hash> 保存译文缓存。
-				读写均为同步操作；存储被禁用或空间不足等异常会向调用方抛出。
+				正常读写同步保留内存副本；首次访问或读写 localStorage 异常后，
+				当前实例的后续读写统一使用内存，不再访问 localStorage，避免读回磁盘旧值。
+				刷新页面后重新尝试 localStorage；回退期间的新值不持久化，
+				也不再同步其他代码对 localStorage 的直接修改。
+				本接口只为经过其读写的键保存副本；未保留副本的磁盘键在回退后返回 null。
 				自定义存储时，可配套覆盖 translate.storage.get 和 translate.storage.set，
 				保持 set 无返回值、get 同步返回字符串或 null 的约定。
 			*/
 			storage:{
-				//同步写入，返回 undefined。key、value 按 localStorage 规则转换为字符串。
+				//仅当前实例有效，首次存储异常后保持内存模式，刷新页面后重置。
+				_memoryOnly:false,
+				//同步写入，返回 undefined。key、value 使用 String(...) 转换为字符串。
 				//保存对象等结构化数据时，由调用方先使用 JSON.stringify 序列化。
 				set:function(key,value){
-					localStorage.setItem(key,value);
+					key = String(key);
+					value = String(value);
+					//先保留新值，确保持久写入失败后仍能读取本次设置，而不是磁盘旧值。
+					translate.storage.browser.memory.set(key,value);
+					if(this._memoryOnly){
+						return;
+					}
+					try{
+						localStorage.setItem(key,value);
+					}catch(e){
+						//包含 localStorage 属性访问和 setItem 的异常，不中断后续翻译。
+						this._memoryOnly = true;
+					}
 				},
 				//同步读取，返回字符串；键不存在时返回 null，空字符串仍返回空字符串。
 				//本方法直接返回存储结果，不自动执行 JSON.parse 等反序列化操作。
 				get:function(key){
-					return localStorage.getItem(key);
+					key = String(key);
+					var memory = translate.storage.browser.memory;
+					if(this._memoryOnly){
+						return memory.get(key);
+					}
+					var value;
+					try{
+						//正常时仍以持久存储为准，可以观察其他代码对值的修改和删除。
+						value = localStorage.getItem(key);
+					}catch(e){
+						this._memoryOnly = true;
+						return memory.get(key);
+					}
+					if(value === null){
+						//同步删除副本，避免后续回退时恢复已经删除的旧值。
+						memory.remove(key);
+					}else{
+						memory.set(key,value);
+					}
+					return value;
 				}
 			}
 		},

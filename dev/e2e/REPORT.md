@@ -17,24 +17,26 @@ fails and its observed signature matches. A repaired scenario passes normally.
 fixes. Current results are generated in `report/results.json`; the following
 observations do not substitute for a run.
 
+## Storage resilience
+
+The baseline stops translating when localStorage quota, reads, writes, or property
+access fail. The current wrapper mirrors successful reads and attempted writes in
+page memory. The first localStorage exception switches the current instance to
+memory for all subsequent reads and writes. This prevents old persisted language
+settings from overriding a failed write. Normal reads still observe external
+updates and remove the mirror when a persisted key is absent.
+
+Storage scenarios are required passes, including in strict mode. They cover quota
+exhaustion and cache reuse, separately blocked reads/writes/property access,
+repeated language switches, failed writes overriding persisted values, external
+updates/deletions, and persistence working again after a page reload.
+
+Memory mode lasts for the instance lifetime, even if localStorage becomes available
+again. It does not persist new values, observe subsequent direct localStorage
+changes, or recover keys that were never mirrored. Reloading starts a fresh instance
+and retries localStorage. Memory entries have no automatic eviction in this change.
+
 ## Existing runtime failures
-
-### Storage quota exhaustion
-
-When writes for `hash_*` translation entries throw `QuotaExceededError`, dynamically
-appended text remains untranslated. The baseline `translate.storage.set()` calls
-`localStorage.setItem()` without guarding the exception. This is an existing core
-problem; the test-only changes do not repair it.
-
-The regression test requires the appended content to translate without a page
-error. Expected-failure handling is limited to this scenario.
-
-### Unavailable storage
-
-Throwing from `Storage.prototype.setItem` before initialization prevents the
-baseline fixture from translating. Storage can also be unavailable on reads or
-when accessing `window.localStorage`; these are separate cases and are tested
-separately rather than treating a write-only simulation as complete coverage.
 
 ### Nested iframe injection
 

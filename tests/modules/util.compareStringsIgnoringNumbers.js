@@ -9,7 +9,8 @@ require('../helpers/module')(__filename, [
   { remark: '比较字符串除了数字外是否完全一致 - 长度不等 - 最后数字', args: ['test123', 'test'], expected: true },
   // 来源：verify.html 第 23 条。
   { remark: '比较字符串除了数字外是否完全一致 - 长度相等 - 无数字 - 不同内容', args: ['abc', 'def'], expected: false },
-  // verify.html 第 24 条与源码注释预期冲突，已交维护者确认；确认前不擅自迁入或改答案。
+  // 来源：verify.html 第 24 条。维护者已确认原源码示例注释有误，忽略数字后两边均为 abc，应返回 true。
+  { remark: '比较字符串除了数字外是否完全一致 - 长度不等 - 中间间隔数字 - 不同内容', args: ['a1b2c3', 'a4b5c'], expected: true },
   // 来源：verify.html 第 25 条。
   { remark: '比较字符串除了数字外是否完全一致 - 空字符串', args: ['', ''], expected: true },
   // 来源：verify.html 第 26 条。

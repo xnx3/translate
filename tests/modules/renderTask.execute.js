@@ -154,5 +154,114 @@ require('../helpers/module')(__filename, [
       await new Promise(resolve => setTimeout(resolve, 30));
       return synchronousCount === 0 && received.length === 1 && received[0] === task && node.nodeValue === '您好';
     }
+  },
+  {
+    remark: '空译文删除文本开头的原文，保留节点及原文译文记录',
+    test: function () {
+      translate.to = 'chinese_simplified';
+      const node = document.createTextNode('你好世界');
+      document.body.append(node);
+      const task = new translate.renderTask();
+      task.add(node, '你好', '');
+      task.execute();
+      const record = translate.node.get(node);
+      return node.nodeValue === '世界' && node.isConnected && record.originalText === '你好世界' && record.resultText === '世界' && record.translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '英文空译文仅删除中间原文，不格式化两侧全角逗号或补空格',
+    test: function () {
+      translate.to = 'english';
+      const node = document.createTextNode('甲，你好，乙');
+      document.body.append(node);
+      const task = new translate.renderTask();
+      task.add(node, '你好', '');
+      task.execute();
+      return node.nodeValue === '甲，，乙' && node.isConnected && translate.node.get(node).translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '英文空译文删除相邻的全部原文后保留空文本节点',
+    test: function () {
+      translate.to = 'english';
+      const node = document.createTextNode('你好你好');
+      document.body.append(node);
+      const task = new translate.renderTask();
+      task.add(node, '你好', '');
+      task.execute();
+      const record = translate.node.get(node);
+      return node.nodeValue === '' && node.isConnected && record.originalText === '你好你好' && record.resultText === '' && record.translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '英文空译文保留受保护分词及原标点，只删除独立原文',
+    test: function () {
+      translate.to = 'english';
+      const node = document.createTextNode('你好世界，你好');
+      const participles = ['你好世界'];
+      document.body.append(node);
+      const task = new translate.renderTask();
+      task.add(node, '你好', '', undefined, participles);
+      task.execute();
+      return node.nodeValue === '你好世界，' && node.isConnected && participles.length === 1 && participles[0] === '你好世界';
+    }
+  },
+  {
+    remark: '空译文清空 title 的文字，保留属性节点及元素正文',
+    test: function () {
+      translate.to = 'english';
+      const element = document.createElement('div');
+      element.title = '你好';
+      element.textContent = '正文保留';
+      document.body.append(element);
+      const attribute = element.getAttributeNode('title');
+      const task = new translate.renderTask();
+      task.add(element, '你好', '', 'title');
+      task.execute();
+      const record = translate.node.get(attribute);
+      return element.title === '' && element.getAttributeNode('title') === attribute && element.textContent === '正文保留' && element.isConnected && record.resultText === '' && record.translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '空译文清空 input 的实时 value，保留输入框及翻译记录',
+    test: function () {
+      translate.to = 'english';
+      const input = document.createElement('input');
+      input.value = '你好';
+      document.body.append(input);
+      const task = new translate.renderTask();
+      task.add(input, '你好', '', 'value');
+      task.execute();
+      const record = translate.node.get(input);
+      return input.value === '' && input.isConnected && record.resultText === '' && record.translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '空译文删除 textarea 实时 value 的开头原文，保留其余文字',
+    test: function () {
+      translate.to = 'english';
+      const input = document.createElement('textarea');
+      input.value = '你好世界';
+      document.body.append(input);
+      const task = new translate.renderTask();
+      task.add(input, '你好', '', 'value');
+      task.execute();
+      const record = translate.node.get(input);
+      return input.value === '世界' && input.isConnected && record.resultText === '世界' && record.translateTexts['你好'] === '';
+    }
+  },
+  {
+    remark: '同节点的空译文与普通译文任务均执行，删除不影响后续替换',
+    test: function () {
+      translate.to = 'english';
+      const node = document.createTextNode('你好世界');
+      document.body.append(node);
+      const task = new translate.renderTask();
+      task.add(node, '你好', '');
+      task.add(node, '世界', 'World');
+      task.execute();
+      const record = translate.node.get(node);
+      return node.nodeValue === 'World' && node.isConnected && record.translateTexts['你好'] === '' && record.translateTexts['世界'] === 'World';
+    }
   }
 ]);

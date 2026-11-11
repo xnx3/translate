@@ -23,5 +23,15 @@ require('../helpers/module')(__filename, [
   { remark: 'Response body 没有 getReader 时报告不支持', test: function () {
     window.Response = function () { this.body = {}; };
     return translate.request.sse.isSupport() === false;
+  } },
+  { remark: '缺少 Promise 能力时报告不支持，能力检测自身不依赖 Promise', test: function () {
+    var originalPromise = window.Promise;
+    try {
+      window.Promise = undefined;
+      return translate.request.sse.isSupport() === false;
+    } finally {
+      // 恢复浏览器能力，避免页面评估工具本身后续需要 Promise 时受到干扰。
+      window.Promise = originalPromise;
+    }
   } }
 ]);

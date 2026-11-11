@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.2.20261111',
+	version: '4.1.3.20261111',
 	
 	/*js translate.config start*/
 	/*
@@ -1454,29 +1454,81 @@ var translate = {
 
 		使用示例：
 		var article = document.getElementById('article');
-		translate.group.elements = [article];
+		translate.group.addElements(article, function(element){
+			// false 表示此子元素及其后代不参与当前区域的 group 分组。
+			return !element.classList.contains('no-group');
+		});
 		if(translate.group.inGroup(paragraph)){
 			var segments = translate.group.analyze(paragraph);
 		}
 
 		analyze 的一个返回数组代表调用方选定的一个翻译单位。建议传入单个段落
 		或句子的容器；区域中有多个段落时，应分别传入各段落，分别进行整体翻译。
-		elements 负责登记区域，inGroup 负责判断归属，analyze 负责读取文本；
+		addElements 负责登记区域及过滤函数，inGroup 负责判断归属，analyze 负责读取文本；
 		登记区域本身不会发起翻译请求，也不会自动改写其中的网页内容。
 	*/
 	group:{
 		/*
 			启用分组提取的区域元素集合，默认空数组，表示尚未登记任何区域。
-			保存真实的 DOM Element 引用，不填写 id 字符串、CSS 选择器或 HTML。
-			可通过 push(element) 向默认数组追加，也可直接赋值 Element 数组、
-			querySelectorAll 返回的 NodeList 或 getElementsByTagName 返回的 HTMLCollection。
-			每个区域的元素自身及任意层级后代都属于该区域；区域可以相互嵌套。
+			每项结构为 {element: DOM元素, ignoreFunction: function(element){return true;}}。
+			通过 addElements 登记，element 保存真实引用，不填写 id、选择器或 HTML。
+			v4.1.3 起使用这个对象数组结构，取代之前直接保存 Element 的数组；
+			不再将 NodeList/HTMLCollection 直接赋给 elements，需要逐个调用 addElements。
+			可以读取本数组查看配置，也可以赋值 [] 清空全部登记区域。
 		*/
 		elements:[],
 
 		/*
+			登记一个启用 group 的区域；成功返回 true，参数无效则不修改配置并返回 false。
+			@param element 一个真实 Element，区域根自身及通过过滤的后代参与分组。
+			@param ignoreFunction 可选的 function(element)；省略或为 null 时，保存一个
+			                      默认返回 true 的函数。其他非函数值视为无效参数。
+
+			ignoreFunction 的参数是当前被判断的后代 Element，不是 Text 节点。
+			只有明确返回 false 才排除该子元素及其整棵子树；返回 true 表示允许。
+			注意这里 false 表示忽略，与 translate.ignore.class 的条件函数含义相反。
+			登记根自身不交给回调判断，其直接文字默认允许。回调对区域内的后代
+			生效，并同时影响 inGroup 和 analyze；这是区域过滤，不修改全局 ignore。
+
+			同一个根再次登记会更新已有记录的回调，不重复追加，避免旧的默认允许
+			配置绕过新过滤。不同区域可重叠，只要某个区域允许完整祖先路径即可参与；
+			因此也可以单独登记内层区域，使其重新启用 group。全局 ignore 仍照常生效。
+			判断不缓存，后续 DOM 或回调条件改变会立即反映；回调可能被多次调用，
+			应只用于判断，避免修改 DOM。回调抛出的异常原样向调用方传播。
+		*/
+		addElements:function(element, ignoreFunction){
+			if(element == null || element.nodeType !== 1 || typeof(element.contains) !== 'function' || typeof(element.getAttribute) !== 'function'){
+				translate.log('translate.group.addElements 的 element 参数必须是一个 DOM Element，此次未登记。');
+				return false;
+			}
+			if(ignoreFunction == null){
+				ignoreFunction = function(element){return true;};
+			}else if(typeof(ignoreFunction) !== 'function'){
+				translate.log('translate.group.addElements 的 ignoreFunction 参数必须是 function，此次未登记。');
+				return false;
+			}
+			var elements = translate.group.elements;
+			if(!Array.isArray(elements)){
+				translate.log('translate.group.elements 必须是配置对象数组，请使用 addElements 登记区域。');
+				return false;
+			}
+			for(var i = 0; i < elements.length; i++){
+				if(elements[i] != null && elements[i].element === element){
+					elements[i].ignoreFunction = ignoreFunction;
+					return true;
+				}
+			}
+			elements.push({element: element, ignoreFunction: ignoreFunction});
+			return true;
+		},
+
+		/*
 			判断 element 是否属于 elements 中登记的任一区域，返回布尔值。
 			除 Element 外，也接受 Text 节点，便于外部扫描文本时直接判断归属。
+			Text 使用其父元素参与过滤；回调从区域根下的第一层祖先依次判断到目标
+			元素，任一层返回 false 即排除这一条路径，不能通过孙元素返回 true 绕过。
+			根自身和它的直接 Text 不调用回调。多个区域中有一条完整允许的路径，
+			即可返回 true；在某个区域被排除，只影响该区域，不阻止其他区域独立登记。
 			没有登记区域、传入 null/undefined 或其他类型时，返回 false。
 			每次按当前 DOM 的 contains 关系判断，不缓存；节点移动、移除或重新
 			登记区域后会立即反映新关系。脱离 document 的区域自身仍可正常判断。
@@ -1490,12 +1542,36 @@ var translate = {
 				return false;
 			}
 			for(var i = 0; i < elements.length; i++){
-				var root = elements[i];
-				// 忽略集合中的空项和非元素项，避免一个无效配置影响其余区域。
+				var entry = elements[i];
+				var root = entry == null ? null : entry.element;
+				// 忽略集合中的空项和无效配置，避免一个无效配置影响其余区域。
 				if(root == null || root.nodeType !== 1 || typeof(root.contains) !== 'function'){
 					continue;
 				}
-				if(root === element || root.contains(element)){
+				if(root === element){
+					return true;
+				}
+				if(!root.contains(element)){
+					continue;
+				}
+
+				// 先收集完整路径，再从外向内执行回调；父元素被拒绝后不再判断其后代。
+				var path = [];
+				var current = element.nodeType === 3 ? element.parentNode : element;
+				while(current != null && current !== root){
+					path.push(current);
+					current = current.parentNode;
+				}
+				var allowed = true;
+				if(typeof(entry.ignoreFunction) === 'function'){
+					for(var pi = path.length - 1; pi >= 0; pi--){
+						if(entry.ignoreFunction(path[pi]) === false){
+							allowed = false;
+							break;
+						}
+					}
+				}
+				if(allowed){
 					return true;
 				}
 			}
@@ -1504,8 +1580,9 @@ var translate = {
 
 		/*
 			分析一个 Element 内的正文，返回 [{text: '原文', weight: 0或1}, ...]。
-			可直接分析尚未登记到 elements 的元素；是否允许参与分组，由调用方
-			根据 inGroup 判断。无效参数或没有可提取文本时返回空数组。
+			可直接分析尚未登记的元素；位于已登记区域内的文字，同时遵循该区域的
+			ignoreFunction。直接传入被过滤的子元素也不能绕过规则。完全不属于任何
+			登记区域的文字仍可独立提取。无效参数或没有可提取文本时返回空数组。
 
 			例如 <div><b>我们</b>是<b>全世界</b>最好的</div> 返回：
 			[
@@ -1532,6 +1609,8 @@ var translate = {
 			跳过注释及脚本、样式、模板、嵌入文档等非正文子树；hidden、
 			translate="no"、notranslate 的区域也跳过，包括本次根元素的祖先设置。
 			正文 Text 另外遵循现有 translate.ignore.tag/class/id 及其条件函数。
+			区域 ignoreFunction 返回 false 只是退出 group；其他翻译流程仍按各自规则
+			决定是否翻译，本方法不为它设置全局忽略标记。
 			本方法不改写 DOM 标签和文字、不发请求；ignore 的自定义条件函数仍会
 			按既有 isIgnore 接口执行。CSS 隐藏、伪元素和 iframe 内部正文不在提取范围。
 		*/
@@ -1568,6 +1647,21 @@ var translate = {
 				var item = stack.pop();
 				var node = item.node;
 				if(node.nodeType === 3){
+					// 只过滤几何上位于登记区域内的文字，保留区域外独立 analyze 的能力。
+					var entries = translate.group.elements;
+					var inRegisteredArea = false;
+					if(entries != null && typeof(entries.length) === 'number'){
+						for(var gi = 0; gi < entries.length; gi++){
+							var groupRoot = entries[gi] == null ? null : entries[gi].element;
+							if(groupRoot != null && groupRoot.nodeType === 1 && typeof(groupRoot.contains) === 'function' && groupRoot.contains(node)){
+								inRegisteredArea = true;
+								break;
+							}
+						}
+					}
+					if(inRegisteredArea && !translate.group.inGroup(node)){
+						continue;
+					}
 					// 正文使用空字符串 attribute，与原扫描流程一致，供条件忽略函数判断。
 					if(node.nodeValue.length > 0 && !translate.ignore.isIgnore(node, {node: node, attribute: ''})){
 						result.push({text: node.nodeValue, weight: item.weight});
@@ -1582,7 +1676,8 @@ var translate = {
 				if(node !== element && !blockTags.test(node.nodeName.toLowerCase())){
 					weight = 1;
 				}
-				// 逆序入栈，出栈时即为页面原有的从前到后顺序；每个节点只访问一次。
+				// group 过滤在 Text 处判断，避免剪掉被外层过滤、却另行登记允许的内层区域。
+				// 逆序入栈，出栈时即为页面原有的从前到后顺序；每个节点只入栈一次。
 				for(var i = node.childNodes.length - 1; i >= 0; i--){
 					stack.push({node: node.childNodes[i], weight: weight});
 				}

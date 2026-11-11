@@ -13,7 +13,7 @@ require('../helpers/module')(__filename, [
     remark: '登记的元素本身属于分组区域，即使尚未插入文档',
     test: function () {
       var root = document.createElement('div');
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       return translate.group.inGroup(root) === true && root.isConnected === false;
     }
   },
@@ -22,7 +22,7 @@ require('../helpers/module')(__filename, [
     test: function () {
       var root = document.createElement('div');
       root.innerHTML = '<section><p><b>内容</b></p></section>';
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       return translate.group.inGroup(root.querySelector('b')) === true;
     }
   },
@@ -31,7 +31,7 @@ require('../helpers/module')(__filename, [
     test: function () {
       var parent = document.createElement('div');
       parent.innerHTML = '<p>分组</p><p>相邻元素</p>';
-      translate.group.elements = [parent.firstChild];
+      translate.group.addElements(parent.firstChild);
       return translate.group.inGroup(parent) === false &&
         translate.group.inGroup(parent.lastChild) === false;
     }
@@ -41,7 +41,7 @@ require('../helpers/module')(__filename, [
     test: function () {
       var root = document.createElement('div');
       root.innerHTML = '普通<span>内部</span>';
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       return translate.group.inGroup(root.firstChild) === true &&
         translate.group.inGroup(root.lastChild.firstChild) === true;
     }
@@ -49,7 +49,7 @@ require('../helpers/module')(__filename, [
   {
     remark: '没有父元素的独立 TextNode 不属于任何已登记区域',
     test: function () {
-      translate.group.elements = [document.createElement('div')];
+      translate.group.addElements(document.createElement('div'));
       return translate.group.inGroup(document.createTextNode('独立文本')) === false;
     }
   },
@@ -59,33 +59,35 @@ require('../helpers/module')(__filename, [
   {
     remark: '即使登记 body，document 也不作为元素或文本成员处理',
     test: function () {
-      translate.group.elements = [document.body];
+      translate.group.addElements(document.body);
       return translate.group.inGroup(document) === false;
     }
   },
   {
-    remark: 'elements 可以直接接收 querySelectorAll 返回的 NodeList',
+    remark: '对象形式的区域记录保存各自元素，多个区域都能判断归属',
     test: function () {
       document.body.innerHTML = '<section class="group"><b>甲</b></section><section class="group"><em>乙</em></section><p>外部</p>';
-      translate.group.elements = document.querySelectorAll('.group');
+      var roots = document.querySelectorAll('.group');
+      translate.group.elements = [
+        { element: roots[0], ignoreFunction: function () { return true; } },
+        { element: roots[1], ignoreFunction: function () { return true; } }
+      ];
       return translate.group.inGroup(document.querySelector('b')) === true &&
         translate.group.inGroup(document.querySelector('em')) === true &&
         translate.group.inGroup(document.querySelector('p')) === false;
     }
   },
   {
-    remark: 'elements 支持 HTMLCollection，并实时识别集合中新增和移除的根',
+    remark: '分别登记多个区域后，移除某条对象记录只影响对应区域',
     test: function () {
-      var container = document.createElement('div');
-      translate.group.elements = container.children;
-      var root = document.createElement('p');
-      root.innerHTML = '<b>内容</b>';
-      var child = root.firstChild;
-      var before = translate.group.inGroup(child);
-      container.append(root);
-      var added = translate.group.inGroup(child);
-      root.remove();
-      return before === false && added === true && translate.group.inGroup(child) === false;
+      var first = document.createElement('p'), second = document.createElement('p');
+      first.innerHTML = '<b>第一个</b>'; second.innerHTML = '<em>第二个</em>';
+      translate.group.addElements(first);
+      translate.group.addElements(second);
+      var before = translate.group.inGroup(first.firstChild) && translate.group.inGroup(second.firstChild);
+      translate.group.elements.splice(0, 1);
+      return before && translate.group.inGroup(first.firstChild) === false &&
+        translate.group.inGroup(second.firstChild) === true;
     }
   },
   {
@@ -93,11 +95,11 @@ require('../helpers/module')(__filename, [
     test: function () {
       var first = document.createElement('p'), second = document.createElement('p');
       translate.group.elements = [];
-      translate.group.elements.push(first);
+      translate.group.elements.push({ element: first, ignoreFunction: function () { return true; } });
       var added = translate.group.inGroup(first);
       translate.group.elements.splice(0, 1);
       var removed = translate.group.inGroup(first);
-      translate.group.elements = [second];
+      translate.group.elements = [{ element: second, ignoreFunction: function () { return true; } }];
       return added === true && removed === false &&
         translate.group.inGroup(first) === false && translate.group.inGroup(second) === true;
     }
@@ -108,7 +110,7 @@ require('../helpers/module')(__filename, [
       var root = document.createElement('div'), outside = document.createElement('div');
       var child = document.createElement('span');
       root.append(child);
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       var before = translate.group.inGroup(child);
       outside.append(child);
       var moved = translate.group.inGroup(child);
@@ -124,7 +126,7 @@ require('../helpers/module')(__filename, [
       var root = iframe.contentDocument.createElement('div');
       root.innerHTML = '<b>子页面内容</b>';
       iframe.contentDocument.body.append(root);
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       return translate.group.inGroup(root) === true &&
         translate.group.inGroup(root.firstChild) === true &&
         translate.group.inGroup(root.firstChild.firstChild) === true &&
@@ -134,7 +136,7 @@ require('../helpers/module')(__filename, [
   {
     remark: '合法区域已登记时，带 nodeType 的普通对象也不能冒充真实 Element 或 TextNode',
     test: function () {
-      translate.group.elements = [document.createElement('div')];
+      translate.group.addElements(document.createElement('div'));
       return translate.group.inGroup({ nodeType: 1 }) === false &&
         translate.group.inGroup({ nodeType: 3 }) === false;
     }
@@ -144,11 +146,94 @@ require('../helpers/module')(__filename, [
     test: function () {
       var root = document.createElement('div');
       root.innerHTML = '<span>正文</span>';
-      translate.group.elements = [null, 'selector', {}, root];
+      translate.group.elements = [null, 'selector', {}, { element: root, ignoreFunction: function () { return true; } }];
       return translate.group.inGroup(root) === true &&
         translate.group.inGroup(root.firstChild) === true &&
         translate.group.inGroup(root.firstChild.firstChild) === true &&
         translate.group.inGroup(document.createElement('p')) === false;
+    }
+  },
+  {
+    remark: '回调返回 false 排除指定子元素及其所有后代，兄弟元素仍属于分组',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '<section class="excluded"><p><b>忽略</b></p></section><p>保留</p>';
+      translate.group.addElements(root, function (element) { return !element.classList.contains('excluded'); });
+      return translate.group.inGroup(root.firstChild) === false &&
+        translate.group.inGroup(root.querySelector('b')) === false &&
+        translate.group.inGroup(root.querySelector('b').firstChild) === false &&
+        translate.group.inGroup(root.lastChild) === true;
+    }
+  },
+  {
+    remark: 'TextNode 判断时回调只接收其父级等真实 Element，不把 TextNode 传入回调',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '<span><b>正文</b></span>';
+      var valid = true, seenParent = false;
+      translate.group.addElements(root, function (element) {
+        valid = valid && element.nodeType === 1;
+        if (element === root.querySelector('b')) seenParent = true;
+        return true;
+      });
+      return translate.group.inGroup(root.querySelector('b').firstChild) === true && valid && seenParent;
+    }
+  },
+  {
+    remark: '登记根自身及其直接文字默认属于组，回调只用于后代元素',
+    test: function () {
+      var root = document.createElement('div');
+      root.textContent = '直接正文';
+      var calls = 0;
+      translate.group.addElements(root, function () { calls++; return false; });
+      return translate.group.inGroup(root) === true &&
+        translate.group.inGroup(root.firstChild) === true && calls === 0;
+    }
+  },
+  {
+    remark: '回调依赖的状态改变后立即重新判断，不缓存旧的允许或拒绝结果',
+    test: function () {
+      var root = document.createElement('div'), allowed = false;
+      root.innerHTML = '<span>正文</span>';
+      translate.group.addElements(root, function () { return allowed; });
+      var rejected = translate.group.inGroup(root.firstChild);
+      allowed = true;
+      var accepted = translate.group.inGroup(root.firstChild);
+      allowed = false;
+      return rejected === false && accepted === true && translate.group.inGroup(root.firstChild) === false;
+    }
+  },
+  {
+    remark: '只有严格布尔 false 排除元素，回调返回 0 或 undefined 仍允许参与',
+    test: function () {
+      var root = document.createElement('div'), decision = 0;
+      root.innerHTML = '<span>正文</span>';
+      translate.group.addElements(root, function () { return decision; });
+      var zero = translate.group.inGroup(root.firstChild);
+      decision = undefined;
+      return zero === true && translate.group.inGroup(root.firstChild) === true;
+    }
+  },
+  {
+    remark: '内层区域独立登记后可允许外层规则排除的分支，不影响其他被排除分支',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '<section class="excluded"><b>内层开启</b></section><section class="excluded"><b>仍忽略</b></section>';
+      translate.group.addElements(root, function (element) { return !element.classList.contains('excluded'); });
+      translate.group.addElements(root.firstChild);
+      return translate.group.inGroup(root.firstChild) === true &&
+        translate.group.inGroup(root.firstChild.firstChild.firstChild) === true &&
+        translate.group.inGroup(root.lastChild.firstChild) === false;
+    }
+  },
+  {
+    remark: '回调抛出的异常保留给调用方，不静默当作允许或拒绝',
+    test: function () {
+      var root = document.createElement('div'), failure = new Error('group callback failure');
+      root.innerHTML = '<span>正文</span>';
+      translate.group.addElements(root, function () { throw failure; });
+      try { translate.group.inGroup(root.firstChild); } catch (error) { return error === failure; }
+      return false;
     }
   }
 ]);

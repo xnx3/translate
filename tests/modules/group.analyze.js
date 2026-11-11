@@ -178,7 +178,7 @@ require('../helpers/module')(__filename, [
     test: function () {
       var root = document.createElement('div');
       root.innerHTML = '普通<span title="标题">强调</span>';
-      translate.group.elements = [root];
+      translate.group.addElements(root);
       var elements = translate.group.elements, html = root.innerHTML;
       var queueKeys = Object.keys(translate.nodeQueue).join(',');
       var first = translate.group.analyze(root), second = translate.group.analyze(root);
@@ -187,8 +187,73 @@ require('../helpers/module')(__filename, [
       first[0].text = '调用方修改';
       return same && first !== second && first[0] !== second[0] &&
         JSON.stringify(second) === expected && root.innerHTML === html &&
-        translate.group.elements === elements && elements.length === 1 && elements[0] === root &&
+        translate.group.elements === elements && elements.length === 1 && elements[0].element === root &&
         Object.keys(translate.nodeQueue).join(',') === queueKeys;
+    }
+  },
+  {
+    remark: '区域回调排除子树正文，保留其余片段的原始顺序、空格和权重',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '普通 <span class="excluded">忽略<b>内部</b></span><b>强调</b> 结尾';
+      translate.group.addElements(root, function (element) { return !element.classList.contains('excluded'); });
+      var html = root.innerHTML;
+      return JSON.stringify(translate.group.analyze(root)) === JSON.stringify([
+        { text: '普通 ', weight: 0 }, { text: '强调', weight: 1 }, { text: ' 结尾', weight: 0 }
+      ]) && root.innerHTML === html;
+    }
+  },
+  {
+    remark: '直接分析已被区域回调排除的子元素或其后代也返回空数组',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '<section class="excluded"><p>忽略<b>内部</b></p></section>';
+      translate.group.addElements(root, function (element) { return !element.classList.contains('excluded'); });
+      return translate.group.analyze(root.firstChild).length === 0 &&
+        translate.group.analyze(root.querySelector('p')).length === 0;
+    }
+  },
+  {
+    remark: '分析包含多个区域及区域外文字的容器，各区域只按自身回调过滤',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '区域外<section><span>忽略甲</span><b>保留甲</b></section><section><span>保留乙</span><b>忽略乙</b></section>';
+      translate.group.addElements(root.children[0], function (element) { return element.tagName !== 'SPAN'; });
+      translate.group.addElements(root.children[1], function (element) { return element.tagName !== 'B'; });
+      return JSON.stringify(translate.group.analyze(root)) === JSON.stringify([
+        { text: '区域外', weight: 0 }, { text: '保留甲', weight: 1 }, { text: '保留乙', weight: 1 }
+      ]);
+    }
+  },
+  {
+    remark: '其他区域的拒绝回调不影响未登记元素的独立分析',
+    test: function () {
+      var registered = document.createElement('div'), outside = document.createElement('p');
+      registered.innerHTML = '<span>已登记</span>'; outside.innerHTML = '独立<b>分析</b>';
+      translate.group.addElements(registered, function () { return false; });
+      return JSON.stringify(translate.group.analyze(outside)) === '[{"text":"独立","weight":0},{"text":"分析","weight":1}]';
+    }
+  },
+  {
+    remark: '内层独立登记可重新开启外层排除分支，已有 hidden 与 ignore 规则仍生效',
+    test: function () {
+      var root = document.createElement('div');
+      root.innerHTML = '<section class="excluded"><b>开启</b><span hidden>隐藏</span><em class="ignore">忽略</em></section><section class="excluded">未开启</section>';
+      translate.group.addElements(root, function (element) { return !element.classList.contains('excluded'); });
+      translate.group.addElements(root.firstChild);
+      return JSON.stringify(translate.group.analyze(root)) === '[{"text":"开启","weight":1}]';
+    }
+  },
+  {
+    remark: '登记根的直接正文保留，后代回调的状态变化会反映在后续分析结果中',
+    test: function () {
+      var root = document.createElement('div'), allowed = false;
+      root.innerHTML = '根正文<span>后代</span>';
+      translate.group.addElements(root, function () { return allowed; });
+      var before = JSON.stringify(translate.group.analyze(root));
+      allowed = true;
+      return before === '[{"text":"根正文","weight":0}]' &&
+        JSON.stringify(translate.group.analyze(root)) === '[{"text":"根正文","weight":0},{"text":"后代","weight":1}]';
     }
   }
 ]);

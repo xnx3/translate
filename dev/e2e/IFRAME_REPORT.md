@@ -146,6 +146,29 @@ the script is still downloading retain the existing behavior. Rebinding dynamic
 listeners after `document.open/write` is also outside this change; the rewrite
 test requires static translation only.
 
+## Initial discovery of src iframes
+
+Source version `4.1.1.20261111` adds three lines of logic in `whileNodes()`:
+when scanning an iframe with a nonempty `src`, call the existing iframe
+`execute()` entry point. Its existing enable flag, origin checks and load-listener
+deduplication remain in effect. No new state or function is introduced.
+
+The static-before-load test now holds the child document request until the parent
+title has translated, then releases it. This proves that the parent scans before
+the child's load event, without relying on network timing or internal state.
+The original missing-injection assertions and artifact checks remain unchanged.
+
+The same 48 source cases produced 42 pass / 5 known / 1 skip before the change
+and 43 pass / 4 known / 1 skip afterward. Only the static-before-load case improved;
+all prior passes and remaining known-failure signatures stayed unchanged. The
+target case also passed in the source `strict` project. The complete 96-check
+after run had no unexpected failures; the unchanged minified file produced
+34 pass / 13 known / 1 skip.
+
+This step handles discovery before the load event. An iframe already loaded when
+first discovered still needs separate handling; `srcdoc` also remains unresolved.
+No-`src` iframes keep their existing entry points.
+
 No unlimited recursive iframe injection is promised: an actual injector enables
 iframe translation itself. Cross-origin pages and sandbox origins remain separate
 browser security boundaries. These checks cover Chromium and the explicit

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.0.20261111',
+	version: '4.1.1.20261111',
 	
 	/*js translate.config start*/
 	/*
@@ -5668,6 +5668,11 @@ var translate = {
 
 			//v3.9.2 增加, 用户可自定义标签内 attribute 的翻译
 			var nodeNameLowerCase = translate.element.getNodeName(node).toLowerCase();
+			//首次扫描也处理页面中已有的 src iframe，避免只依赖后续新增节点或 src 变动。
+			//复用原 execute，由它检查启用开关、同源访问，并防止重复添加 load 监听。
+			if(nodeNameLowerCase === 'iframe' && typeof(node.src) === 'string' && node.src.trim().length > 0 && typeof(translate.element.iframe) !== 'undefined'){
+				translate.element.iframe.execute(node);
+			}
 			if(typeof(translate.element.tagAttribute[nodeNameLowerCase]) != 'undefined'){
 				//console.log('find:'+nodeNameLowerCase);
 				//console.log(translate.element.tagAttribute[nodeNameLowerCase]);

@@ -119,7 +119,20 @@ async function addDynamicFrame(page) {
 }
 
 test('iframe static src is injected when scanning starts before its load event', async ({ page, iframeEvidence }, testInfo) => {
-  await openSuite(page, 'static');
+  let releaseChild;
+  const childGate = new Promise((resolve) => { releaseChild = resolve; });
+  await page.route('**/iframe-suite-child.html?marker=initial', async (route) => {
+    await childGate;
+    await route.continue();
+  });
+  try {
+    // Hold the child response until observable parent translation has finished.
+    await page.goto('/iframe-suite.html?scenario=static', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => window.__suiteReady === true)).toBe(true);
+    await expect(page.locator('#suite-title')).toHaveText('Chinese paragraph.');
+  } finally {
+    releaseChild();
+  }
   const frame = await frameAt(page, '#child');
   await knownMissingInjection(frame, testInfo, iframeEvidence.errors, 'Initial iframe elements are not discovered by the baseline traversal');
   await oneScript(frame, testInfo.project.metadata.build);

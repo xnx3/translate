@@ -2,29 +2,31 @@
 
 记录日期：2026-11-11（UTC）。这是本轮测试基线，后续代码或用例变化后需要重新运行并更新结果。
 
-当前从源码语法树识别出 272 个具名入口，分别对应 272 个非空模块，共 2,684 条独立用例（823 条普通调用、1,861 条自定义判断）。每项分别检查实际源码和压缩文件，共 5,368 项方法检查。
+当前从源码语法树识别出 272 个具名入口，分别对应 272 个非空模块，共 2,685 条独立用例（824 条普通调用、1,861 条自定义判断）。每项分别检查实际源码和压缩文件，共 5,370 项方法检查。
 
 入口包括普通方法、动态创建的 listener.callback、三个构造器及实例方法，以及同一发布文件中的两个 nodeuuid 全局方法；不把局部函数或回调重复计入入口。
 
 以下结果来自分批实际运行：按当前模块文件的 SHA-256 匹配验证快照，发生内容变化的文件重新运行，再选取每个方法最新匹配的结果。不是一次不加筛选的全量运行。最后两批通过 BAT 复测新增和修正过的模块，原场景另以一个 worker 复测。仅移除文件末尾多余空行的规范化保留原执行证据。
 
-Windows 使用 Playwright 与本机可运行的 Chromium 缓存 chromium-1234；接口使用本地模拟服务。最终双项目发现检查登记 5,464 项检查（方法 5,368 + 原场景 96）。浏览器执行结果与语法树/格式核对分别记录，不以发现数量代替执行通过。
+上述基线后，维护者确认 compareStringsIgnoringNumbers 的原 verify 第 24 条应为 true，现已补回模块，并仅更正源码示例注释。该模块 22 条用例通过 BAT 分别对两份发布文件复测，共 44 项全部通过，无跳过或已知失败；其余方法及原场景沿用此前分批验证结果，没有重新全量执行。
+
+Windows 使用 Playwright 与本机可运行的 Chromium 缓存 chromium-1234；接口使用本地模拟服务。补回用例后重新进行双项目发现检查，登记 5,466 项检查（方法 5,370 + 原场景 96）。浏览器执行结果与语法树/格式核对分别记录，不以发现数量代替执行通过。
 
 ## 执行结果
 
 | 发布文件 | 方法检查通过 | 方法检查失败 | 原场景正常通过 | 原场景已知失败 | 原场景跳过 | 原场景意外失败 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| translate.js | 2642 | 42 | 43 | 4 | 1 | 0 |
-| translate.min.js | 2637 | 47 | 34 | 13 | 1 | 0 |
+| translate.js | 2643 | 42 | 43 | 4 | 1 | 0 |
+| translate.min.js | 2638 | 47 | 34 | 13 | 1 | 0 |
 
-方法检查合计 5,279 项通过、89 项失败，涉及 28 个方法模块。失败数量按“用例 × 发布文件”统计，不等于 89 个不同缺陷。方法模块不使用跳过或已知失败豁免，失败会使默认 BAT 返回非零退出码。
+方法检查合计 5,281 项通过、89 项失败，涉及 28 个方法模块。失败数量按“用例 × 发布文件”统计，不等于 89 个不同缺陷。方法模块不使用跳过或已知失败豁免，失败会使默认 BAT 返回非零退出码。
 
 原有场景合计 77 项正常通过、17 项已知失败、2 项跳过，与原基线一致。已知失败不代表功能正常，严格模式会取消该类豁免。两类结果不要混为“全部通过”。
 
-本轮未修改 translate.js、translate.min.js 或版本号。验证使用的运行库 SHA-256：
+源码仅按上述确认将示例注释由 false 更正为 true，函数实现、压缩文件及版本号未变。去除注释和位置元数据后，源码可执行语法树与原基线一致；此前分批基线的源码 SHA-256 为 14fa001ac1e90ea4ac1be393af7795c96d8d867bcb0332c50db52fa4300bd089。当前发布文件 SHA-256：
 
 ```text
-translate.js      14fa001ac1e90ea4ac1be393af7795c96d8d867bcb0332c50db52fa4300bd089
+translate.js      593c9f1c4ae377a5c5f316cdc6d8e55fd2022bffc9b27ac49aa8a7942c8b2604
 translate.min.js  f027e461c331e21c60634725db8f13c01d72788faf87dc815882a7c0572e96e4
 ```
 
@@ -67,14 +69,14 @@ translate.min.js  f027e461c331e21c60634725db8f13c01d72788faf87dc815882a7c0572e96
 
 ## 原 verify.html 的逐项去向
 
-原验证页 27 条记录中，26 条已按原参数、预期、备注和来源编号迁移，1 条因预期冲突等待确认。重复记录仍分别保留，没有默默去重。
+原验证页 27 条记录已按原参数、预期、备注和来源编号全部迁移。第 24 条已由维护者确认应为 true，原源码示例注释已更正；重复记录仍分别保留，没有默默去重。
 
 | 模块 | 原记录编号 | 已保留数量 | 模块中用例序号 |
 | --- | --- | ---: | --- |
 | util.findParticiple.js | 1、14 | 2 | 1、2 |
 | util.textReplace.js | 2—13、15、16 | 14 | 1—14 |
 | nomenclature.dispose.js | 17—19 | 3 | 1—3 |
-| util.compareStringsIgnoringNumbers.js | 20—23、25—27 | 7 | 1—7 |
+| util.compareStringsIgnoringNumbers.js | 20—27 | 8 | 1—8 |
 
 util.textReplace 当前 49 条独立用例，其中前 14 条来自原验证页。原第 12、13、15 条表达式相同，仍分别保留为模块第 11、12、13 条；原第 19 条备注写“字符串数组”而实参是字符串，两者都保留并在注释中说明。
 
@@ -84,7 +86,6 @@ util.textReplace 当前 49 条独立用例，其中前 14 条来自原验证页�
 
 | 方法及输入 | 可选约定或冲突 | 当前处理 |
 | --- | --- | --- |
-| util.compareStringsIgnoringNumbers("a1b2c3", "a4b5c") | 忽略全部数字应为 true；保留数字位置/数量约束可能为 false。原 verify 第 24 条写 true，源码注释写 false。 | 原第 24 条等待确认；原验证页保持原样。 |
 | execute(单个 Text 节点) | 支持直接传 Text，或只保证传入 [Text]。 | 直接 Text 的预期用例暂不登记。 |
 | storage.IndexedDB.list() 及含正则字符的键 | 仅 * 通配且省略参数列出全部；保留正则语义及当前省略行为；或仅 * 通配但省略参数仅匹配空键。 | 暂不规定非空数据库中的省略行为及正则元字符语义。 |
 | renderTask.execute 的空字符串译文 | 允许删除对应原文，或空译文无效并保留原文。 | 尚未选择；删除匹配片段的预期用例暂不登记。 |
@@ -336,7 +337,7 @@ util.textReplace 当前 49 条独立用例，其中前 14 条来自原验证页�
 | [util.arrayFindMaxNumber](modules/util.arrayFindMaxNumber.js) | `arr` | 9 | 9 / 0 | 9 / 0 |
 | [util.browserDefaultLanguage](modules/util.browserDefaultLanguage.js) | 无参数 | 12 | 12 / 0 | 12 / 0 |
 | [util.charReplace](modules/util.charReplace.js) | `str` | 15 | 15 / 0 | 15 / 0 |
-| [util.compareStringsIgnoringNumbers](modules/util.compareStringsIgnoringNumbers.js) | `a, b` | 21 | 21 / 0 | 21 / 0 |
+| [util.compareStringsIgnoringNumbers](modules/util.compareStringsIgnoringNumbers.js) | `a, b` | 22 | 22 / 0 | 22 / 0 |
 | [util.findParticiple](modules/util.findParticiple.js) | `text, findText, translateTexts` | 17 | 17 / 0 | 17 / 0 |
 | [util.findTag](modules/util.findTag.js) | `str` | 12 | 12 / 0 | 12 / 0 |
 | [util.getElementPosition](modules/util.getElementPosition.js) | `node` | 5 | 5 / 0 | 5 / 0 |

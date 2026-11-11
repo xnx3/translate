@@ -81,4 +81,6 @@ if (require.main === module) {
   const missing = entries.filter(method => !fs.existsSync(path.join(modules, method.file)));
   console.log(JSON.stringify({ total: entries.length, present: entries.length - missing.length,
     missing: missing.map(method => ({ method: method.name, params: method.params })) }, null, 2));
+  // 新增源码方法或误删模块时，让启动器能够阻止漏测，不能只打印清单后仍报告成功。
+  if (missing.length) process.exitCode = 1;
 }

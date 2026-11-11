@@ -31,5 +31,12 @@ require('../helpers/module')(__filename, [
     translate.request.setHost(['https://only.example/']);
     await new Promise(resolve => originalTimeout(resolve, 20));
     return initialized === 1;
+  } },
+  { remark: '旧主机配置为字符串时，新传入的主机数组仍保持一维顺序', test: function () {
+    translate.request.api.host = 'https://old.example/';
+    translate.request.speedDetectionControl.checkResponseSpeed = function () {};
+    var hosts = ['https://first.example/', 'https://second.example/'];
+    translate.request.setHost(hosts);
+    return translate.request.api.host.length === 2 && translate.request.api.host[0] === hosts[0] && translate.request.api.host[1] === hosts[1] && typeof translate.request.api.host[0] === 'string';
   } }
 ]);

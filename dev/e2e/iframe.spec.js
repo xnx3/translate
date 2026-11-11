@@ -422,3 +422,79 @@ test('iframe without src is not injected twice when scanned repeatedly', async (
       await frame.locator('#frame-p').textContent() === 'This is a test.');
   await translated(frame);
 });
+
+test('iframe without src reuses its loaded library for manual translation when listening is disabled', async ({ page, iframeEvidence }, testInfo) => {
+  await openSuite(page, 'blank');
+  const frame = await frameAt(page, '#child');
+  await translated(frame);
+  await frame.evaluate(() => {
+    window.__rescanInstance = translate;
+    translate.listener.reset();
+    translate.listener.use = false;
+    const node = document.createElement('p');
+    node.id = 'manual-rescan-text';
+    node.textContent = '动态内容';
+    document.body.appendChild(node);
+  });
+  await expect(frame.locator('#manual-rescan-text')).toHaveText('动态内容');
+  await page.evaluate(() => translate.element.iframe.execute(document.querySelector('#child')));
+  await expect(frame.locator('#manual-rescan-text')).toHaveText('Dynamic content');
+  expect(await frame.evaluate(() => window.translate === window.__rescanInstance)).toBe(true);
+  await knownIssue(testInfo, iframeEvidence.errors, 'A manual no-src rescan downloads the already loaded library again',
+    () => oneScript(frame, testInfo.project.metadata.build),
+    async () => sameErrors(iframeEvidence.errors, [duplicateLoadError]) &&
+      await frame.locator(`script[src="/${testInfo.project.metadata.build}"]`).count() === 2 &&
+      await frame.locator('#manual-rescan-text').textContent() === 'Dynamic content');
+});
+
+test('iframe without src resynchronizes parent configuration without replacing its loaded library', async ({ page, iframeEvidence }, testInfo) => {
+  await openSuite(page, 'blank');
+  const frame = await frameAt(page, '#child');
+  await translated(frame);
+  await frame.evaluate(() => { window.__rescanInstance = translate; });
+  await page.evaluate(() => {
+    translate.request.appendParams = { ...translate.request.appendParams, __e2e_owner: 'parent-rescan' };
+    translate.selectLanguageTag.show = false;
+  });
+  expect(await frame.evaluate(() => ({
+    owner: translate.request.appendParams.__e2e_owner,
+    show: translate.selectLanguageTag.show
+  }))).toEqual({ owner: 'outer', show: true });
+  await page.evaluate(() => translate.element.iframe.execute(document.querySelector('#child')));
+  await expect.poll(() => frame.evaluate(() => ({
+    owner: translate.request.appendParams.__e2e_owner,
+    show: translate.selectLanguageTag.show
+  }))).toEqual({ owner: 'parent-rescan', show: false });
+  await translated(frame);
+  expect(await frame.evaluate(() => window.translate === window.__rescanInstance)).toBe(true);
+  await knownIssue(testInfo, iframeEvidence.errors, 'A no-src configuration rescan downloads the already loaded library again',
+    () => oneScript(frame, testInfo.project.metadata.build),
+    async () => sameErrors(iframeEvidence.errors, [duplicateLoadError]) &&
+      await frame.locator(`script[src="/${testInfo.project.metadata.build}"]`).count() === 2 &&
+      await frame.evaluate(() => translate.request.appendParams.__e2e_owner === 'parent-rescan' &&
+        translate.selectLanguageTag.show === false));
+});
+
+test('iframe without src translates a rewritten document using its retained library', async ({ page, iframeEvidence }, testInfo) => {
+  await openSuite(page, 'blank');
+  const frame = await frameAt(page, '#child');
+  await translated(frame);
+  await frame.evaluate(() => {
+    window.__rescanInstance = translate;
+    window.__rescanRoot = document.documentElement;
+    document.open();
+    document.write('<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="translate"></div><h1 id="frame-title">你好世界</h1><p id="frame-p">这是一个测试。</p></body></html>');
+    document.close();
+  });
+  expect(await frame.evaluate(() => document.documentElement !== window.__rescanRoot)).toBe(true);
+  expect(await frame.evaluate(() => window.translate === window.__rescanInstance)).toBe(true);
+  await page.evaluate(() => translate.element.iframe.execute(document.querySelector('#child')));
+  await translated(frame);
+  expect(await frame.evaluate(() => window.translate === window.__rescanInstance)).toBe(true);
+  await knownIssue(testInfo, iframeEvidence.errors, 'A rewritten no-src document downloads its retained library again',
+    () => expect(frame.locator(`script[src="/${testInfo.project.metadata.build}"]`)).toHaveCount(0),
+    async () => sameErrors(iframeEvidence.errors, [duplicateLoadError]) &&
+      await frame.locator(`script[src="/${testInfo.project.metadata.build}"]`).count() === 1 &&
+      await frame.locator('#frame-title').textContent() === 'Hello world' &&
+      await frame.locator('#frame-p').textContent() === 'This is a test.');
+});

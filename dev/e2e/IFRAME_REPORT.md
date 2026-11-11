@@ -5,11 +5,11 @@ The test contribution changes no runtime code. Both checked-out release files
 are exercised in local headless Chromium with mocked translation responses.
 
 The original matrix added 22 scenarios to the existing 21, for 43 checks per
-artifact, 86 in total. Two additional navigation checks now bring a complete
-`test.bat` run to 45 checks per artifact, 90 in total. The normal runner
+artifact, 86 in total. Two navigation checks and three no-`src` rescan checks
+now bring a complete `test.bat` run to 48 checks per artifact, 96 in total. The normal runner
 reports reproduced known failures separately; they are unresolved defects, not
 successful behavior. `test.bat --no-pause --strict --grep iframe` disables those
-exceptions and runs 26 iframe checks per artifact, including the original two
+exceptions and runs 29 iframe checks per artifact, including the original two
 in `run.js`. The existing two cross-origin message tests also run in the full suite.
 
 ## Baseline results
@@ -114,8 +114,37 @@ passed in the source `strict` project without known-failure exceptions. All
 previous passes and remaining known-failure signatures stayed unchanged, with
 no unexpected failures. The same test files were used before and after.
 The minified file was deliberately left byte-for-byte unchanged in this step.
-The six remaining source failures are static discovery (two cases), `srcdoc`,
+The six source failures remaining after that fix were static discovery (two cases), `srcdoc`,
 repeated no-`src` injection and the two Shadow DOM limitations.
+
+## Loaded no-src iframe rescans
+
+Source version `4.1.0.20261111` adds a check only to the no-`src` branch. When the
+child document is accessible and its library version exists, it reuses that
+library, synchronizes the parent configuration and current language, schedules
+the existing translation call after 10 ms, and returns before script injection.
+The change adds no shared state or new helper function.
+
+The original repeated-scan case and three additional regressions check that
+rescanning does not add a script or throw a duplicate-load error. The additional
+checks verify manual translation with listening disabled, parent configuration
+updates, and static translation after `document.open/write` replaces the root
+while retaining the library. They also verify that the library instance is
+preserved. Known-failure classification requires all functional assertions to
+pass and the exact duplicate-error and script-count signature to match.
+
+The same 48 source cases were run before and after: 38 pass / 9 known / 1 skip
+became 42 pass / 5 known / 1 skip. Only those four rescan cases improved; all
+previous passes and remaining known-failure signatures were preserved. The
+complete after run also checked the unchanged minified file separately: 34 pass,
+13 known, one skip. There were no unexpected failures in either file. All four
+source rescan cases also passed in the `strict` project without known-failure
+exceptions.
+
+This step handles rescans after the library has loaded. Concurrent scans while
+the script is still downloading retain the existing behavior. Rebinding dynamic
+listeners after `document.open/write` is also outside this change; the rewrite
+test requires static translation only.
 
 No unlimited recursive iframe injection is promised: an actual injector enables
 iframe translation itself. Cross-origin pages and sandbox origins remain separate

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.0.20260526',
+	version: '4.1.0.20261111',
 	
 	/*js translate.config start*/
 	/*
@@ -5582,6 +5582,19 @@ var translate = {
 					
 				}else{
 					//不通过src，根本就没有src参数，直接用js渲染赋予内容的，那么就不用监听了，直接强制赋予
+					//无 src 的 iframe 再次扫描时，窗口中可能已经加载了 translate.js，无需重复插入脚本。
+					//先确认文档可访问，再通过 version 识别库，避免把 id="translate" 形成的同名窗口属性误认为库。
+					var iframeWindow = iframeTag.contentWindow;
+					if(iframeTag.contentDocument && typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){
+						//沿用原注入成功后的配置同步、目标语种设置和延迟翻译，保证再次扫描仍能翻译新内容。
+						iframeWindow.translate.config.set(translate.config.get());
+						iframeWindow.translate.to = iframeWindow.translate.language.getCurrent();
+						setTimeout(function(){
+							iframeWindow.translate.execute();
+						},10);
+						//退出整个 execute，避免继续执行下方的脚本注入；尚未加载库时仍走原注入流程。
+						return;
+					}
 					var ifr = new translate.element.iframe.iframeJsInjector(iframeTag, translate.element.iframe.translateJsUrl);
 					ifr.injectJs();
 				}

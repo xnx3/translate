@@ -115,7 +115,7 @@ translation provider works.
 
 ## Iframe regression matrix
 
-`iframe.spec.js` adds 24 scenarios using the pages in `iframe-fixtures.js`.
+`iframe.spec.js` adds 27 scenarios using the pages in `iframe-fixtures.js`.
 The fixture server and Playwright config include them in the normal `test.bat`
 run, for both release files. Every scenario verifies the SHA256 of each loaded
 library response against the selected file on disk and checks browser errors.
@@ -125,7 +125,9 @@ preloaded libraries, repeated scans, navigation, reload, removal/recreation,
 dynamic content, language switches, multiple nesting levels, different ancestor
 configuration, cross-origin boundaries and sandboxed frames. Navigation checks
 include a same-origin URL that redirects cross-origin and a frame that returns
-to the same origin after visiting another origin. Negative cases
+to the same origin after visiting another origin. No-`src` rescans also check
+manual translation with listening disabled, parent configuration updates and
+static translation after `document.open/write` retains the loaded library. Negative cases
 exercise discovery rather than relying on a frame never being scanned.
 
 To run the iframe assertions without known-failure exceptions on Windows:

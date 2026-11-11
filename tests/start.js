@@ -141,6 +141,10 @@ async function main() {
   if (!dependenciesReady()) {
     if (installDependencies() !== 0 || !dependenciesReady()) throw new Error('测试依赖安装失败，请检查网络和 npm 后重试。');
   }
+  // 在启动浏览器前核对源码入口与模块文件，避免新增方法或误删测试后静默漏测。
+  if (run(process.execPath, [path.join(ROOT, 'method-inventory.js')]) !== 0) {
+    throw new Error('方法测试模块不完整或清点失败，请按上方清单补齐后重试。');
+  }
   const executablePath = await chooseBrowser();
   if (fs.existsSync(REPORT)) fs.unlinkSync(REPORT);
   const args = process.argv.slice(2).filter((arg) => arg !== '--no-pause');

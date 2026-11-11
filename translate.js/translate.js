@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.1.20261111',
+	version: '4.1.2.20261111',
 	
 	/*js translate.config start*/
 	/*
@@ -1448,6 +1448,150 @@ var translate = {
 	autoDiscriminateLocalLanguage:false,
 	documents:[], //指定要翻译的元素的集合,可设置多个，如设置： document.getElementsByTagName('DIV')
 	
+	/*js translate.group start*/
+	/*
+		按段落提取带权重的文本片段，供外部程序整体翻译后，按原位置回填。
+
+		使用示例：
+		var article = document.getElementById('article');
+		translate.group.elements = [article];
+		if(translate.group.inGroup(paragraph)){
+			var segments = translate.group.analyze(paragraph);
+		}
+
+		analyze 的一个返回数组代表调用方选定的一个翻译单位。建议传入单个段落
+		或句子的容器；区域中有多个段落时，应分别传入各段落，分别进行整体翻译。
+		elements 负责登记区域，inGroup 负责判断归属，analyze 负责读取文本；
+		登记区域本身不会发起翻译请求，也不会自动改写其中的网页内容。
+	*/
+	group:{
+		/*
+			启用分组提取的区域元素集合，默认空数组，表示尚未登记任何区域。
+			保存真实的 DOM Element 引用，不填写 id 字符串、CSS 选择器或 HTML。
+			可通过 push(element) 向默认数组追加，也可直接赋值 Element 数组、
+			querySelectorAll 返回的 NodeList 或 getElementsByTagName 返回的 HTMLCollection。
+			每个区域的元素自身及任意层级后代都属于该区域；区域可以相互嵌套。
+		*/
+		elements:[],
+
+		/*
+			判断 element 是否属于 elements 中登记的任一区域，返回布尔值。
+			除 Element 外，也接受 Text 节点，便于外部扫描文本时直接判断归属。
+			没有登记区域、传入 null/undefined 或其他类型时，返回 false。
+			每次按当前 DOM 的 contains 关系判断，不缓存；节点移动、移除或重新
+			登记区域后会立即反映新关系。脱离 document 的区域自身仍可正常判断。
+		*/
+		inGroup:function(element){
+			if(element == null || (element.nodeType !== 1 && element.nodeType !== 3) || typeof(element.contains) !== 'function'){
+				return false;
+			}
+			var elements = translate.group.elements;
+			if(elements == null || typeof(elements.length) !== 'number'){
+				return false;
+			}
+			for(var i = 0; i < elements.length; i++){
+				var root = elements[i];
+				// 忽略集合中的空项和非元素项，避免一个无效配置影响其余区域。
+				if(root == null || root.nodeType !== 1 || typeof(root.contains) !== 'function'){
+					continue;
+				}
+				if(root === element || root.contains(element)){
+					return true;
+				}
+			}
+			return false;
+		},
+
+		/*
+			分析一个 Element 内的正文，返回 [{text: '原文', weight: 0或1}, ...]。
+			可直接分析尚未登记到 elements 的元素；是否允许参与分组，由调用方
+			根据 inGroup 判断。无效参数或没有可提取文本时返回空数组。
+
+			例如 <div><b>我们</b>是<b>全世界</b>最好的</div> 返回：
+			[
+				{text: '我们', weight: 1}, {text: '是', weight: 0},
+				{text: '全世界', weight: 1}, {text: '最好的', weight: 0}
+			]
+
+			文本与回填约定：
+			1. 按 DOM 顺序，每个非空 Text 节点对应一项；不把相邻同权重的项合并，
+			   不重复提取嵌套元素的 textContent，也不提取 title/alt/placeholder 等属性。
+			2. text 保留 nodeValue 原文，包含首尾空格、纯空格节点、换行和缩进；
+			   不 trim、不补空格。回填方遍历时应采用相同的节点筛选和顺序。
+			3. 翻译时把整个数组作为上下文，返回数组须保留长度、顺序及 weight；
+			   译文可带空格或为空字符串，再由调用方一项对应一个原 Text 节点写回。
+
+			权重约定：
+			1. 传入元素作为本次分析的基准，其直接文本默认 weight: 0。
+			2. 后代 b/strong/em/span/a 等独立行内标签中的文本为 weight: 1；
+			   嵌套行内标签继承 1，不按嵌套深度累加，也不只限于加粗标签。
+			3. div/p/section 等块级容器本身不提高权重，其内部独立行内标签仍为 1。
+			   此处按 HTML 标签区分容器，不读取 CSS，不推断最终视觉强调程度。
+
+			忽略规则：
+			跳过注释及脚本、样式、模板、嵌入文档等非正文子树；hidden、
+			translate="no"、notranslate 的区域也跳过，包括本次根元素的祖先设置。
+			正文 Text 另外遵循现有 translate.ignore.tag/class/id 及其条件函数。
+			本方法不改写 DOM 标签和文字、不发请求；ignore 的自定义条件函数仍会
+			按既有 isIgnore 接口执行。CSS 隐藏、伪元素和 iframe 内部正文不在提取范围。
+		*/
+		analyze:function(element){
+			var result = [];
+			if(element == null || element.nodeType !== 1 || typeof(element.getAttribute) !== 'function'){
+				return result;
+			}
+
+			// 仅剔除非正文和显式禁止翻译的子树；普通块级容器仍须向内遍历。
+			var excludedTags = /^(script|style|link|meta|template|noscript|iframe|object|embed|canvas|svg|math)$/;
+			var blockTags = /^(html|body|address|article|aside|blockquote|caption|center|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hgroup|hr|legend|li|main|menu|nav|ol|p|search|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)$/;
+			var isExcluded = function(node){
+				var tagName = node.nodeName.toLowerCase();
+				var translateAttr = node.getAttribute('translate');
+				var className = node.getAttribute('class') || '';
+				return excludedTags.test(tagName) || node.hasAttribute('hidden') ||
+					(typeof(translateAttr) === 'string' && translateAttr.toLowerCase() === 'no') ||
+					/(^|\s)notranslate(\s|$)/.test(className);
+			};
+
+			// 单独分析子元素时，也必须遵守其祖先上已声明的隐藏/不翻译规则。
+			var ancestor = element;
+			while(ancestor != null && ancestor.nodeType === 1){
+				if(isExcluded(ancestor)){
+					return result;
+				}
+				ancestor = ancestor.parentNode;
+			}
+
+			// 使用显式栈做深度优先遍历，避免层级很深的网页耗尽递归调用栈。
+			var stack = [{node: element, weight: 0}];
+			while(stack.length > 0){
+				var item = stack.pop();
+				var node = item.node;
+				if(node.nodeType === 3){
+					// 正文使用空字符串 attribute，与原扫描流程一致，供条件忽略函数判断。
+					if(node.nodeValue.length > 0 && !translate.ignore.isIgnore(node, {node: node, attribute: ''})){
+						result.push({text: node.nodeValue, weight: item.weight});
+					}
+					continue;
+				}
+				if(node.nodeType !== 1 || isExcluded(node)){
+					continue;
+				}
+
+				var weight = item.weight;
+				if(node !== element && !blockTags.test(node.nodeName.toLowerCase())){
+					weight = 1;
+				}
+				// 逆序入栈，出栈时即为页面原有的从前到后顺序；每个节点只访问一次。
+				for(var i = node.childNodes.length - 1; i >= 0; i--){
+					stack.push({node: node.childNodes[i], weight: weight});
+				}
+			}
+			return result;
+		}
+	},
+	/*js translate.group end*/
+
 	//翻译时忽略的一些东西，比如忽略某个tag、某个class等
 	ignore:{
 		tag:['style', 'script', 'link', 'pre', 'code'],

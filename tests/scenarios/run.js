@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { createHash } = require('crypto');
 const { test: base, expect } = require('@playwright/test');
-const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('./server');
+const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('../fixtures/server');
 
 const BASE = `http://127.0.0.1:${DEFAULT_PORT}`;
 const CROSS_ORIGIN = `http://127.0.0.1:${CROSS_ORIGIN_PORT}`;

@@ -6,7 +6,7 @@
   "scripts": {
     "version": "node dev/update-version.js",
     "postversion": "git push && git push --tags",
-    "test:e2e": "npm --prefix dev/e2e test"
+    "test:e2e": "npm --prefix tests test"
   },
   "keywords": [
     "i18n",

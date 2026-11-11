@@ -6,11 +6,11 @@ are exercised in local headless Chromium with mocked translation responses.
 
 The original matrix added 22 scenarios to the existing 21, for 43 checks per
 artifact, 86 in total. Two navigation checks and three no-`src` rescan checks
-now bring a complete `test.bat` run to 48 checks per artifact, 96 in total. The normal runner
+now bring a complete `test-translate.js.bat` run to 48 checks per artifact, 96 in total. The normal runner
 reports reproduced known failures separately; they are unresolved defects, not
-successful behavior. `test.bat --no-pause --strict --grep iframe` disables those
+successful behavior. `test-translate.js.bat --no-pause --strict --grep iframe` disables those
 exceptions and runs 29 iframe checks per artifact, including the original two
-in `run.js`. The existing two cross-origin message tests also run in the full suite.
+in `scenarios/run.js`. The existing two cross-origin message tests also run in the full suite.
 
 ## Baseline results
 

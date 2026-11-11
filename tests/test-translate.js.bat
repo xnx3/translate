@@ -3,7 +3,7 @@ setlocal
 chcp 65001 >nul
 
 rem ============================================================================
-rem translate.js 自动化测试入口：分别检查同目录的 translate.js 和 translate.min.js。
+rem translate.js 自动化测试入口：分别检查 ../translate.js/ 下的 translate.js 和 translate.min.js。
 rem 以下说明也供 AI 阅读，用于在新电脑上准备测试环境。
 rem
 rem 一、先安装的环境
@@ -17,7 +17,7 @@ rem   安装完成后重新打开终端或编辑器，使 PATH 更新，再运�
 rem   本文件会检查环境并提示错误，不会自行安装或升级系统 Node.js。
 rem
 rem 二、运行时自动准备的内容
-rem   dev/e2e/start.js 会按 dev/e2e/package-lock.json 自动安装缺失的测试依赖。
+rem   tests/start.js 会按 tests/package-lock.json 自动安装缺失的测试依赖。
 rem   优先使用配套 Chromium；也会尝试本机已有的可运行 Playwright 缓存。
 rem   没有可用浏览器时，自动下载 Chromium Headless Shell，不需要手工装 Chrome。
 rem   首次准备需要能访问 npm registry 和 Playwright 浏览器下载服务。
@@ -26,18 +26,19 @@ rem   后续依赖和浏览器都可用时，直接双击，不再重复安装�
 rem
 rem 三、使用方法与结果
 rem   必须保留完整项目目录，不能只复制本 bat 文件到其他位置。
-rem   默认对本文件旁边的 translate.js 和 translate.min.js 分别运行完整测试。
-rem   iframe 场景在 dev/e2e/iframe.spec.js，默认一并执行；无需另开测试入口。
-rem   只看 iframe 的严格检查可执行 test.bat --no-pause --strict --grep iframe。
+rem   默认对 ../translate.js/translate.js 和 ../translate.js/translate.min.js 分别运行完整测试。
+rem   modules/ 下的方法测试和 scenarios/ 下的场景测试会自动发现，无需逐个修改入口。
+rem   方法模块平铺命名，如 modules/util.textReplace.js；用例内部规范见 README.md。
+rem   只看 iframe 的严格检查可执行 test-translate.js.bat --no-pause --strict --grep iframe。
 rem   与启动时的工作目录无关，两份文件始终直接从当前项目读取。
 rem   测试不会自动压缩生成 translate.min.js；修改源码后请按发布流程更新压缩文件。
-rem   AI 或脚本可执行 test.bat --no-pause，结束后不等待按键，并保留退出码。
-rem   修复已知问题时可执行 test.bat --no-pause --strict。
+rem   AI 或脚本可执行 test-translate.js.bat --no-pause，结束后不等待按键，并保留退出码。
+rem   修复已知问题时可执行 test-translate.js.bat --no-pause --strict。
 rem   退出码 0 表示未发现新的故障；非 0 表示测试失败或环境准备失败。
 rem   两份文件各自统计正常通过、已知失败、跳过、意外失败，再显示总计。
 rem   任一文件出现新增故障，最终退出码都非 0；一份失败仍会继续测试另一份。
 rem   已知失败不代表已修复，严格模式也会分别测试两份文件。
-rem   JSON 报告在 dev/e2e/report/results.json，截图和跟踪在 dev/e2e/test-results。
+rem   JSON 报告在 tests/report/results.json，截图和跟踪在 tests/test-results。
 rem   只覆盖已有测试场景，不能证明全部功能和所有浏览器都无问题。
 rem ============================================================================
 
@@ -64,9 +65,9 @@ if errorlevel 1 (
     goto finish
 )
 
-pushd "%~dp0..\dev\e2e"
+pushd "%~dp0"
 if errorlevel 1 (
-    echo [错误] 未找到 dev\e2e 测试目录，请先将项目更新到包含测试工具的版本。
+    echo [错误] 无法进入 tests 测试目录，请保留完整项目并检查目录权限。
     set "test_exit=1"
     goto finish
 )

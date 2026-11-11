@@ -98,7 +98,7 @@ async function chooseBrowser() {
   console.log('正在下载测试浏览器，首次运行需要联网。');
   const code = run(process.execPath, [path.join(ROOT, 'node_modules', 'playwright', 'cli.js'),
     'install', 'chromium', '--only-shell'], { ...process.env, PLAYWRIGHT_SKIP_BROWSER_GC: '1' });
-  if (code !== 0) throw new Error('测试浏览器下载失败。请检查网络后重新双击 test.bat。');
+  if (code !== 0) throw new Error('测试浏览器下载失败。请检查网络后重新双击 test-translate.js.bat。');
   if (!await canLaunch()) throw new Error('测试浏览器已下载，但无法启动，请查看上方输出。');
   return undefined;
 }
@@ -137,7 +137,7 @@ function printSummary() {
 
 async function main() {
   process.chdir(ROOT);
-  if (Number(process.versions.node.split('.')[0]) < 20) throw new Error('请安装 Node.js 20 或更新版本后再运行 test.bat。');
+  if (Number(process.versions.node.split('.')[0]) < 20) throw new Error('请安装 Node.js 20 或更新版本后再运行 test-translate.js.bat。');
   if (!dependenciesReady()) {
     if (installDependencies() !== 0 || !dependenciesReady()) throw new Error('测试依赖安装失败，请检查网络和 npm 后重试。');
   }
@@ -148,7 +148,7 @@ async function main() {
   const forwarded = args.filter((arg) => arg !== '--strict');
   console.log('\n将分别测试以下两个发布文件：');
   for (const build of ['translate.js', 'translate.min.js']) {
-    console.log('  ' + path.resolve(ROOT, '../../translate.js', build));
+    console.log('  ' + path.resolve(ROOT, '../translate.js', build));
   }
   const projects = strict ? ['strict', 'strict-minified'] : ['chromium', 'chromium-minified'];
   const code = run(process.execPath, [path.join(ROOT, 'node_modules', '@playwright', 'test', 'cli.js'),

@@ -6,7 +6,9 @@ const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: ['run.js', 'iframe.spec.js'],
+  //只发现方法模块和完整场景，避免将启动器、辅助代码或模拟服务当成测试。
+  //modules 保持平铺；新增 method.path.js 文件后会自动加入两份发布文件的测试。
+  testMatch: ['**/modules/*.js', '**/scenarios/*.js'],
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -50,14 +52,14 @@ module.exports = defineConfig({
   ],
   webServer: [
     {
-      command: 'node server.js',
+      command: 'node fixtures/server.js',
       env: { PORT: '8123' },
       url: 'http://127.0.0.1:8123/health',
       reuseExistingServer: false,
       timeout: 10000
     },
     {
-      command: 'node server.js',
+      command: 'node fixtures/server.js',
       env: { PORT: '8124' },
       url: 'http://127.0.0.1:8124/health',
       reuseExistingServer: false,

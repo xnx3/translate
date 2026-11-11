@@ -12,7 +12,7 @@ not translation quality or provider availability.
 Use Node.js 20 or newer. The test dependency is pinned in `package-lock.json`.
 
 ```bash
-cd dev/e2e
+cd tests
 npm ci
 npx playwright install chromium
 ```
@@ -22,7 +22,7 @@ browser's operating-system dependencies too.
 
 ## Run
 
-On Windows, double-click `translate.js/test.bat` from this checkout. It prepares
+On Windows, double-click `tests/test-translate.js.bat` from this checkout. It prepares
 missing test dependencies, selects a usable headless Chromium (or downloads one
 if necessary), runs the tests and keeps the result window open. It requires
 Node.js 20 or newer; the first setup may need an internet connection. The launcher
@@ -35,12 +35,12 @@ regenerate `translate.min.js`. After changing the source, regenerate the minifie
 file through the project's release process before checking the updated release
 pair. Passing the old minified file does not prove that it includes a source change.
 
-The comments at the top of `translate.js/test.bat` contain the Windows environment
+The comments at the top of `tests/test-translate.js.bat` contain the Windows environment
 checklist and Node.js installation commands for people or AI assistants setting
 up a fresh checkout. Node.js and npm must be installed first; the launcher does
 not install or upgrade the system Node.js runtime itself.
 
-For scripts that should not wait for a key press, use `test.bat --no-pause`.
+For scripts that should not wait for a key press, use `test-translate.js.bat --no-pause`.
 The batch file preserves the test command's exit code.
 
 To run from a terminal after setup:
@@ -76,7 +76,7 @@ Strict mode is expected to fail while the documented limitations remain. A
 missing optional cache-clearing API is skipped in both modes; absence of a new
 feature is not a runtime regression. Strict mode also tests both files, using
 the `strict` and `strict-minified` projects. On Windows, the equivalent launcher
-command is `translate.js/test.bat --no-pause --strict` from the repository root.
+command is `tests/test-translate.js.bat --no-pause --strict` from the repository root.
 
 For focused development, forward Playwright options, for example:
 
@@ -115,8 +115,8 @@ translation provider works.
 
 ## Iframe regression matrix
 
-`iframe.spec.js` adds 27 scenarios using the pages in `iframe-fixtures.js`.
-The fixture server and Playwright config include them in the normal `test.bat`
+`scenarios/iframe.spec.js` adds 27 scenarios using the pages in `fixtures/iframe-fixtures.js`.
+The fixture server and Playwright config include them in the normal `test-translate.js.bat`
 run, for both release files. Every scenario verifies the SHA256 of each loaded
 library response against the selected file on disk and checks browser errors.
 
@@ -133,7 +133,7 @@ exercise discovery rather than relying on a frame never being scanned.
 To run the iframe assertions without known-failure exceptions on Windows:
 
 ```bat
-translate.js\test.bat --no-pause --strict --grep iframe
+tests\test-translate.js.bat --no-pause --strict --grep iframe
 ```
 
 The strict command deliberately fails when a covered existing defect is present.

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { createHash } = require('crypto');
 const { test: base, expect } = require('@playwright/test');
-const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('./server');
+const { DEFAULT_PORT, CROSS_ORIGIN_PORT } = require('../fixtures/server');
 
 const knownFailures = new WeakMap();
 const duplicateLoadError = 'PAGEERROR: translate.js 已经加载过一次了，当前是重复加载，避免你的翻译出现异常，已帮你拦截此次加载。本信息只是给你一个提示，你可以检查一下你的项目中是否出现了重复引入 translate.js ，当然，这个异常并不会影响到你的具体使用，它已经自动帮你处理拦截了这个异常，只不过提示出来是让你知道，你的代码里出现了重复引入的情况。';

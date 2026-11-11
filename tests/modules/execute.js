@@ -403,5 +403,35 @@ require('../helpers/module')(__filename, [
       return await finished === true && Array.from(document.querySelectorAll('p')).every(element => element.textContent === 'Hello world') &&
         request.texts.length === 1 && request.texts[0] === '你好世界' && request.nodes.length === 2;
     }
+  },
+  {
+    remark: '直接传入单个 Text 节点保持当前不翻译的行为，不新增支持',
+    test: function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+      document.body.textContent = '你好世界';
+      const node = document.body.firstChild;
+      // Text.length 是字符数；当前入口把有 length 的参数当作集合，直接传 Text 不会扫描到该节点。
+      // 即使译文已经缓存，也应保留现有行为；本项仅锁定兼容状态，不给运行库增加新的参数支持。
+      translate.execute(node);
+      return node.nodeValue === '你好世界' && translate.node.get(node) == null && translate.state === 0;
+    }
+  },
+  {
+    remark: 'Text 节点放入数组后按现有支持方式翻译，其他节点保持原文',
+    test: function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+      document.body.innerHTML = '<p>你好世界</p><p>动态内容</p>';
+      const node = document.querySelector('p').firstChild;
+      // 与直接传 Text 分开登记；使用已缓存译文验证真实扫描和渲染，避免网络耗时影响判断。
+      translate.execute([node]);
+      return node.nodeValue === 'Hello world' && translate.node.get(node).originalText === '你好世界' &&
+        document.querySelectorAll('p')[1].textContent === '动态内容' && translate.state === 0;
+    }
   }
 ]);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.3.20261111',
+	version: '4.1.4.20261111',
 	
 	/*js translate.config start*/
 	/*
@@ -8876,8 +8876,8 @@ var translate = {
            		let replaceOriginalText = '' + translateOriginal; 
 
 
-           		//根据不同的语种，如果有的语种需要加空格来进行区分单词，那么也要进行空格的判定
-           		if(translate.language.wordBlankConnector(language)){
+                        //只有非空译文才需要按语种补空格和转换相邻标点；空译文直接使用下面已有的替换流程。
+                        if(translateResult !== '' && translate.language.wordBlankConnector(language)){
 	                //let originalIndex = text.indexOf(translateOriginal, currentReplaceEndIndex); //翻译之前，翻译的单词在字符串中的起始坐标（0开始）
 	                let originalIndex = indexArray[i];
 	                //console.log("originalIndex: "+originalIndex);
@@ -8948,7 +8948,9 @@ var translate = {
 	            
 	            let replaceResult  = translate.util.replaceFromIndex(text, replaceIndex, replaceOriginalText, replaceResultText);
 
-	            if(replaceResult.replaceEndIndex < 1){
+	            // 从开头删除原文后，合法的替换结束位置也可能为 0，不能用它判断是否匹配。
+	            // 按照 replaceFromIndex 的查找方式判断未匹配，避免接受其未匹配时的截断结果。
+	            if(text.indexOf(replaceOriginalText, replaceIndex) === -1){
 	            	translate.log('translate.util.findParticiple 中已经发现了，但是实际没有替换，出现异常了！理论上这是不应该出现的。 text:'+text+' , index:'+indexArray[i]+',  translateOriginal:'+translateOriginal);
 	            }else{
 	            	text = replaceResult.text;

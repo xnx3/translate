@@ -30,5 +30,12 @@ require('../helpers/module')(__filename, [
     const valid = { url: /search/, methods: ['GET'], params: ['q'] };
     translate.network.rules = [{ methods: ['GET'] }, { url: '', methods: ['GET'] }, valid];
     return translate.network.getRuleMatch('/search', 'GET') === valid;
+  } },
+  { remark: '规则使用全局正则时连续请求相同地址仍稳定命中', test: function () {
+    var rule = { url: /\/search/g, methods: ['GET'], params: ['q'] };
+    translate.network.rules = [rule];
+    var first = translate.network.getRuleMatch('/search', 'GET');
+    var second = translate.network.getRuleMatch('/search', 'GET');
+    return first === rule && second === rule;
   } }
 ]);

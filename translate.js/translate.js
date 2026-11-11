@@ -9560,7 +9560,8 @@ var translate = {
 
 		/*js translate.util.compareStringsIgnoringNumbers start*/
 		/*	
-			比较两个字符串，是否除了数字之外，其他的完全一致。
+			比较两个字符串，忽略所有半角数字 0-9 后，其余字符是否按顺序完全一致。
+			数字的数量和位置不参与比较；空格、标点、大小写及全角数字仍参与比较。
 			实测 i5 双核 2.4G ，计算1亿次 - 7s
 
 			["abc123def", "abc456def", true],
@@ -9568,7 +9569,7 @@ var translate = {
 	        ["test123", "test", true],
 	        ["123test", "test", true],
 	        ["abc", "def", false],
-	        ["a1b2c3", "a4b5c", false],
+	        ["a1b2c3", "a4b5c", true],
 	        ["", "", true],
 	        ["123", "456", true],
 	        ["你好123世界", "3你好1世界", true],

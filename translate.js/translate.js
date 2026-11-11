@@ -11476,10 +11476,16 @@ var translate = {
 				});
 			},
 			/*
-				列出针对key进行模糊匹配的所有键值对
+				列出按字符串 key 匹配的键值对，返回 Promise，结果为 [{key, value}, ...]。
+				保留现有匹配规则：将 key 中的 * 转为 .*，再在两端加上 ^ 和 $ 构造 JavaScript 正则。
+				因此 * 表示零个或多个字符，但不跨换行；其他正则字符也保留含义，不会自动转义。
 				使用方式：
 					const users = await translate.storage.IndexedDB.list("*us*r*");
-					其中传入的key可以模糊搜索，其中的 * 标识另个或多个
+					list("user.1") 也能匹配 userX1；list("a[1]") 匹配 a1，而非字面的 a[1]。
+					如果要匹配字面的点，JavaScript 字符串中需转义反斜杠，例如 list("user\\.1")。
+				省略参数、显式传 undefined 或传空字符串时，均只匹配空字符串键，不是列出全部。
+				查询全部普通字符串键时显式传入 "*"；含换行的键仍受上述正则规则限制。
+				非法正则（例如 "["）会使返回的 Promise 以 SyntaxError 拒绝，调用方可用 try/await/catch 处理。
 			*/
 			list: async function (key = '') {
 				if (!this.db) await this.initDB();

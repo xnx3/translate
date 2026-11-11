@@ -24,8 +24,11 @@ module.exports = function registerModule(filename, cases) {
   cases.forEach((item, index) => {
     const title = `${method} / ${index + 1}. ${item.remark}`;
     const custom = Object.hasOwn(item, 'test');
+    const fields = custom ? ['remark', 'test'] : ['remark', 'args', 'expected'];
     // 检查字段存在性，不能把 false、0、空字符串或 undefined 的预期误当缺失。
+    // 同时拒绝约定之外的字段，避免旧 name/id 或拼错的字段被悄悄忽略。
     if (typeof item.remark !== 'string' || !item.remark.trim() ||
+        Object.keys(item).some(field => !fields.includes(field)) ||
         (custom ? typeof item.test !== 'function' || Object.hasOwn(item, 'args') || Object.hasOwn(item, 'expected') :
           !Array.isArray(item.args) || !Object.hasOwn(item, 'expected'))) {
       throw new Error(method + ' / ' + title + ' 的用例格式不符合 README 约定');

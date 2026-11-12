@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.8.20261112',
+	version: '4.1.9.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -2553,6 +2553,8 @@ var translate = {
 				if(typeof(documents[i]) === 'undefined' || documents[i] === null){
 					//这个元素不存在，从这里面删除掉
 					 documents.splice(i, 1);
+					// 删除后，后面的元素前移到当前下标，下一轮仍需检查这个位置。
+					i--;
 				}
 			}
 

@@ -36,5 +36,46 @@ require('../helpers/module')(__filename, [
     const input = ['你好', '世界'];
     translate.request.translateText = function (data, done) { done({ result: 1, text: ['Hello', 'World'], to: data.to }); };
     return await new Promise(resolve => translate.js.transObject(input, 'english', function (output) { resolve(output === input && output[0] === 'Hello' && output[1] === 'World'); }, function () { resolve(false); }));
+  } },
+  { remark: '根数组中的对象文本翻译后保留对象与数组身份', test: async function () {
+    const item = { title: '你好', count: 0 }, input = [item];
+    let texts;
+    translate.request.translateText = function (data, done) {
+      texts = data.texts;
+      done({ result: 1, text: ['Hello'], to: data.to });
+    };
+    return await new Promise(resolve => translate.js.transObject(input, 'english', function (output) {
+      resolve(output === input && output.length === 1 && output[0] === item &&
+        item.title === 'Hello' && item.count === 0 && texts.length === 1 && texts[0] === '你好');
+    }, function () { resolve(false); }));
+  } },
+  { remark: '根数组中的多层数组文本翻译后保留嵌套身份与顺序', test: async function () {
+    const inner = ['你好', '世界'], input = [inner];
+    let texts;
+    translate.request.translateText = function (data, done) {
+      texts = data.texts;
+      done({ result: 1, text: ['Hello', 'World'], to: data.to });
+    };
+    return await new Promise(resolve => translate.js.transObject(input, 'english', function (output) {
+      resolve(output === input && output.length === 1 && output[0] === inner && inner.length === 2 &&
+        inner[0] === 'Hello' && inner[1] === 'World' && texts.length === 2 && texts[0] === '你好' && texts[1] === '世界');
+    }, function () { resolve(false); }));
+  } },
+  { remark: '混合根数组去重翻译并保留非文本值及函数引用', test: async function () {
+    let called = 0;
+    const fn = function () { called++; return 'unchanged'; };
+    const item = { title: '你好', action: fn }, inner = ['世界'];
+    const input = ['你好', 0, false, null, fn, item, inner];
+    let texts;
+    translate.request.translateText = function (data, done) {
+      texts = data.texts;
+      done({ result: 1, text: ['Hello', 'World'], to: data.to });
+    };
+    return await new Promise(resolve => translate.js.transObject(input, 'english', function (output) {
+      resolve(output === input && output.length === 7 && output[0] === 'Hello' && output[1] === 0 &&
+        output[2] === false && output[3] === null && output[4] === fn && output[5] === item &&
+        output[6] === inner && item.title === 'Hello' && item.action === fn && called === 0 &&
+        inner.length === 1 && inner[0] === 'World' && texts.length === 2 && texts[0] === '你好' && texts[1] === '世界');
+    }, function () { resolve(false); }));
   } }
 ]);

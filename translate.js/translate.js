@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.12.20261112',
+	version: '4.1.13.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -12942,6 +12942,8 @@ var translate = {
 			    	continue;
 			    }
 			    //console.log(rule);
+			    // 每个请求独立匹配 URL，避免全局或粘连正则沿用上次 test 留下的匹配位置。
+			    rule.url.lastIndex = 0;
 			    const isUrlMatch = rule.url.test(url);
 			    if(!isUrlMatch){
 			    	continue;

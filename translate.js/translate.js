@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.9.20261112',
+	version: '4.1.10.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -8517,7 +8517,7 @@ var translate = {
 				U+007D } 关 右花括号
 				U+007E ~ 波浪纹
 			*/
-			if(/.*[\u003B\u003B\u003C\u003D\u003E\u003F\u005B\u005C\u005D\u005E\u005F\u0060\u007B\u007C\u007D\u007E]+.*$/.test(str)){
+			if(/.*[\u003A\u003B\u003C\u003D\u003E\u003F\u005B\u005C\u005D\u005E\u005F\u0060\u007B\u007C\u007D\u007E]+.*$/.test(str)){
 				return true;
 			}
 			

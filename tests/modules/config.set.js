@@ -785,5 +785,84 @@ require('../helpers/module')(__filename, [
       translate.config.set({ visual: { webPageLoadTranslateBeforeHiddenText: { use: true } } });
       return calls === 1 && translate.visual.webPageLoadTranslateBeforeHiddenText_use === true;
     }
+  },
+  {
+    remark: "request.api.translate 的空字符串作为禁用翻译接口的显式配置保留",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: '' } } });
+      return translate.request.api.translate === '';
+    }
+  },
+  {
+    remark: "省略 request.api.translate 时保留已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { ip: 'updated-ip.json' } } });
+      return translate.request.api.translate === 'before-translate.json' && translate.request.api.ip === 'updated-ip.json';
+    }
+  },
+  {
+    remark: "request.api.translate 显式 undefined 不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: undefined } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "request.api.translate 为 null 时不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: null } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "request.api.translate 为数值零时不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: 0 } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "request.api.translate 为布尔 false 时不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: false } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "request.api.translate 为数组时不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: ['custom-translate.json'] } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "request.api.translate 为函数时不覆盖已有翻译接口",
+    test: function () {
+      translate.request.api.translate = 'before-translate.json';
+      translate.config.set({ request: { api: { translate: function () { return 'custom-translate.json'; } } } });
+      return translate.request.api.translate === 'before-translate.json';
+    }
+  },
+  {
+    remark: "自定义翻译接口导出后可恢复且不混淆其他接口字段",
+    test: function () {
+      translate.request.api.translate = 'saved-translate.json';
+      translate.request.api.language = 'saved-language.json';
+      translate.request.api.ip = 'saved-ip.json';
+      const data = translate.config.get();
+      translate.request.api.translate = 'changed-translate.json';
+      // 使用完整导出配置验证恢复路径，与 iframe 同步配置采用的流程一致。
+      translate.config.set(data);
+      return data.request.api.translate === 'saved-translate.json' &&
+        translate.request.api.translate === 'saved-translate.json' &&
+        translate.request.api.language === 'saved-language.json' && translate.request.api.ip === 'saved-ip.json';
+    }
   }
 ]);

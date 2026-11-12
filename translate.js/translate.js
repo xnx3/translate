@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.13.20261112',
+	version: '4.1.14.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -12699,6 +12699,10 @@ var translate = {
 		},
 		setValueByPath: function(obj, path, value){
 			const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+			// 根数组的 [下标] 转换后会产生开头空项，仅移除此项，避免先访问不存在的空属性。
+			if (path[0] === '[' && parts[0] === '') {
+				parts.shift();
+			}
 			let current = obj;
 			for (let i = 0; i < parts.length - 1; i++) {
 				current = current[parts[i]];

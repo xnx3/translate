@@ -2,6 +2,45 @@
 
 最近更新：2026-11-12（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 请求结束清理开始时的进度元素（4.1.17.20261112）
+
+按确认的最小改动，在 progress.api.startUITip 的局部闭包中以 WeakMap 保存“本次 nodes 数组 → 开始时的元素集合”。开始提示时保存，结束时取出并先删除记录，再调用原有 removeUITipByElements；不再按 Text 的当前位置回退查找。前后钩子共用同一 nodes 数组引用，各请求的数组独立；没有对应记录时由原清理方法安全跳过，不新增全局属性或判断分支。
+
+源码版本更新为 4.1.17.20261112，translate.min.js 未更新。已有节点移动回归覆盖成功、业务失败、HTTP 503、网络状态零、Fragment、ShadowRoot、移除及 SSE 收尾；另在 startUITip 保留原十九条并新增五条：重复结束、无配套开始记录、开始有效元素为空、独立请求乱序完成、自定义元素 class 变化造成同步重入。同步重入同时核对内层结束不提前清掉外层尚未清理的进度类，以验证删除记录先于样式清理。SSE 保留原二十一条并新增连续 error、done 后晚到读取错误两条，验证第一次结束后移动文本，不会在后续通知中误清目标的其他进度样式；用真实 ReadableStream 控制时序，不固定重复完成回调次数。
+
+新增七条在修复前通过 BAT 双版本全部复现失败，修复后源码全部通过。当前登记 275 个方法模块、2,918 条用例（888 条普通调用、2,030 条自定义判断），双版本共 5,836 项方法检查；登记规模不代表本轮全量执行。
+
+通过 BAT 对八个相关模块运行两份实际发布文件，每份 156 项，共 312 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 35 / 6 | 32 / 9 |
+| `progress.api.startUITip` | 24 / 0 | 12 / 12 |
+| `progress.api.removeUITipByElements` | 9 / 0 | 9 / 0 |
+| `request.post` | 8 / 0 | 8 / 0 |
+| `request.send` | 11 / 0 | 11 / 0 |
+| `request.sse.collectSafeProgressElements` | 33 / 0 | 32 / 1 |
+| `request.sse.post` | 22 / 1 | 18 / 5 |
+| `waitingExecute.isAllExecuteFinish` | 7 / 0 | 7 / 0 |
+| 合计 | 149 / 7 | 129 / 27 |
+
+复测命令（仓库根目录）：
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/progress\.api\.startUITip\.js modules/progress\.api\.removeUITipByElements\.js modules/request\.sse\.post\.js modules/request\.post\.js modules/request\.send\.js modules/waitingExecute\.isAllExecuteFinish\.js modules/request\.sse\.collectSafeProgressElements\.js --workers=2
+```
+
+与上一节七模块报告按方法、备注及发布文件逐项比较，已有 140 项源码中 11 项失败恢复通过（execute 移动三项、startUITip 六项、SSE 移动两项），其余原有 122 项通过和七项失败保持；压缩版已有 120 项通过和二十项失败均保持。另检查的原有清理方法九项在两份文件均通过。本轮七条新增回归源码通过、压缩版仍失败；没有已有用例由通过转为失败，没有跳过、已知失败豁免或运行器错误，BAT 因真实失败返回退出码 1。本轮未重跑全部方法或原场景，不改写历史全量结果。
+
+源码剩余七项分别是 execute 忙碌时的单元素和 NodeList、空范围配合源语种过滤、HTTP 200 返回 HTML／坏 JSON／空正文的三项异常收尾，以及 SSE CRLF 跨块解析。下一项先分析原始正文回调缺少请求上下文的收尾问题，尚未实施。多个请求共享同一元素的提示归属、SSE 提前清理及异常没有触发结束钩子仍需各自分析；本次只改变最终清理的元素身份。第三方钩子若将 nodes 整个替换成新数组，也不能据此宣称仍可关联原记录。
+
+本轮源码及两个测试模块分别提交、推送。验证对应 SHA-256：
+
+```text
+translate.js      57a97cd3469e237b49e1f9873b1fb81dd92292d98a52a007c9652e9586e4abbb
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 进度移动与请求失败回归基线（源码 4.1.16.20261112）
 
 本轮先补测试并记录现有行为，未修改 translate.js、translate.min.js 或源码版本号。三个方法模块的原有用例逐项保留，共新增 23 条独立自定义测试：

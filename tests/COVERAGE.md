@@ -2,6 +2,46 @@
 
 最近更新：2026-11-12（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 原始错误正文缺少请求上下文时完成收尾（4.1.18.20261112）
+
+XHR 和 SSE 的普通响应正文在无法解析为 JSON 时，按现有约定只将原始正文传给完成回调。execute 原先直接读取第二个参数 requestData.from，遇到 HTML、损坏 JSON 或空正文会抛错，执行状态停留在 20，未执行结束钩子和进度清理。本次仅在 execute 完成回调缺少 requestData（null 或 undefined）时，使用已有闭包 requestLang、requestTo 补齐来源和目标语种，继续原有失败流程；已有请求对象和正常响应语种的处理不变，不修改共享 post、send、SSE 或 Edge 的回调约定。
+
+源码版本更新为 4.1.18.20261112，translate.min.js 未更新。execute 保留原四十一条并新增五条独立回归：SSE 收到普通 HTML、损坏 JSON、空正文三条，两个源语种的错误正文逆序完成一条，请求期间改变全局目标语种一条。测试执行真实 execute、post、send、SSE，仅模拟底层 XHR／fetch；检查各请求来源、开始时的目标语种、原文显示、进度清理及整轮完成，SSE 普通正文不重复发起 XHR。
+
+新增五条在修复前通过 BAT 双版本全部复现失败，修复后源码全部通过。当前登记 275 个方法模块、2,923 条用例（888 条普通调用、2,035 条自定义判断），双版本共 5,846 项方法检查；登记规模不代表本轮全量执行。
+
+通过 BAT 对九个相关模块运行两份实际发布文件，每份 169 项，共 338 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 43 / 3 | 32 / 14 |
+| `progress.api.startUITip` | 24 / 0 | 12 / 12 |
+| `progress.api.removeUITipByElements` | 9 / 0 | 9 / 0 |
+| `request.post` | 8 / 0 | 8 / 0 |
+| `request.send` | 11 / 0 | 11 / 0 |
+| `request.sse.collectSafeProgressElements` | 33 / 0 | 32 / 1 |
+| `request.sse.post` | 22 / 1 | 18 / 5 |
+| `service.edge.translate` | 8 / 0 | 8 / 0 |
+| `waitingExecute.isAllExecuteFinish` | 7 / 0 | 7 / 0 |
+| 合计 | 165 / 4 | 137 / 32 |
+
+复测命令（仓库根目录）：
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/progress\.api\.startUITip\.js modules/progress\.api\.removeUITipByElements\.js modules/request\.sse\.post\.js modules/request\.post\.js modules/request\.send\.js modules/waitingExecute\.isAllExecuteFinish\.js modules/request\.sse\.collectSafeProgressElements\.js modules/service\.edge\.translate\.js --workers=2
+```
+
+与上一轮八模块、每份 156 项的报告按方法、备注及发布文件逐项比较，源码原三条 HTTP 200 异常正文失败恢复通过，其余已有结果保持，没有缺失或由通过转为失败。新增五条源码全部通过、压缩版全部失败；本轮额外复测的 Edge 原八条在两份文件均通过，未作为新增登记。没有跳过、已知失败豁免或运行器错误，BAT 因真实失败返回退出码 1。本轮未重跑全部方法或原场景，不改写历史全量结果。
+
+本轮范围内源码剩余四项为 execute 忙碌时的单元素和 NodeList、空范围配合源语种过滤，以及 SSE CRLF 恰好跨网络块解析，均为原有失败。另行只读复现了 SSE done／error 事件 data 为 JSON null 时，execute 读取 responseData.result 抛错的旧问题；普通正文字符串 "null" 与事件解析后的 JavaScript null 不同，下一项单独确认最小修复，尚未加入正式回归或修改实现。其他请求消费者及 HTTP 失败分支的处理也不在本次修改范围。
+
+源码与 execute 测试模块分别提交、推送。验证对应 SHA-256：
+
+```text
+translate.js      9e4834bbeaf423ca0835a11cfa76447ac17108b6c8998e3f6b22229a486a4d70
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 请求结束清理开始时的进度元素（4.1.17.20261112）
 
 按确认的最小改动，在 progress.api.startUITip 的局部闭包中以 WeakMap 保存“本次 nodes 数组 → 开始时的元素集合”。开始提示时保存，结束时取出并先删除记录，再调用原有 removeUITipByElements；不再按 Text 的当前位置回退查找。前后钩子共用同一 nodes 数组引用，各请求的数组独立；没有对应记录时由原清理方法安全跳过，不新增全局属性或判断分支。

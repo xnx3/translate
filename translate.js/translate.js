@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.15.20261112',
+	version: '4.1.16.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -6144,8 +6144,8 @@ var translate = {
 			        }
 			        elements.push(nodeParentElement);
 	    		}else if(node.nodeType === 3){
-	    			//是文本节点
-	    			var nodeParentElement = node.parentNode;
+					// 文本节点只取父元素；直接位于 DocumentFragment 或 ShadowRoot 下时为 null，由下方判断跳过。
+					var nodeParentElement = node.parentElement;
 	    			if(nodeParentElement == null){
 			        	continue;
 			        }

@@ -270,5 +270,76 @@ require('../helpers/module')(__filename, [
     return await finished === true && pending && fetchCalls === 1 && xhrCalls === 1 && afterCalls === 1 && after.result === 0 &&
       after.nodes[0] === text && translate.state === 0 && element.firstChild === text && text.nodeValue === '你好' &&
       !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'SSE 连续错误触发重复收尾时不清理文本移动目标的其他进度样式', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const oldParent = document.createElement('span'), target = document.createElement('span'), text = document.createTextNode('你好');
+    oldParent.append(text); oldParent.style.cssText = 'display:inline-block;width:40px;height:20px';
+    const targetClasses = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+    target.className = targetClasses; document.body.append(oldParent, target);
+    let controller, afterCalls = 0, secondSent = false, firstCleaned = false, resolveFinished, timer;
+    window.fetch = function () {
+      return Promise.resolve(new Response(new ReadableStream({ start: function (value) { controller = value; } }), { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.progress.api.startUITip();
+    const finished = new Promise(function (resolve) {
+      resolveFinished = resolve; timer = setTimeout(function () { resolve(false); }, 1500);
+    });
+    translate.lifecycle.execute.translateNetworkAfter.push(function () {
+      afterCalls++;
+      if (afterCalls === 1) {
+        firstCleaned = !oldParent.classList.contains('translatejs-text-element-hidden') && !oldParent.classList.contains('translate_api_in_progress');
+        target.append(text);
+        // 第一轮收尾后再发送第二个错误，验证后续通知不会误清新父元素的其他请求进度。
+        controller.enqueue(new TextEncoder().encode('event: error\ndata: {"result":0,"info":"重复错误"}\n\n')); controller.close(); secondSent = true;
+        // 已投递第二事件并关闭流；让 Promise 读取链先走完，再到下一轮检查结果。
+        // 这里只验证清理结果，不要求 SSE 永久重复分发错误或完成回调。
+        setTimeout(function () { clearTimeout(timer); resolveFinished(true); }, 0);
+      }
+    });
+    translate.execute([text]);
+    const started = oldParent.classList.contains('translatejs-text-element-hidden') && oldParent.classList.contains('translate_api_in_progress');
+    controller.enqueue(new TextEncoder().encode('event: error\ndata: {"result":0,"info":"首次错误"}\n\n'));
+    return await finished === true && started && secondSent && afterCalls >= 1 && firstCleaned && translate.state === 0 &&
+      text.parentNode === target && text.nodeValue === '你好' && target.className === targetClasses &&
+      !oldParent.classList.contains('translatejs-text-element-hidden') && !oldParent.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'SSE done 后晚到读取错误重复收尾时保留译文和移动目标的其他进度样式', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const oldParent = document.createElement('span'), target = document.createElement('span'), text = document.createTextNode('你好');
+    oldParent.append(text); oldParent.style.cssText = 'display:inline-block;width:40px;height:20px';
+    const targetClasses = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+    target.className = targetClasses; document.body.append(oldParent, target);
+    let controller, errorSent = false, afterCalls = 0, firstCleaned = false, resolveFinished, timer;
+    const bytes = new TextEncoder().encode('event: done\ndata: {"result":1,"from":"chinese_simplified","to":"english","text":["Hello"]}\n\n');
+    window.fetch = function () {
+      return Promise.resolve(new Response(new ReadableStream({ start: function (value) {
+        controller = value; controller.enqueue(bytes);
+      } }), { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.progress.api.startUITip();
+    const finished = new Promise(function (resolve) {
+      resolveFinished = resolve; timer = setTimeout(function () { resolve(false); }, 1500);
+    });
+    translate.lifecycle.execute.translateNetworkAfter.push(function () {
+      afterCalls++;
+      if (afterCalls === 1) {
+        firstCleaned = !oldParent.classList.contains('translatejs-text-element-hidden') && !oldParent.classList.contains('translate_api_in_progress');
+        target.append(text);
+        // 明确等到首次完成后才让后续读取失败，避免依赖固定延时碰巧撞上先后顺序。
+        controller.error(new Error('socket closed after done')); errorSent = true;
+        // Promise 的读取异常先走完，再于下一轮检查元素；不固化异常必须重复触发收尾的行为。
+        setTimeout(function () { clearTimeout(timer); resolveFinished(true); }, 0);
+      }
+    });
+    translate.execute([text]);
+    const started = oldParent.classList.contains('translatejs-text-element-hidden') && oldParent.classList.contains('translate_api_in_progress');
+    const completed = await finished, record = translate.node.get(text);
+    return completed === true && started && afterCalls >= 1 && errorSent && firstCleaned && translate.state === 0 &&
+      text.parentNode === target && text.nodeValue === 'Hello' && record.originalText === '你好' && record.resultText === 'Hello' &&
+      target.className === targetClasses && !oldParent.classList.contains('translatejs-text-element-hidden') &&
+      !oldParent.classList.contains('translate_api_in_progress');
   } }
 ]);

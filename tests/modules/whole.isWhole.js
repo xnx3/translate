@@ -40,5 +40,76 @@ require('../helpers/module')(__filename, [
     translate.whole.class = ['article'];
     var root = document.createElement('div'), child = document.createElement('span'); root.className = 'other\tarticle\nlast'; root.append(child); document.body.append(root);
     return root.classList.contains('article') && translate.whole.isWhole(root) === true && translate.whole.isWhole(child) === true;
+  } },
+  { remark: '单个普通空格分隔的完整类名命中当前元素和后代文本', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other article'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '单个制表符分隔的完整类名命中当前元素和后代文本', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\tarticle'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '单个换行符分隔的完整类名命中当前元素和后代文本', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\narticle'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '单个换页符分隔的完整类名命中当前元素和后代文本', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\farticle'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '单个回车符分隔的完整类名命中当前元素和后代文本', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\rarticle'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '连续混合的 HTML 空白仍分隔完整类名并沿后代命中', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other \t\n\f\r  article\r\n\tlast'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return root.classList.contains('article') && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child) === true && translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '类名内部的不间断空格不分隔，只有完整类名配置才能命中', test: function () {
+    // NBSP 不属于 HTML class 分隔符，不能因使用通用空白正则而误命中 article。
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\u00a0article\u00a0last'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    translate.whole.class = ['article'];
+    var rejected = !root.classList.contains('article') && translate.whole.isWhole(root) === false &&
+      translate.whole.isWhole(child.firstChild) === false;
+    translate.whole.class = [root.className];
+    return rejected && root.classList.contains(root.className) && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '类名内部的竖制表符不分隔，只有完整类名配置才能命中', test: function () {
+    // 竖制表符也不属于 HTML 的五种 ASCII 空白，仍是同一个类名的一部分。
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\varticle\vlast'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    translate.whole.class = ['article'];
+    var rejected = !root.classList.contains('article') && translate.whole.isWhole(root) === false &&
+      translate.whole.isWhole(child.firstChild) === false;
+    translate.whole.class = [root.className];
+    return rejected && root.classList.contains(root.className) && translate.whole.isWhole(root) === true &&
+      translate.whole.isWhole(child.firstChild) === true;
+  } },
+  { remark: '制表符和换行分隔后仍不把部分类名当成完整配置', test: function () {
+    translate.whole.class = ['article'];
+    var root = document.createElement('div'), child = document.createElement('span');
+    root.className = 'other\tarticle-more\nlast'; child.textContent = '文本'; root.append(child); document.body.append(root);
+    return !root.classList.contains('article') && translate.whole.isWhole(root) === false &&
+      translate.whole.isWhole(child) === false && translate.whole.isWhole(child.firstChild) === false;
   } }
 ]);

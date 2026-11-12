@@ -96,5 +96,179 @@ require('../helpers/module')(__filename, [
     var chunks = ['event: done\r', '\ndata: {"result":1,"text":["A"]}\r', '\n\r', '\n'], events = [];
     window.fetch = function () { return Promise.resolve(new Response(new ReadableStream({ start: function (controller) { chunks.forEach(function (part) { controller.enqueue(new TextEncoder().encode(part)); }); controller.close(); } }), { headers: { 'content-type': 'text/event-stream' } })); };
     return await new Promise(function (resolve) { translate.request.sse.post('translate.json', {}, function (value) { resolve(value.result === 1 && value.text[0] === 'A' && JSON.stringify(events) === '["done"]'); }, function () { resolve(false); }, function () { resolve(false); }, { onEvent: function (name) { events.push(name); } }); });
+  } },
+  { remark: '实际翻译收到 SSE error 时保留原文并统一清理进度样式', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const element = document.createElement('span'); element.textContent = '你好';
+    element.style.cssText = 'display:inline-block;width:40px;height:20px'; document.body.append(element);
+    const text = element.firstChild;
+    let fetchCalls = 0, after, afterCalls = 0;
+    window.fetch = function () {
+      fetchCalls++;
+      return Promise.resolve(new Response('event: error\ndata: {"result":0,"info":"额度不足"}\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      // 等待上限只防止测试挂起，不给运行库规定请求超时时间。
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const started = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+    return await finished === true && started && fetchCalls === 1 && afterCalls === 1 && after.result === 0 &&
+      after.info === '额度不足' && after.nodes.length === 1 && after.nodes[0] === text && translate.state === 0 &&
+      element.firstChild === text && text.nodeValue === '你好' && !element.classList.contains('translatejs-text-element-hidden') &&
+      !element.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'SSE error 前文本移到新元素时仍应恢复旧父元素并保留新父元素业务样式', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const oldParent = document.createElement('span'), newParent = document.createElement('span'), keep = document.createElement('b');
+    const text = document.createTextNode('你好'); keep.textContent = '留在原处';
+    oldParent.append(text, keep); oldParent.style.cssText = 'display:inline-block;width:100px;height:20px';
+    newParent.className = 'business-class'; document.body.append(oldParent, newParent);
+    const originalFill = getComputedStyle(keep).webkitTextFillColor;
+    let controller, after, afterCalls = 0;
+    window.fetch = function () {
+      return Promise.resolve(new Response(new ReadableStream({ start: function (value) { controller = value; } }), { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const started = oldParent.classList.contains('translatejs-text-element-hidden') && oldParent.classList.contains('translate_api_in_progress');
+    // 请求期间移动原 Text；完成清理应针对开始时加过样式的旧元素。
+    newParent.append(text);
+    controller.enqueue(new TextEncoder().encode('event: error\ndata: {"result":0,"info":"额度不足"}\n\n')); controller.close();
+    return await finished === true && started && afterCalls === 1 && after.result === 0 && after.nodes[0] === text &&
+      translate.state === 0 && text.parentNode === newParent && text.nodeValue === '你好' && keep.parentNode === oldParent &&
+      !oldParent.classList.contains('translatejs-text-element-hidden') && !oldParent.classList.contains('translate_api_in_progress') &&
+      getComputedStyle(keep).webkitTextFillColor === originalFill && newParent.className === 'business-class';
+  } },
+  { remark: 'SSE 已渲染一项后断流时清理提示并保留已显示译文，不回滚原文', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const element = document.createElement('span'); element.textContent = '你好';
+    element.style.cssText = 'display:inline-block;width:40px;height:20px'; document.body.append(element);
+    const text = element.firstChild;
+    let fetchCalls = 0, after, afterCalls = 0, itemRendered = false;
+    window.fetch = function () {
+      fetchCalls++;
+      // 有 item 而无 done，读取完毕后应异常收尾，不重发整批文本。
+      return Promise.resolve(new Response('event: item\ndata: {"index":0,"text":"Hello"}\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.request.sse.onItem = function () { itemRendered = text.nodeValue === 'Hello'; };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const started = element.classList.contains('translatejs-text-element-hidden');
+    const completed = await finished, record = translate.node.get(text);
+    return completed === true && started && itemRendered && fetchCalls === 1 && afterCalls === 1 && after.result === 0 &&
+      after.nodes[0] === text && translate.state === 0 && element.firstChild === text && text.nodeValue === 'Hello' &&
+      record.originalText === '你好' && record.resultText === 'Hello' && !element.classList.contains('translatejs-text-element-hidden') &&
+      !element.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'SSE item 前文本移入片段后断流时保留译文并恢复原父元素', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const oldParent = document.createElement('span'), keep = document.createElement('b'), fragment = document.createDocumentFragment();
+    const text = document.createTextNode('你好'); keep.textContent = '留在原处'; oldParent.append(text, keep);
+    oldParent.style.cssText = 'display:inline-block;width:100px;height:20px'; document.body.append(oldParent);
+    const originalFill = getComputedStyle(keep).webkitTextFillColor;
+    let controller, after, afterCalls = 0, itemRendered = false;
+    window.fetch = function () {
+      return Promise.resolve(new Response(new ReadableStream({ start: function (value) { controller = value; } }), { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    translate.request.sse.onItem = function () { itemRendered = text.nodeValue === 'Hello'; };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const started = oldParent.classList.contains('translatejs-text-element-hidden') && oldParent.classList.contains('translate_api_in_progress');
+    fragment.append(text);
+    controller.enqueue(new TextEncoder().encode('event: item\ndata: {"index":0,"text":"Hello"}\n\n')); controller.close();
+    const completed = await finished, record = translate.node.get(text);
+    return completed === true && started && itemRendered && afterCalls === 1 && after.result === 0 && after.nodes[0] === text &&
+      translate.state === 0 && text.parentNode === fragment && text.nodeValue === 'Hello' && record.originalText === '你好' &&
+      record.resultText === 'Hello' && !oldParent.classList.contains('translatejs-text-element-hidden') &&
+      !oldParent.classList.contains('translate_api_in_progress') && getComputedStyle(keep).webkitTextFillColor === originalFill;
+  } },
+  { remark: 'SSE 未收到业务事件便断流时保持提示，等待降级 XHR 成功后再恢复并显示译文', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const element = document.createElement('span'); element.textContent = '你好';
+    element.style.cssText = 'display:inline-block;width:40px;height:20px'; document.body.append(element);
+    const text = element.firstChild;
+    let fetchCalls = 0, xhrCalls = 0, after, afterCalls = 0, sentBody, resolveSent, sentTimer;
+    const sent = new Promise(function (resolve) { resolveSent = resolve; sentTimer = setTimeout(function () { resolve(null); }, 1500); });
+    window.fetch = function () {
+      fetchCalls++;
+      return Promise.resolve(new Response(': heartbeat\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    window.XMLHttpRequest = function () {
+      xhrCalls++; this.open = function () {}; this.setRequestHeader = function () {};
+      this.send = function (body) { sentBody = body; clearTimeout(sentTimer); resolveSent(this); };
+    };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const xhr = await sent;
+    if (xhr === null) return false;
+    // 降级只切换传输方式，最终 XHR 尚未结束时不能提前取消进度提示。
+    const pending = afterCalls === 0 && translate.state === 20 && text.nodeValue === '你好' &&
+      element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+    xhr.readyState = 4; xhr.status = 200;
+    xhr.responseText = '{"result":1,"from":"chinese_simplified","to":"english","text":["Hello"]}'; xhr.onreadystatechange();
+    return await finished === true && pending && fetchCalls === 1 && xhrCalls === 1 && !new URLSearchParams(sentBody).has('stream') &&
+      afterCalls === 1 && after.result === 1 && after.nodes[0] === text && translate.state === 0 && element.firstChild === text &&
+      text.nodeValue === 'Hello' && !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'SSE 未收到业务事件便断流时等待降级 XHR 失败后清理提示并保留原文', test: async function () {
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.request.sse.use = true;
+    const element = document.createElement('span'); element.textContent = '你好';
+    element.style.cssText = 'display:inline-block;width:40px;height:20px'; document.body.append(element);
+    const text = element.firstChild;
+    let fetchCalls = 0, xhrCalls = 0, after, afterCalls = 0, resolveSent, sentTimer;
+    const sent = new Promise(function (resolve) { resolveSent = resolve; sentTimer = setTimeout(function () { resolve(null); }, 1500); });
+    window.fetch = function () {
+      fetchCalls++;
+      return Promise.resolve(new Response(': heartbeat\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+    };
+    window.XMLHttpRequest = function () {
+      xhrCalls++; this.open = function () {}; this.setRequestHeader = function () {};
+      this.send = function () { clearTimeout(sentTimer); resolveSent(this); };
+    };
+    translate.progress.api.startUITip();
+    translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after = data; afterCalls++; });
+    const finished = new Promise(function (resolve) {
+      const timer = setTimeout(function () { resolve(false); }, 1500);
+      translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+    });
+    translate.execute([text]);
+    const xhr = await sent;
+    if (xhr === null) return false;
+    const pending = afterCalls === 0 && translate.state === 20 && text.nodeValue === '你好' &&
+      element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+    xhr.readyState = 4; xhr.status = 503; xhr.responseText = 'Service Unavailable'; xhr.onreadystatechange();
+    return await finished === true && pending && fetchCalls === 1 && xhrCalls === 1 && afterCalls === 1 && after.result === 0 &&
+      after.nodes[0] === text && translate.state === 0 && element.firstChild === text && text.nodeValue === '你好' &&
+      !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
   } }
 ]);

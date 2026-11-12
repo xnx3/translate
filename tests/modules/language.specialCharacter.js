@@ -9,5 +9,9 @@ require('../helpers/module')(__filename, [
   })),
   { remark: '文字中间包含特殊符号时可检测到', args: ['你好×世界'], expected: true },
   // 源码注释列出的 U+003A 冒号也必须归入特殊字符。
-  { remark: 'ASCII 冒号属于标点特殊字符', args: [':'], expected: true }
+  { remark: 'ASCII 冒号属于标点特殊字符', args: [':'], expected: true },
+  { remark: '英文文字开头的 ASCII 冒号可检测到', args: [':Hello'], expected: true },
+  { remark: '中文文字中间的 ASCII 冒号可检测到', args: ['你好:世界'], expected: true },
+  { remark: '英文文字末尾的 ASCII 冒号可检测到', args: ['Hello:'], expected: true },
+  { remark: '连续 ASCII 冒号属于特殊字符', args: ['::'], expected: true }
 ]);

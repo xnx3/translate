@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.11.20261112',
+	version: '4.1.12.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -12877,8 +12877,8 @@ var translate = {
 			                        if(typeof(obj.functionBodyHandle) === 'function'){
 			                        	body = obj.functionBodyHandle(body);
 			                        }
-			                        // 替换原行中的字符串为函数表达式
-			                        lines[li] = lines[li].replace(`"${valueMatch[1]}"`, `function${name}(${params}){${body}}`);
+			                        // 替换为函数表达式；function 与具名函数名称之间必须保留空格，避免拼成 functionplus。
+			                        lines[li] = lines[li].replace(`"${valueMatch[1]}"`, `function ${name}(${params}){${body}}`);
 			                    }
 			                } catch (e) {
 			                    console.error('转换函数时出错:', e);

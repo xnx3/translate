@@ -116,5 +116,29 @@ require('../helpers/module')(__filename, [
       callback({nodes:[node.firstChild]});
       return node.classList.contains('translatejs-text-element-hidden') && node.classList.contains('translate_api_in_progress')===true;
     }
+  },
+  {
+    remark: '混合片段文本与正常文本时，前后提示钩子只修改并恢复真实元素',
+    test: function () {
+      // 调用真实提示钩子，既检查非元素不被写入 className，也检查后续元素仍隐藏并恢复。
+      const fragment = document.createDocumentFragment(), fragmentText = document.createTextNode('片段原文');
+      fragment.append(fragmentText);
+      const element = document.createElement('span');
+      element.textContent = '正常原文';
+      element.style.cssText = 'display:inline-block;width:20px;height:20px';
+      document.body.append(element);
+      const text = element.firstChild, nodes = [fragmentText, text];
+      translate.progress.api.startUITip();
+      const before = translate.lifecycle.execute.translateNetworkBefore.at(-1);
+      const after = translate.lifecycle.execute.translateNetworkAfter.at(-1);
+      before({ nodes: nodes });
+      const hidden = element.classList.contains('translatejs-text-element-hidden') &&
+        element.classList.contains('translate_api_in_progress') && !Object.hasOwn(fragment, 'className');
+      after({ nodes: nodes });
+      return hidden && !element.classList.contains('translatejs-text-element-hidden') &&
+        !element.classList.contains('translate_api_in_progress') && !Object.hasOwn(fragment, 'className') &&
+        fragmentText.parentNode === fragment && fragmentText.nodeValue === '片段原文' &&
+        element.firstChild === text && text.nodeValue === '正常原文';
+    }
   }
 ]);

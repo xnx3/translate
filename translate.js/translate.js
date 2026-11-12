@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.4.20261111',
+	version: '4.1.5.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -9163,11 +9163,11 @@ var translate = {
 		    		replaceEndIndex: index + originalTextIndex + replaceText.length
 		    	}
 		    }else{
-		    	//没有发现可替换的字符，那么就原样返回
+                //没有发现可替换的字符时返回完整原文，不能只返回 index 之前的前缀 before，否则会截断原文。
 		    	//console.log('after:'+after);
 		    	//console.log(text+originalText);
 		    	return {
-		    		text: before, 
+                    text: text,
 		    		replaceEndIndex: 0
 		    	};
 		    }

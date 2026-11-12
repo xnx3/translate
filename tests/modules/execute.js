@@ -858,5 +858,205 @@ require('../helpers/module')(__filename, [
         text.parentNode === element && element.firstChild === text &&
         !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
     }
+  },
+  {
+    remark: '启用 SSE 后收到 HTTP 200 普通 HTML 错误正文时失败收尾，不重复发起 XHR',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = true;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let fetchCalls = 0, xhrCalls = 0, beforeData, afterData, afterCalls = 0;
+      // 保留真实 post、SSE 解析及 execute 回调，只模拟 fetch 返回的普通错误正文。
+      window.fetch = function () {
+        fetchCalls++;
+        return Promise.resolve(new Response('<html>gateway error</html>', { status: 200, headers: { 'content-type': 'text/html' } }));
+      };
+      // 已收到完整普通正文后不应降级重发；若误入 XHR，用计数和测试等待上限检出。
+      window.XMLHttpRequest = class { open() {} setRequestHeader() {} send() { xhrCalls++; } };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 等待上限只防止测试挂起，不给产品新增超时规则，也不捕获浏览器异常。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      return await finished === true && wasHidden && fetchCalls === 1 && xhrCalls === 0 && afterCalls === 1 &&
+        beforeData.nodes[0] === text && afterData.nodes === beforeData.nodes && afterData.result === 0 &&
+        afterData.from === 'chinese_simplified' && afterData.to === 'english' && translate.state === 0 &&
+        element.firstChild === text && text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '启用 SSE 后收到 HTTP 200 普通损坏 JSON 正文时失败收尾，不重复发起 XHR',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = true;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let fetchCalls = 0, xhrCalls = 0, beforeData, afterData, afterCalls = 0;
+      // 声明为 JSON 但正文不可解析，仍走真实 SSE 普通响应分支及其单参数回调。
+      window.fetch = function () {
+        fetchCalls++;
+        return Promise.resolve(new Response('{"result": invalid}', { status: 200, headers: { 'content-type': 'application/json' } }));
+      };
+      window.XMLHttpRequest = class { open() {} setRequestHeader() {} send() { xhrCalls++; } };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 等待上限只属于测试；回调中的异常继续交给浏览器和公共测试工具报告。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      return await finished === true && wasHidden && fetchCalls === 1 && xhrCalls === 0 && afterCalls === 1 &&
+        beforeData.nodes[0] === text && afterData.nodes === beforeData.nodes && afterData.result === 0 &&
+        afterData.from === 'chinese_simplified' && afterData.to === 'english' && translate.state === 0 &&
+        element.firstChild === text && text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '启用 SSE 后收到 HTTP 200 普通空正文时失败收尾，不重复发起 XHR',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = true;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let fetchCalls = 0, xhrCalls = 0, beforeData, afterData, afterCalls = 0;
+      // 空字符串也是完整普通响应，不能把它误作断流而重复请求或一直隐藏原文。
+      window.fetch = function () {
+        fetchCalls++;
+        return Promise.resolve(new Response('', { status: 200, headers: { 'content-type': 'text/plain' } }));
+      };
+      window.XMLHttpRequest = class { open() {} setRequestHeader() {} send() { xhrCalls++; } };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 这里只限制用例等待，不改变运行库对网络请求的超时行为。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      return await finished === true && wasHidden && fetchCalls === 1 && xhrCalls === 0 && afterCalls === 1 &&
+        beforeData.nodes[0] === text && afterData.nodes === beforeData.nodes && afterData.result === 0 &&
+        afterData.from === 'chinese_simplified' && afterData.to === 'english' && translate.state === 0 &&
+        element.firstChild === text && text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '不同源语种的原始错误正文逆序返回时分别结束各自请求并恢复全部原文',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'japanese';
+      translate.request.sse.use = false;
+      const chinese = document.createElement('span'), english = document.createElement('span');
+      chinese.textContent = '你好'; english.textContent = 'Hello';
+      chinese.style.cssText = english.style.cssText = 'display:inline-block;width:40px;height:20px';
+      document.body.append(chinese, english);
+      const chineseText = chinese.firstChild, englishText = english.firstChild;
+      const pending = [], before = [], after = [];
+      let renderFinishes = 0;
+      // 两个语种由真实 execute 分别请求；传输层只保存 XHR，稍后按发送相反顺序交付原始正文。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() { pending.push(this); }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { before.push(data); });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { after.push(data); });
+      const finished = new Promise(resolve => {
+        // 这是测试等待上限，不增加产品超时、重试或其他网络规则。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([chineseText, englishText]);
+      const wasHidden = [chinese, english].every(element => element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress'));
+      pending.slice().reverse().forEach(function (xhr, index) {
+        // 放到异步任务中交付，不捕获回调异常；防止将语种闭包串线伪装成测试成功。
+        setTimeout(function () {
+          xhr.readyState = 4; xhr.status = 200;
+          xhr.responseText = '<html>gateway error</html>'; xhr.response = xhr.responseText;
+          xhr.onreadystatechange();
+        }, index * 10);
+      });
+      return await finished === true && wasHidden && pending.length === 2 && before.length === 2 && after.length === 2 &&
+        renderFinishes === 1 && translate.state === 0 && after.every(function (data, index) {
+          const expectedText = data.from === 'chinese_simplified' ? chineseText : englishText;
+          return data.from === pending[1 - index].data.from && ['chinese_simplified', 'english'].includes(data.from) &&
+            data.to === 'japanese' && data.result === 0 && data.nodes.length === 1 && data.nodes[0] === expectedText &&
+            before.some(item => item.nodes === data.nodes);
+        }) && chineseText.nodeValue === '你好' && englishText.nodeValue === 'Hello' &&
+        translate.node.get(chineseText).originalText === '你好' && translate.node.get(englishText).originalText === 'Hello' &&
+        [chinese, english].every(element => !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress'));
+    }
+  },
+  {
+    remark: '请求期间改变目标语种后原始错误正文仍按请求开始时的目标语种收尾',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, requestData, beforeData, afterData, afterCalls = 0;
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++; requestData = this.data;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 200;
+            this.responseText = '<html>gateway error</html>'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 只防止本用例挂起；真实 post、send 和失败收尾仍按原实现执行。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      // 请求已发出但响应尚未到达，此时全局目标变化不能改变旧请求的归属或请求数据。
+      translate.to = 'korean';
+      return await finished === true && wasHidden && sent === 1 && afterCalls === 1 &&
+        requestData.from === 'chinese_simplified' && requestData.to === 'english' &&
+        beforeData.to === 'english' && afterData.from === 'chinese_simplified' && afterData.to === 'english' &&
+        afterData.result === 0 && afterData.nodes === beforeData.nodes && afterData.nodes[0] === text &&
+        translate.to === 'korean' && translate.state === 0 && element.firstChild === text &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
   }
 ]);

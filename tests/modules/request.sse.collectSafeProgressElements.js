@@ -93,5 +93,19 @@ require('../helpers/module')(__filename, [
     var data = { uuid: 'unit', fanyiLangs: ['english'], translateHashArray: { english: [] }, renderLang: 'english', renderedIndexes: [] };
     return translate.request.sse.collectSafeProgressElements({ initialized: true }, data).length === 0 && translate.request.sse.collectSafeProgressElements({ initialized: true, elementPendingMap: new Map() }, data).length === 0;
   } },
-  ...invalidCases
+  ...invalidCases,
+  { remark: '片段直接文本与正常文本混合完成时只返回真实元素且清空待完成计数', test: function () {
+    translate.progress.api.use = true; translate.progress.api.isTip = true;
+    var fragment = document.createDocumentFragment(), fragmentText = document.createTextNode('片段原文'); fragment.append(fragmentText);
+    var element = document.createElement('p'); element.textContent = '正常原文'; document.body.append(element);
+    var text = element.firstChild;
+    translate.nodeQueue.unit = { list: { english: {
+      a: { nodes: [{ node: fragmentText }] }, b: { nodes: [{ node: text }] }
+    } } };
+    var state = {}, data = { uuid: 'unit', fanyiLangs: ['english'], translateHashArray: { english: ['a', 'b'] }, renderLang: 'english', renderedIndexes: [0, 1] };
+    var result = translate.request.sse.collectSafeProgressElements(state, data);
+    return result.length === 1 && result[0] === element && state.elementPendingMap.size === 0 &&
+      fragmentText.parentNode === fragment && fragmentText.nodeValue === '片段原文' &&
+      element.firstChild === text && text.nodeValue === '正常原文';
+  } }
 ]);

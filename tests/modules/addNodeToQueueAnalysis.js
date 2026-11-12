@@ -206,5 +206,26 @@ require('../helpers/module')(__filename, [
       translate.addNodeToQueueAnalysis('batch', node, 'Hello', '');
       return node.nodeValue === 'Hello' && translate.node.get(node) === original && original.custom === 123;
     }
+  },
+  {
+    remark: '父级 class 以制表符和换行分隔时，混排文本仍整体入队并保留节点',
+    test: function () {
+      // 通过真实入队调用验证类名识别的效果，不能仅检查 isWhole 的布尔返回值。
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'japanese';
+      translate.whole.class = ['article'];
+      translate.nodeQueue.batch = { list: {} };
+      const parent = document.createElement('div');
+      parent.className = 'other\tarticle\nlast';
+      parent.innerHTML = '<span>你好hello</span>';
+      document.body.append(parent);
+      const node = parent.firstChild.firstChild;
+      const result = translate.addNodeToQueueAnalysis('batch', node, '你好hello', '');
+      const items = Object.values(translate.nodeQueue.batch.list).flatMap(list => Object.values(list));
+      return parent.classList.contains('article') && result.length === 1 && items.length === 1 &&
+        items[0].original === '你好hello' && items[0].translateText === '你好hello' &&
+        items[0].nodes[0] === result[0] && result[0].node === node && parent.firstChild.firstChild === node &&
+        node.nodeValue === '你好hello' && result[0].beforeText === '' && result[0].afterText === '';
+    }
   }
 ]);

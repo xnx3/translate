@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.16.20261112',
+	version: '4.1.17.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -12422,12 +12422,17 @@ var translate = {
 		        
 
 				if(translate.progress.api.isTip){
+					// 保存每次请求开始时加过提示的元素，避免 Text 移动或移除后清错父元素。
+					// 前后钩子的 data 对象不同，但 nodes 使用同一数组引用，以此关联本次请求。
+					// 两个回调通过闭包共用此记录，不需要新增全局属性。
+					const requestElements = new WeakMap();
 					//translate.listener.execute.renderStartByApi.push(function(uuid, from, to){
 					translate.lifecycle.execute.translateNetworkBefore.push(function(data){
 						var startTime = new Date().getTime();
 
 						//取出当前变动的node，对应的元素
 						var elements = translate.element.nodeToElement(data.nodes);
+						requestElements.set(data.nodes, elements);
 						//console.log(elements)
 				    	
 						//隐藏所有node的文本
@@ -12482,8 +12487,10 @@ var translate = {
 					});
 					
 					translate.lifecycle.execute.translateNetworkAfter.push(function(data){
-						//取出当前变动的node，对应的元素
-						var elements = translate.element.nodeToElement(data.nodes);
+						// 成功或失败都只清理开始时记录的元素，不再按 Text 的当前位置查找。
+						var elements = requestElements.get(data.nodes);
+						// 先删除记录：重复或重入的结束回调将取不到记录，由原清理方法直接跳过。
+						requestElements.delete(data.nodes);
 						translate.progress.api.removeUITipByElements(elements);
 						
 						

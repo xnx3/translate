@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.7.20261112',
+	version: '4.1.8.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -14469,7 +14469,8 @@ var translate = {
 	    		continue;
 	    	}
 			var expireTime = translate.nodeQueue[uuid].expireTime;
-			if(expireTime+120 < currentTime){
+			// expireTime 小于 0 表示常驻内存，仅对非负过期时间执行原有回收判断。
+			if(expireTime >= 0 && expireTime+120 < currentTime){
 				nodeQueueDeleteArray.push(uuid);
 			}	
 		}

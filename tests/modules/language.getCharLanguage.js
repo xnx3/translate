@@ -22,5 +22,6 @@ require('../helpers/module')(__filename, [
   { remark: '空字符串没有可识别语种', args: [''], expected: '' },
   { remark: 'null 返回未识别而不抛错', args: [null], expected: '' },
   { remark: '省略参数返回未识别而不抛错', args: [], expected: '' },
-  { remark: '显式 undefined 返回未识别而不抛错', args: [undefined], expected: '' }
+  { remark: '显式 undefined 返回未识别而不抛错', args: [undefined], expected: '' },
+  { remark: 'ASCII 冒号识别为特殊字符而非未识别语种', args: [':'], expected: 'specialCharacter' }
 ]);

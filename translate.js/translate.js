@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.17.20261112',
+	version: '4.1.18.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -4816,6 +4816,10 @@ var translate = {
 				return renderNumber;
 			};
 			translate.request.post(url, data, function(responseData, requestData){
+				// 非 JSON 正文按单参数回调，缺少请求数据时使用本次请求保存的语种，仍按原失败流程收尾。
+				if(requestData == null){
+					requestData = {from:requestLang, to:requestTo};
+				}
 				//console.log(data); 
 				//console.log(translateTextArray[data.from]);
 

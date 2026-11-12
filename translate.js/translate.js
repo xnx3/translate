@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.5.20261112',
+	version: '4.1.6.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -3076,7 +3076,8 @@ var translate = {
 			}
 			if (originalText.substr(originalText.length - 1, 1) === ' ') {
 				//console.log('最后一个字符是空格');
-				if(resultText.substr(0, 1) != ' '){
+				//检查译文最后一个字符，避免把前空格误当成尾空格，或重复补上已有的尾空格。
+				if(resultText.substr(resultText.length - 1, 1) != ' '){
 					//翻译结果的最后一个字符不是空格，那么补上
 					resultText = resultText + ' ';
 				}

@@ -109,5 +109,67 @@ require('../helpers/module')(__filename, [
       translate.setDocuments([]);
       return translate.documents.length === 1 && translate.documents[0] === node && Object.keys(translate.nodeQueue).length === 0;
     }
+  },
+  {
+    remark: "数组开头相邻null与undefined全部移除并保留引用和节点顺序",
+    test: function () {
+      const a = document.createElement('div');
+      const b = document.createElement('section');
+      const nodes = [null, undefined, b, a];
+      translate.nodeQueue = {old: true};
+      translate.setDocuments(nodes);
+      return translate.documents === nodes && nodes.length === 2 && nodes[0] === b && nodes[1] === a &&
+        Object.keys(translate.nodeQueue).length === 0;
+    }
+  },
+  {
+    remark: "数组中间相邻null与undefined全部移除并保留引用和节点顺序",
+    test: function () {
+      const a = document.createElement('div');
+      const b = document.createElement('section');
+      const nodes = [b, null, undefined, a];
+      translate.nodeQueue = {old: true};
+      translate.setDocuments(nodes);
+      return translate.documents === nodes && nodes.length === 2 && nodes[0] === b && nodes[1] === a &&
+        Object.keys(translate.nodeQueue).length === 0;
+    }
+  },
+  {
+    remark: "数组末尾相邻null与undefined全部移除并保留引用和节点顺序",
+    test: function () {
+      const a = document.createElement('div');
+      const b = document.createElement('section');
+      const nodes = [b, a, null, undefined];
+      translate.nodeQueue = {old: true};
+      translate.setDocuments(nodes);
+      return translate.documents === nodes && nodes.length === 2 && nodes[0] === b && nodes[1] === a &&
+        Object.keys(translate.nodeQueue).length === 0;
+    }
+  },
+  {
+    remark: "连续四个混合空项全部移除并保留两侧有效节点",
+    test: function () {
+      const a = document.createElement('div');
+      const b = document.createElement('section');
+      const nodes = [b, null, undefined, null, undefined, a];
+      translate.nodeQueue = {old: true};
+      translate.setDocuments(nodes);
+      return translate.documents === nodes && nodes.length === 2 && nodes[0] === b && nodes[1] === a &&
+        Object.keys(translate.nodeQueue).length === 0;
+    }
+  },
+  {
+    remark: "全为空项的数组过滤后为空时保留原范围并清空队列",
+    test: function () {
+      const node = document.createElement('section');
+      const previous = [node];
+      translate.setDocuments(previous);
+      const nodes = [null, undefined, null, undefined];
+      translate.nodeQueue = {old: true};
+      translate.setDocuments(nodes);
+      // 过滤后沿用已有空数组约定，不将原范围改成空范围。
+      return nodes.length === 0 && translate.documents === previous && previous.length === 1 &&
+        previous[0] === node && Object.keys(translate.nodeQueue).length === 0;
+    }
   }
 ]);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.14.20261112',
+	version: '4.1.15.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -7189,7 +7189,8 @@ var translate = {
 					}
 					//console.log('className:'+typeof(classNames));
 					//console.log(classNames);
-					classNames = classNames.trim().split(' ');
+					// HTML class 按 ASCII 空白分隔，包含制表符、换行等；不把不间断空格等类名字符当成分隔符。
+					classNames = classNames.trim().split(/[\t\n\f\r ]+/);
 					for(var c_index = 0; c_index < classNames.length; c_index++){
 						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
 							//有效的class name，进行判断

@@ -433,5 +433,430 @@ require('../helpers/module')(__filename, [
       return node.nodeValue === 'Hello world' && translate.node.get(node).originalText === '你好世界' &&
         document.querySelectorAll('p')[1].textContent === '动态内容' && translate.state === 0;
     }
+  },
+  {
+    remark: '翻译接口返回业务失败时保留原文并结束进度提示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 200;
+            this.responseText = '{"result":0,"info":"额度不足"}'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '翻译接口返回 HTTP 503 时保留原文并结束进度提示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 503;
+            this.responseText = 'Unavailable'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '翻译网络失败进入 readyState 4 且状态为零时保留原文并结束进度提示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 0;
+            this.responseText = ''; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '业务失败前文本移到另一元素时恢复旧父元素且保留新父元素其他进度',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      const keep = document.createElement('span'); keep.textContent = '留在原处';
+      element.append(text, keep); document.body.append(element);
+      const target = document.createElement('div');
+      // 新容器的样式代表另一请求；本次失败不能清理未由本请求添加的样式。
+      target.className = 'translatejs-text-element-hidden translate_api_in_progress';
+      document.body.append(target);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            target.append(text);
+            this.readyState = 4; this.status = 200;
+            this.responseText = '{"result":0,"info":"额度不足"}'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === target && element.firstChild === keep && keep.textContent === '留在原处' &&
+        !['transparent', 'rgba(0, 0, 0, 0)'].includes(getComputedStyle(keep).webkitTextFillColor) &&
+        target.classList.contains('translatejs-text-element-hidden') && target.classList.contains('translate_api_in_progress') &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: 'HTTP 503 失败前文本移到片段时仍恢复旧父元素和留下的文字',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      const keep = document.createElement('span'); keep.textContent = '留在原处';
+      element.append(text, keep); document.body.append(element);
+      const target = document.createDocumentFragment();
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            target.append(text);
+            this.readyState = 4; this.status = 503;
+            this.responseText = 'Unavailable'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === target && element.firstChild === keep && keep.textContent === '留在原处' &&
+        !['transparent', 'rgba(0, 0, 0, 0)'].includes(getComputedStyle(keep).webkitTextFillColor) &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: '网络状态零失败前文本移到另一元素时恢复旧父元素且不误清新父元素',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      const keep = document.createElement('span'); keep.textContent = '留在原处';
+      element.append(text, keep); document.body.append(element);
+      const target = document.createElement('div');
+      // 新容器的样式代表另一请求；本次失败不能清理未由本请求添加的样式。
+      target.className = 'translatejs-text-element-hidden translate_api_in_progress';
+      document.body.append(target);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            target.append(text);
+            this.readyState = 4; this.status = 0;
+            this.responseText = ''; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === target && element.firstChild === keep && keep.textContent === '留在原处' &&
+        !['transparent', 'rgba(0, 0, 0, 0)'].includes(getComputedStyle(keep).webkitTextFillColor) &&
+        target.classList.contains('translatejs-text-element-hidden') && target.classList.contains('translate_api_in_progress') &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: 'HTTP 200 返回 HTML 错误正文时应安全失败收尾并恢复原文显示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 200;
+            this.responseText = '<html>gateway error</html>'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: 'HTTP 200 返回无法解析的 JSON 时应安全失败收尾并恢复原文显示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 200;
+            this.responseText = '{"result": invalid}'; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
+  },
+  {
+    remark: 'HTTP 200 返回空正文时应安全失败收尾并恢复原文显示',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      const element = document.createElement('span');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      const text = document.createTextNode('你好');
+      element.append(text); document.body.append(element);
+      let sent = 0, beforeData, afterData, wasHidden = false;
+      // 只替换浏览器传输层，post、send、execute 及其失败收尾均执行真实实现。
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            this.readyState = 4; this.status = 200;
+            this.responseText = ''; this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) {
+        beforeData = data;
+        wasHidden = element.classList.contains('translatejs-text-element-hidden') &&
+          element.classList.contains('translate_api_in_progress');
+      });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; });
+      const finished = new Promise(resolve => {
+        // 这里只限制测试等待时间，不为产品新增请求超时规则；异常也不在此吞掉。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      return await finished === true && sent === 1 && wasHidden && beforeData.nodes[0] === text &&
+        afterData.result === 0 && afterData.nodes[0] === text && translate.state === 0 &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        text.parentNode === element && element.firstChild === text &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
+    }
   }
 ]);

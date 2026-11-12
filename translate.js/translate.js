@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.6.20261112',
+	version: '4.1.7.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -10605,7 +10605,8 @@ var translate = {
 		setHost:function(hosts){
 			translate.service.use('translate.service');
 
-			if (typeof translate.request.api.host == 'string') {
+			// 按本次传入的 hosts 判断类型，避免旧配置为字符串时把新主机数组再次包装。
+			if (typeof hosts == 'string') {
 				//单个，那么赋予数组形式
 				//translate.request.speedDetectionControl.hostQueue = [{"host":translate.request.api.host, time:0 }];
 				translate.request.api.host = [hosts];

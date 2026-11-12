@@ -328,5 +328,121 @@ require('../helpers/module')(__filename, [
         text.parentNode === source && text.nodeValue === '未移动失败原文' &&
         kept.parentNode === source && kept.nodeValue === '保留文字';
     }
+  },
+  {
+    remark: '结束钩子重复触发时不清理文本后来移入的其他请求元素',
+    test: function () {
+      const source = document.createElement('p'), target = document.createElement('div');
+      const text = document.createTextNode('重复结束原文'), nodes = [text];
+      source.className = 'source-business'; source.append(text);
+      source.style.cssText = 'display:block;width:120px;height:30px';
+      target.className = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+      const targetClass = target.className;
+      document.body.append(source, target);
+      translate.progress.api.startUITip();
+      const before = translate.lifecycle.execute.translateNetworkBefore.at(-1);
+      const after = translate.lifecycle.execute.translateNetworkAfter.at(-1);
+      before({ nodes: nodes });
+      const started = source.classList.contains('translatejs-text-element-hidden');
+      after({ nodes: nodes });
+      // 第一次结束已释放本次记录；第二次结束不能回退到 Text 的新位置清理。
+      target.append(text);
+      after({ nodes: nodes });
+      return started && source.classList.contains('source-business') &&
+        !source.classList.contains('translatejs-text-element-hidden') &&
+        !source.classList.contains('translate_api_in_progress') && target.className === targetClass &&
+        text.parentNode === target && text.nodeValue === '重复结束原文';
+    }
+  },
+  {
+    remark: '没有配套开始记录的结束钩子不清理其他请求的提示',
+    test: function () {
+      const target = document.createElement('div');
+      target.className = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+      target.textContent = '其他请求原文'; document.body.append(target);
+      const targetClass = target.className, text = target.firstChild;
+      translate.progress.api.startUITip();
+      // 本提示回调没有为这次 nodes 加过样式，不能擅自清理它当前所在的元素。
+      translate.lifecycle.execute.translateNetworkAfter.at(-1)({ nodes: [text] });
+      return target.className === targetClass && target.firstChild === text && text.nodeValue === '其他请求原文';
+    }
+  },
+  {
+    remark: '开始时文本没有父元素则结束时不清理后来挂入的元素',
+    test: function () {
+      const fragment = document.createDocumentFragment(), target = document.createElement('div');
+      const text = document.createTextNode('开始无父元素'), nodes = [text]; fragment.append(text);
+      target.className = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+      const targetClass = target.className; document.body.append(target);
+      translate.progress.api.startUITip();
+      const before = translate.lifecycle.execute.translateNetworkBefore.at(-1);
+      const after = translate.lifecycle.execute.translateNetworkAfter.at(-1);
+      before({ nodes: nodes });
+      // 开始时有效元素集合为空；不能因此改为清理后来出现的父元素。
+      target.append(text);
+      after({ nodes: nodes });
+      return target.className === targetClass && text.parentNode === target && text.nodeValue === '开始无父元素' &&
+        !Object.hasOwn(fragment, 'className');
+    }
+  },
+  {
+    remark: '不同请求乱序结束时分别清理各自开始时的元素',
+    test: function () {
+      const first = document.createElement('p'), second = document.createElement('p'), target = document.createElement('div');
+      const firstText = document.createTextNode('请求甲'), secondText = document.createTextNode('请求乙');
+      const firstNodes = [firstText], secondNodes = [secondText];
+      first.append(firstText); second.append(secondText);
+      first.style.cssText = second.style.cssText = 'display:block;width:120px;height:30px';
+      target.className = 'target-business'; document.body.append(first, second, target);
+      translate.progress.api.startUITip();
+      const before = translate.lifecycle.execute.translateNetworkBefore.at(-1);
+      const after = translate.lifecycle.execute.translateNetworkAfter.at(-1);
+      before({ nodes: firstNodes }); before({ nodes: secondNodes });
+      const started = first.classList.contains('translatejs-text-element-hidden') && second.classList.contains('translatejs-text-element-hidden');
+      target.append(firstText, secondText);
+      after({ nodes: secondNodes });
+      const firstStillPending = first.classList.contains('translatejs-text-element-hidden') &&
+        first.classList.contains('translate_api_in_progress') && !second.classList.contains('translatejs-text-element-hidden') &&
+        !second.classList.contains('translate_api_in_progress');
+      after({ nodes: firstNodes });
+      return started && firstStillPending && !first.classList.contains('translatejs-text-element-hidden') &&
+        !first.classList.contains('translate_api_in_progress') && target.className === 'target-business' &&
+        firstText.parentNode === target && secondText.parentNode === target &&
+        firstText.nodeValue === '请求甲' && secondText.nodeValue === '请求乙';
+    }
+  },
+  {
+    remark: '清理样式触发自定义元素同步重入时不误清移动目标',
+    test: function () {
+      let armed = false, reentered = 0, progressKeptDuringReentry = false, after;
+      const target = document.createElement('div'), text = document.createTextNode('同步重入原文'), nodes = [text];
+      target.className = 'target-business translatejs-text-element-hidden translate_api_in_progress';
+      const targetClass = target.className;
+      // className 赋值可同步触发真实自定义元素回调，验证删除记录必须在清理样式之前。
+      customElements.define('translate-progress-reentry', class extends HTMLElement {
+        static get observedAttributes() { return ['class']; }
+        attributeChangedCallback() {
+          if (!armed) return;
+          armed = false; reentered++;
+          target.append(text);
+          after({ nodes: nodes });
+          // 内层应因记录已删除而跳过；剩余进度类仍由外层清理，不能被内层提前清掉。
+          progressKeptDuringReentry = this.classList.contains('translate_api_in_progress');
+        }
+      });
+      const source = document.createElement('translate-progress-reentry');
+      source.className = 'source-business'; source.style.cssText = 'display:block;width:120px;height:30px';
+      source.append(text); document.body.append(source, target);
+      translate.progress.api.startUITip();
+      const before = translate.lifecycle.execute.translateNetworkBefore.at(-1);
+      after = translate.lifecycle.execute.translateNetworkAfter.at(-1);
+      before({ nodes: nodes });
+      const started = source.classList.contains('translatejs-text-element-hidden') && source.classList.contains('translate_api_in_progress');
+      armed = true;
+      after({ nodes: nodes });
+      return started && reentered === 1 && progressKeptDuringReentry && source.classList.contains('source-business') &&
+        !source.classList.contains('translatejs-text-element-hidden') && !source.classList.contains('translate_api_in_progress') &&
+        target.className === targetClass && text.parentNode === target && text.nodeValue === '同步重入原文';
+    }
   }
 ]);

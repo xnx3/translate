@@ -89,5 +89,34 @@ require('../helpers/module')(__filename, [
       translate.recycle();
       return Object.keys(translate.nodeQueue).length===0 && translate.node.data.size===0;
     }
+  },
+  {
+    remark: 'expireTime 为 -2 的负整数队列，回收时应保留',
+    test: function () {
+      // 常驻约定适用于所有负值，不能仅对 -1 特殊处理。
+      translate.nodeQueue = { permanent: { expireTime: -2 } };
+      translate.recycle();
+      return Object.hasOwn(translate.nodeQueue, 'permanent');
+    }
+  },
+  {
+    remark: 'expireTime 为 -0.5 的负小数队列，回收时应保留',
+    test: function () {
+      translate.nodeQueue = { permanent: { expireTime: -0.5 } };
+      translate.recycle();
+      return Object.hasOwn(translate.nodeQueue, 'permanent');
+    }
+  },
+  {
+    remark: 'expireTime 为 0 不表示常驻，超过保留期时应回收',
+    test: function () {
+      const OriginalDate=Date;
+      window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[1000]));}};
+      try {
+        translate.nodeQueue={item:{expireTime:0}};
+        translate.recycle();
+        return Object.hasOwn(translate.nodeQueue,'item')===false;
+      } finally {window.Date=OriginalDate;}
+    }
   }
 ]);

@@ -35,5 +35,44 @@ require('../helpers/module')(__filename, [
     const parent = { value: null }, object = { parent }, replacement = { a: 1 };
     translate.js.setValueByPath(object, 'parent.value', replacement);
     return object.parent === parent && object.parent.value === replacement;
+  } },
+  { remark: '根数组零号下标路径更新元素并保留相邻对象', test: function () {
+    const sibling = { keep: true }, array = ['old', sibling];
+    const result = translate.js.setValueByPath(array, '[0]', 'new');
+    return result === undefined && array.length === 2 && array[0] === 'new' && array[1] === sibling;
+  } },
+  { remark: '根数组非零下标路径更新目标并保留前项', test: function () {
+    const sibling = { keep: true }, array = [sibling, 'old'];
+    translate.js.setValueByPath(array, '[1]', 'new');
+    return array.length === 2 && array[0] === sibling && array[1] === 'new';
+  } },
+  { remark: '根数组的连续括号路径保留嵌套数组身份', test: function () {
+    const inner = ['old', 'keep'], sibling = { keep: true }, array = [inner, sibling];
+    translate.js.setValueByPath(array, '[0][0]', 'new');
+    return array.length === 2 && array[0] === inner && array[1] === sibling &&
+      inner.length === 2 && inner[0] === 'new' && inner[1] === 'keep';
+  } },
+  { remark: '根数组内对象的属性路径更新目标并保留对象身份', test: function () {
+    const item = { name: 'old', other: 'keep' }, sibling = { keep: true }, array = [item, sibling];
+    translate.js.setValueByPath(array, '[0].name', 'new');
+    return array.length === 2 && array[0] === item && array[1] === sibling &&
+      item.name === 'new' && item.other === 'keep';
+  } },
+  { remark: '根数组路径修复不改变已有空字符串属性路径', test: function () {
+    // 空路径目前指向空字符串属性，不能把它当成数组转换产生的空段删除。
+    const sibling = { keep: true }, object = { '': 'old', sibling: sibling };
+    translate.js.setValueByPath(object, '', 'new');
+    return object[''] === 'new' && object.sibling === sibling;
+  } },
+  { remark: '以点开头的已有路径仍通过空属性定位下层对象', test: function () {
+    const parent = { value: 'old', other: 'keep' }, sibling = { keep: true };
+    const object = { '': parent, sibling: sibling };
+    translate.js.setValueByPath(object, '.value', 'new');
+    return object[''] === parent && parent.value === 'new' && parent.other === 'keep' && object.sibling === sibling;
+  } },
+  { remark: '非数字括号字面属性不被当作根数组下标处理', test: function () {
+    const sibling = { keep: true }, object = { '[name]': 'old', sibling: sibling };
+    translate.js.setValueByPath(object, '[name]', 'new');
+    return object['[name]'] === 'new' && object.sibling === sibling && !Object.hasOwn(object, 'name');
   } }
 ]);

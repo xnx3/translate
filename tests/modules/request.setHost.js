@@ -2,6 +2,7 @@ require('../helpers/module')(__filename, [
   { remark: '配置多个主机时保留顺序并切换回标准服务模式', test: function () {
     let checks = 0;
     translate.service.name = 'client.edge';
+    translate.request.api.host = ['https://old.example/'];
     translate.request.speedDetectionControl.checkResponseSpeed = function () { checks++; };
     const hosts = ['https://first.example/', 'https://second.example/'];
     translate.request.setHost(hosts);
@@ -38,5 +39,21 @@ require('../helpers/module')(__filename, [
     var hosts = ['https://first.example/', 'https://second.example/'];
     translate.request.setHost(hosts);
     return translate.request.api.host.length === 2 && translate.request.api.host[0] === hosts[0] && translate.request.api.host[1] === hosts[1] && typeof translate.request.api.host[0] === 'string';
+  } },
+  // setHost 应按本次新参数的类型包装字符串，与旧配置类型无关。
+  // 隔离测速，避免其后续自动包装字符串，掩盖 setHost 本身没有完成包装的问题。
+  { remark: '旧主机配置为数组时，新传入的主机字符串包装为单元素数组', test: function () {
+    translate.request.api.host = ['https://old.example/'];
+    translate.request.speedDetectionControl.checkResponseSpeed = function () {};
+    const host = 'https://new.example/';
+    translate.request.setHost(host);
+    return Array.isArray(translate.request.api.host) && translate.request.api.host.length === 1 && translate.request.api.host[0] === host;
+  } },
+  { remark: '旧主机配置为字符串时，新传入的主机字符串仍包装为单元素数组', test: function () {
+    translate.request.api.host = 'https://old.example/';
+    translate.request.speedDetectionControl.checkResponseSpeed = function () {};
+    const host = 'https://new.example/';
+    translate.request.setHost(host);
+    return Array.isArray(translate.request.api.host) && translate.request.api.host.length === 1 && translate.request.api.host[0] === host;
   } }
 ]);

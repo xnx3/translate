@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.10.20261112',
+	version: '4.1.11.20261112',
 	
 	/*js translate.config start*/
 	/*
@@ -341,6 +341,10 @@ var translate = {
 			}
 			if(typeof(requestApi.language) === 'string'){
 				translate.request.api.language = requestApi.language;
+			}
+			// 与配置导出保持一致，恢复翻译接口路径；未传入时保留原值，空字符串仍可禁用接口请求。
+			if(typeof(requestApi.translate) === 'string'){
+				translate.request.api.translate = requestApi.translate;
 			}
 			if(typeof(requestApi.ip) === 'string'){
 				translate.request.api.ip = requestApi.ip;

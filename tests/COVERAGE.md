@@ -2,6 +2,51 @@
 
 最近更新：2026-11-12（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 进度移动与请求失败回归基线（源码 4.1.16.20261112）
+
+本轮先补测试并记录现有行为，未修改 translate.js、translate.min.js 或源码版本号。三个方法模块的原有用例逐项保留，共新增 23 条独立自定义测试：
+
+| 模块 | 新增数 | 覆盖行为 | 新增通过 / 失败（两份文件分别相同） |
+| --- | ---: | --- | ---: |
+| `progress.api.startUITip` | 8 | Text 移入其他元素、DocumentFragment、ShadowRoot，Text 移除、整个父元素移除，成功与失败收尾，以及目标已有进度样式的保护 | 2 / 6 |
+| `execute` | 9 | 业务失败、HTTP 503、readyState 4 且状态零的网络失败，三种失败结合节点移动，以及 HTTP 200 返回 HTML、损坏 JSON、空正文 | 3 / 6 |
+| `request.sse.post` | 6 | SSE error、已渲染 item 后断流、移动后错误或断流，以及未收到业务事件时降级 XHR 的成功和失败收尾 | 4 / 2 |
+| 合计 | 23 | 每项独立报告结果 | 9 / 14 |
+
+测试执行真实生命周期钩子及 post、send、execute、SSE 链路，仅在需要时模拟浏览器传输层。检查提示确实出现后再验证清理，核对原文、已显示译文、节点身份与位置、业务样式和执行状态；SSE 降级的最终 XHR 未结束前应保持提示，部分译文后的断流不回滚已显示译文。没有新增公共辅助接口、用例字段、跳过或已知失败豁免。
+
+当前登记 275 个方法模块、2,911 条用例（888 条普通调用、2,023 条自定义判断），两份发布文件共 5,822 项方法检查。登记规模不代表本轮全量执行；本轮通过 BAT 实际运行七个相关模块，每份 140 项，共 280 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 32 / 9 | 32 / 9 |
+| `progress.api.startUITip` | 13 / 6 | 12 / 7 |
+| `request.post` | 8 / 0 | 8 / 0 |
+| `request.send` | 11 / 0 | 11 / 0 |
+| `request.sse.collectSafeProgressElements` | 33 / 0 | 32 / 1 |
+| `request.sse.post` | 18 / 3 | 18 / 3 |
+| `waitingExecute.isAllExecuteFinish` | 7 / 0 | 7 / 0 |
+| 合计 | 122 / 18 | 120 / 20 |
+
+复测命令（仓库根目录）：
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/progress\.api\.startUITip\.js modules/request\.sse\.post\.js modules/request\.post\.js modules/request\.send\.js modules/waitingExecute\.isAllExecuteFinish\.js modules/request\.sse\.collectSafeProgressElements\.js --workers=2
+```
+
+与此前完整源码报告及上轮父元素转换的最新模块结果按方法和备注逐项比较，原有 117 项中 113 项保持通过、4 项保持失败，没有变化。四项原有失败分别是 execute 忙碌时的单元素和 NodeList 参数、空范围配合源语种过滤，以及 SSE 的 CRLF 恰好跨网络块解析。本轮新增 23 项为 9 项通过、14 项失败；这些失败揭示已有问题，不是运行库改动引入的回归。压缩版原有 117 项为 111 项通过、6 项失败，新增结果与源码相同。
+
+新增失败中 11 项涉及节点移动或移除后，结束钩子漏清原父元素或误清新父元素的进度样式；其余 3 项是 HTTP 200 异常正文触发缺少 requestData.from 的页面异常，未完成统一收尾。两类问题分别分析、确认最小修复，本轮不实施修复。页面异常未被测试吞掉，BAT 因真实失败返回退出码 1；没有测试运行器错误。本轮未重跑全部方法或原场景，历史全量结果不据此改写。
+
+测试内等待上限仅防止本地模拟测试挂起，不为产品规定请求超时。请求始终无响应、自定义 post 不回调或同步抛错的产品行为仍待确认；同一元素的跨语种并发及 SSE 提前清理时机也未在此轮顺带规定新行为。
+
+本次验证前后两份运行库 SHA-256 保持不变：
+
+```text
+translate.js      99790762111308e40eb4745f0face0746a41b3d54d15100df02114b92361be3a
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 文本节点转换只返回真实父元素（4.1.16.20261112）
 
 仅将 element.nodeToElement 文本分支的 parentNode 改为 parentElement，继续复用已有空值跳过判断，补充 Fragment 和 ShadowRoot 直接文本的原因注释。普通元素、属性、SVG、未挂载元素内文本、输出顺序及重复语义保持；不跨 ShadowRoot 查找宿主，不改变原始翻译节点或请求执行流程。

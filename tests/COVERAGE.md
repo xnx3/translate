@@ -2,6 +2,41 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 动态属性监听允许省略条件（4.1.26.20261113）
+
+本轮仅调整 listener.addListener 的自定义属性变化判断：继续先检查标签配置和属性名单，condition 未填写或显式为 undefined 时默认允许，提供函数时沿用原有调用与返回值判断。补充两行中文注释，与首次扫描的缺省规则保持一致，源码版本更新为 4.1.26.20261113；translate.min.js 未更新。
+
+listener.addListener 保留原七条，追加五条真实 MutationObserver 回归：省略 condition、显式 undefined、条件允许时的 this／元素参数／调用次数、条件拒绝，以及登记既有翻译结果后的回写过滤。名单内外变化同时检查；回写用例只在第一次 execute 通知内按已有格式登记结果并改变 Attr，验证观察器与记录契约，不将桩函数称为完整渲染流程。即使过滤失效也只记录额外通知，避免测试自身无限回写。修复前检查该模块和 nodeValueChangeNeedTranslate，双版本共 54 项，48 通过、6 失败；缺省条件相关三条在两份文件中均复现 condition 不是函数的异常。
+
+修复后通过 BAT 检查八个模块，每份 144 项，双版本共 288 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.nodeAnalyse.gets` | 19 / 0 | 17 / 2 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `addNodeToQueue` | 21 / 1 | 21 / 1 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| `listener.addListener` | 12 / 0 | 9 / 3 |
+| `listener.nodeValueChangeNeedTranslate` | 15 / 0 | 15 / 0 |
+| 合计 | 142 / 2 | 115 / 29 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.findNode\.js modules/element\.nodeAnalyse\.gets\.js modules/element\.whileNodes\.js modules/addNodeToQueue\.js modules/execute\.js modules/whole\.context\.collectInlineTextGroups\.js modules/listener\.addListener\.js modules/listener\.nodeValueChangeNeedTranslate\.js --workers=2
+```
+
+首次运行停在自动准备浏览器阶段，未执行用例或生成新报告；结束该次测试进程后，使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定上一轮已验证可运行的本机 Chromium，完成上述修复前和修复后检查。未修改启动器、浏览器依赖或测试断言。该环境准备重启不计为测试用例重试。
+
+将上一轮 234 项报告与本轮修复前 54 项报告合并，逐项比较双版本、方法和备注：仅源码三条缺省条件回归由失败恢复通过，其余 285 项结果保持。源码两项旧失败仍为 whileNodes 自定义实时 value 重复扫描、addNodeToQueue 属性全文命中术语时的记录。没有跳过、失败豁免、用例重试或运行器错误，BAT 因真实失败返回退出码 1。本轮未全量复测；当前登记 275 模块、2,937 条用例（888 条普通、2,049 条自定义），双版本共 5,874 项，登记规模不代表实际执行范围。
+
+测试提交 ea3b5d3、源码提交 a34a439 已分别推送。gets 的实时 value 收集、whileNodes 重复扫描职责等统一扫描后续改动仍需逐处审查，本轮未实施。验证对应 SHA-256：
+
+```text
+translate.js      57ef31b13858d7f6b6b1f1b8878631514984b12bda7b9a76d8df6495a0f6e1c8
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 自定义属性收集允许省略条件（4.1.25.20261113）
 
 本轮仅调整 gets 自定义属性收集的一行判断：属性仍须在配置名单内，condition 未填写或显式为 undefined 时默认允许；提供函数时继续使用原有返回值判断。该缺省行为在 tagAttribute 原始注释中已有明确约定，whileNodes 也已按此处理，属于正常配置，因此不增加提醒日志。补充两行中文注释，源码版本更新为 4.1.25.20261113；translate.min.js 未更新。

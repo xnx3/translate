@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.22.20261113',
+	version: '4.1.23.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -3961,6 +3961,14 @@ var translate = {
 		}
 		translate.time.log('扫描要翻译区域的元素完成');
 
+		// 扫描未创建批次时先补齐空 list，避免后续语种过滤读取尚不存在的批次。
+		if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
+			translate.nodeQueue[uuid] = new Array();
+			translate.nodeQueue[uuid].list = [];
+			translate.log('--- translate.js warn tip 警告！！ ---');
+			translate.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
+		}
+
 		/***** translate.language.translateLanguagesRange 开始 *****/
 		if(translate.language.translateLanguagesRange.length > 0){
 			//如果大于0，则是有设置，那么只翻译有设置的语种，不在设置中的语种不会参与翻译
@@ -3977,13 +3985,6 @@ var translate = {
 		
 		/***** translate.language.translateLanguagesRange 结束 *****/
 		
-		//修复如果translate放在了页面最顶部，此时执行肯定扫描不到任何东西的，避免这种情况出现报错
-		if(typeof(translate.nodeQueue[uuid]) == 'undefined'){
-			translate.nodeQueue[uuid] = new Array();
-			translate.nodeQueue[uuid].list = [];
-			translate.log('--- translate.js warn tip 警告！！ ---');
-			translate.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
-		}
 		for(var lang in translate.nodeQueue[uuid].list){
 			if (!translate.nodeQueue[uuid].list.hasOwnProperty(lang)) {
 	    		continue;

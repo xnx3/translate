@@ -2,6 +2,34 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 排队日志使用已规范的节点范围截取预览（4.1.20.20261113）
+
+按维护者逐行确认的范围，仅将 execute 忙碌分支的 docs.slice(0, 2) 改为 Array.prototype.slice.call(all, 0, 2)，并补充中文注释。all 由前面的既有参数规范生成，日志取前两项不再依赖单元素或 DOM 集合自身提供 slice；waitingExecute.add(docs) 仍保存原始参数及引用。源码版本更新为 4.1.20.20261113，translate.min.js 未更新。日志计数、空项处理及异常捕获均未在本次调整，不能将本次验证表述为任意输入都不会发生日志异常。
+
+复用 execute 原有四十八条测试，没有新增或修改用例。修复前经 BAT 对单元素和 NodeList 两条运行双版本共四项，全部复现 slice 不是函数；修复后运行下列五个模块，每份 76 项，双版本共 152 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 47 / 1 | 32 / 16 |
+| `waitingExecute.add` | 7 / 0 | 7 / 0 |
+| `waitingExecute.get` | 5 / 0 | 5 / 0 |
+| `lifecycle.execute.trigger_Trigger` | 11 / 0 | 11 / 0 |
+| `lifecycle.execute.finally_Trigger` | 5 / 0 | 5 / 0 |
+| 合计 | 75 / 1 | 60 / 16 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/waitingExecute\.add\.js modules/waitingExecute\.get\.js modules/lifecycle\.execute\.trigger_Trigger\.js modules/lifecycle\.execute\.finally_Trigger\.js --workers=2
+```
+
+与上轮 execute 双版本 96 项逐项比较，只有源码第十七、十八条从失败转为通过，其余结果保持，无缺失；四个队列和钩子模块的双版本共 56 项全部通过。范围内源码唯一失败仍为 execute 空范围配合非空源语种过滤；上轮 SSE CRLF 跨块失败本轮未复测。没有跳过、失败豁免、重试或运行器错误，BAT 因真实旧失败返回退出码 1。本轮没有重跑全部方法或原场景，登记规模保持 275 模块、2,925 条用例（888 条普通、2,037 条自定义），双版本 5,850 项。
+
+验证对应 SHA-256：
+
+```text
+translate.js      95e40cc2fe131f8705aedc58edc64263d06384d38e4cb131bff85b623b2df876
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## SSE 空值结束响应按失败流程收尾（4.1.19.20261113）
 
 SSE done／error 事件的 data 为 JSON null 时，解析器按原有约定将它解析为 JavaScript null，事件旁路和响应拦截也保留这个值；execute 完成回调直接读取 responseData.result 会抛错，导致状态停留在 20，原文继续隐藏。本次仅按确认的四行方案，在 execute 完成回调将 null 或 undefined 的局部 responseData 设为空对象，复用原 result 非 1 的失败收尾。不调整解析器、共享请求回调或公开事件数据，正常对象和其他非空值不触发此分支。

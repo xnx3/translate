@@ -1138,5 +1138,164 @@ require('../helpers/module')(__filename, [
         !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress') &&
         eventCalls === 1 && eventName === 'error' && eventData === null && responseCalls === 1 && responseText === 'null';
     }
+  },
+  {
+    remark: '忙碌时日志跳过数组首项 null，保留原参数并在出队后完成翻译',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      document.body.innerHTML = '<p id="selected">你好世界</p><aside>不翻译</aside>';
+      const element = document.getElementById('selected'), text = element.firstChild;
+      const docs = [null, element];
+      const ticks = [], logs = [];
+      // 只控制调度时钟和浏览器传输层，保留真实排队、出队、扫描、请求及渲染流程。
+      window.setInterval = function (callback, delay) { ticks.push({ callback: callback, delay: delay }); return 811; };
+      translate.log = function (message) { logs.push(message); };
+      let sent = 0, afterCalls = 0, renderFinishes = 0;
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            const texts = JSON.parse(decodeURIComponent(this.data.text));
+            this.readyState = 4; this.status = 200;
+            this.responseText = JSON.stringify({ result: 1, from: this.data.from, to: this.data.to,
+              text: texts.map(value => value === '你好世界' ? 'Hello world' : 'Unexpected') });
+            this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.lifecycle.execute.translateNetworkAfter.push(function () { afterCalls++; });
+      translate.state = 20;
+      translate.execute(docs);
+      // 日志只略过预览中的空项，不能删改原数组，也不能在忙碌时提前扫描或请求。
+      const pending = translate.state === 20 && sent === 0 && translate.node.get(text) == null &&
+        translate.waitingExecute.queue.length === 1 && translate.waitingExecute.queue[0] === docs &&
+        docs.length === 2 && (0 in docs) && docs[0] === null && docs[1] === element && element.firstChild === text &&
+        ticks.filter(item => item.delay === 500).length === 1 &&
+        logs.some(message => typeof message === 'string' && message.endsWith(' (2)[P id=selected]'));
+      const finished = new Promise(resolve => {
+        // 只限制测试等待，异常仍由浏览器和公共测试工具报告，不规定产品请求超时。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.state = 0;
+      ticks.find(item => item.delay === 500).callback();
+      return await finished === true && pending && sent === 1 && afterCalls === 1 && renderFinishes === 1 &&
+        translate.state === 0 && translate.waitingExecute.queue.length === 0 &&
+        docs.length === 2 && (0 in docs) && docs[0] === null && docs[1] === element &&
+        element.firstChild === text && text.nodeValue === 'Hello world' &&
+        translate.node.get(text).originalText === '你好世界' && document.querySelector('aside').textContent === '不翻译';
+    }
+  },
+  {
+    remark: '忙碌时日志跳过数组首项 undefined，保留原参数并在出队后完成翻译',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      document.body.innerHTML = '<p id="selected">你好世界</p><aside>不翻译</aside>';
+      const element = document.getElementById('selected'), text = element.firstChild;
+      const docs = [undefined, element];
+      const ticks = [], logs = [];
+      // 只控制调度时钟和浏览器传输层，保留真实排队、出队、扫描、请求及渲染流程。
+      window.setInterval = function (callback, delay) { ticks.push({ callback: callback, delay: delay }); return 811; };
+      translate.log = function (message) { logs.push(message); };
+      let sent = 0, afterCalls = 0, renderFinishes = 0;
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            const texts = JSON.parse(decodeURIComponent(this.data.text));
+            this.readyState = 4; this.status = 200;
+            this.responseText = JSON.stringify({ result: 1, from: this.data.from, to: this.data.to,
+              text: texts.map(value => value === '你好世界' ? 'Hello world' : 'Unexpected') });
+            this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.lifecycle.execute.translateNetworkAfter.push(function () { afterCalls++; });
+      translate.state = 20;
+      translate.execute(docs);
+      // 日志只略过预览中的空项，不能删改原数组，也不能在忙碌时提前扫描或请求。
+      const pending = translate.state === 20 && sent === 0 && translate.node.get(text) == null &&
+        translate.waitingExecute.queue.length === 1 && translate.waitingExecute.queue[0] === docs &&
+        docs.length === 2 && (0 in docs) && docs[0] === undefined && docs[1] === element && element.firstChild === text &&
+        ticks.filter(item => item.delay === 500).length === 1 &&
+        logs.some(message => typeof message === 'string' && message.endsWith(' (2)[P id=selected]'));
+      const finished = new Promise(resolve => {
+        // 只限制测试等待，异常仍由浏览器和公共测试工具报告，不规定产品请求超时。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.state = 0;
+      ticks.find(item => item.delay === 500).callback();
+      return await finished === true && pending && sent === 1 && afterCalls === 1 && renderFinishes === 1 &&
+        translate.state === 0 && translate.waitingExecute.queue.length === 0 &&
+        docs.length === 2 && (0 in docs) && docs[0] === undefined && docs[1] === element &&
+        element.firstChild === text && text.nodeValue === 'Hello world' &&
+        translate.node.get(text).originalText === '你好世界' && document.querySelector('aside').textContent === '不翻译';
+    }
+  },
+  {
+    remark: '忙碌时日志跳过数组首项空位，保留原参数并在出队后完成翻译',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = false;
+      document.body.innerHTML = '<p id="selected">你好世界</p><aside>不翻译</aside>';
+      const element = document.getElementById('selected'), text = element.firstChild;
+      const docs = [, element];
+      const ticks = [], logs = [];
+      // 只控制调度时钟和浏览器传输层，保留真实排队、出队、扫描、请求及渲染流程。
+      window.setInterval = function (callback, delay) { ticks.push({ callback: callback, delay: delay }); return 811; };
+      translate.log = function (message) { logs.push(message); };
+      let sent = 0, afterCalls = 0, renderFinishes = 0;
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() {
+          sent++;
+          setTimeout(() => {
+            const texts = JSON.parse(decodeURIComponent(this.data.text));
+            this.readyState = 4; this.status = 200;
+            this.responseText = JSON.stringify({ result: 1, from: this.data.from, to: this.data.to,
+              text: texts.map(value => value === '你好世界' ? 'Hello world' : 'Unexpected') });
+            this.response = this.responseText;
+            this.onreadystatechange();
+          }, 0);
+        }
+      };
+      translate.lifecycle.execute.translateNetworkAfter.push(function () { afterCalls++; });
+      translate.state = 20;
+      translate.execute(docs);
+      // 日志只略过预览中的空项，不能删改原数组，也不能在忙碌时提前扫描或请求。
+      const pending = translate.state === 20 && sent === 0 && translate.node.get(text) == null &&
+        translate.waitingExecute.queue.length === 1 && translate.waitingExecute.queue[0] === docs &&
+        docs.length === 2 && !(0 in docs) && docs[0] === undefined && docs[1] === element && element.firstChild === text &&
+        ticks.filter(item => item.delay === 500).length === 1 &&
+        logs.some(message => typeof message === 'string' && message.endsWith(' (2)[P id=selected]'));
+      const finished = new Promise(resolve => {
+        // 只限制测试等待，异常仍由浏览器和公共测试工具报告，不规定产品请求超时。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.state = 0;
+      ticks.find(item => item.delay === 500).callback();
+      return await finished === true && pending && sent === 1 && afterCalls === 1 && renderFinishes === 1 &&
+        translate.state === 0 && translate.waitingExecute.queue.length === 0 &&
+        docs.length === 2 && !(0 in docs) && docs[0] === undefined && docs[1] === element &&
+        element.firstChild === text && text.nodeValue === 'Hello world' &&
+        translate.node.get(text).originalText === '你好世界' && document.querySelector('aside').textContent === '不翻译';
+    }
   }
 ]);

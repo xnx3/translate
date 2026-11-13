@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.24.20261113',
+	version: '4.1.25.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -5258,7 +5258,9 @@ var translate = {
 					//有这个标签的自定义翻译某个属性
 					for(var ai = 0; ai<node.attributes.length; ai++){
 						var arrtibuteNodeName = translate.element.getNodeName(node.attributes[ai]).toLowerCase();
-						if(divTagAttribute.attribute.indexOf(arrtibuteNodeName) > -1 && divTagAttribute.condition(node)){
+						// condition 是可选配置，省略或为 undefined 时按 tagAttribute 的既有约定默认允许。
+						// 仍先限定属性名单；已提供的条件函数继续决定是否收集，不改变内置属性规则。
+						if(divTagAttribute.attribute.indexOf(arrtibuteNodeName) > -1 && (typeof(divTagAttribute.condition) === 'undefined' || divTagAttribute.condition(node))){
 							//包含这个属性，且自定义判断条件满足，允许翻译
 							//判定一下是否已经加入过了，如果没有加入过，才会加入。这里主要是针对input 标签进行判断，比如 input type="submit" 的，value值如果也被用户自定义翻译，那上面的value就已经加上了，不需要在加了
 							var isAlreadyAdd = false; //true已经加入过了

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.25.20261113',
+	version: '4.1.26.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -2880,7 +2880,9 @@ var translate = {
 							//判断是否是 translate.element.tagAttribute 自定义翻译属性的
 							var divTagAttribute = translate.element.tagAttribute[nodeNameLowerCase];
 							//console.log('divTagAttribute:'+divTagAttribute);
-							if(typeof(divTagAttribute) !== 'undefined' && divTagAttribute.attribute.indexOf(mutation.attributeName) > -1 && divTagAttribute.condition(mutation.target)){
+							// 自定义属性的 condition 可省略，与首次扫描一致，省略时默认允许。
+							// 仍先校验标签配置和属性名单，已提供的条件函数继续决定是否处理本次变化。
+							if(typeof(divTagAttribute) !== 'undefined' && divTagAttribute.attribute.indexOf(mutation.attributeName) > -1 && (typeof(divTagAttribute.condition) === 'undefined' || divTagAttribute.condition(mutation.target))){
 								//是自定义翻译这个属性的，以及判定是否达到翻译条件
 								//条件满足，允许翻译
 							}else{

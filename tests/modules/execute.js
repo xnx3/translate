@@ -1058,5 +1058,85 @@ require('../helpers/module')(__filename, [
         text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
         !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress');
     }
+  },
+  {
+    remark: 'SSE done 事件返回 JSON null 时安全失败收尾，原始事件及响应拦截数据仍保留 null',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = true;
+      const element = document.createElement('span'), text = document.createTextNode('你好');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      element.append(text); document.body.append(element);
+      let fetchCalls = 0, xhrCalls = 0, beforeData, afterData, afterCalls = 0, renderFinishes = 0;
+      let eventCalls = 0, eventName, eventData, responseCalls = 0, responseText;
+      // 使用真实 SSE 解析和 execute 完成回调；JSON null 应按失败响应结束，不能遗留隐藏样式或重发 XHR。
+      window.fetch = function () {
+        fetchCalls++;
+        return Promise.resolve(new Response('event: done\ndata: null\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+      };
+      window.XMLHttpRequest = class { open() {} setRequestHeader() {} send() { xhrCalls++; } };
+      // 只观察公开旁路和响应拦截，确保收尾处理没有把传输层的原始 null 改成其他值。
+      translate.request.sse.onEvent = function (name, data) { eventCalls++; eventName = name; eventData = data; };
+      translate.request.response = function (xhr) { responseCalls++; responseText = xhr.responseText; };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 等待上限只用于防止测试挂起，不规定产品超时，也不吞掉浏览器异步异常。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      return await finished === true && wasHidden && fetchCalls === 1 && xhrCalls === 0 && afterCalls === 1 && renderFinishes === 1 &&
+        beforeData.lang === 'chinese_simplified' && beforeData.to === 'english' && beforeData.nodes[0] === text &&
+        afterData.from === 'chinese_simplified' && afterData.to === 'english' && afterData.result === 0 &&
+        afterData.nodes === beforeData.nodes && translate.state === 0 && element.firstChild === text && text.parentNode === element &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress') &&
+        eventCalls === 1 && eventName === 'done' && eventData === null && responseCalls === 1 && responseText === 'null';
+    }
+  },
+  {
+    remark: 'SSE error 事件返回 JSON null 时安全失败收尾，原始事件及响应拦截数据仍保留 null',
+    test: async function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.request.sse.use = true;
+      const element = document.createElement('span'), text = document.createTextNode('你好');
+      element.style.cssText = 'display:inline-block;width:40px;height:20px';
+      element.append(text); document.body.append(element);
+      let fetchCalls = 0, xhrCalls = 0, beforeData, afterData, afterCalls = 0, renderFinishes = 0;
+      let eventCalls = 0, eventName, eventData, responseCalls = 0, responseText;
+      // error 事件也可能携带合法的 JSON null；保留真实请求链路，独立验证其失败收尾而非仅测试解析器。
+      window.fetch = function () {
+        fetchCalls++;
+        return Promise.resolve(new Response('event: error\ndata: null\n\n', { headers: { 'content-type': 'text/event-stream' } }));
+      };
+      window.XMLHttpRequest = class { open() {} setRequestHeader() {} send() { xhrCalls++; } };
+      // 对外事件与 response 的内容继续按原协议暴露 null，不能因 execute 内部防护而改变。
+      translate.request.sse.onEvent = function (name, data) { eventCalls++; eventName = name; eventData = data; };
+      translate.request.response = function (xhr) { responseCalls++; responseText = xhr.responseText; };
+      translate.progress.api.startUITip();
+      translate.lifecycle.execute.translateNetworkBefore.push(function (data) { beforeData = data; });
+      translate.lifecycle.execute.translateNetworkAfter.push(function (data) { afterData = data; afterCalls++; });
+      const finished = new Promise(resolve => {
+        // 只限制本用例的等待；异常仍交给浏览器和公共测试工具报告，不在此转为成功。
+        const timer = setTimeout(() => resolve(false), 1000);
+        translate.lifecycle.execute.renderFinish.push(function () { renderFinishes++; clearTimeout(timer); resolve(true); });
+      });
+      translate.execute([text]);
+      const wasHidden = element.classList.contains('translatejs-text-element-hidden') && element.classList.contains('translate_api_in_progress');
+      return await finished === true && wasHidden && fetchCalls === 1 && xhrCalls === 0 && afterCalls === 1 && renderFinishes === 1 &&
+        beforeData.lang === 'chinese_simplified' && beforeData.to === 'english' && beforeData.nodes[0] === text &&
+        afterData.from === 'chinese_simplified' && afterData.to === 'english' && afterData.result === 0 &&
+        afterData.nodes === beforeData.nodes && translate.state === 0 && element.firstChild === text && text.parentNode === element &&
+        text.nodeValue === '你好' && translate.node.get(text).originalText === '你好' &&
+        !element.classList.contains('translatejs-text-element-hidden') && !element.classList.contains('translate_api_in_progress') &&
+        eventCalls === 1 && eventName === 'error' && eventData === null && responseCalls === 1 && responseText === 'null';
+    }
   }
 ]);

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.19.20261113',
+	version: '4.1.20.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -3767,7 +3767,8 @@ var translate = {
 				var sliceDocString = '';
 
 				if(typeof(docs) != 'undefined' && docs != null){
-					var sliceDoc = docs.slice(0, 2);
+					// 日志从已规范的 all 截取前两项，兼容单元素和 DOM 集合；队列仍保存原 docs。
+					var sliceDoc = Array.prototype.slice.call(all, 0, 2);
 				
 					for(var di = 0; di < sliceDoc.length; di++){
 						if(sliceDocString.length > 0){

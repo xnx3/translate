@@ -1,6 +1,48 @@
 # 方法测试覆盖及验证记录
 
-最近更新：2026-11-12（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+
+## SSE 空值结束响应按失败流程收尾（4.1.19.20261113）
+
+SSE done／error 事件的 data 为 JSON null 时，解析器按原有约定将它解析为 JavaScript null，事件旁路和响应拦截也保留这个值；execute 完成回调直接读取 responseData.result 会抛错，导致状态停留在 20，原文继续隐藏。本次仅按确认的四行方案，在 execute 完成回调将 null 或 undefined 的局部 responseData 设为空对象，复用原 result 非 1 的失败收尾。不调整解析器、共享请求回调或公开事件数据，正常对象和其他非空值不触发此分支。
+
+源码版本更新为 4.1.19.20261113，translate.min.js 未更新。execute 保留原四十六条，分别追加 done:null、error:null 两条独立回归，共四十八条。使用真实 execute、post、SSE 链路，仅模拟底层 fetch 响应及 XHR 计数，核对开始提示、失败结束和渲染完成各一次、状态归零、原文与 Text 身份、前后 nodes 同引用、来源和目标语种、进度样式清除；同时确认 onEvent 仍收到 null、responseText 仍为字符串 'null'，不重复发起 XHR。不吞浏览器异常，测试等待上限不规定产品超时。
+
+新增两条在修复前通过 BAT 对两份文件共四项检查，全部复现读取 null.result 的异常和未收尾。修复后源码两条均通过，压缩版仍失败。当前登记 275 个方法模块、2,925 条用例（888 条普通调用、2,037 条自定义判断），双版本共 5,850 项方法检查；登记规模不代表本轮全量执行。
+
+通过 BAT 对十一个相关模块运行两份实际发布文件，每份 193 项，共 386 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 45 / 3 | 32 / 16 |
+| `progress.api.startUITip` | 24 / 0 | 12 / 12 |
+| `progress.api.removeUITipByElements` | 9 / 0 | 9 / 0 |
+| `request.post` | 8 / 0 | 8 / 0 |
+| `request.send` | 11 / 0 | 11 / 0 |
+| `request.sse.collectSafeProgressElements` | 33 / 0 | 32 / 1 |
+| `request.sse.post` | 22 / 1 | 18 / 5 |
+| `request.sse.parseEventBlock` | 15 / 0 | 15 / 0 |
+| `request.sse.triggerEvent` | 7 / 0 | 7 / 0 |
+| `service.edge.translate` | 8 / 0 | 8 / 0 |
+| `waitingExecute.isAllExecuteFinish` | 7 / 0 | 7 / 0 |
+| 合计 | 189 / 4 | 159 / 34 |
+
+复测命令（仓库根目录）：
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/progress\.api\.startUITip\.js modules/progress\.api\.removeUITipByElements\.js modules/request\.sse\.post\.js modules/request\.post\.js modules/request\.send\.js modules/waitingExecute\.isAllExecuteFinish\.js modules/request\.sse\.collectSafeProgressElements\.js modules/service\.edge\.translate\.js modules/request\.sse\.parseEventBlock\.js modules/request\.sse\.triggerEvent\.js --workers=2
+```
+
+与上一轮九模块的 338 项报告按方法、备注及发布文件逐项比较，所有既有结果保持，没有缺失或新增退化。本轮额外复测解析器十五条及事件分派七条，双版本共四十四项全部通过，包括解析器原有的 JSON null 保持类型用例；这两个模块没有新增登记。新增两条 execute 源码回归由修复前失败转为通过；没有跳过、已知失败豁免或运行器错误，BAT 因真实失败返回退出码 1。本轮未重跑全部方法或原场景，不改写历史全量结果。
+
+本轮范围内源码仍有四项原有失败：execute 忙碌时的单元素和 NodeList、空范围配合源语种过滤，以及 SSE CRLF 恰好跨网络块解析。下一项先分析忙碌分支为日志预览直接调用 docs.slice()，导致本应支持的单元素和 DOM 集合在入队前抛错的问题；已有 all 参数规范可复用，尚未修改该分支。其他请求消费者、HTTP 失败分支及并发提示归属问题仍独立分析。
+
+源码与 execute 测试模块分别提交、推送。验证对应 SHA-256：
+
+```text
+translate.js      7b79bbc874e22bf9be396f629c3e9e1574af6b7aca0eb1bf8516fdb1d19deac0
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
 
 ## 原始错误正文缺少请求上下文时完成收尾（4.1.18.20261112）
 

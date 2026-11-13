@@ -41,5 +41,43 @@ require('../helpers/module')(__filename, [
     translate.addNodeToQueue = function () { calls++; };
     translate.element.findNode('unit', parent.firstChild); translate.element.findNode('unit', parent.lastChild);
     return calls === 0;
-  } }
+  } },
+  {
+    remark: '收集器返回 input 实时 value 时保留属性参数，旧 value Attr 不入队也不改写',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'japanese';
+      translate.nodeQueue.batch = { list: {} };
+      const input = document.createElement('input');
+      input.setAttribute('value', 'default'); input.value = 'Hello'; document.body.append(input);
+      const oldValue = input.getAttributeNode('value');
+      // 只模拟统一收集器的返回约定；findNode 和 addNodeToQueue 使用真实实现，启用规则由收集器的测试验证。
+      translate.element.nodeAnalyse.gets = function () { return [{ node: input, text: input.value, attribute: 'value' }]; };
+      translate.element.findNode('batch', input);
+      const record = translate.node.get(input);
+      const item = Object.values(translate.nodeQueue.batch.list.english)[0];
+      return record.originalText === 'Hello' && record.attribute === 'value' && translate.node.get(oldValue) == null &&
+        item.original === 'Hello' && item.nodes.length === 1 && item.nodes[0].node === input && item.nodes[0].attribute === 'value' &&
+        input.value === 'Hello' && input.defaultValue === 'default' && input.getAttributeNode('value') === oldValue;
+    }
+  },
+  {
+    remark: '收集器返回 textarea 实时 value 时保留属性参数和原默认文本',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'japanese';
+      translate.nodeQueue.batch = { list: {} };
+      const textarea = document.createElement('textarea');
+      textarea.textContent = 'default'; textarea.value = 'Hello'; document.body.append(textarea);
+      const defaultText = textarea.firstChild;
+      // 只模拟收集结果，不替换入队方法；实时值应绑定 textarea 本身，默认 Text 不应被当作本次目标。
+      translate.element.nodeAnalyse.gets = function () { return [{ node: textarea, text: textarea.value, attribute: 'value' }]; };
+      translate.element.findNode('batch', textarea);
+      const record = translate.node.get(textarea);
+      const item = Object.values(translate.nodeQueue.batch.list.english)[0];
+      return record.originalText === 'Hello' && record.attribute === 'value' && translate.node.get(defaultText) == null &&
+        item.original === 'Hello' && item.nodes.length === 1 && item.nodes[0].node === textarea && item.nodes[0].attribute === 'value' &&
+        textarea.value === 'Hello' && textarea.defaultValue === 'default' && textarea.firstChild === defaultText;
+    }
+  }
 ]);

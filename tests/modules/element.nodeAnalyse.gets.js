@@ -53,5 +53,18 @@ require('../helpers/module')(__filename, [
   { remark: '只读取当前节点的可翻译内容，不直接递归收集后代', test: function () {
     var root = document.createElement('div'); root.innerHTML = '甲<span>乙</span>';
     return translate.element.nodeAnalyse.gets(root).length === 0;
+  } },
+  // condition 是可选配置；省略和显式 undefined 分别验证，属性名单仍限制翻译范围。
+  { remark: '自定义属性省略 condition 时默认允许，只收集名单内属性', test: function () {
+    translate.element.tagAttribute.span = { attribute: ['data-label'] };
+    var node = document.createElement('span'); node.setAttribute('data-label', '标签'); node.setAttribute('data-other', '范围外');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return result.length === 1 && result[0].attribute === 'data-label' && result[0].text === '标签' && result[0].node === node.getAttributeNode('data-label');
+  } },
+  { remark: '自定义属性显式传入 condition 为 undefined 时默认允许，只收集名单内属性', test: function () {
+    translate.element.tagAttribute.span = { attribute: ['data-label'], condition: undefined };
+    var node = document.createElement('span'); node.setAttribute('data-label', '标签'); node.setAttribute('data-other', '范围外');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return result.length === 1 && result[0].attribute === 'data-label' && result[0].text === '标签' && result[0].node === node.getAttributeNode('data-label');
   } }
 ]);

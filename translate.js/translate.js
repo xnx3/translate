@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.23.20261113',
+	version: '4.1.24.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -6055,7 +6055,8 @@ var translate = {
 					continue;
 				}
 
-				translate.addNodeToQueue(uuid, nodeAnalyChild[nci].node, nodeAnalyChild[nci].text, '');
+				// 实时 value 以元素本身为目标，需要保留 value 参数；真实 Attr 和 Text 仍直接操作 nodeValue。
+				translate.addNodeToQueue(uuid, nodeAnalyChild[nci].node, nodeAnalyChild[nci].text, nodeAnalyChild[nci].node === node ? nodeAnalyChild[nci].attribute : '');
 			}
 			/*
 			var nodeAnaly = translate.element.nodeAnalyse.get(node);

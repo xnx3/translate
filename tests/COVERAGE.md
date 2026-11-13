@@ -2,6 +2,38 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 节点入队保留实时 value 参数（4.1.24.20261113）
+
+本轮仅实施维护者逐行确认的第一步：findNode 调用 addNodeToQueue 时，收集结果的目标等于传入节点则保留该项 attribute，其余情况仍传空字符串。补充中文注释，源码版本更新为 4.1.24.20261113。现有 gets 的属性结果为真实 Attr，自身 Text／Attr 的 attribute 为空，所以现有收集结果的入队参数保持；后续统一收集器返回 Element + attribute:value 时，才会进入已有实时值入队路径。gets、whileNodes 及实时值启用规则尚未改动，不能将本步表述为已经完成统一扫描或修复了重复扫描。translate.min.js 未更新。
+
+在 element.findNode 模块保留原八条，分别追加 input、textarea 两条独立消费者契约回归。仅模拟 gets 返回元素本身及 attribute:value，真实执行 findNode 和 addNodeToQueue；核对实时原文与属性参数、队列目标及节点身份，旧 value Attr／默认 Text 不被本次入队记录、默认内容不变。启用规则留给实际收集器的后续回归，不用这些模拟结果证明已完成收集器迁移。修改运行库前通过 BAT 对新增两条双版本共四项检查，全部复现失败；修复后源码两条通过，未更新压缩版仍失败。
+
+修复后通过 BAT 检查五个模块，每份 107 项，双版本共 214 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.nodeAnalyse.gets` | 17 / 0 | 17 / 0 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `addNodeToQueue` | 21 / 1 | 21 / 1 |
+| `execute` | 51 / 0 | 32 / 19 |
+| 合计 | 105 / 2 | 83 / 24 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.findNode\.js modules/element\.nodeAnalyse\.gets\.js modules/element\.whileNodes\.js modules/addNodeToQueue\.js modules/execute\.js --workers=2
+```
+
+与上轮九模块的重叠 116 项（execute、element.whileNodes）按发布文件、方法及备注逐项比较，全部结果保持；原 findNode 八条登记的备注和测试函数未改。源码仍有两项旧失败：whileNodes 自定义实时 value 重复扫描，以及 addNodeToQueue 属性全文命中术语时的记录。后一项在独立浏览器上下文执行同一原始测试，修改前源码、修改后源码及未更新压缩版均返回 false，无页面异常，确认不是本步新增；本轮不修改这两项实现或放宽预期。
+
+没有跳过、失败豁免、重试或运行器错误，BAT 因真实失败返回退出码 1。本轮未重跑全部方法或原场景；登记规模为 275 模块、2,930 条用例（888 条普通、2,042 条自定义），双版本共 5,860 项，登记规模不代表全量验证。
+
+测试模块提交 503f8a1、源码提交 234e647 已分别推送。下一处只提案调整 gets 的自定义属性收集块，默认 title、独立根元素规则和 whileNodes 的重复扫描删除继续逐处审查，均未在本轮实施。验证对应 SHA-256：
+
+```text
+translate.js      1192254522c96cf308b3ca08b8613dd6f99412bd8468913e6a2c642f538b0efb
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 空批次初始化先于源语种过滤（4.1.23.20261113）
 
 按维护者确认的顺序调整，将 execute 中原有的 nodeQueue[uuid] 不存在时的初始化块移到 translateLanguagesRange 过滤之前。判断、赋值和两条日志保持原样，仅更新说明注释；扫描未创建批次时先补齐空 list，避免过滤读取 undefined.list。图片替换、入口与开始钩子仍按原顺序执行，空范围继续原有完成通知、状态归零和完成次数处理，不在入口新增 return。源码版本更新为 4.1.23.20261113，translate.min.js 未更新。

@@ -2,6 +2,36 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 排队日志按规范后的节点范围显示数量（4.1.21.20261113）
+
+按维护者确认的单行范围，仅将 execute 忙碌日志拼接中的两处 docs.length 改为 all.length，与此前前两项预览采用同一范围。单个普通元素、Attr 和 Document 经既有逻辑包装为 [docs]，数量应为 1，原先显示 undefined；数组、NodeList 和 HTMLCollection 的 all === docs，计数与省略号保持。队列仍接收原 docs，不修改空项处理或异常捕获。源码版本更新为 4.1.21.20261113，translate.min.js 未更新。
+
+在 TEMP 中用实际修改前后源码作七类输入、共十四组隔离浏览器比较，确认上述三类单节点日志从 (undefined) 改为 (1)，数组、NodeList、HTMLCollection 和空数组日志保持。所有组均保留入队及出队参数引用，完成相同的 finally 状态和半秒调度，未出现页面异常。临时比较不作为新增方法用例登记，也不混入 BAT 数量。
+
+复用已有测试，通过 BAT 检查五个相关模块，每份 76 项、双版本共 152 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 47 / 1 | 32 / 16 |
+| `waitingExecute.add` | 7 / 0 | 7 / 0 |
+| `waitingExecute.get` | 5 / 0 | 5 / 0 |
+| `lifecycle.execute.trigger_Trigger` | 11 / 0 | 11 / 0 |
+| `lifecycle.execute.finally_Trigger` | 5 / 0 | 5 / 0 |
+| 合计 | 75 / 1 | 60 / 16 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/waitingExecute\.add\.js modules/waitingExecute\.get\.js modules/lifecycle\.execute\.trigger_Trigger\.js modules/lifecycle\.execute\.finally_Trigger\.js --workers=2
+```
+
+与上轮五模块 152 项按发布文件、方法和备注逐项比较，全部结果保持，没有缺失、新增退化、跳过、失败豁免、重试或运行器错误。范围内源码唯一失败仍为空范围配合非空源语种过滤，BAT 因真实旧失败返回退出码 1。本轮没有新增测试或重跑全部方法及原场景，登记规模保持 275 模块、2,925 条用例（888 条普通、2,037 条自定义），双版本共 5,850 项。
+
+下一项单独确认日志预览读取数组 null、undefined 或空位的 nodeType 时抛错的问题。实际扫描 whileNodes 已跳过这些空项，预览循环尚未处理；本次未混入实现或正式用例。验证对应 SHA-256：
+
+```text
+translate.js      dd19bb05b6868bef13478831e3a56c641519132828ddba1e8362ed87af06129f
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 排队日志使用已规范的节点范围截取预览（4.1.20.20261113）
 
 按维护者逐行确认的范围，仅将 execute 忙碌分支的 docs.slice(0, 2) 改为 Array.prototype.slice.call(all, 0, 2)，并补充中文注释。all 由前面的既有参数规范生成，日志取前两项不再依赖单元素或 DOM 集合自身提供 slice；waitingExecute.add(docs) 仍保存原始参数及引用。源码版本更新为 4.1.20.20261113，translate.min.js 未更新。日志计数、空项处理及异常捕获均未在本次调整，不能将本次验证表述为任意输入都不会发生日志异常。

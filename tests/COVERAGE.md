@@ -2,6 +2,40 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 空批次初始化先于源语种过滤（4.1.23.20261113）
+
+按维护者确认的顺序调整，将 execute 中原有的 nodeQueue[uuid] 不存在时的初始化块移到 translateLanguagesRange 过滤之前。判断、赋值和两条日志保持原样，仅更新说明注释；扫描未创建批次时先补齐空 list，避免过滤读取 undefined.list。图片替换、入口与开始钩子仍按原顺序执行，空范围继续原有完成通知、状态归零和完成次数处理，不在入口新增 return。源码版本更新为 4.1.23.20261113，translate.min.js 未更新。
+
+复用现有 execute 第二十二条回归，修改前通过 BAT 双版本共两项检查，均复现读取 list 的异常。修复后检查九个相关模块，每份 107 项，双版本共 214 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `execute` | 51 / 0 | 32 / 19 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `images.execute` | 9 / 0 | 9 / 0 |
+| `lifecycle.execute.trigger_Trigger` | 11 / 0 | 11 / 0 |
+| `lifecycle.execute.start_Trigger` | 6 / 0 | 6 / 0 |
+| `lifecycle.execute.renderFinish_Trigger` | 6 / 0 | 6 / 0 |
+| `lifecycle.execute.finally_Trigger` | 5 / 0 | 5 / 0 |
+| `waitingExecute.add` | 7 / 0 | 7 / 0 |
+| `waitingExecute.get` | 5 / 0 | 5 / 0 |
+| 合计 | 106 / 1 | 86 / 21 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/execute\.js modules/waitingExecute\.add\.js modules/waitingExecute\.get\.js modules/element\.whileNodes\.js modules/images\.execute\.js modules/lifecycle\.execute\.trigger_Trigger\.js modules/lifecycle\.execute\.start_Trigger\.js modules/lifecycle\.execute\.renderFinish_Trigger\.js modules/lifecycle\.execute\.finally_Trigger\.js --workers=2
+```
+
+与上一轮五模块的 158 项按发布文件、方法及备注逐项比较，仅源码 execute 第二十二条由失败恢复通过，其余结果保持，没有缺失。此次扩展运行的 element.whileNodes 第四条（自定义 input value 应使用实时值并绑定元素本身）仍失败；在独立浏览器上下文中执行该原始测试函数，修改前 HEAD、修改后源码及未更新压缩版均返回 false，确认不是此次调整引入。该项涉及后续叶子扫描再次读取旧 value Attr，需要单独分析，未在本次改动中处理或放宽预期。
+
+没有跳过、失败豁免、重试或运行器错误，BAT 因真实旧失败返回退出码 1。本轮没有新增测试用例或重跑全部方法、原场景；登记规模仍为 275 模块、2,928 条用例（888 条普通、2,040 条自定义），双版本共 5,856 项，登记规模不代表本轮全量运行。另行已知的 SSE CRLF 跨块问题本轮未复测、未修改。
+
+源码修复提交 0864caa 已推送。验证对应 SHA-256：
+
+```text
+translate.js      e65dadc46e2a1f88df537ed83c73d921ca64925f127e662b57899a60ae4c5d93
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 排队日志预览跳过空项（4.1.22.20261113）
 
 按维护者确认的单处方案，在 execute 忙碌分支的预览循环开头、逗号拼接前增加 sliceDoc[di] == null 判断并 continue，补充中文注释。null、显式 undefined 和数组空位只在日志预览中跳过，与实际 whileNodes 的既有容错一致；原 docs 引用、长度、空位和值均保留，不改变队列或翻译范围。源码版本更新为 4.1.22.20261113，translate.min.js 未更新。

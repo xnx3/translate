@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.20.20261113',
+	version: '4.1.21.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -3788,7 +3788,7 @@ var translate = {
 							sliceDocString = sliceDocString + sliceDoc[di].nodeValue.replaceAll(/\r?\n/g, '[换行符]');
 						}
 					}
-					sliceDocString = ' ('+docs.length+')['+sliceDocString+(docs.length > 2 ? ', ...':'')+']';
+					sliceDocString = ' ('+all.length+')['+sliceDocString+(all.length > 2 ? ', ...':'')+']';
 				}
 				
 

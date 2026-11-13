@@ -2,6 +2,39 @@
 
 最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 自定义属性收集允许省略条件（4.1.25.20261113）
+
+本轮仅调整 gets 自定义属性收集的一行判断：属性仍须在配置名单内，condition 未填写或显式为 undefined 时默认允许；提供函数时继续使用原有返回值判断。该缺省行为在 tagAttribute 原始注释中已有明确约定，whileNodes 也已按此处理，属于正常配置，因此不增加提醒日志。补充两行中文注释，源码版本更新为 4.1.25.20261113；translate.min.js 未更新。
+
+element.nodeAnalyse.gets 保留原十七条用例，追加两条独立回归，分别覆盖省略 condition 和显式 condition:undefined。两条均同时设置名单内外属性，检查只返回名单内属性及其原文本、真实 Attr 身份。修复前通过 BAT 对新增两条执行双版本共四项检查，均复现 condition 不是函数的异常；修复后源码两条通过，未更新压缩版两条仍失败。
+
+修复后通过 BAT 检查六个模块，每份 117 项，双版本共 234 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.nodeAnalyse.gets` | 19 / 0 | 17 / 2 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `addNodeToQueue` | 21 / 1 | 21 / 1 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 115 / 2 | 91 / 26 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.findNode\.js modules/element\.nodeAnalyse\.gets\.js modules/element\.whileNodes\.js modules/addNodeToQueue\.js modules/execute\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+与上一轮重叠的 214 项按发布文件、方法及备注逐项比较，全部结果保持。源码仍有两项旧失败：whileNodes 自定义实时 value 重复扫描，以及 addNodeToQueue 属性全文命中术语时的记录。额外检查 gets 的另一个消费者 collectInlineTextGroups，双版本十六项全部通过。没有跳过、失败豁免、重试或运行器错误，BAT 因真实失败返回退出码 1；没有全量复测。当前登记 275 模块、2,932 条用例（888 条普通、2,044 条自定义），双版本共 5,864 项，登记规模不代表本轮实际执行范围。
+
+动态属性监听处仍直接调用 condition，省略条件时可能在属性更新或翻译回写触发监听后报错；这处同类旧问题留待单独确认，本轮没有改动监听或完成统一扫描。条件使用带副作用 getter 时，新增 typeof 判断会使读取次数由一次变为两次；此前临时边界比较已确认该差异，普通函数字段的 this、参数及调用次数保持。
+
+测试提交 e082456、源码提交 3dfe77d 已分别推送。验证对应 SHA-256：
+
+```text
+translate.js      eda1fc48346033dc98f0842b10bbeb12950ed531f5451fc7a45dad863a70d207
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 节点入队保留实时 value 参数（4.1.24.20261113）
 
 本轮仅实施维护者逐行确认的第一步：findNode 调用 addNodeToQueue 时，收集结果的目标等于传入节点则保留该项 attribute，其余情况仍传空字符串。补充中文注释，源码版本更新为 4.1.24.20261113。现有 gets 的属性结果为真实 Attr，自身 Text／Attr 的 attribute 为空，所以现有收集结果的入队参数保持；后续统一收集器返回 Element + attribute:value 时，才会进入已有实时值入队路径。gets、whileNodes 及实时值启用规则尚未改动，不能将本步表述为已经完成统一扫描或修复了重复扫描。translate.min.js 未更新。

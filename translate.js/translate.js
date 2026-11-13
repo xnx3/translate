@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.21.20261113',
+	version: '4.1.22.20261113',
 	
 	/*js translate.config start*/
 	/*
@@ -3771,6 +3771,10 @@ var translate = {
 					var sliceDoc = Array.prototype.slice.call(all, 0, 2);
 				
 					for(var di = 0; di < sliceDoc.length; di++){
+						// 与实际节点扫描保持一致，日志预览跳过 null、undefined 和数组空位，不修改原队列数据。
+						if(sliceDoc[di] == null){
+							continue;
+						}
 						if(sliceDocString.length > 0){
 							sliceDocString = sliceDocString + ', ';
 						}

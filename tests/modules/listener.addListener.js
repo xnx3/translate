@@ -106,5 +106,101 @@ require('../helpers/module')(__filename, [
       translate.listener.addListener();
       return translate.listener.input.originalValueDescriptor === null && Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set === before;
     }
+  },
+  // 真实 MutationObserver 分发变化；仅记录 execute 入参，分别检查缺省条件和属性名单。
+  {
+    remark: '自定义属性省略 condition 时监听名单内变化，名单外变化不触发翻译',
+    test: async function () {
+      const node = document.createElement('span');
+      node.setAttribute('data-label', '旧标签'); node.setAttribute('data-other', '旧内容');
+      document.body.append(node);
+      translate.documents = [node];
+      translate.element.tagAttribute.span = { attribute: ['data-label'] };
+      const calls = [];
+      translate.execute = function (docs) { calls.push(docs); };
+      translate.listener.addListener();
+      node.setAttribute('data-other', '新内容'); node.setAttribute('data-label', '新标签');
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return calls.length === 1 && calls[0].length === 1 && calls[0][0] === node.getAttributeNode('data-label') && calls[0][0].nodeValue === '新标签';
+    }
+  },
+  {
+    remark: '自定义属性显式 condition 为 undefined 时监听名单内变化，名单外变化不触发翻译',
+    test: async function () {
+      const node = document.createElement('span');
+      node.setAttribute('data-label', '旧标签'); node.setAttribute('data-other', '旧内容');
+      document.body.append(node);
+      translate.documents = [node];
+      translate.element.tagAttribute.span = { attribute: ['data-label'], condition: undefined };
+      const calls = [];
+      translate.execute = function (docs) { calls.push(docs); };
+      translate.listener.addListener();
+      node.setAttribute('data-other', '新内容'); node.setAttribute('data-label', '新标签');
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return calls.length === 1 && calls[0].length === 1 && calls[0][0] === node.getAttributeNode('data-label') && calls[0][0].nodeValue === '新标签';
+    }
+  },
+  {
+    remark: '自定义属性 condition 返回 true 时保留所属配置、元素参数及匹配后的单次调用',
+    test: async function () {
+      const node = document.createElement('span');
+      node.setAttribute('data-label', '旧标签'); node.setAttribute('data-other', '旧内容');
+      document.body.append(node);
+      translate.documents = [node];
+      let conditionCalls = 0, correctReceiver = true, correctNode = true;
+      const config = { attribute: ['data-label'], condition: function (element) {
+        conditionCalls++; correctReceiver = correctReceiver && this === config; correctNode = correctNode && element === node;
+        return true;
+      } };
+      translate.element.tagAttribute.span = config;
+      const calls = [];
+      translate.execute = function (docs) { calls.push(docs); };
+      translate.listener.addListener();
+      node.setAttribute('data-other', '新内容'); node.setAttribute('data-label', '新标签');
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return conditionCalls === 1 && correctReceiver && correctNode && calls.length === 1 && calls[0].length === 1 && calls[0][0] === node.getAttributeNode('data-label');
+    }
+  },
+  {
+    remark: '自定义属性 condition 返回 false 时仍拒绝名单内变化，不触发翻译',
+    test: async function () {
+      const node = document.createElement('span');
+      node.setAttribute('data-label', '旧标签');
+      document.body.append(node);
+      translate.documents = [node];
+      let conditionCalls = 0;
+      translate.element.tagAttribute.span = { attribute: ['data-label'], condition: function () { conditionCalls++; return false; } };
+      const calls = [];
+      translate.execute = function (docs) { calls.push(docs); };
+      translate.listener.addListener();
+      node.setAttribute('data-label', '新标签');
+      await new Promise(resolve => setTimeout(resolve, 20));
+      return conditionCalls === 1 && calls.length === 0 && node.getAttribute('data-label') === '新标签';
+    }
+  },
+  {
+    remark: '自定义属性省略 condition 时仍识别已登记的翻译回写，避免重复翻译并保留历史',
+    test: async function () {
+      const node = document.createElement('span'); node.setAttribute('data-label', '旧标签');
+      document.body.append(node);
+      translate.documents = [node];
+      translate.element.tagAttribute.span = { attribute: ['data-label'] };
+      const attribute = node.getAttributeNode('data-label');
+      const calls = [];
+      translate.execute = function (docs) {
+        calls.push(docs);
+        // 只在首次通知中按既有格式登记结果并回写，验证监听与记录契约，不替代完整渲染测试。
+        // 即使重复翻译过滤失效，也只记录额外调用，避免测试自身形成无限回写。
+        if (calls.length === 1) {
+          translate.node.set(attribute, { translateResults: { '译后': 0 } });
+          attribute.nodeValue = '译后';
+        }
+      };
+      translate.listener.addListener();
+      node.setAttribute('data-label', '新标签');
+      await new Promise(resolve => setTimeout(resolve, 20));
+      const history = translate.node.get(attribute);
+      return calls.length === 1 && calls[0].length === 1 && calls[0][0] === attribute && attribute.nodeValue === '译后' && history !== null && history.translateResults['译后'] === 0;
+    }
   }
 ]);

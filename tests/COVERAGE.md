@@ -1,6 +1,32 @@
 # 方法测试覆盖及验证记录
 
-最近更新：2026-11-13（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+
+## 提前读取节点自定义属性配置（4.1.27.20261114）
+
+本轮仅实施逐处确认的声明前移：gets 在取得 nodename 后、进入 switch 前读取原有 divTagAttribute，删除通用属性扫描前的原声明，补充一行中文说明。版本更新为 4.1.27.20261114。此步未修改标签分支、属性名单、条件判断、返回结构或 whileNodes，也未启用实时 value 收集；translate.min.js 未更新。普通稳定配置保持原行为，使用 getter／Proxy 或 DOM getter 副作用时，配置读取时点变化不保证等价。
+
+复用现有三个相关模块，通过 BAT 检查每份 37 项、双版本共 74 项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 19 / 0 | 17 / 2 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 37 / 0 | 33 / 4 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定此前已验证的本机 Chromium。74 项按发布文件、方法和备注与上一轮报告逐项比较，全部结果保持；压缩版四项失败仍为 findNode 的两条实时 value 参数回归、gets 的两条缺省 condition 回归。没有新增用例、跳过、失败豁免、重试或运行器错误，BAT 因压缩版真实失败返回退出码 1。未重跑全部方法、场景或其它模块，不据此宣称 whileNodes 的重复扫描及其它旧问题已修复。
+
+当前登记保持 275 模块、2,937 条用例（888 条普通、2,049 条自定义），双版本共 5,874 项；登记规模不代表本轮执行范围。源码提交 c3a99d8 已推送。下一步仍需逐处确认 INPUT／TEXTAREA 分支整理与实时值收集，普通元素的 value 继续按 Attr 处理。验证对应 SHA-256：
+
+```text
+translate.js      8af308592ccbb97579fa0b4d61a542ed17b3d7df920386f0f9d7b7aed79f9233
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
 
 ## 动态属性监听允许省略条件（4.1.26.20261113）
 

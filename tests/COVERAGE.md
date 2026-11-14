@@ -2,6 +2,32 @@
 
 最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 合并输入控件的占位符收集（4.1.28.20261114）
+
+本轮仅实施已确认的分支整理：将 TEXTAREA 的 case 移到 INPUT 前，复用两段原本完全相同的 placeholder 判断与结果构造，删除重复块。默认 button／submit value 的判断最左侧增加 nodename === 'INPUT'，使 TEXTAREA 即使带 type、value 属性也在按钮逻辑前短路。补充准确中文注释，源码版本更新为 4.1.28.20261114，净减少九行。实时 value 收集、whileNodes 及 translate.min.js 均未改动。
+
+复用三个相关模块，通过 BAT 检查每份 37 项、双版本共 74 项，按发布文件、方法及备注与上一轮逐项比较，全部结果保持：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 19 / 0 | 17 / 2 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 37 / 0 | 33 / 4 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时通过 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定此前已验证的本机 Chromium。另在 TEMP 使用真实浏览器对照修改前后源码，分别组合 input／textarea、type=button／submit／text、非空／纯空白／空 placeholder，共十八组、三十六次检查：INPUT button／submit 仍按 value、placeholder 顺序返回真实 Attr；TEXTAREA 不因模拟按钮属性而新增默认 value，空白及空 placeholder 不产生结果。所有结果符合预期且前后一致，无页面异常；这些临时检查不作为新增方法用例登记。
+
+没有新增用例、跳过、失败豁免、重试或运行器错误，BAT 因未更新压缩版的四项旧失败返回退出码 1。当前登记仍为 275 模块、2,937 条用例（888 条普通、2,049 条自定义），双版本共 5,874 项；本轮未全量复测，不据此宣称其它旧问题或统一扫描已完成。源码提交 7d65942 已推送。下一处仅准备已配置 INPUT／TEXTAREA 的实时 value 收集及跳过旧 Attr 的提案，仍待确认。验证对应 SHA-256：
+
+```text
+translate.js      a2f7d899e180b9ce650c42dce3252efa510f1c7e73a932aa89d325ee8d87ddda
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 提前读取节点自定义属性配置（4.1.27.20261114）
 
 本轮仅实施逐处确认的声明前移：gets 在取得 nodename 后、进入 switch 前读取原有 divTagAttribute，删除通用属性扫描前的原声明，补充一行中文说明。版本更新为 4.1.27.20261114。此步未修改标签分支、属性名单、条件判断、返回结构或 whileNodes，也未启用实时 value 收集；translate.min.js 未更新。普通稳定配置保持原行为，使用 getter／Proxy 或 DOM getter 副作用时，配置读取时点变化不保证等价。

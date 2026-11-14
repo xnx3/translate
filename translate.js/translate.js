@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.26.20261113',
+	version: '4.1.27.20261114',
 	
 	/*js translate.config start*/
 	/*
@@ -5185,6 +5185,8 @@ var translate = {
 				var resultArray = [];
 
 				var nodename = translate.element.getNodeName(node).toUpperCase();
+				// 提前读取当前标签的自定义属性配置，后续判断复用这一份配置。
+				var divTagAttribute = translate.element.tagAttribute[nodename.toLowerCase()];
 				switch (nodename) {
 				  case 'META': 	//meta标签，如是关键词、描述等
 				    var nodeAttributeName = node.name.toLowerCase();  //取meta 标签的name 属性
@@ -5255,7 +5257,6 @@ var translate = {
 				}
 
 				//判断是否是 translate.element.tagAttribute 自定义翻译属性的
-				var divTagAttribute = translate.element.tagAttribute[nodename.toLowerCase()];
 				if(typeof(divTagAttribute) !== 'undefined'){
 					//有这个标签的自定义翻译某个属性
 					for(var ai = 0; ai<node.attributes.length; ai++){

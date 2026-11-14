@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.27.20261114',
+	version: '4.1.28.20261114',
 	
 	/*js translate.config start*/
 	/*
@@ -5215,15 +5215,16 @@ var translate = {
 						});
 					}
 				    break;
+				  case 'TEXTAREA':
 				  case 'INPUT':  
 				  	/*
-						input，要对以下情况进行翻译
+						input、textarea 共用 placeholder；下面的按钮默认 value 仅处理 input
 							placeholder
 							type=button、submit 的情况下的 value 
 				  	*/
 
 				  	//针对 type=button、submit 的情况下的 value 
-				  	if(typeof(node.attributes.type) !== 'undefined' && node.attributes.type !== null &&  typeof(node.attributes.type.nodeValue) === 'string' && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
+					if(nodename === 'INPUT' && typeof(node.attributes.type) !== 'undefined' && node.attributes.type !== null &&  typeof(node.attributes.type.nodeValue) === 'string' && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
 						//取它的value
 						var input_value_node = node.attributes.value;
 						if(typeof(input_value_node) !== 'undefined' && input_value_node !== null && typeof(input_value_node.nodeValue) === 'string' && input_value_node.nodeValue.trim().length > 0){
@@ -5236,16 +5237,6 @@ var translate = {
 					}
 
 					//针对 placeholder
-					if(typeof(node.attributes['placeholder']) !== 'undefined' && typeof(node.attributes['placeholder'].nodeValue) === 'string' && node.attributes['placeholder'].nodeValue.trim().length > 0){
-						resultArray.push({
-							text: node.attributes['placeholder'].nodeValue,
-							attribute: 'placeholder',
-							node: node.attributes['placeholder']
-						});
-					}
-					break;
-				  case 'TEXTAREA':	
-				  	//针对 placeholder
 					if(typeof(node.attributes['placeholder']) !== 'undefined' && typeof(node.attributes['placeholder'].nodeValue) === 'string' && node.attributes['placeholder'].nodeValue.trim().length > 0){
 						resultArray.push({
 							text: node.attributes['placeholder'].nodeValue,

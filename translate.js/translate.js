@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.28.20261114',
+	version: '4.1.29.20261114',
 	
 	/*js translate.config start*/
 	/*
@@ -5175,7 +5175,7 @@ var translate = {
 				[
 					{
 						node: 当前扫描出的node （传入的node、或下层node）
-						attribute: 是否是下层属性，比如 alt、placeholder , 如果是传入的node本身，不是任何下层属性，则这里是空白字符串 ''
+						attribute: 属性名，如 alt、placeholder；实时 input／textarea value 返回元素本身及 'value'，普通自身 Text／Attr 为 ''
 						text: 可进行翻译的文本，也就是当前数组中 node 的值的文本
 					},
 					...
@@ -5223,8 +5223,31 @@ var translate = {
 							type=button、submit 的情况下的 value 
 				  	*/
 
-				  	//针对 type=button、submit 的情况下的 value 
-					if(nodename === 'INPUT' && typeof(node.attributes.type) !== 'undefined' && node.attributes.type !== null &&  typeof(node.attributes.type.nodeValue) === 'string' && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
+					// 仅为当前 input、textarea 显式配置 value 时启用实时取值，保留原配置的大小写规则。
+					// 沿用原 for-in 和自有属性检查，跳过数组空位及继承项。
+					// 不要求存在 HTML value 属性，JS 设置的实时值也需收集；condition 仍决定是否允许。
+					// 扫描过程中 condition 可能多次执行，避免依赖固定调用次数或在其中修改 DOM。
+					var isInputValue = false;
+					if(typeof(divTagAttribute) !== 'undefined'){
+						for(var ai in divTagAttribute.attribute){
+							if(divTagAttribute.attribute.hasOwnProperty(ai) && divTagAttribute.attribute[ai].toLowerCase() === 'value'){
+								isInputValue = true;
+								break;
+							}
+						}
+					}
+					if(isInputValue && (typeof(divTagAttribute.condition) === 'undefined' || divTagAttribute.condition(node))){
+						var inputValue = node.value;
+						// 实时值已清空就不收集，不能回退到旧的 HTML value；非空值以元素本身为目标。
+						if(inputValue !== ''){
+							resultArray.push({
+								text: inputValue,
+								attribute: 'value',
+								node: node
+							});
+						}
+					// 未配置或条件拒绝时，INPUT 的 button、submit 保留原默认 value Attr。
+					}else if(nodename === 'INPUT' && typeof(node.attributes.type) !== 'undefined' && node.attributes.type !== null &&  typeof(node.attributes.type.nodeValue) === 'string' && (node.attributes.type.nodeValue.toLowerCase() == 'button' || node.attributes.type.nodeValue.toLowerCase() == 'submit')){
 						//取它的value
 						var input_value_node = node.attributes.value;
 						if(typeof(input_value_node) !== 'undefined' && input_value_node !== null && typeof(input_value_node.nodeValue) === 'string' && input_value_node.nodeValue.trim().length > 0){
@@ -5252,6 +5275,10 @@ var translate = {
 					//有这个标签的自定义翻译某个属性
 					for(var ai = 0; ai<node.attributes.length; ai++){
 						var arrtibuteNodeName = translate.element.getNodeName(node.attributes[ai]).toLowerCase();
+						// input、textarea 的 value 已由标签分支处理；其他元素的 value 仍按真实 Attr 处理。
+						if((nodename === 'INPUT' || nodename === 'TEXTAREA') && arrtibuteNodeName === 'value'){
+							continue;
+						}
 						// condition 是可选配置，省略或为 undefined 时按 tagAttribute 的既有约定默认允许。
 						// 仍先限定属性名单；已提供的条件函数继续决定是否收集，不改变内置属性规则。
 						if(divTagAttribute.attribute.indexOf(arrtibuteNodeName) > -1 && (typeof(divTagAttribute.condition) === 'undefined' || divTagAttribute.condition(node))){

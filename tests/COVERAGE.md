@@ -2,6 +2,48 @@
 
 最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 显式配置的输入控件收集实时 value（4.1.29.20261114）
+
+本轮实施维护者确认的 gets 两处逻辑：仅对显式配置 value、且 condition 允许的 INPUT／TEXTAREA 收集实时 .value，返回元素本身及 attribute:value；不要求 HTML value Attr 存在，实时值清空不回退旧 Attr。通用属性循环跳过这两类控件的 value Attr，普通元素仍返回真实 Attr；未配置或条件拒绝时，INPUT button／submit 保留原默认规则。补充中文注释及返回结构说明，版本更新为 4.1.29.20261114。没有修改 whileNodes、监听或压缩文件，统一扫描尚未完成。
+
+维护者接受扫描过程中 condition 额外执行；当前判断也提前至 placeholder 和其它自定义属性收集之前。回调应读取状态并返回允许与否，不保证固定次数、结果数组中的原 value 位置，或回调修改 DOM／配置时仍与旧版等价。本轮不为这些副作用增加缓存、全局状态或额外标记。
+
+element.nodeAnalyse.gets 保留原十九项原样，新增三十三项独立回归：分别覆盖 input／textarea 的旧 Attr 与实时值不同、无 HTML value、清空、空白、大写及重复配置、未启用和条件拒绝；button／submit 默认与回退；普通 div／button／option 不访问 value getter；condition 的 this／入参及其它属性共存；同源 iframe 与跨 realm 配置；真实 execute 缓存渲染后 reset 保留默认内容及节点身份。测试提交 5c2f4e1 先单独推送，修改源码前通过 BAT 验证本模块，源码 32 通过、20 失败，压缩版 25 通过、27 失败，没有豁免。
+
+修复后通过 BAT 运行十三个相关模块，每份二百三十五项、双版本共四百七十项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 52 / 0 | 25 / 27 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `addNodeToQueue` | 21 / 1 | 21 / 1 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `element.nodeAnalyse.analyse` | 6 / 0 | 6 / 0 |
+| `element.nodeAnalyse.get` | 5 / 0 | 5 / 0 |
+| `element.nodeAnalyse.set` | 6 / 0 | 6 / 0 |
+| `renderTask.add` | 17 / 0 | 14 / 3 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `listener.addListener` | 12 / 0 | 9 / 3 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 233 / 2 | 172 / 63 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/addNodeToQueue\.js modules/execute\.js modules/element\.nodeAnalyse\.analyse\.js modules/element\.nodeAnalyse\.get\.js modules/element\.nodeAnalyse\.set\.js modules/renderTask\.add\.js modules/renderTask\.execute\.js modules/reset\.js modules/listener\.addListener\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定本机已验证的 Chromium。修复前先分别运行其它十二模块和本模块，合并两份报告后，按发布文件、方法及备注与修复后四百七十项逐项比较：仅二十条源码目标回归由失败恢复通过，其余四百五十项结果保持。没有跳过、失败豁免、用例重试或运行器错误；BAT 因真实失败返回退出码 1。
+
+源码余下两项失败均与基线一致：whileNodes 的模拟入队用例仍观察到两次收集尝试（本轮已统一为同一 Element 实时 value，实际入队由原 originalText 判断去重），以及 addNodeToQueue 的属性全文命中术语记录问题。不能把前者继续描述为源码仍收集旧 value Attr。textarea 自带默认子 Text 的扫描及 placeholder 漏收等旧路径仍未调整，不以本轮默认英文 Text 的身份验证宣称所有默认内容都不会被另行翻译。
+
+当前登记 275 模块、2,970 条用例（888 条普通、2,082 条自定义），双版本共 5,940 项；登记规模不代表本轮执行范围，本轮未全量复测。源码提交 0daaf59 已推送。验证对应 SHA-256：
+
+```text
+translate.js      b880a3ad217323e27f8da1918c5fcb8f92fe9215108317a3084f2305f8fbf15c
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 合并输入控件的占位符收集（4.1.28.20261114）
 
 本轮仅实施已确认的分支整理：将 TEXTAREA 的 case 移到 INPUT 前，复用两段原本完全相同的 placeholder 判断与结果构造，删除重复块。默认 button／submit value 的判断最左侧增加 nodename === 'INPUT'，使 TEXTAREA 即使带 type、value 属性也在按钮逻辑前短路。补充准确中文注释，源码版本更新为 4.1.28.20261114，净减少九行。实时 value 收集、whileNodes 及 translate.min.js 均未改动。

@@ -2,6 +2,40 @@
 
 最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## title 的判断和取值统一使用真实 Attr（4.1.30.20261114）
+
+本轮仅实施维护者确认的三行替换：gets 先仅对 Element 调用 getAttributeNode('title')，复用原 titleNode 判断真实 Attr 存在且内容非空白，再按原结构返回该 Attr 和 nodeValue。注释、判断和取值来源保持一致，Text／Attr／Comment／Document／DocumentFragment 不调用元素取属性方法；trim 仅用于判空，返回原文不裁空白。源码版本更新为 4.1.30.20261114，包含版本号在内共四行替换，没有增加行数，未修改 whileNodes 或 translate.min.js。
+
+维护者明确选择只处理真实 title Attr：SVG 等元素有真实 title Attr 时也应收集；仅有 .title DOM 属性而无 Attr 时跳过，不新增 DOMProperty 翻译路径。此处不再读取覆写的 .title getter，但 whileNodes 顶部的旧 title 扫描仍会读取它，不能据此宣称完整 execute 已避免所有 getter 副作用。父节点漏扫、独立根节点及原有重复收集等职责尚待后续逐处审查。
+
+element.nodeAnalyse.gets 原五十二项的备注及测试函数经前后比较保持原样，追加二十五项独立回归，登记共七十七项：HTML title 缺省／空／空白／非空／保留首尾空白；SVG 真实 Attr、无 Attr 的 .title 及子 title 元素；覆写 .title getter；非元素节点；同源 iframe 的 HTML／SVG Attr；真实 findNode 入队、忽略 title 时保留其它属性、execute 缓存渲染及 reset 的原文和节点身份。测试提交 82feb53 已单独推送；修改源码前通过 BAT 运行本模块，源码 62 通过、15 失败，压缩版 34 通过、43 失败，无豁免。
+
+修复后通过 BAT 检查七个相关模块，每份一百九十二项、双版本共三百八十四项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 77 / 0 | 34 / 43 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 6 / 1 | 5 / 2 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 191 / 1 | 120 / 72 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定此前已验证的本机 Chromium。修复前，本模块重跑新增用例，其余六模块使用上一轮同一源码及压缩文件哈希的报告作为基线；合并后按发布文件、方法及备注与本轮三百八十四项逐项比较，仅十五条源码目标回归由失败恢复通过，其余三百六十九项结果保持。没有新增失败、跳过、失败豁免、用例重试或运行器错误。源码余下一项仍是 whileNodes 模拟入队用例观察到重复收集的旧问题；压缩版未更新，BAT 因真实失败返回退出码 1。未重跑全部模块或原场景，不代表其它旧问题已修复。
+
+当前登记 275 模块、2,995 条用例（888 条普通、2,107 条自定义），双版本共 5,990 项；登记规模不代表本轮执行范围。源码提交 aa5d7e7 已推送。验证对应 SHA-256：
+
+```text
+translate.js      e36819c9e9f1a06c8d1ae9e27a098080787c86e28920848a055c910ecb121646
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 显式配置的输入控件收集实时 value（4.1.29.20261114）
 
 本轮实施维护者确认的 gets 两处逻辑：仅对显式配置 value、且 condition 允许的 INPUT／TEXTAREA 收集实时 .value，返回元素本身及 attribute:value；不要求 HTML value Attr 存在，实时值清空不回退旧 Attr。通用属性循环跳过这两类控件的 value Attr，普通元素仍返回真实 Attr；未配置或条件拒绝时，INPUT button／submit 保留原默认规则。补充中文注释及返回结构说明，版本更新为 4.1.29.20261114。没有修改 whileNodes、监听或压缩文件，统一扫描尚未完成。

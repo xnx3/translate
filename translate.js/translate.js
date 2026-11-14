@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.29.20261114',
+	version: '4.1.30.20261114',
 	
 	/*js translate.config start*/
 	/*
@@ -5305,9 +5305,9 @@ var translate = {
 				}
 
 
-				//所有元素都要判定的属性 - title 属性
-				if(typeof(node['title']) === 'string' && node['title'].trim().length > 0){
-					var titleNode = node.getAttributeNode('title');
+				// 仅元素节点有 Attr；title 的判空、取值和翻译目标统一使用同一个真实属性节点。
+				var titleNode = node.nodeType === 1 ? node.getAttributeNode('title') : null;
+				if(titleNode !== null && titleNode.nodeValue.trim().length > 0){
 					resultArray.push({
 						text: titleNode.nodeValue,
 						attribute: 'title',

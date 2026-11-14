@@ -156,6 +156,133 @@ const valueRenderResetCases = ['input', 'textarea'].map(function (tag) {
   `) };
 });
 
+// title 的判空、文本和目标都来自同一真实 Attr；trim 只判空，不应裁掉返回的原文。
+const htmlTitleCases = [
+  { remark: '没有 title Attr 时不收集', value: null, collected: false },
+  { remark: '空 title Attr 不产生翻译项', value: '', collected: false },
+  { remark: '纯空格、换行和制表符 title 不产生翻译项', value: ' \n\t ', collected: false },
+  { remark: '非空 title 返回真实 Attr', value: '标题文字', collected: true },
+  { remark: '非空 title 保留原文首尾空白', value: ' \t标题文字\n ', collected: true }
+].map(function (item) {
+  return { remark: 'HTML ' + item.remark, test: new Function(`
+    var node = document.createElement('span');
+    if (${JSON.stringify(item.value)} !== null) node.setAttribute('title', ${JSON.stringify(item.value)});
+    var title = node.getAttributeNode('title');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return ${JSON.stringify(item.collected)} ? result.length === 1 && result[0].node === title &&
+      result[0].node.nodeType === 2 && result[0].attribute === 'title' && result[0].text === ${JSON.stringify(item.value)} &&
+      title.nodeValue === ${JSON.stringify(item.value)} : result.length === 0 && node.getAttributeNode('title') === title;
+  `) };
+});
+
+const svgTitleCases = [
+  { remark: '真实 title Attr 可翻译', setup: "node.setAttribute('title', 'SVG 标题');", text: 'SVG 标题' },
+  { remark: '空白 title Attr 不产生翻译项', setup: "node.setAttribute('title', ' \\t\\n ');", text: null },
+  { remark: '只有 .title 属性而没有 Attr 时不收集', setup: "Object.defineProperty(node, 'title', { value: '只有属性值' });", text: null },
+  { remark: '只有 SVG title 子元素时不递归收集其文本', setup: "var child = document.createElementNS('http://www.w3.org/2000/svg', 'title'); child.textContent = '子标题文字'; node.append(child);", text: null }
+].map(function (item) {
+  return { remark: 'SVG ' + item.remark, test: new Function(`
+    var node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    ${item.setup}
+    var title = node.getAttributeNode('title'), child = node.firstChild;
+    var result = translate.element.nodeAnalyse.gets(node);
+    return ${JSON.stringify(item.text)} === null ? result.length === 0 && node.firstChild === child :
+      result.length === 1 && result[0].node === title && result[0].node.nodeType === 2 &&
+      result[0].attribute === 'title' && result[0].text === ${JSON.stringify(item.text)};
+  `) };
+});
+
+// 覆写 DOM Property 不应影响实际 Attr；抛错 getter 仅走 gets/findNode，避开尚未统一的 whileNodes。
+const titleGetterCases = [
+  { remark: '返回与 Attr 不同的字符串', body: "return '属性外文字';" },
+  { remark: '返回空字符串', body: "return '';" },
+  { remark: '返回对象', body: "return { text: '属性外文字' };" },
+  { remark: '直接抛错', body: "throw new Error('gets 不应读取 title getter');" }
+].map(function (item) {
+  return { remark: 'HTML 的 .title getter ' + item.remark + '，仍按真实 title Attr 收集', test: new Function(`
+    var node = document.createElement('span'); node.setAttribute('title', '真实标题');
+    var reads = 0;
+    Object.defineProperty(node, 'title', { get: function () { reads++; ${item.body} } });
+    var title = node.getAttributeNode('title');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return reads === 0 && result.length === 1 && result[0].node === title &&
+      result[0].attribute === 'title' && result[0].text === '真实标题' && title.nodeValue === '真实标题';
+  `) };
+});
+
+const nonElementTitleCases = [
+  { remark: 'Text', setup: "var node = document.createTextNode('正文文字');", text: '正文文字' },
+  { remark: 'Attr', setup: "var element = document.createElement('span'); element.setAttribute('title', '属性文字'); var node = element.getAttributeNode('title');", text: '属性文字' },
+  { remark: 'Comment', setup: "var node = document.createComment('注释文字');", text: '注释文字' },
+  { remark: 'Document', setup: "var node = document.implementation.createHTMLDocument('文档标题');", text: null },
+  { remark: 'DocumentFragment', setup: "var node = document.createDocumentFragment(); node.append(document.createTextNode('后代文字'));", text: null }
+].map(function (item) {
+  return { remark: item.remark + ' 不走元素 title 分支，保留节点自身的收集契约', test: new Function(`
+    ${item.setup}
+    Object.defineProperty(node, 'title', { get: function () { throw new Error('非元素不能读取 title 属性'); } });
+    var result = translate.element.nodeAnalyse.gets(node);
+    return ${JSON.stringify(item.text)} === null ? result.length === 0 : result.length === 1 &&
+      result[0].node === node && result[0].attribute === '' && result[0].text === ${JSON.stringify(item.text)};
+  `) };
+});
+
+const iframeTitleCases = ['HTML', 'SVG'].map(function (kind) {
+  return { remark: '同源 iframe 的 ' + kind + ' title 返回该 realm 的真实 Attr 目标', test: new Function(`
+    var frame = document.createElement('iframe'); document.body.append(frame);
+    var node = ${kind === 'HTML' ? "frame.contentDocument.createElement('span')" : "frame.contentDocument.createElementNS('http://www.w3.org/2000/svg', 'g')"};
+    node.setAttribute('title', '跨窗口标题'); frame.contentDocument.body.append(node);
+    var title = node.getAttributeNode('title');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return !(node instanceof Element) && !(title instanceof Attr) && title instanceof frame.contentWindow.Attr &&
+      result.length === 1 && result[0].node === title && result[0].node.ownerElement === node &&
+      result[0].attribute === 'title' && result[0].text === '跨窗口标题';
+  `) };
+});
+
+const titleRenderResetCases = ['HTML', 'SVG'].map(function (kind) {
+  return { remark: kind + ' 真实 title Attr 经 execute 缓存渲染及 reset，保留属性身份和节点正文', test: new Function(`
+    translate.selectLanguageTag.show = false;
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+    var node = ${kind === 'HTML' ? "document.createElement('span')" : "document.createElementNS('http://www.w3.org/2000/svg', 'g')"};
+    node.setAttribute('title', '你好世界'); document.body.append(node);
+    var title = node.getAttributeNode('title'), collected = translate.element.nodeAnalyse.gets(node);
+    var networkCalls = 0;
+    translate.lifecycle.execute.translateNetworkBefore.push(function () { networkCalls++; });
+    translate.execute(node);
+    var record = translate.node.get(title);
+    var rendered = collected.length === 1 && collected[0].node === title && title.nodeValue === 'Hello world' &&
+      node.getAttributeNode('title') === title && record && record.originalText === '你好世界' &&
+      record.resultText === 'Hello world' && translate.node.get(node) == null &&
+      node.textContent === '' && networkCalls === 0 && translate.state === 0;
+    translate.reset({ selectLanguageRefreshRender: false });
+    return rendered === true && title.nodeValue === '你好世界' && node.getAttributeNode('title') === title &&
+      node.textContent === '' && document.body.contains(node) && translate.node.data.size === 0;
+  `) };
+});
+
+// title 只统一收集来源，真实 findNode 仍须逐属性执行既有编程忽略规则。
+const titleIgnoreCases = ['HTML', 'SVG'].map(function (kind) {
+  return { remark: kind + ' 的 title 忽略规则仍生效，同节点其他属性可以真实入队', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.nodeQueue.batch = { list: {} };
+    var wrapper = document.createElement('div'); wrapper.className = 'title-filter';
+    var node = ${kind === 'HTML' ? "document.createElement('span')" : "document.createElementNS('http://www.w3.org/2000/svg', 'g')"};
+    node.setAttribute('title', '标题文字'); node.setAttribute('data-label', '其他文字'); wrapper.append(node); document.body.append(wrapper);
+    var title = node.getAttributeNode('title'), label = node.getAttributeNode('data-label'), checked = false;
+    translate.element.tagAttribute[${JSON.stringify(kind === 'HTML' ? 'span' : 'g')}] = { attribute: ['data-label'] };
+    translate.ignore.class.push('title-filter', function (element, data) {
+      if (data.attribute === 'title') { checked = element === node && data.node === title; return true; }
+      return false;
+    });
+    translate.element.findNode('batch', node);
+    var record = translate.node.get(label), entries = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {});
+    return checked && translate.node.get(title) == null && record && record.originalText === '其他文字' &&
+      entries.length === 1 && entries[0].nodes.length === 1 && entries[0].nodes[0].node === label &&
+      node.getAttributeNode('title') === title && title.nodeValue === '标题文字';
+  `) };
+});
+
 require('../helpers/module')(__filename, [
   { remark: '文本和属性节点返回自身，空白节点不产生翻译项', test: function () {
     var text = document.createTextNode(' 文本 '), element = document.createElement('span'); element.title = '标题';
@@ -211,5 +338,24 @@ require('../helpers/module')(__filename, [
   ...ordinaryValueCases,
   ...valueConditionCases,
   ...iframeValueCases,
-  ...valueRenderResetCases
+  ...valueRenderResetCases,
+  ...htmlTitleCases,
+  ...svgTitleCases,
+  ...titleGetterCases,
+  ...nonElementTitleCases,
+  ...iframeTitleCases,
+  { remark: 'findNode 不读取抛错 .title getter，真实 title Attr 仍按空属性参数入队', test: function () {
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.nodeQueue.batch = { list: {} };
+    var node = document.createElement('span'); node.setAttribute('title', '标题文字'); document.body.append(node);
+    Object.defineProperty(node, 'title', { get: function () { throw new Error('findNode 不应读取 title getter'); } });
+    var title = node.getAttributeNode('title');
+    translate.element.findNode('batch', node);
+    var record = translate.node.get(title), entries = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {});
+    return record && record.originalText === '标题文字' && translate.node.get(node) == null &&
+      entries.length === 1 && entries[0].nodes.length === 1 && entries[0].nodes[0].node === title &&
+      entries[0].nodes[0].attribute === '' && title.nodeValue === '标题文字';
+  } },
+  ...titleRenderResetCases,
+  ...titleIgnoreCases
 ]);

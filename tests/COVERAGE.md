@@ -2,6 +2,40 @@
 
 最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## whileNodes 的 title 扫描统一使用真实 Attr（4.1.31.20261114）
+
+本轮仅实施维护者确认的顶部 title 调整：whileNodes 仅为 Element 获取真实 title Attr，复用同一 titleNode 进行非空白判断、ignore 过滤及入队，原文取自 titleNode.nodeValue。补充中文注释，版本更新为 4.1.31.20261114，源码净增加一行。title 先于子节点扫描的顺序、独立根属性处理及原有队列逻辑保持；gets、自定义属性循环、iframe 和递归均未改动，translate.min.js 未更新。
+
+此步延续已确认的真实 Attr 规则：覆写 .title getter 不再干扰这处扫描；带子节点的 SVG 真实 title Attr 也会收集；仅有 .title DOM 属性而无 Attr 时跳过，不新增 DOMProperty 支持。ignore 回调仍接收原元素、真实 Attr 及 attribute:title；回调若删除或替换 Attr，复用原节点与旧版再次查找的行为不保证等价，本轮不为回调的 DOM 突变增加补丁。父节点其它属性漏收及旧重复扫描职责尚待后续逐处审查。
+
+element.whileNodes 保留原七项的备注和测试函数原样，包括第四项重复收集的失败断言，追加二十项独立回归，登记共二十七项：HTML 父／叶节点 title 的非空、缺省、空、纯空白；父节点 getter 返回不同值／空串／对象／抛错的完整 execute 缓存翻译及 reset；SVG 父元素真实 Attr 与仅有 .title 的情况；HTML／SVG 编程忽略 title 而保留正文；同源 iframe 中未挂载 HTML／SVG 根节点；真实缓存渲染、原文译文记录、状态与 Attr／Text 身份。测试提交 a8a3e9b 已单独推送。修复前本模块源码 18 通过、9 失败，压缩版 17 通过、10 失败；两条 iframe 用例在明确改为未挂载根并断言 parentNode === null 后另行定点复测，双版本四项仍为 2 通过、2 失败，合并基线时用新结果替换同名条目，没有豁免。
+
+修复后通过 BAT 检查七个相关模块，每份二百一十二项、双版本共四百二十四项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 77 / 0 | 34 / 43 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 26 / 1 | 17 / 10 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 211 / 1 | 132 / 80 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定此前已验证的本机 Chromium。本模块采用修复前新增回归报告及独立根补测，其余六模块使用上一轮同一源码及压缩文件哈希的报告作为基线；按发布文件、方法及备注与本轮四百二十四项逐项比较，仅八条源码目标回归由失败恢复通过，其余四百一十六项结果保持。新增二十项源码回归全部通过；没有新增失败、跳过、失败豁免、用例重试或运行器错误。源码余下一项仍为原有 whileNodes 模拟入队检查观察到重复收集；压缩版未更新，BAT 因真实失败返回退出码 1。本轮未全量复测，不代表其它旧问题已修复。
+
+当前登记 275 模块、3,015 条用例（888 条普通、2,127 条自定义），双版本共 6,030 项；登记规模不代表本轮执行范围。源码提交 4a5cae9 已推送。推送期间合入远端仅修改 extend/bot/pom.xml 的独立更新，发布 JS 的哈希仍与实际测试一致。验证对应 SHA-256：
+
+```text
+translate.js      d82ae84aa4147425c2380e3adecac1920af1fd6a7f00161b45c1ee2fe2da626d
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## title 的判断和取值统一使用真实 Attr（4.1.30.20261114）
 
 本轮仅实施维护者确认的三行替换：gets 先仅对 Element 调用 getAttributeNode('title')，复用原 titleNode 判断真实 Attr 存在且内容非空白，再按原结构返回该 Attr 和 nodeValue。注释、判断和取值来源保持一致，Text／Attr／Comment／Document／DocumentFragment 不调用元素取属性方法；trim 仅用于判空，返回原文不裁空白。源码版本更新为 4.1.30.20261114，包含版本号在内共四行替换，没有增加行数，未修改 whileNodes 或 translate.min.js。

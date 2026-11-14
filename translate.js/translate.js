@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.30.20261114',
+	version: '4.1.31.20261114',
 	
 	/*js translate.config start*/
 	/*
@@ -5934,18 +5934,19 @@ var translate = {
 			}
 
 			//console.log('---'+typeof(node)+', ');
-			//判断是否是有title属性，title属性也要翻译
-			if(typeof(node) == 'object' && typeof(node['title']) == 'string' && node['title'].trim().length > 0){
+			// 仅处理元素上的真实 title Attr，判空、忽略判断和入队复用同一属性节点及其原文。
+			var titleNode = node.nodeType === 1 ? node.getAttributeNode('title') : null;
+			if(titleNode !== null && titleNode.nodeValue.trim().length > 0){
 				//将title加入翻译队列
 				//console.log('---'+node.title+'\t'+node.tagName);
 				//console.log(node)
 				//console.log('------------');
 				
 				//判断当前元素是否在ignore忽略的tag、id、class name中
-				if(!translate.ignore.isIgnore(node, {node: node.getAttributeNode('title'), attribute: 'title'})){
+				if(!translate.ignore.isIgnore(node, {node: titleNode, attribute: 'title'})){
 					//不在忽略的里面，才会加入翻译
 					//translate.addNodeToQueue(uuid, node, node['title'], 'title');
-					translate.addNodeToQueue(uuid, node.getAttributeNode('title'), node['title'], '');
+					translate.addNodeToQueue(uuid, titleNode, titleNode.nodeValue, '');
 				}
 			}
 

@@ -20,6 +20,7 @@
     <properties>
         <java.version>17</java.version>
         <playwright.version>1.44.0</playwright.version>
+        <tomcat.version>10.1.56</tomcat.version>
     </properties>
 
     <dependencies>
@@ -33,6 +34,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- Explicit override to fix CVE-2026-55276 (tomcat-embed-core) -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>10.1.56</version>
         </dependency>
 
         <!-- Playwright -->

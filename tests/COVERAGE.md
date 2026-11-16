@@ -2,6 +2,27 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 标签配置只认可自身属性：回归已登记，源码待审查
+
+维护者已确认不应将 tagAttribute 字典继承的 constructor／__proto__ 等属性当成用户配置。本轮先补测试并提交推送，尚未修改 translate.js；计划只调整 gets 的配置读取，通过 Object.prototype.hasOwnProperty.call 区分自身配置与继承项，再保留原有标签收集规则。whileNodes 等其它入口仍有独立配置读取，不能据此认定整个 execute 已统一跳过继承配置。
+
+element.nodeAnalyse.gets 原有一百零四项的备注和测试函数经程序比较保持原样，追加十七项独立回归，当前登记共一百二十一项：默认 constructor／__proto__ 有无 title；显式自身同名配置 condition 允许／拒绝；继承 input／textarea value 不开启实时取值而保留 placeholder；普通继承配置及抛错 getter 不读取；自身同名覆盖、不可枚举自身项、hasOwnProperty 被遮蔽和无原型字典的直接 gets 调用；默认 constructor 叶节点不阻断 execute 后续正文缓存翻译。测试不捕获扫描异常，也没有为其它入口的继承处理规定新行为。
+
+源码修改前通过 BAT 运行本模块，双版本共二百四十二项：
+
+| 发布文件 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: |
+| `translate.js` | 112 | 9 | 0 |
+| `translate.min.js` | 38 | 83 | 0 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js --workers=2
+```
+
+使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。与上一轮报告按发布文件和完整用例名称比较，原有二百零八项结果全部保持；新增十七项中，源码八项通过、九项失败。压缩版未更新，新增四项通过、十三项失败。没有新增豁免、重试、跳过或运行器错误，BAT 因真实失败返回退出码 1。
+
+拟改的一行仅在临时浏览器环境替换，逐项执行本模块一百二十一项均返回 true、无浏览器异常，并已核对仓库源码字节未变。这是方案预验证，不是正式修复后的 BAT 结果。测试提交 cf02738 已单独推送；当前登记 275 模块、3,059 条用例（888 条普通、2,171 条自定义），双版本共 6,118 项。当前源码仍为 4.1.32.20261116，SHA-256 与下方 meta name 修复记录一致。
+
 ## meta 的 name 非字符串时继续检查 property（4.1.32.20261116）
 
 本轮仅实施维护者确认的 gets 单行类型判断：只有字符串 name 才调用 toLowerCase，其余按空名称继续后续 property 判断。正常 HTML meta 的 name、property 白名单及 content 判空规则保持，补充中文注释，版本更新为 4.1.32.20261116。没有扩大 whileNodes 的父节点扫描范围，也没有修改其它取值位置或 translate.min.js；父节点扫描仍需后续逐处审查。

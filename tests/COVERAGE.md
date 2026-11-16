@@ -2,6 +2,36 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 普通属性命中术语后写入真实 Attr（4.1.35.20261116）
+
+本轮只实施维护者确认的两处参数修改：addNodeToQueue 的忽略文本及自定义术语调用保留实际 translateNode，目标仍为原节点时保留属性名，已经转为真实 Attr 时传空属性名。补充两条中文注释，版本更新为 4.1.35.20261116。末尾结果读取保持原样，没有新增变量、全局状态或辅助函数，translate.min.js 未修改。
+
+原二十二项备注、参数、预期及测试函数经程序比较保持原样，追加十九项独立回归，模块共四十一项：title、textarea.placeholder、img.alt、meta.content 全文术语；input／textarea.placeholder 和 title 局部术语及剩余片段入队；直接 Attr；input／textarea 实时 value 与默认值分离；placeholder／title 纯空白保留；缺失 placeholder／data-label 不抛错、不创建属性；自定义元素同步移除、更换或覆盖 title 后记录当前值；普通属性全文及局部忽略。自定义元素检查原任务的最终记录，不代表新 Attr 的后续 reset 或全链路行为已覆盖。
+
+源码修改前通过 BAT 检查十三个相关模块，每份二百九十四项、双版本共五百八十八项：源码 282 通过、12 失败，压缩版 219 通过、75 失败。addNodeToQueue 两份均为 30 通过、11 失败，其中新增十项失败复现同一术语写回根因，另外九项保护已有行为。测试提交 7fc155d 已先单独推送，随后才修改运行库。
+
+```bat
+tests\test-translate.js.bat --no-pause modules/addNodeToQueue\.js modules/addNodeToQueueAnalysis\.js modules/nomenclature\.dispose\.js modules/nomenclature\.replace\.js modules/element\.nodeAnalyse\.analyse\.js modules/element\.nodeAnalyse\.get\.js modules/element\.nodeAnalyse\.set\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/history\.translateText\.add\.js --workers=2
+```
+
+修复后使用同一 Playwright 配置、真实文件和浏览器，对同组源码重新执行二百九十四项：293 通过、1 失败，addNodeToQueue 四十一项全部通过。按发布文件和完整用例名称比较，十一项术语回归由失败恢复通过，其余二百八十三项结果保持。唯一失败仍是 whileNodes 原第 4 项模拟入队观察到两次收集；真实队列去重已有测试通过，扫描职责合并按维护者要求暂缓，没有放宽该项预期。
+
+```bat
+cd tests
+node node_modules/@playwright/test/cli.js test --project=chromium modules/addNodeToQueue\.js modules/addNodeToQueueAnalysis\.js modules/nomenclature\.dispose\.js modules/nomenclature\.replace\.js modules/element\.nodeAnalyse\.analyse\.js modules/element\.nodeAnalyse\.get\.js modules/element\.nodeAnalyse\.set\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/history\.translateText\.add\.js --workers=2
+```
+
+两轮均使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定本机 chromium-1234；无跳过、失败豁免、重试或运行器错误，命令因真实失败返回 1。压缩版在修复前已实际验证，文件哈希保持，源码修复后未重复执行压缩项目；219／75 属于本轮修复前实测结果。未全量复测，也未覆盖其它浏览器和任意 DOM 回调行为。
+
+三处同时修改的早期候选在临时副本补查中发现末尾 get(null, '') 新增报错、普通属性空白记录变化及同步回调后读取旧 Attr，因此未采用第三处。正式回归保护这些边界；普通 data-* 或 SVG 属性译文已显示、但末尾仍通过 Element 的同名属性读取而记录错误结果的问题，留待下一项单独展示 diff，不作为本轮已修复行为。
+
+当前登记 275 模块、3,123 条用例（888 条普通、2,235 条自定义），双版本共 6,246 项；登记规模不代表本轮执行范围。源码提交 f45bd39 已单独推送，验证对应 SHA-256：
+
+```text
+translate.js      b9c4a09d6ff1aadfb9ca34276118076013219952b5ea780bab504a4fc7ec6600
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 递归子节点后收集当前节点属性（4.1.34.20261116）
 
 本轮先按维护者要求补 element.whileNodes 测试并单独提交推送，再展示源码 diff，经确认后将末尾现有 findNode 调用移到子节点递归之后，修复 textarea 带默认 Text 时漏收 placeholder。补充中文注释，版本更新为 4.1.34.20261116，源码净减少一行；没有新增扫描器、全局状态或节点标记，translate.min.js 未更新。父节点的 condition／ignore 检查次数会增加，回调应作稳定判断，不保证依赖次数或修改 DOM 的回调与旧版等价。

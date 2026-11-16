@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.33.20261116',
+	version: '4.1.34.20261116',
 	
 	/*js translate.config start*/
 	/*
@@ -6023,10 +6023,9 @@ var translate = {
 				for(var i = 0; i<childNodes.length; i++){
 					translate.element.whileNodes(uuid, childNodes[i]);
 				}
-			}else{
-				//单个了
-				translate.element.findNode(uuid, node);
 			}
+			// 子节点扫描后也收集当前节点自身的属性，避免 textarea 有默认文本时漏掉 placeholder。
+			translate.element.findNode(uuid, node);
 		},
 		findNode:function(uuid, node){
 			if(node == null || typeof(node) == 'undefined'){

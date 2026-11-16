@@ -569,5 +569,286 @@ require('../helpers/module')(__filename, [
       return node.placeholder === 'HelloKEEPworld' && JSON.stringify(words) === '["Hello","world"]' &&
         data.originalText === 'HelloKEEPworld' && data.attribute === 'placeholder' && data.whole === false;
     }
+  },
+  {
+    remark: 'data-label 全文命中术语后记录真实属性文本及双向历史',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('div');
+      node.setAttribute('data-label', '你好');
+      const attr = node.getAttributeNode('data-label');
+      translate.addNodeToQueue('batch', node, '你好', 'data-label');
+      const data = translate.node.get(attr);
+      return node.getAttribute('data-label') === 'Hello' && data.originalText === '你好' &&
+        data.resultText === 'Hello' && data.attribute === 'data-label' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' &&
+        translate.history.translateText.resultMap.get('Hello') === '你好' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'SVG title 全文命中术语后记录实际属性文本及双向历史',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      node.setAttribute('title', '你好');
+      const attr = node.getAttributeNode('title');
+      translate.addNodeToQueue('batch', node, '你好', 'title');
+      const data = translate.node.get(attr);
+      return node.getAttribute('title') === 'Hello' && data.originalText === '你好' && data.resultText === 'Hello' &&
+        data.attribute === 'title' && translate.history.translateText.originalMap.get('你好') === 'Hello' &&
+        translate.history.translateText.resultMap.get('Hello') === '你好' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'data-label 只有空白时结果和历史保留属性原有空白',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      const node = document.createElement('div');
+      node.setAttribute('data-label', ' \n\t');
+      translate.addNodeToQueue('batch', node, ' \n\t', 'data-label');
+      const data = translate.node.get(node.getAttributeNode('data-label'));
+      return node.getAttribute('data-label') === ' \n\t' && data.originalText === ' \n\t' && data.resultText === ' \n\t' &&
+        data.attribute === 'data-label' && translate.history.translateText.originalMap.get(' \n\t') === ' \n\t' &&
+        translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'placeholder 缺失时保持原有空结果和历史且不创建属性',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('input');
+      const result = translate.addNodeToQueue('batch', node, '你好', 'placeholder');
+      // 通过对外历史检查缺失属性的空结果，不规定缺失目标在节点 Map 中如何保存。
+      return result === undefined && !node.hasAttribute('placeholder') && node.placeholder === '' &&
+        translate.history.translateText.originalMap.get('你好') === '' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '自定义元素同步移除 data-label 后沿用缺失属性的原有结果',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      // 回调在属性写入期间同步执行；移除后不能继续把旧 Attr 的 Hello 当作当前结果。
+      customElements.define('translate-data-label-remove', class extends HTMLElement {
+        static get observedAttributes() { return ['data-label']; }
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (newValue === 'Hello') this.removeAttribute(name);
+        }
+      });
+      const node = document.createElement('translate-data-label-remove');
+      node.setAttribute('data-label', '你好');
+      const attr = node.getAttributeNode('data-label');
+      translate.addNodeToQueue('batch', node, '你好', 'data-label');
+      const data = translate.node.get(attr);
+      return !node.hasAttribute('data-label') && attr.ownerElement === null && data.originalText === '你好' &&
+        data.resultText === undefined && data.attribute === 'data-label' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '自定义元素同步更换 data-label Attr 后记录当前新属性文本',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      customElements.define('translate-data-label-replace', class extends HTMLElement {
+        static get observedAttributes() { return ['data-label']; }
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (newValue === 'Hello') {
+            this.removeAttribute(name);
+            this.setAttribute(name, '用户设置的新值');
+          }
+        }
+      });
+      const node = document.createElement('translate-data-label-replace');
+      node.setAttribute('data-label', '你好');
+      const attr = node.getAttributeNode('data-label');
+      translate.addNodeToQueue('batch', node, '你好', 'data-label');
+      const data = translate.node.get(attr);
+      // 保留原扫描任务的记录，只要求本次最终结果读取当前 DOM；不表示新 Attr 已重新登记。
+      return node.getAttribute('data-label') === '用户设置的新值' && node.getAttributeNode('data-label') !== attr &&
+        attr.ownerElement === null && data.originalText === '你好' && data.resultText === '用户设置的新值' &&
+        data.attribute === 'data-label' && translate.history.translateText.originalMap.get('你好') === '用户设置的新值' &&
+        translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '自定义元素同步覆盖同一 data-label Attr 后记录回调设置的当前值',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      customElements.define('translate-data-label-overwrite', class extends HTMLElement {
+        static get observedAttributes() { return ['data-label']; }
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (newValue === 'Hello') this.setAttribute(name, '用户设置的新值');
+        }
+      });
+      const node = document.createElement('translate-data-label-overwrite');
+      node.setAttribute('data-label', '你好');
+      const attr = node.getAttributeNode('data-label');
+      translate.addNodeToQueue('batch', node, '你好', 'data-label');
+      const data = translate.node.get(attr);
+      return node.getAttribute('data-label') === '用户设置的新值' && node.getAttributeNode('data-label') === attr &&
+        data.originalText === '你好' && data.resultText === '用户设置的新值' && data.attribute === 'data-label' &&
+        translate.history.translateText.originalMap.get('你好') === '用户设置的新值' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'input 实时 value 翻译结果仍写入历史且保留默认 value',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('input');
+      node.setAttribute('value', 'default');
+      node.value = '你好';
+      translate.addNodeToQueue('batch', node, '你好', 'value');
+      const data = translate.node.get(node);
+      return node.value === 'Hello' && node.defaultValue === 'default' && data.resultText === 'Hello' &&
+        data.attribute === 'value' && translate.history.translateText.originalMap.get('你好') === 'Hello' &&
+        translate.history.translateText.resultMap.get('Hello') === '你好' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'textarea 实时 value 翻译结果仍写入历史且保留默认文本',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('textarea');
+      node.textContent = 'default';
+      node.value = '你好';
+      translate.addNodeToQueue('batch', node, '你好', 'value');
+      const data = translate.node.get(node);
+      return node.value === 'Hello' && node.defaultValue === 'default' && node.textContent === 'default' &&
+        data.resultText === 'Hello' && data.attribute === 'value' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' &&
+        translate.history.translateText.resultMap.get('Hello') === '你好' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'form 内名为 getAttribute 的控件不阻断 title 结果读取',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('form');
+      node.title = '你好';
+      const attr = node.getAttributeNode('title');
+      const input = document.createElement('input');
+      input.name = 'getAttribute';
+      node.append(input);
+      // HTMLFormElement 的具名控件会遮蔽同名方法，确认本项确实进入该边界。
+      translate.addNodeToQueue('batch', node, '你好', 'title');
+      const data = translate.node.get(attr);
+      return node.getAttribute === input && node.title === 'Hello' && data.resultText === 'Hello' &&
+        data.attribute === 'title' && translate.history.translateText.originalMap.get('你好') === 'Hello' &&
+        translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '自定义 form 在翻译回调中新加 getAttributeNode 具名控件后仍能读取结果',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      customElements.define('translate-current-attribute-form', class extends HTMLFormElement {
+        static get observedAttributes() { return ['title']; }
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (newValue === 'Hello') {
+            const input = document.createElement('input');
+            input.name = 'getAttributeNode';
+            this.append(input);
+          }
+        }
+      }, { extends: 'form' });
+      const node = document.createElement('form', { is: 'translate-current-attribute-form' });
+      node.title = '你好';
+      const attr = node.getAttributeNode('title');
+      translate.addNodeToQueue('batch', node, '你好', 'title');
+      const data = translate.node.get(attr);
+      // 初次取 Attr 时方法尚未遮蔽，翻译写入触发回调后才出现同名控件。
+      return node.getAttributeNode === node.firstElementChild && node.firstElementChild.name === 'getAttributeNode' &&
+        node.title === 'Hello' && data.resultText === 'Hello' && data.attribute === 'title' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '同源 iframe 中 data-label 翻译后可由父页面原生方法读取结果',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const iframe = document.createElement('iframe');
+      document.body.append(iframe);
+      const node = iframe.contentDocument.createElement('div');
+      node.setAttribute('data-label', '你好');
+      iframe.contentDocument.body.append(node);
+      const attr = node.getAttributeNode('data-label');
+      translate.addNodeToQueue('batch', node, '你好', 'data-label');
+      const data = translate.node.get(attr);
+      return node instanceof iframe.contentWindow.Element && !(node instanceof Element) &&
+        node.getAttribute('data-label') === 'Hello' && data.resultText === 'Hello' && data.attribute === 'data-label' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '同源 iframe 中 SVG title 翻译后记录跨 realm 属性结果',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const iframe = document.createElement('iframe');
+      document.body.append(iframe);
+      const node = iframe.contentDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      node.setAttribute('title', '你好');
+      iframe.contentDocument.body.append(node);
+      const attr = node.getAttributeNode('title');
+      translate.addNodeToQueue('batch', node, '你好', 'title');
+      const data = translate.node.get(attr);
+      return node instanceof iframe.contentWindow.Element && !(node instanceof Element) &&
+        node.getAttribute('title') === 'Hello' && data.resultText === 'Hello' && data.attribute === 'title' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: '普通属性与同名 DOM property 内容不同时结果记录真实 Attr',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.nomenclature.append('chinese_simplified', 'english', '你好=Hello');
+      const node = document.createElement('div');
+      node.label = '独立 property';
+      node.setAttribute('label', '你好');
+      const attr = node.getAttributeNode('label');
+      translate.addNodeToQueue('batch', node, '你好', 'label');
+      const data = translate.node.get(attr);
+      return node.label === '独立 property' && node.getAttribute('label') === 'Hello' && data.originalText === '你好' &&
+        data.resultText === 'Hello' && data.attribute === 'label' &&
+        translate.history.translateText.originalMap.get('你好') === 'Hello' && translate.nodeQueue.batch === undefined;
+    }
+  },
+  {
+    remark: 'data-label 全文被忽略时结果记录和历史仍使用实际属性文本',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'japanese';
+      translate.ignore.text = ['KEEP'];
+      const node = document.createElement('div');
+      node.setAttribute('data-label', 'KEEP');
+      translate.addNodeToQueue('batch', node, 'KEEP', 'data-label');
+      const data = translate.node.get(node.getAttributeNode('data-label'));
+      return node.getAttribute('data-label') === 'KEEP' && data.originalText === 'KEEP' && data.resultText === 'KEEP' &&
+        data.attribute === 'data-label' && translate.history.translateText.originalMap.get('KEEP') === 'KEEP' &&
+        translate.history.translateText.resultMap.get('KEEP') === 'KEEP' && translate.nodeQueue.batch === undefined;
+    }
   }
 ]);

@@ -139,6 +139,232 @@ const titleRenderResetCases = ['HTML', 'SVG'].map(function (kind) {
   `) };
 });
 
+// 有无子 Text 分别验证 placeholder；空、空白和缺省值不应产生新的翻译任务。
+// 扫描结果检查真实 Attr／Text 身份，不以入队入口的调用次数代替最终队列。
+const textareaPlaceholderCases = [false, true].flatMap(function (hasText) {
+  return [null, '', ' \t\n ', ' 输入提示 '].map(function (placeholder) {
+    var collected = placeholder === ' 输入提示 ';
+    return { remark: 'textarea ' + (hasText ? '带默认文本' : '没有子节点') + '，placeholder ' + (placeholder === null ? '缺省' : placeholder === '' ? '为空' : collected ? '非空时保留原文并收集真实 Attr' : '仅空白时不收集'), test: new Function(`
+      translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+      var node = document.createElement('textarea');
+      if (${JSON.stringify(placeholder)} !== null) node.setAttribute('placeholder', ${JSON.stringify(placeholder)});
+      if (${hasText}) node.textContent = '默认正文';
+      document.body.append(node);
+      var attribute = node.getAttributeNode('placeholder'), text = node.firstChild;
+      translate.element.whileNodes('batch', node);
+      var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+      var placeholders = targets.filter(function (item) { return item.node === attribute; });
+      var record = translate.node.get(attribute);
+      return targets.length === ${Number(hasText) + Number(collected)} && placeholders.length === ${Number(collected)} &&
+        (${collected} ? record && record.originalText === ${JSON.stringify(placeholder)} && record.attribute === '' && placeholders[0].attribute === '' : record == null) &&
+        (${hasText} ? text === node.firstChild && translate.node.get(text).originalText === '默认正文' && targets.some(function (item) { return item.node === text && item.attribute === ''; }) : node.firstChild === null) &&
+        node.getAttribute('placeholder') === ${JSON.stringify(placeholder)} && node.getAttributeNode('placeholder') === attribute && translate.node.get(node) == null;
+    `) };
+  });
+});
+
+// input 保留原叶节点流程，textarea 带默认 Text；仅显式允许 value 才记录元素实时值。
+// condition 只作稳定判断，不限定扫描次数；未启用或拒绝时用 getter 陷阱确保不会偷读 value。
+const parentValueCases = ['input', 'textarea'].flatMap(function (tag) {
+  return ['unconfigured', 'other', 'deny', 'allow', 'cleared'].map(function (mode) {
+    var enabled = mode === 'allow', hasText = tag === 'textarea';
+    var description = { unconfigured: '未配置 value', other: '只配置其它属性', deny: 'condition 拒绝 value', allow: '显式允许实时 value', cleared: '实时 value 已清空' }[mode];
+    return { remark: tag + ' ' + description + '时保持 value 开关并收集 placeholder', test: new Function(`
+      translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+      var node = document.createElement(${JSON.stringify(tag)}); node.setAttribute('value', '旧属性值');
+      node.setAttribute('placeholder', '输入提示'); node.setAttribute('data-label', '自定义标签');
+      if (${hasText}) node.textContent = '默认正文';
+      node.value = ${JSON.stringify(mode === 'cleared' ? '' : '实时内容')};
+      ${mode === 'unconfigured' ? '' : "translate.element.tagAttribute[" + JSON.stringify(tag) + "] = { attribute: [" + JSON.stringify(mode === 'other' ? 'data-label' : 'value') + "], condition: function () { return " + JSON.stringify(mode !== 'deny') + "; } };"}
+      ${['unconfigured', 'other', 'deny'].includes(mode) ? "Object.defineProperty(node, 'value', { get: function () { throw new Error('未启用的 value 不应读取'); } });" : ''}
+      document.body.append(node);
+      var placeholder = node.getAttributeNode('placeholder'), label = node.getAttributeNode('data-label'), oldValue = node.getAttributeNode('value'), text = node.firstChild;
+      translate.element.whileNodes('batch', node);
+      var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+      var valueTargets = targets.filter(function (item) { return item.node === node; });
+      var record = translate.node.get(node);
+      return targets.length === ${1 + Number(hasText) + Number(enabled) + Number(mode === 'other')} &&
+        targets.filter(function (item) { return item.node === placeholder && item.attribute === ''; }).length === 1 &&
+        translate.node.get(placeholder).originalText === '输入提示' && valueTargets.length === ${Number(enabled)} &&
+        (${enabled} ? record && record.originalText === '实时内容' && record.attribute === 'value' && valueTargets[0].attribute === 'value' : record == null) &&
+        (${mode === 'other'} ? targets.some(function (item) { return item.node === label; }) : translate.node.get(label) == null) &&
+        (${hasText} ? translate.node.get(text).originalText === '默认正文' && text === node.firstChild : node.firstChild === null) &&
+        translate.node.get(oldValue) == null && oldValue.nodeValue === '旧属性值' && node.getAttributeNode('value') === oldValue;
+    `) };
+  });
+});
+
+const parentIgnoreCases = ['自身 class', '祖先 class', '祖先 tag', '自身 tag', '自身 id'].map(function (mode) {
+  return { remark: 'textarea 父节点命中' + mode + '忽略时，placeholder 和正文均不入队', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var wrapper = document.createElement(${JSON.stringify(mode === '祖先 tag' ? 'pre' : 'div')}), node = document.createElement('textarea');
+    node.setAttribute('placeholder', '输入提示'); node.textContent = '默认正文'; wrapper.append(node); document.body.append(wrapper);
+    ${mode === '自身 class' ? "node.className = 'ignore';" : mode === '祖先 class' ? "wrapper.className = 'ignore';" : mode === '自身 tag' ? "translate.ignore.tag.push('textarea');" : mode === '自身 id' ? "node.id = 'ignored-textarea'; translate.ignore.id.push('ignored-textarea');" : ''}
+    var placeholder = node.getAttributeNode('placeholder'), text = node.firstChild;
+    translate.element.whileNodes('batch', wrapper);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    return targets.length === 0 && translate.node.get(placeholder) == null && translate.node.get(text) == null &&
+      placeholder.nodeValue === '输入提示' && text.nodeValue === '默认正文' && node.firstChild === text && node.getAttributeNode('placeholder') === placeholder;
+  `) };
+});
+
+const parentAttributeIgnoreCases = ['placeholder', 'title'].map(function (ignoredAttribute) {
+  return { remark: 'textarea 父节点仅编程忽略 ' + ignoredAttribute + '，其它真实属性和正文仍入队', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement('textarea'); node.className = 'filter-parent'; node.title = '标题原文';
+    node.setAttribute('placeholder', '输入提示'); node.textContent = '默认正文'; document.body.append(node);
+    var placeholder = node.getAttributeNode('placeholder'), title = node.getAttributeNode('title'), text = node.firstChild, checked = false;
+    translate.ignore.class.push('filter-parent', function (element, data) {
+      if (data.attribute === ${JSON.stringify(ignoredAttribute)}) { checked = element === node && data.node === ${ignoredAttribute}; return true; }
+      return false;
+    });
+    translate.element.whileNodes('batch', node);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    var ignored = ${ignoredAttribute}, allowed = ${ignoredAttribute === 'title' ? 'placeholder' : 'title'};
+    return checked && targets.length === 2 && translate.node.get(ignored) == null &&
+      targets.filter(function (item) { return item.node === allowed && item.attribute === ''; }).length === 1 &&
+      targets.filter(function (item) { return item.node === text && item.attribute === ''; }).length === 1 &&
+      translate.node.get(text).originalText === '默认正文' && node.firstChild === text;
+  `) };
+});
+
+// 重复扫描以实际队列目标和节点记录为准，不要求 addNodeToQueue 仅被调用一次。
+const parentQueueCases = ['div', 'textarea'].map(function (tag) {
+  return { remark: tag + ' 父节点连续扫描两次，title、自定义属性、正文及启用的 value 目标均只入队一次', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement(${JSON.stringify(tag)}); node.title = '标题原文'; node.setAttribute('data-label', '自定义标签'); node.textContent = '默认正文';
+    translate.element.tagAttribute[${JSON.stringify(tag)}] = { attribute: ${JSON.stringify(tag === 'textarea' ? ['data-label', 'value'] : ['data-label'])} };
+    ${tag === 'textarea' ? "node.setAttribute('placeholder', '输入提示'); node.value = '实时内容';" : ''}
+    document.body.append(node);
+    var nodes = [node.getAttributeNode('title'), node.getAttributeNode('data-label'), node.firstChild${tag === 'textarea' ? ", node.getAttributeNode('placeholder'), node" : ''}];
+    var originals = ${JSON.stringify(tag === 'textarea' ? ['标题原文', '自定义标签', '默认正文', '输入提示', '实时内容'] : ['标题原文', '自定义标签', '默认正文'])};
+    translate.element.whileNodes('batch', node);
+    var records = nodes.map(function (target) { return translate.node.get(target); });
+    var snapshots = records.map(function (record) { return JSON.stringify(record); });
+    translate.element.whileNodes('batch', node);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    return targets.length === nodes.length && nodes.every(function (target, index) {
+      var record = translate.node.get(target), expectedAttribute = target === node ? 'value' : '';
+      return record && record === records[index] && record.originalText === originals[index] && record.attribute === expectedAttribute &&
+        JSON.stringify(record) === snapshots[index] && targets.filter(function (item) { return item.node === target && item.attribute === expectedAttribute; }).length === 1;
+    });
+  `) };
+});
+
+// 只验证根内部已附着的元素；不新增 Document／Fragment／ShadowRoot 自身的属性翻译约定。
+const parentRootCases = ['Document', 'DocumentFragment', 'ShadowRoot'].map(function (kind) {
+  return { remark: kind + ' 作为扫描根时，内部 textarea 的 placeholder 和默认正文各收集一次', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement('textarea'); node.setAttribute('placeholder', '输入提示'); node.textContent = '默认正文';
+    ${kind === 'Document' ? 'document.body.append(node); var root = document;' : kind === 'DocumentFragment' ? 'var root = document.createDocumentFragment(); root.append(node);' : "var host = document.createElement('div'); document.body.append(host); var root = host.attachShadow({ mode: 'open' }); root.append(node);"}
+    var placeholder = node.getAttributeNode('placeholder'), text = node.firstChild;
+    translate.element.whileNodes('batch', root);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    return targets.length === 2 && targets.filter(function (item) { return item.node === placeholder && item.attribute === ''; }).length === 1 &&
+      targets.filter(function (item) { return item.node === text && item.attribute === ''; }).length === 1 &&
+      translate.node.get(placeholder).originalText === '输入提示' && translate.node.get(text).originalText === '默认正文' &&
+      translate.node.get(root) == null && node.parentNode !== null && node.firstChild === text;
+  `) };
+});
+
+// 保留 findNode 对未挂载根的既有早退；顶部 title 和子 Text 仍可按旧路径收集。
+const detachedTextareaCases = [false, true].map(function (hasText) {
+  return { remark: '未挂载 textarea ' + (hasText ? '带默认文本' : '没有子节点') + '时保留 title 路径，不新增 placeholder 根节点支持', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement('textarea'); node.title = '标题原文'; node.setAttribute('placeholder', '输入提示');
+    if (${hasText}) node.textContent = '默认正文';
+    var placeholder = node.getAttributeNode('placeholder'), title = node.getAttributeNode('title'), text = node.firstChild;
+    translate.element.whileNodes('batch', node);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    return node.parentNode === null && targets.length === ${1 + Number(hasText)} && translate.node.get(placeholder) == null &&
+      translate.node.get(title).originalText === '标题原文' && targets.some(function (item) { return item.node === title; }) &&
+      (${hasText} ? translate.node.get(text).originalText === '默认正文' && targets.some(function (item) { return item.node === text; }) : text === null);
+  `) };
+});
+
+// 同源 iframe 的 Document 作为显式扫描根，验证一层／两层跨 realm 节点和配置数组。
+// 不把显式扫描内层文档等同于自动跨 iframe 注入，后者仍由独立 iframe 模块检查。
+const iframeParentCases = [1, 2].flatMap(function (depth) {
+  return [false, true].map(function (liveValue) {
+    return { remark: depth + ' 层同源 iframe 内显式扫描 textarea 父节点，' + (liveValue ? '跨 realm value 配置生效' : '未配置时不启用 value'), test: new Function(`
+      translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+      var doc = document, frame;
+      for (var depth = 0; depth < ${depth}; depth++) { frame = doc.createElement('iframe'); doc.body.append(frame); doc = frame.contentDocument; }
+      var node = doc.createElement('textarea'); node.setAttribute('placeholder', '输入提示'); node.textContent = '默认正文'; node.value = '实时内容'; doc.body.append(node);
+      ${liveValue ? "translate.element.tagAttribute.textarea = { attribute: new frame.contentWindow.Array('value') };" : ''}
+      var placeholder = node.getAttributeNode('placeholder'), text = node.firstChild;
+      translate.element.whileNodes('batch', doc);
+      var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+      return !(node instanceof Element) && placeholder instanceof frame.contentWindow.Attr && targets.length === ${liveValue ? 3 : 2} &&
+        targets.filter(function (item) { return item.node === placeholder && item.attribute === ''; }).length === 1 &&
+        targets.filter(function (item) { return item.node === text && item.attribute === ''; }).length === 1 &&
+        translate.node.get(placeholder).originalText === '输入提示' && translate.node.get(text).originalText === '默认正文' &&
+        (${liveValue} ? translate.node.get(node).originalText === '实时内容' && translate.node.get(node).attribute === 'value' &&
+          targets.filter(function (item) { return item.node === node && item.attribute === 'value'; }).length === 1 : translate.node.get(node) == null) &&
+        node.ownerDocument === doc && placeholder.ownerElement === node && node.firstChild === text;
+    `) };
+  });
+});
+
+// 扩大扫描曾触发的两个边界继续保留：无 name 的 SVG meta，以及空字典继承的 constructor。
+const parentBoundaryCases = ['SVG meta', 'constructor'].flatMap(function (kind) {
+  return [false, true].map(function (hasText) {
+    return { remark: kind + ' ' + (hasText ? '父节点' : '叶子节点') + '正常扫描 title 和正文，不把其它属性误收集', test: new Function(`
+      translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+      var node = ${kind === 'SVG meta' ? "document.createElementNS('http://www.w3.org/2000/svg', 'meta')" : "document.createElement('constructor')"};
+      node.setAttribute('title', '标题原文'); node.setAttribute('data-label', '未配置标签');
+      ${kind === 'SVG meta' ? "node.setAttribute('name', 'description'); node.setAttribute('property', 'OG:DESCRIPTION'); node.setAttribute('content', '属性原文');" : ''}
+      if (${hasText}) node.textContent = '默认正文';
+      document.body.append(node);
+      var title = node.getAttributeNode('title'), text = node.firstChild, label = node.getAttributeNode('data-label');
+      translate.element.whileNodes('batch', node);
+      var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+      return targets.length === ${1 + Number(hasText)} && targets.filter(function (item) { return item.node === title && item.attribute === ''; }).length === 1 &&
+        translate.node.get(title).originalText === '标题原文' && translate.node.get(label) == null && translate.node.get(node) == null &&
+        (${hasText} ? translate.node.get(text).originalText === '默认正文' && targets.some(function (item) { return item.node === text; }) : text === null) &&
+        node.getAttributeNode('title') === title;
+    `) };
+  });
+});
+
+const parentNonTextChildCases = ['空白 Text', 'Comment'].map(function (kind) {
+  return { remark: 'textarea 只有' + kind + '子节点时也收集 placeholder，不翻译空白或注释', test: new Function(`
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement('textarea'); node.setAttribute('placeholder', '输入提示');
+    var child = ${kind === 'Comment' ? "document.createComment('注释原文')" : "document.createTextNode(' \\t\\n ')"};
+    node.append(child); document.body.append(node);
+    var placeholder = node.getAttributeNode('placeholder'), original = child.nodeValue;
+    translate.element.whileNodes('batch', node);
+    var targets = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {}).flatMap(function (entry) { return entry.nodes; });
+    return targets.length === 1 && targets[0].node === placeholder && targets[0].attribute === '' &&
+      translate.node.get(placeholder).originalText === '输入提示' && translate.node.get(child) == null &&
+      node.firstChild === child && child.nodeValue === original;
+  `) };
+});
+
+// 完整 execute 只命中已预置的缓存，检查扫描修复的用户可见结果；reset 仅核对原有 Attr／Text 还原。
+const parentRenderResetCases = [false, true].map(function (liveValue) {
+  return { remark: 'textarea 父节点的 placeholder 与默认正文完成缓存翻译并还原，' + (liveValue ? '显式 value 同时翻译' : '不额外启用 value'), test: new Function(`
+    translate.selectLanguageTag.show = false; translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    [['输入提示', 'Please enter'], ['默认正文', 'Default text'], ['实时内容', 'Live text']].forEach(function (item) { translate.storage.set('hash_english_' + translate.util.hash(item[0]), item[1]); });
+    var node = document.createElement('textarea'); node.setAttribute('placeholder', '输入提示'); node.textContent = '默认正文';
+    ${liveValue ? "node.value = '实时内容'; translate.element.tagAttribute.textarea = { attribute: ['value'] };" : ''}
+    document.body.append(node);
+    var placeholder = node.getAttributeNode('placeholder'), text = node.firstChild, networkCalls = 0;
+    translate.lifecycle.execute.translateNetworkBefore.push(function () { networkCalls++; });
+    translate.execute(node);
+    var record = translate.node.get(placeholder), textRecord = translate.node.get(text);
+    var rendered = placeholder.nodeValue === 'Please enter' && text.nodeValue === 'Default text' &&
+      record && record.originalText === '输入提示' && record.resultText === 'Please enter' &&
+      textRecord && textRecord.originalText === '默认正文' && textRecord.resultText === 'Default text' &&
+      (${liveValue} ? node.value === 'Live text' && translate.node.get(node).attribute === 'value' : translate.node.get(node) == null) &&
+      networkCalls === 0 && translate.state === 0;
+    translate.reset({ selectLanguageRefreshRender: false });
+    return rendered === true && node.getAttributeNode('placeholder') === placeholder && placeholder.nodeValue === '输入提示' &&
+      node.firstChild === text && text.nodeValue === '默认正文' && translate.node.data.size === 0 && translate.state === 0;
+  `) };
+});
+
 require('../helpers/module')(__filename, [
   { remark: '递归遍历真实嵌套节点，按 DOM 顺序收集叶子文本并创建带过期时间的队列', test: function () {
     var root = document.createElement('div'); root.innerHTML = '甲<span>乙<b>丙</b></span>丁'; document.body.append(root);
@@ -191,5 +417,28 @@ require('../helpers/module')(__filename, [
   ...svgTitleCases,
   ...titleIgnoreCases,
   ...iframeTitleCases,
-  ...titleRenderResetCases
+  ...titleRenderResetCases,
+  ...textareaPlaceholderCases,
+  ...parentValueCases,
+  ...parentIgnoreCases,
+  ...parentAttributeIgnoreCases,
+  ...parentQueueCases,
+  ...parentRootCases,
+  ...detachedTextareaCases,
+  ...iframeParentCases,
+  ...parentBoundaryCases,
+  ...parentNonTextChildCases,
+  ...parentRenderResetCases,
+  { remark: '父 placeholder 与子 Text 原文相同时合并文本项，但保留两个不同翻译目标', test: function () {
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english'; translate.whole.enableAll();
+    var node = document.createElement('textarea'); node.setAttribute('placeholder', '相同原文'); node.textContent = '相同原文'; document.body.append(node);
+    var placeholder = node.getAttributeNode('placeholder'), text = node.firstChild;
+    translate.element.whileNodes('batch', node);
+    var entries = Object.values(translate.nodeQueue.batch.list.chinese_simplified || {});
+    return entries.length === 1 && entries[0].nodes.length === 2 &&
+      entries[0].nodes.filter(function (item) { return item.node === placeholder && item.attribute === ''; }).length === 1 &&
+      entries[0].nodes.filter(function (item) { return item.node === text && item.attribute === ''; }).length === 1 &&
+      translate.node.get(placeholder).originalText === '相同原文' && translate.node.get(text).originalText === '相同原文' &&
+      node.firstChild === text && node.getAttributeNode('placeholder') === placeholder;
+  } }
 ]);

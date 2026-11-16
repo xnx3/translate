@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.34.20261116',
+	version: '4.1.35.20261116',
 	
 	/*js translate.config start*/
 	/*
@@ -6378,7 +6378,8 @@ var translate = {
 			//console.log(textArray);
 			textArray = translate.nomenclature.dispose(textArray, temporaryIgnoreTexts[ti], temporaryIgnoreTexts[ti], {
 				node:translateNode,
-				attribute:translateNode_attribute
+				// 普通属性已转为 Attr，直接操作其文本；实时 value 仍使用元素及属性名。
+				attribute:translateNode === node ? translateNode_attribute : ''
 			}).texts;
 			//console.log(textArray);
 		}
@@ -6407,7 +6408,8 @@ var translate = {
 				//console.log(textArray);
 				var nomenclatureDispose = translate.nomenclature.dispose(textArray, nomenclatureKey, nomenclatureValue, {
 					node:translateNode,
-					attribute:translateNode_attribute
+					// 与忽略文本保持一致：Attr 直接操作文本，实时 value 保留属性名。
+					attribute:translateNode === node ? translateNode_attribute : ''
 				});
 				
 				textArray = nomenclatureDispose.texts;

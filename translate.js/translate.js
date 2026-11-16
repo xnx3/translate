@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.32.20261116',
+	version: '4.1.33.20261116',
 	
 	/*js translate.config start*/
 	/*
@@ -5185,8 +5185,8 @@ var translate = {
 				var resultArray = [];
 
 				var nodename = translate.element.getNodeName(node).toUpperCase();
-				// 提前读取当前标签的自定义属性配置，后续判断复用这一份配置。
-				var divTagAttribute = translate.element.tagAttribute[nodename.toLowerCase()];
+				// 仅读取字典自身的标签配置，避免 constructor、__proto__ 等继承项被误当成配置；后续复用。
+				var divTagAttribute = Object.prototype.hasOwnProperty.call(translate.element.tagAttribute, nodename.toLowerCase()) ? translate.element.tagAttribute[nodename.toLowerCase()] : undefined;
 				switch (nodename) {
 				  case 'META': 	//meta标签，如是关键词、描述等
 				    // 仅字符串 name 才转小写；SVG 等节点没有此属性时按空名称处理，继续后续 property 判断。

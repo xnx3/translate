@@ -2,9 +2,9 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
-## 标签配置只认可自身属性：回归已登记，源码待审查
+## 标签配置只认可自身属性（4.1.33.20261116）
 
-维护者已确认不应将 tagAttribute 字典继承的 constructor／__proto__ 等属性当成用户配置。本轮先补测试并提交推送，尚未修改 translate.js；计划只调整 gets 的配置读取，通过 Object.prototype.hasOwnProperty.call 区分自身配置与继承项，再保留原有标签收集规则。whileNodes 等其它入口仍有独立配置读取，不能据此认定整个 execute 已统一跳过继承配置。
+维护者确认 diff 后，本轮仅调整 gets 的配置读取，通过 Object.prototype.hasOwnProperty.call 区分自身配置与继承项，避免 constructor／__proto__ 等继承项被误当成用户配置。保留显式自身同名配置、condition 和内置标签收集规则，补充中文注释，版本更新为 4.1.33.20261116，源码合计三行替换、无新增行数。whileNodes 等其它入口仍有独立配置读取，不能据此认定整个 execute 已统一跳过继承配置；父节点扫描范围及 translate.min.js 均未改动。
 
 element.nodeAnalyse.gets 原有一百零四项的备注和测试函数经程序比较保持原样，追加十七项独立回归，当前登记共一百二十一项：默认 constructor／__proto__ 有无 title；显式自身同名配置 condition 允许／拒绝；继承 input／textarea value 不开启实时取值而保留 placeholder；普通继承配置及抛错 getter 不读取；自身同名覆盖、不可枚举自身项、hasOwnProperty 被遮蔽和无原型字典的直接 gets 调用；默认 constructor 叶节点不阻断 execute 后续正文缓存翻译。测试不捕获扫描异常，也没有为其它入口的继承处理规定新行为。
 
@@ -21,7 +21,33 @@ tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js --
 
 使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。与上一轮报告按发布文件和完整用例名称比较，原有二百零八项结果全部保持；新增十七项中，源码八项通过、九项失败。压缩版未更新，新增四项通过、十三项失败。没有新增豁免、重试、跳过或运行器错误，BAT 因真实失败返回退出码 1。
 
-拟改的一行仅在临时浏览器环境替换，逐项执行本模块一百二十一项均返回 true、无浏览器异常，并已核对仓库源码字节未变。这是方案预验证，不是正式修复后的 BAT 结果。测试提交 cf02738 已单独推送；当前登记 275 模块、3,059 条用例（888 条普通、2,171 条自定义），双版本共 6,118 项。当前源码仍为 4.1.32.20261116，SHA-256 与下方 meta name 修复记录一致。
+源码落地前，拟改的一行先仅在临时浏览器环境替换，本模块一百二十一项均返回 true、无浏览器异常，并核对当时仓库源码字节未变。该结果仅作为方案预验证；测试提交 cf02738 已单独推送，之后展示源码 diff 并经维护者确认才实施修改。
+
+正式修复后通过 BAT 检查七个相关模块，每份二百五十六项、双版本共五百一十二项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 121 / 0 | 38 / 83 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 26 / 1 | 17 / 10 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 255 / 1 | 136 / 120 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。基线采用本模块修复前二百四十二项及上一轮其它六模块报告；对应发布文件哈希与测试函数保持一致。按发布文件和完整用例名称比较全部五百一十二项，仅九项源码目标回归由失败恢复通过，其余五百零三项结果保持。gets 源码一百二十一项全部通过；源码余下一项仍是原有 whileNodes 模拟入队用例观察到重复收集。压缩版未更新，原有失败全部保留；无跳过、重试、失败豁免或运行器错误，BAT 因真实失败返回退出码 1。本轮未全量复测，不代表其它旧问题已修复。
+
+当前登记 275 模块、3,059 条用例（888 条普通、2,171 条自定义），双版本共 6,118 项；登记规模不代表本轮执行范围。源码提交 02b241e 已单独推送，验证对应 SHA-256：
+
+```text
+translate.js      c247b593bbb6375c77ab2e32faeaecb3b5f02a2e4db29ee466251c53804efec8
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
 
 ## meta 的 name 非字符串时继续检查 property（4.1.32.20261116）
 

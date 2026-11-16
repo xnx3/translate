@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.35.20261116',
+	version: '4.1.36.20261116',
 	
 	/*js translate.config start*/
 	/*
@@ -6485,7 +6485,10 @@ var translate = {
 			//将具体通过文本翻译接口进行翻译的文本记录到 translate.node.data
 			translate.node.get(translateNode).translateTexts = {}; //这里全部命中了，所以根本没有走翻译接口的文本
 			//将翻译完成后要显示出的文本进行记录
-			translate.node.get(translateNode).resultText = translate.element.nodeAnalyse.get(node, attribute).text; //直接获取当前node显示出来的文本作为最后的结果的文本
+			// 普通属性读取当前 Attr 并保留空白；属性缺失或操作节点本身时沿用原读取方式。
+			// 从原型调用，避免 form 的同名控件遮蔽 getAttributeNode 方法。
+			var currentAttributeNode = translateNode === node ? null : Element.prototype.getAttributeNode.call(node, attribute);
+			translate.node.get(translateNode).resultText = currentAttributeNode === null ? translate.element.nodeAnalyse.get(node, attribute).text : currentAttributeNode.nodeValue;
 
 			//将其加入 translate.history.translateTexts 中
 			translate.history.translateText.add(translate.node.get(translateNode).originalText, translate.node.get(translateNode).resultText);

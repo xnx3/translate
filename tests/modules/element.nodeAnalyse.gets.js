@@ -283,6 +283,63 @@ const titleIgnoreCases = ['HTML', 'SVG'].map(function (kind) {
   `) };
 });
 
+// name 的所有非字符串类型分别登记；只允许跳过 name 匹配，不能阻断 property 的既有规则。
+// 将值表达式写入生成函数，浏览器执行时无需访问模块闭包；对象陷阱同时防止隐式类型转换。
+const metaNonStringNameCases = [
+  { remark: 'undefined', value: 'undefined' },
+  { remark: 'null', value: 'null' },
+  { remark: '布尔值', value: 'false' },
+  { remark: '数字', value: '123' },
+  { remark: 'NaN', value: 'NaN' },
+  { remark: '对象', value: "({ toLowerCase: function () { throw new Error('非字符串 name 不应调用 toLowerCase'); }, toString: function () { throw new Error('非字符串 name 不应隐式转换'); } })" },
+  { remark: '数组', value: '[]' },
+  { remark: '函数', value: '(function () {})' },
+  { remark: 'Symbol', value: "Symbol('meta-name')" },
+  { remark: 'BigInt', value: '1n' }
+].flatMap(function (item) {
+  return [false, true].map(function (matchedProperty) {
+    return { remark: 'meta name 为' + item.remark + (matchedProperty ? '时仍按 property 收集真实 content Attr' : '且没有匹配 property 时不收集'), test: new Function(`
+      var meta = document.createElement('meta'), nameValue = ${item.value};
+      Object.defineProperty(meta, 'name', { value: nameValue });
+      meta.setAttribute('property', ${JSON.stringify(matchedProperty ? 'OG:DESCRIPTION' : 'og:unknown')});
+      meta.content = ' 内容原文 ';
+      var content = meta.getAttributeNode('content');
+      var result = translate.element.nodeAnalyse.gets(meta);
+      return Object.is(meta.name, nameValue) && meta.getAttributeNode('content') === content &&
+        content.nodeValue === ' 内容原文 ' && (${matchedProperty} ?
+          result.length === 1 && result[0].node === content && result[0].attribute === 'content' && result[0].text === ' 内容原文 ' :
+          result.length === 0);
+    `) };
+  });
+});
+
+// 回退到 property 后仍沿用原 content 判空规则，不新增空翻译任务。
+const metaEmptyContentCases = [null, '', ' \t\n '].map(function (content) {
+  return { remark: 'meta 非字符串 name 配合允许的 property，content ' + (content === null ? '缺省' : content === '' ? '为空' : '仅空白') + '时不收集', test: new Function(`
+    var meta = document.createElement('meta');
+    Object.defineProperty(meta, 'name', { value: undefined });
+    meta.setAttribute('property', 'OG:DESCRIPTION');
+    if (${JSON.stringify(content)} !== null) meta.setAttribute('content', ${JSON.stringify(content)});
+    var original = meta.getAttributeNode('content');
+    return translate.element.nodeAnalyse.gets(meta).length === 0 && meta.getAttributeNode('content') === original;
+  `) };
+});
+
+// 使用真实 SVG DOM 复现没有 .name 的情况；同名标签的 Attr 不会自动变成 HTML meta 的 DOM 属性。
+// 父、叶节点分别验证 gets 只处理当前节点，正文及已有 Attr 均保持原样。
+const svgMetaNameCases = [false, true].map(function (hasChild) {
+  return { remark: 'SVG meta ' + (hasChild ? '父节点' : '叶子节点') + '没有 .name 时正常返回，不扩大到非 HTML content Attr', test: new Function(`
+    var meta = document.createElementNS('http://www.w3.org/2000/svg', 'meta');
+    meta.setAttribute('name', 'description'); meta.setAttribute('property', 'OG:DESCRIPTION'); meta.setAttribute('content', '属性原文');
+    if (${hasChild}) meta.textContent = '正文原文';
+    var name = meta.getAttributeNode('name'), content = meta.getAttributeNode('content'), text = meta.firstChild;
+    var result = translate.element.nodeAnalyse.gets(meta);
+    return typeof meta.name === 'undefined' && result.length === 0 && meta.getAttributeNode('name') === name &&
+      meta.getAttributeNode('content') === content && content.nodeValue === '属性原文' &&
+      meta.firstChild === text && meta.textContent === ${JSON.stringify(hasChild ? '正文原文' : '')};
+  `) };
+});
+
 require('../helpers/module')(__filename, [
   { remark: '文本和属性节点返回自身，空白节点不产生翻译项', test: function () {
     var text = document.createTextNode(' 文本 '), element = document.createElement('span'); element.title = '标题';
@@ -357,5 +414,43 @@ require('../helpers/module')(__filename, [
       entries[0].nodes[0].attribute === '' && title.nodeValue === '标题文字';
   } },
   ...titleRenderResetCases,
-  ...titleIgnoreCases
+  ...titleIgnoreCases,
+  ...metaNonStringNameCases,
+  ...metaEmptyContentCases,
+  ...svgMetaNameCases,
+  { remark: 'execute 扫描无 .name 的 SVG meta 叶节点后，继续完成后续段落的缓存翻译并恢复空闲', test: function () {
+    translate.selectLanguageTag.show = false;
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+    var root = document.createElement('div'), meta = document.createElementNS('http://www.w3.org/2000/svg', 'meta');
+    var paragraph = document.createElement('p'); paragraph.textContent = '你好世界';
+    root.append(meta, paragraph); document.body.append(root);
+    var text = paragraph.firstChild, networkCalls = 0;
+    translate.lifecycle.execute.translateNetworkBefore.push(function () { networkCalls++; });
+    translate.execute(root);
+    var record = translate.node.get(text);
+    return typeof meta.name === 'undefined' && paragraph.firstChild === text && text.nodeValue === 'Hello world' &&
+      record && record.originalText === '你好世界' && record.resultText === 'Hello world' &&
+      translate.node.get(meta) == null && networkCalls === 0 && translate.state === 0;
+  } },
+  { remark: 'execute 对非字符串 meta name 仍按 property 缓存翻译 content，reset 保留原 Attr 和正文身份', test: function () {
+    translate.selectLanguageTag.show = false;
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.storage.set('hash_english_' + translate.util.hash('描述原文'), 'Description');
+    translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+    var root = document.createElement('div'), meta = document.createElement('meta'), paragraph = document.createElement('p');
+    Object.defineProperty(meta, 'name', { value: undefined });
+    meta.setAttribute('property', 'OG:DESCRIPTION'); meta.content = '描述原文'; paragraph.textContent = '你好世界';
+    root.append(meta, paragraph); document.body.append(root);
+    var content = meta.getAttributeNode('content'), text = paragraph.firstChild, networkCalls = 0;
+    translate.lifecycle.execute.translateNetworkBefore.push(function () { networkCalls++; });
+    translate.execute(root);
+    var record = translate.node.get(content), textRecord = translate.node.get(text);
+    var rendered = content.nodeValue === 'Description' && text.nodeValue === 'Hello world' &&
+      record && record.originalText === '描述原文' && record.resultText === 'Description' &&
+      textRecord && textRecord.originalText === '你好世界' && networkCalls === 0 && translate.state === 0;
+    translate.reset({ selectLanguageRefreshRender: false });
+    return rendered === true && meta.getAttributeNode('content') === content && content.nodeValue === '描述原文' &&
+      paragraph.firstChild === text && text.nodeValue === '你好世界' && translate.node.data.size === 0;
+  } }
 ]);

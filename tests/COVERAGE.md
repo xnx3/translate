@@ -2,6 +2,41 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 术语处理结束后读取当前真实属性结果（4.1.36.20261116）
+
+本轮按维护者确认的 diff，仅在 addNodeToQueue 的无网络待译项分支增加一个当前 Attr 局部引用，并用它读取最终结果。普通属性存在时直接读取当前 nodeValue，保留空白并避免误读同名 DOM property；操作 Text、直接 Attr、input／textarea 实时 value，或普通属性已经缺失时，沿用原 get(node, attribute)。通过 Element.prototype.getAttributeNode.call 避免 form 同名控件遮蔽方法，也兼容真实同源 iframe 元素。补充两条中文注释，版本更新为 4.1.36.20261116，translate.min.js 未修改。
+
+原四十一项备注、参数、预期和测试函数经程序比较保持原样，追加十五项独立回归，模块共五十六项：data-label／SVG title 的实际结果及双向历史；data-label 纯空白；缺失 placeholder 的原空结果；自定义元素同步移除、更换或覆盖 data-label；input／textarea 实时值与历史；form 的 getAttribute 具名控件；自定义 form 在属性回调中添加 getAttributeNode 具名控件；同源 iframe 内普通及 SVG 属性跨 realm；Attr 与同名 DOM property 内容不同；全文忽略属性的结果与历史。原第 36 项继续保护缺失 data-label 不抛错，不重复登记相同输入。缺失或被回调移除的自定义属性保留原缺失结果，不将其统一改成空串；不把新 Attr 的后续重登记或完整 reset 支持纳入本次承诺。
+
+修改运行库前通过 BAT 检查本模块，双版本共一百一十二项：
+
+| 发布文件 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: |
+| `translate.js` | 47 | 9 | 0 |
+| `translate.min.js` | 33 | 23 | 0 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/addNodeToQueue\.js --workers=2
+```
+
+源码新增九项失败复现同一结果读取根因，其余六项保护已有行为。测试提交 c451824 已先单独推送，之后才修改运行库。其它十二模块沿用上一轮对应相同源码哈希和未变测试函数的正式报告，合并源码基线共三百零九项：299 通过、10 失败。
+
+修复后通过同一 Playwright 配置、真实文件和浏览器复测十三个源码模块：308 通过、1 失败，addNodeToQueue 五十六项全部通过。按发布文件和完整用例名称比较，九项结果读取回归由失败恢复通过，其余三百项结果保持。唯一失败仍是 whileNodes 原第 4 项模拟入队观察重复收集，扫描职责合并按维护者要求暂缓，没有放宽预期。
+
+```bat
+cd tests
+node node_modules/@playwright/test/cli.js test --project=chromium modules/addNodeToQueue\.js modules/addNodeToQueueAnalysis\.js modules/nomenclature\.dispose\.js modules/nomenclature\.replace\.js modules/element\.nodeAnalyse\.analyse\.js modules/element\.nodeAnalyse\.get\.js modules/element\.nodeAnalyse\.set\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/history\.translateText\.add\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定本机 chromium-1234。两轮均无跳过、失败豁免、重试或运行器错误，命令因真实失败返回 1。压缩版只在本模块修复前实际执行，33／23 不代表其它模块或全量结果，源码修复后未重复执行未改动的压缩文件。未全量复测，未覆盖其它浏览器、跨域 iframe 或任意页面回调。
+
+当前登记 275 模块、3,138 条用例（888 条普通、2,250 条自定义），双版本共 6,276 项；登记规模不代表本轮执行范围。源码提交 adf387b 已单独推送，验证对应 SHA-256：
+
+```text
+translate.js      c9f687b3466deaa9e2cd1db787165f4e9a466497942cca609b9ec53403013698
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
+
 ## 普通属性命中术语后写入真实 Attr（4.1.35.20261116）
 
 本轮只实施维护者确认的两处参数修改：addNodeToQueue 的忽略文本及自定义术语调用保留实际 translateNode，目标仍为原节点时保留属性名，已经转为真实 Attr 时传空属性名。补充两条中文注释，版本更新为 4.1.35.20261116。末尾结果读取保持原样，没有新增变量、全局状态或辅助函数，translate.min.js 未修改。

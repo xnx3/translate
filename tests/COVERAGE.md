@@ -2,9 +2,9 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
-## 父节点属性扫描：回归已补齐，源码待确认
+## 递归子节点后收集当前节点属性（4.1.34.20261116）
 
-本轮按维护者要求先补 element.whileNodes 测试，尚未修改 translate.js 或 translate.min.js。待审查的最小方案是在子节点递归结束后，也将当前节点交给 findNode，修复 textarea 带默认 Text 时漏收 placeholder；不新增扫描器、全局状态或节点标记。该方案会增加父节点的 condition／ignore 检查次数，回调应作稳定判断，不保证依赖次数或修改 DOM 的回调与旧版等价。
+本轮先按维护者要求补 element.whileNodes 测试并单独提交推送，再展示源码 diff，经确认后将末尾现有 findNode 调用移到子节点递归之后，修复 textarea 带默认 Text 时漏收 placeholder。补充中文注释，版本更新为 4.1.34.20261116，源码净减少一行；没有新增扫描器、全局状态或节点标记，translate.min.js 未更新。父节点的 condition／ignore 检查次数会增加，回调应作稳定判断，不保证依赖次数或修改 DOM 的回调与旧版等价。
 
 原二十七项的备注和测试函数经程序比较保持原样，包括第 4 项观察重复收集的旧失败。追加四十五项独立回归，模块共七十二项：textarea 父／叶节点的 placeholder 缺省、空、空白和非空；input／textarea 的 value 未配置、仅配置其它属性、condition 拒绝、允许及实时清空；自身／祖先 class、tag、id 和逐属性忽略；真实队列去重、重复扫描后原文及属性标记保持；Document／DocumentFragment／ShadowRoot 的内部元素；未挂载根的旧早退；一层／两层同源 iframe 内显式扫描 Document 和跨 realm value 数组；SVG meta／constructor 边界；只有 Comment／空白 Text 子节点；缓存 execute 与 reset 保留 Attr／Text；父 placeholder 和子 Text 原文相同时保留两个不同目标。
 
@@ -23,9 +23,33 @@ tests\test-translate.js.bat --no-pause modules/element\.whileNodes\.js --workers
 
 使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。与上一轮同一发布文件哈希的报告按完整用例名称比较，原有双版本五十四项结果全部保持。新增四十五项中，源码二十四项通过、二十一项失败；这些失败涉及同一父节点漏扫根因，不代表二十一个独立 bug。未更新压缩版新增十九项通过、二十六项失败。没有豁免、跳过、重试或运行器错误，BAT 因真实失败返回退出码 1。
 
-仅在临时浏览器环境应用拟改方案，运行本模块七十二项及 gets 模块一百二十一项，共一百九十三项：新增四十五项全部通过；仅保留 whileNodes 原第 4 项返回 false，其余一百九十二项全部返回 true，且无浏览器异常。该结果是方案预验证，不是仓库源码修改后的正式 BAT 结果；已核对源码及压缩文件字节未变。测试提交 3ebddd6 已单独推送，当前源码仍为 4.1.33.20261116，发布文件 SHA-256 与下方自身配置修复记录一致。
+源码落地前，仅在临时浏览器环境应用拟改方案，运行本模块七十二项及 gets 模块一百二十一项，共一百九十三项：新增四十五项全部通过；仅保留 whileNodes 原第 4 项返回 false，其余一百九十二项全部返回 true，且无浏览器异常。当时已核对源码及压缩文件字节未变，该结果仅作为方案预验证。测试提交 3ebddd6 已单独推送，之后展示最小 diff 并经维护者确认才修改源码。
 
-当前登记 275 模块、3,104 条用例（888 条普通、2,216 条自定义），双版本共 6,208 项；登记规模不代表本轮执行范围。下一步先展示最小源码 diff，维护者确认后再落地、更新版本并通过 BAT 前后比较，不将临时验证写成已完成修复。
+正式修复后通过 BAT 检查七个相关模块，每份三百零一项、双版本共六百零二项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 121 / 0 | 38 / 83 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 71 / 1 | 36 / 36 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 300 / 1 | 155 / 146 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。基线采用本模块修复前一百四十四项及上一轮同一发布文件哈希的其它六模块报告，测试函数未变；按发布文件和完整用例名称比较全部六百零二项，仅二十一项源码目标回归由失败恢复通过，其余五百八十一项结果保持。新增四十五项源码回归全部通过，原第 4 项模拟入队检查仍观察到重复收集并失败；真实队列与节点记录的去重检查通过，未用此结果豁免旧失败。压缩版未更新，失败继续保留；无跳过、重试、豁免或运行器错误，BAT 因真实失败返回退出码 1。本轮未全量复测，不能据此认定其它旧问题均已修复。
+
+当前登记 275 模块、3,104 条用例（888 条普通、2,216 条自定义），双版本共 6,208 项；登记规模不代表本轮执行范围。源码提交 23f6482 已单独推送，验证对应 SHA-256：
+
+```text
+translate.js      c0365fac296cb4b26025f58b8c47fe44404973c3f7091dd6d19a8aeb4b426454
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
 
 ## 标签配置只认可自身属性（4.1.33.20261116）
 

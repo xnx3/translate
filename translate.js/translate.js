@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.31.20261114',
+	version: '4.1.32.20261116',
 	
 	/*js translate.config start*/
 	/*
@@ -5189,7 +5189,8 @@ var translate = {
 				var divTagAttribute = translate.element.tagAttribute[nodename.toLowerCase()];
 				switch (nodename) {
 				  case 'META': 	//meta标签，如是关键词、描述等
-				    var nodeAttributeName = node.name.toLowerCase();  //取meta 标签的name 属性
+				    // 仅字符串 name 才转小写；SVG 等节点没有此属性时按空名称处理，继续后续 property 判断。
+				    var nodeAttributeName = typeof(node.name) === 'string' ? node.name.toLowerCase() : '';
 					var nodeAttributePropertyOri = node.getAttribute('property'); //取 property的值
 					var nodeAttributeProperty = '';
 					if(typeof(nodeAttributePropertyOri) === 'string' && nodeAttributePropertyOri.length > 0){

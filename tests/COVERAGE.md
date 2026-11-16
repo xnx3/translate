@@ -2,6 +2,31 @@
 
 最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
 
+## 父节点属性扫描：回归已补齐，源码待确认
+
+本轮按维护者要求先补 element.whileNodes 测试，尚未修改 translate.js 或 translate.min.js。待审查的最小方案是在子节点递归结束后，也将当前节点交给 findNode，修复 textarea 带默认 Text 时漏收 placeholder；不新增扫描器、全局状态或节点标记。该方案会增加父节点的 condition／ignore 检查次数，回调应作稳定判断，不保证依赖次数或修改 DOM 的回调与旧版等价。
+
+原二十七项的备注和测试函数经程序比较保持原样，包括第 4 项观察重复收集的旧失败。追加四十五项独立回归，模块共七十二项：textarea 父／叶节点的 placeholder 缺省、空、空白和非空；input／textarea 的 value 未配置、仅配置其它属性、condition 拒绝、允许及实时清空；自身／祖先 class、tag、id 和逐属性忽略；真实队列去重、重复扫描后原文及属性标记保持；Document／DocumentFragment／ShadowRoot 的内部元素；未挂载根的旧早退；一层／两层同源 iframe 内显式扫描 Document 和跨 realm value 数组；SVG meta／constructor 边界；只有 Comment／空白 Text 子节点；缓存 execute 与 reset 保留 Attr／Text；父 placeholder 和子 Text 原文相同时保留两个不同目标。
+
+同源 iframe 用例检查显式扫描内层文档，不能据此认定自动 iframe 注入或跨域访问已全部覆盖。未挂载 textarea 根仍不要求收集 placeholder，condition／ignore 不限定调用次数；没有扩展其它入口的继承配置规则、textarea defaultValue 或 reset 行为。
+
+源码修改前通过 BAT 运行本模块，双版本共一百四十四项：
+
+| 发布文件 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: |
+| `translate.js` | 50 | 22 | 0 |
+| `translate.min.js` | 36 | 36 | 0 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.whileNodes\.js --workers=2
+```
+
+使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。与上一轮同一发布文件哈希的报告按完整用例名称比较，原有双版本五十四项结果全部保持。新增四十五项中，源码二十四项通过、二十一项失败；这些失败涉及同一父节点漏扫根因，不代表二十一个独立 bug。未更新压缩版新增十九项通过、二十六项失败。没有豁免、跳过、重试或运行器错误，BAT 因真实失败返回退出码 1。
+
+仅在临时浏览器环境应用拟改方案，运行本模块七十二项及 gets 模块一百二十一项，共一百九十三项：新增四十五项全部通过；仅保留 whileNodes 原第 4 项返回 false，其余一百九十二项全部返回 true，且无浏览器异常。该结果是方案预验证，不是仓库源码修改后的正式 BAT 结果；已核对源码及压缩文件字节未变。测试提交 3ebddd6 已单独推送，当前源码仍为 4.1.33.20261116，发布文件 SHA-256 与下方自身配置修复记录一致。
+
+当前登记 275 模块、3,104 条用例（888 条普通、2,216 条自定义），双版本共 6,208 项；登记规模不代表本轮执行范围。下一步先展示最小源码 diff，维护者确认后再落地、更新版本并通过 BAT 前后比较，不将临时验证写成已完成修复。
+
 ## 标签配置只认可自身属性（4.1.33.20261116）
 
 维护者确认 diff 后，本轮仅调整 gets 的配置读取，通过 Object.prototype.hasOwnProperty.call 区分自身配置与继承项，避免 constructor／__proto__ 等继承项被误当成用户配置。保留显式自身同名配置、condition 和内置标签收集规则，补充中文注释，版本更新为 4.1.33.20261116，源码合计三行替换、无新增行数。whileNodes 等其它入口仍有独立配置读取，不能据此认定整个 execute 已统一跳过继承配置；父节点扫描范围及 translate.min.js 均未改动。

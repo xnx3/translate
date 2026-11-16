@@ -1,6 +1,40 @@
 # 方法测试覆盖及验证记录
 
-最近更新：2026-11-14（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+
+## meta 的 name 非字符串时继续检查 property（4.1.32.20261116）
+
+本轮仅实施维护者确认的 gets 单行类型判断：只有字符串 name 才调用 toLowerCase，其余按空名称继续后续 property 判断。正常 HTML meta 的 name、property 白名单及 content 判空规则保持，补充中文注释，版本更新为 4.1.32.20261116。没有扩大 whileNodes 的父节点扫描范围，也没有修改其它取值位置或 translate.min.js；父节点扫描仍需后续逐处审查。
+
+element.nodeAnalyse.gets 原有七十七项的备注和测试函数经程序比较保持原样，追加二十七项独立回归，登记共一百零四项：undefined、null、布尔、数字、NaN、对象、数组、函数、Symbol、BigInt 各自配合匹配／不匹配 property；content 缺省／空／纯空白；真实 SVG meta 父／叶节点；execute 在 SVG meta 之后继续翻译正文并恢复空闲；非字符串 name 仍按 property 缓存翻译 content 并通过 reset 保留原 Attr／Text 身份。对象用例阻止调用其自定义 toLowerCase 或隐式转字符串，测试不捕获扫描异常。
+
+测试提交 53bc61a 已单独推送。修改源码前通过 BAT 运行本模块，双版本二百零八项：源码 77 通过、27 失败，压缩版 34 通过、70 失败；新增二十七项在两份文件上均复现 name 的 toLowerCase 错误，无跳过、重试或运行器错误。
+
+修复后通过 BAT 检查七个相关模块，每份二百三十九项、双版本共四百七十八项：
+
+| 模块 | 源码通过 / 失败 | 压缩版通过 / 失败 |
+| --- | ---: | ---: |
+| `element.nodeAnalyse.gets` | 104 / 0 | 34 / 70 |
+| `element.findNode` | 10 / 0 | 8 / 2 |
+| `element.whileNodes` | 26 / 1 | 17 / 10 |
+| `execute` | 51 / 0 | 32 / 19 |
+| `renderTask.execute` | 20 / 0 | 14 / 6 |
+| `reset` | 19 / 0 | 19 / 0 |
+| `whole.context.collectInlineTextGroups` | 8 / 0 | 8 / 0 |
+| 合计 | 238 / 1 | 132 / 107 |
+
+```bat
+tests\test-translate.js.bat --no-pause modules/element\.nodeAnalyse\.gets\.js modules/element\.findNode\.js modules/element\.whileNodes\.js modules/execute\.js modules/renderTask\.execute\.js modules/reset\.js modules/whole\.context\.collectInlineTextGroups\.js --workers=2
+```
+
+运行时使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指定已验证的本机 Chromium。按发布文件及完整用例名称比较本模块修复前后二百零八项结果，仅二十七项源码目标回归由失败恢复通过，其余一百八十一项结果保持；其余六模块本轮的通过／失败数量与上一轮记录一致。源码余下一项仍是原有 whileNodes 模拟入队用例观察到重复收集；未更新压缩版的失败继续保留，BAT 因真实失败返回退出码 1，没有新增豁免、跳过、重试或运行器错误。本轮未全量复测，不能据此认定所有方法均无问题。
+
+当前登记 275 模块、3,042 条用例（888 条普通、2,154 条自定义），双版本共 6,084 项；登记规模不代表本轮执行范围。源码提交 84b519f 已单独推送，验证对应 SHA-256：
+
+```text
+translate.js      c6167b39b80a92209aaee10a013821f2f286438efa5c67818534919639c53a82
+translate.min.js  3fcfce8873ba6f67c32b2a46b7948fda7b8909523ccbf0751af58618cb0f8198
+```
 
 ## whileNodes 的 title 扫描统一使用真实 Attr（4.1.31.20261114）
 

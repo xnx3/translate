@@ -340,6 +340,76 @@ const svgMetaNameCases = [false, true].map(function (hasChild) {
   `) };
 });
 
+// 普通对象自带 constructor、__proto__，但这些继承项不是用户配置。
+// 每个标签分别验证有无 title：跳过假配置不能妨碍内置真实 Attr 的收集。
+const inheritedBuiltinConfigCases = ['constructor', '__proto__'].flatMap(function (tag) {
+  return [false, true].map(function (hasTitle) {
+    return { remark: tag + ' 未配置时不把继承项当配置' + (hasTitle ? '，仍收集真实 title' : '，其它属性不擅自收集'), test: new Function(`
+      var node = document.createElement(${JSON.stringify(tag)}); node.setAttribute('data-label', '标签原文');
+      if (${hasTitle}) node.setAttribute('title', '标题原文');
+      var config = translate.element.tagAttribute, title = node.getAttributeNode('title');
+      var result = translate.element.nodeAnalyse.gets(node);
+      return !Object.prototype.hasOwnProperty.call(config, ${JSON.stringify(tag)}) && node.getAttribute('data-label') === '标签原文' &&
+        (${hasTitle} ? result.length === 1 && result[0].node === title && result[0].attribute === 'title' && result[0].text === '标题原文' : result.length === 0);
+    `) };
+  });
+});
+
+// 同名配置只要确实定义在字典自身就仍然有效；__proto__ 用 defineProperty 创建，避免赋值变成修改原型。
+const ownBuiltinConfigCases = ['constructor', '__proto__'].flatMap(function (tag) {
+  return [false, true].map(function (allowed) {
+    return { remark: tag + ' 显式自身配置的 condition ' + (allowed ? '允许时只收集名单内 Attr' : '拒绝时保留内置 title'), test: new Function(`
+      var node = document.createElement(${JSON.stringify(tag)});
+      node.setAttribute('data-label', '标签原文'); node.setAttribute('data-other', '名单外原文'); node.title = '标题原文';
+      var calls = 0, correctReceiver = true;
+      var config = { attribute: ['data-label'], condition: function (element) { calls++; correctReceiver = correctReceiver && this === config && element === node; return ${allowed}; } };
+      Object.defineProperty(translate.element.tagAttribute, ${JSON.stringify(tag)}, { value: config, enumerable: true, configurable: true });
+      var label = node.getAttributeNode('data-label'), title = node.getAttributeNode('title');
+      var result = translate.element.nodeAnalyse.gets(node);
+      var labels = result.filter(function (item) { return item.node === label; });
+      var titles = result.filter(function (item) { return item.node === title; });
+      return calls === 1 && correctReceiver && result.length === ${allowed ? 2 : 1} && labels.length === ${allowed ? 1 : 0} &&
+        (${allowed} ? labels[0].text === '标签原文' && labels[0].attribute === 'data-label' : true) &&
+        titles.length === 1 && titles[0].text === '标题原文' && titles[0].attribute === 'title';
+    `) };
+  });
+});
+
+// 继承的 input／textarea 配置不能开启实时 value；同时验证不读取 value getter，placeholder 仍遵守内置规则。
+const inheritedValueConfigCases = ['input', 'textarea'].map(function (tag) {
+  return { remark: tag + ' 仅继承 value 配置时不启用实时 value，仍收集 placeholder', test: new Function(`
+    var prototype = {}, node = document.createElement(${JSON.stringify(tag)});
+    prototype[${JSON.stringify(tag)}] = { attribute: ['value'] };
+    translate.element.tagAttribute = Object.create(prototype);
+    node.setAttribute('value', '旧属性值'); node.setAttribute('placeholder', '输入提示');
+    Object.defineProperty(node, 'value', { get: function () { throw new Error('继承配置不能开启实时 value'); } });
+    var placeholder = node.getAttributeNode('placeholder');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return result.length === 1 && result[0].node === placeholder && result[0].attribute === 'placeholder' &&
+      result[0].text === '输入提示' && node.getAttribute('value') === '旧属性值';
+  `) };
+});
+
+// 不依赖字典自身的 hasOwnProperty 方法，也不要求配置项可枚举。
+// 这些用例只调用 gets；execute 等其它入口对特殊字典的处理不属于本轮修复。
+const ownConfigDictionaryCases = [
+  { remark: '字典自身 hasOwnProperty 被配置值遮蔽', setup: "var dictionary = { hasOwnProperty: { attribute: ['data-other'] } }; dictionary.span = config;" },
+  { remark: '字典没有原型', setup: 'var dictionary = Object.create(null); dictionary.span = config;' },
+  { remark: '自身标签配置不可枚举', setup: "var dictionary = {}; Object.defineProperty(dictionary, 'span', { value: config });" },
+  { remark: '自身标签配置覆盖继承的同名配置', setup: "var dictionary = Object.create({ span: { attribute: ['data-other'] } }); dictionary.span = config;" }
+].map(function (item) {
+  return { remark: item.remark + '时 gets 仍只收集自身名单内 Attr', test: new Function(`
+    var node = document.createElement('span'); node.setAttribute('data-label', '标签原文'); node.setAttribute('data-other', '名单外原文');
+    var config = { attribute: ['data-label'] };
+    ${item.setup}
+    translate.element.tagAttribute = dictionary;
+    var label = node.getAttributeNode('data-label');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return result.length === 1 && result[0].node === label && result[0].attribute === 'data-label' &&
+      result[0].text === '标签原文' && dictionary.span === config && node.getAttribute('data-other') === '名单外原文';
+  `) };
+});
+
 require('../helpers/module')(__filename, [
   { remark: '文本和属性节点返回自身，空白节点不产生翻译项', test: function () {
     var text = document.createTextNode(' 文本 '), element = document.createElement('span'); element.title = '标题';
@@ -452,5 +522,42 @@ require('../helpers/module')(__filename, [
     translate.reset({ selectLanguageRefreshRender: false });
     return rendered === true && meta.getAttributeNode('content') === content && content.nodeValue === '描述原文' &&
       paragraph.firstChild === text && text.nodeValue === '你好世界' && translate.node.data.size === 0;
+  } },
+  ...inheritedBuiltinConfigCases,
+  ...ownBuiltinConfigCases,
+  ...inheritedValueConfigCases,
+  ...ownConfigDictionaryCases,
+  { remark: '普通标签的继承配置不启用自定义属性，内置 title 仍正常收集', test: function () {
+    var calls = 0, config = { attribute: ['data-label'], condition: function () { calls++; return true; } };
+    translate.element.tagAttribute = Object.create({ div: config });
+    var node = document.createElement('div'); node.setAttribute('data-label', '标签原文'); node.title = '标题原文';
+    var title = node.getAttributeNode('title');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return calls === 0 && result.length === 1 && result[0].node === title && result[0].text === '标题原文' &&
+      result[0].attribute === 'title' && node.getAttribute('data-label') === '标签原文';
+  } },
+  { remark: '继承配置的 getter 不会读取，真实 title 仍正常收集', test: function () {
+    var prototype = {};
+    Object.defineProperty(prototype, 'span', { get: function () { throw new Error('不能读取继承配置 getter'); } });
+    translate.element.tagAttribute = Object.create(prototype);
+    var node = document.createElement('span'); node.title = '标题原文';
+    var title = node.getAttributeNode('title');
+    var result = translate.element.nodeAnalyse.gets(node);
+    return result.length === 1 && result[0].node === title && result[0].text === '标题原文' && result[0].attribute === 'title';
+  } },
+  { remark: 'execute 遇到未配置的 constructor 叶节点时不中断，后续正文仍完成缓存翻译', test: function () {
+    translate.selectLanguageTag.show = false;
+    translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+    translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+    var root = document.createElement('div'), node = document.createElement('constructor'), paragraph = document.createElement('p');
+    node.setAttribute('data-label', '未启用的标签'); paragraph.textContent = '你好世界';
+    root.append(node, paragraph); document.body.append(root);
+    var text = paragraph.firstChild, label = node.getAttributeNode('data-label'), networkCalls = 0;
+    translate.lifecycle.execute.translateNetworkBefore.push(function () { networkCalls++; });
+    translate.execute(root);
+    var record = translate.node.get(text);
+    return translate.state === 0 && networkCalls === 0 && paragraph.firstChild === text && text.nodeValue === 'Hello world' &&
+      record && record.originalText === '你好世界' && record.resultText === 'Hello world' &&
+      translate.node.get(label) == null && label.nodeValue === '未启用的标签' && node.getAttributeNode('data-label') === label;
   } }
 ]);

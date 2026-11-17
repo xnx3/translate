@@ -2516,28 +2516,89 @@ var translate = {
 		translate.autoDiscriminateLocalLanguage = true;
 	},
 	/*
-		待翻译的页面的node队列
-		一维：key:uuid，也就是execute每次执行都会创建一个翻译队列，这个是翻译队列的唯一标识。   
-			 value:
-				k/v 
-		二维：对象形态，具体有：
-			 key:expireTime 当前一维数组key的过期时间，到达过期时间会自动删除掉这个一维数组。如果<0则代表永不删除，常驻内存
-			 value:list 从DOM中自动识别出的语言文本及节点数据，按照语种进行了划分，每个语种便是其中的一项。
-		三维：针对二维的value，  key:english、chinese_simplified等语种，这里的key便是对value的判断，取value中的要翻译的词是什么语种，对其进行了语种分类    value: k/v
-		四维：针对三维的value，  key:要翻译的词（经过语种分割的）的hash，   value: node数组
-		五维：针对四维的value，  这是个对象， 其中
-				original: 是三维的key的hash的原始文字， node 元素中的原始文字（可能是node元素整个内容，也可能是被分割出的某一块内容，比如中英文混合时单独提取中文）
-				cacheHash: 如果翻译时匹配到了自定义术语库中的词，那么翻译完后存入到缓存中时，其缓存的翻译前字符串已经不是original，而是匹配完术语库后的文本的hash了。所以这里额外多增加了这个属性。如果匹配了术语库，那这里就是要进行缓存的翻译前文本的hash，如果未使用术语库，这里就跟其key-hash 相同。
-				translateText: 针对 original 的经过加工过的文字，比如经过自定义术语、以及其他处理操作后的，待进行文本翻译的文字。
-				nodes: 有哪些node元素中包含了这个词，都会在这里记录
-		六维：针对五维的 nodes，将各个具体的 node 以及 其操作的 attribute 以数组形式列出
-		七维：针对六维列出的nodes数组，其中包含：
-				node: 具体操作的node元素
-				attribute: 也就是翻译文本针对的是什么，是node本身（nodeValue），还是 node 的某个属性，比如title属性，这则是设置为 "title"。如果这里不为空，那就是针对的属性操作的。 如果这里为空或者undefined ，那就是针对node本身，也就是 nodeValue 的字符串操作的
-				beforeText: node元素中进行翻译结果赋予时，额外在翻译结果的前面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
-				afterText:  node元素中进行翻译结果赋予时，额外在翻译结果的后面加上的字符串。其应用场景为，如果中英文混合场景下，避免中文跟英文挨着导致翻译为英语后，连到一块了。默认是空字符串 ''
+		页面翻译任务按 uuid 保存的批次记录，对应 translate.nodeQueue[uuid]。
+		当前批次包含 expireTime 和 list；下文 scan 为后续统一扫描记录的结构约定，
+		当前 whileNodes 尚未创建或写入 scan，以下约定供后续实现使用。
 
-		生命周期： 当execute()执行时创建，  当execute结束（其中的所有request接收到响应并渲染完毕）时销毁（当前暂时不销毁，以方便调试）
+		list 与规划中的 scan 是两份用途独立的数据：list 保存经过忽略判断、术语处理、
+		语种拆分后需要翻译的任务；scan 保存扫描遇到的节点、当时的文本及结构顺序。
+		它们可以由同一次 whileNodes 遍历产生，内部可以引用同一个真实 DOM 节点。
+		放在同一 uuid 下是为了关联本次任务、统一管理生命周期，不表示 scan 已接入翻译。
+
+		一维：key 为 uuid，即一次 execute 翻译任务的标识，value 为该批次的记录。
+			现有实现多处使用 new Array() 承载命名属性，不能将各层都视为顺序数组。
+		二维：批次的字段如下：
+			expireTime：过期时间，单位为毫秒时间戳，普通扫描创建时默认为当前时间加两分钟。
+				非负值由 recycle 定期检查并回收；负值表示免于自动回收，仍可被 reset 清空。
+			list：现有翻译队列，按源语种和文本 hash 组织，结构见下方三至七维。
+			scan：规划中的通用扫描记录，与 list 同级，结构见下方 scan 说明。
+		三维：仅针对 list，key 为源语种，如 english、chinese_simplified。
+		四维：针对 list[lang]，普通翻译项的 key 为入队文本的 hash，value 为一个翻译项，
+			不是直接的节点数组；节点数组保存在该翻译项的 nodes 字段中。
+		五维：普通翻译项 list[lang][hash] 的字段如下：
+			original：此项实际入队的文本片段，可能已经经过术语处理、忽略文本切分或语种拆分，
+				不保证等于整个 Text 节点，也不保证是未经处理的页面原文。
+			translateText：此项实际提交翻译的文本，普通翻译项为字符串。
+			cacheHash：execute 在查询缓存时补写的缓存键；original 与 translateText 相同时
+				复用当前项的 hash，否则使用 translateText 的 hash，刚入队时可能尚未设置。
+			nodes：该文本项对应的回填目标数组；普通翻译项的多个目标共用同一个字符串译文。
+		六维：针对 nodes，每项保存一个回填目标，即 list[lang][hash].nodes[index]。
+		七维：每个回填目标的字段如下：
+			node：真实目标节点，可以是 Text、真实 Attr，或用于实时 value 的 input/textarea 元素。
+			attribute：为空或 undefined 时操作目标节点的 nodeValue；真实 Attr 同样使用空值，
+				所以 attribute 为空也可能是在翻译元素属性。非空时表示操作元素的指定属性，
+				其中 input/textarea 的 'value' 使用实时 .value，而非旧的 HTML value Attr。
+			beforeText：回填时追加在译文之前的文字，默认空字符串，用于补充必要的分隔等。
+			afterText：回填时追加在译文之后的文字，默认空字符串。
+
+		已有的受控 wholeContext 项通过 type:'wholeContext' 区分，translateText 为字符串数组，
+		与 nodes 按下标对应，使用独立 hash 命名空间；该辅助入口尚未接入自动扫描和完整翻译链路。
+		它与下方规划的通用 scan 记录是不同结构，不能将其分段目标当作普通共享译文目标。
+
+		scan 结构约定（待实现；当前不会自动生成该字段）：
+			{
+				scopes: [
+					{
+						root: 扫描根节点,
+						events: [
+							{type: 'enter', snapshot: 元素快照},
+							{type: 'text', snapshot: 文本快照},
+							{type: 'leave', snapshot: 元素快照}
+						],
+						complete: false
+					}
+				],
+				snapshots: new Map()
+			}
+			scopes：数组，每次顶层调用 whileNodes 保存一个扫描范围；递归子节点沿用该范围。
+				相同或互相包含的顶层范围仍各自保留完整事件，不能在记录时跳过重复节点的事件。
+			scopes[index] 的字段：
+				root：本次顶层调用传入的真实 Node，后续分析应据此限定范围。
+				events：按实际扫描顺序追加的事件数组，元素结构为 {type, snapshot}，说明见下一层。
+				complete：初始为 false，顶层调用正常扫描结束后置为 true；异常中断时保持 false，
+					此范围的事件可能不完整，不能将其视为一次完整扫描。
+			scopes[index].events[index] 的字段（snapshot 属于事件，不是 scope 的直接属性）：
+				type：'enter' 为进入容器；'text' 为遇到一个 Text；'leave' 为正常完成该容器扫描。
+					Element、Document、DocumentFragment/ShadowRoot 对应 enter/leave；Text 只有 text。
+				snapshot：引用 snapshots 中该节点的同一份快照；enter 和 leave 复用容器快照，
+					text 引用对应的文本快照，不复制 DOM 节点，也不按文字反查节点。
+			snapshots：Map，key 为真实 DOM 节点，value 为该节点在本批次首次遇到时的快照。
+				记录 nodeType 为 1、3、9、11 的节点；注释及 Attr 不进入这些结构事件，
+				属性翻译继续使用现有 list。快照保存以下字段：
+				node：真实节点引用；文字相同的不同节点仍有各自的快照。
+				nodeType：节点类型编号，例如 Text 为 3。
+				nodeName：当时的原生节点名称，例如 DIV、#text，不另行转换大小写。
+				parent：当时的 parentNode 引用，无父节点为 null；节点随后移动时不更新此记录。
+				text：Text 当时的 nodeValue，其他类型为 null；保留空字符串、空格、换行和缩进。
+					在该节点本次原有处理之前保存，这是当时的节点文本，不保证为源语原文；
+					节点此前已翻译时，这里也可能是译文。相同 uuid 内再次遇到时复用快照，
+					不以新值覆盖，但仍在对应范围中追加事件。
+			scan 不依赖 group 是否启用，记录空白及被忽略区域也不表示这些内容需要翻译。
+			它是包含 DOM 引用和 Map 的运行时记录，不作为接口参数或浏览器持久缓存内容。
+
+		生命周期：普通批次在 whileNodes 首次扫描时创建；空扫描等路径也可能补建空 list。
+			execute 请求及渲染结束后，当前不立即销毁批次，由 recycle 按过期时间定期回收。
+			reset()、setDocuments() 会清空整个 nodeQueue；规划中的 scan 应随所属批次一起回收。
 	*/
 	nodeQueue:{},
 	//指定要翻译的元素的集合,可传入一个元素或多个元素

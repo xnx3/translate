@@ -102,6 +102,24 @@
 	</build>
 	
 	<dependencies>  
+		<!-- 仅用于可选 usage 字段的 JSON 序列化注解，不引入 JSON 解析器。 -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.13.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.13.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- https://github.com/xnx3/FileUpload -->
 		<dependency> 
 			<groupId>cn.zvo.fileupload</groupId>

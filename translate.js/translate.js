@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.36.20261116',
+	version: '4.1.37.20261117',
 	
 	/*js translate.config start*/
 	/*
@@ -2517,10 +2517,10 @@ var translate = {
 	},
 	/*
 		页面翻译任务按 uuid 保存的批次记录，对应 translate.nodeQueue[uuid]。
-		当前批次包含 expireTime 和 list；下文 scan 为后续统一扫描记录的结构约定，
-		当前 whileNodes 尚未创建或写入 scan，以下约定供后续实现使用。
+		当前批次包含 expireTime、list 和 whileNodes 创建的 scan 扫描范围记录。
+		scan 已记录各次顶层调用的范围及完成状态，事件及节点快照尚未写入。
 
-		list 与规划中的 scan 是两份用途独立的数据：list 保存经过忽略判断、术语处理、
+		list 与 scan 是两份用途独立的数据：list 保存经过忽略判断、术语处理、
 		语种拆分后需要翻译的任务；scan 保存扫描遇到的节点、当时的文本及结构顺序。
 		它们可以由同一次 whileNodes 遍历产生，内部可以引用同一个真实 DOM 节点。
 		放在同一 uuid 下是为了关联本次任务、统一管理生命周期，不表示 scan 已接入翻译。
@@ -2531,7 +2531,7 @@ var translate = {
 			expireTime：过期时间，单位为毫秒时间戳，普通扫描创建时默认为当前时间加两分钟。
 				非负值由 recycle 定期检查并回收；负值表示免于自动回收，仍可被 reset 清空。
 			list：现有翻译队列，按源语种和文本 hash 组织，结构见下方三至七维。
-			scan：规划中的通用扫描记录，与 list 同级，结构见下方 scan 说明。
+			scan：通用扫描记录，与 list 同级；scopes 保存范围，snapshots 暂为空 Map。
 		三维：仅针对 list，key 为源语种，如 english、chinese_simplified。
 		四维：针对 list[lang]，普通翻译项的 key 为入队文本的 hash，value 为一个翻译项，
 			不是直接的节点数组；节点数组保存在该翻译项的 nodes 字段中。
@@ -2555,7 +2555,7 @@ var translate = {
 		与 nodes 按下标对应，使用独立 hash 命名空间；该辅助入口尚未接入自动扫描和完整翻译链路。
 		它与下方规划的通用 scan 记录是不同结构，不能将其分段目标当作普通共享译文目标。
 
-		scan 结构约定（待实现；当前不会自动生成该字段）：
+		scan 结构（当前已记录 scopes 的 root、complete，events 和 snapshots 的写入待实现）：
 			{
 				scopes: [
 					{
@@ -2575,7 +2575,7 @@ var translate = {
 			scopes[index] 的字段：
 				root：本次顶层调用传入的真实 Node，后续分析应据此限定范围。
 				events：按实际扫描顺序追加的事件数组，元素结构为 {type, snapshot}，说明见下一层。
-				complete：初始为 false，顶层调用正常扫描结束后置为 true；异常中断时保持 false，
+				complete：初始为 false，顶层扫描执行到末尾后置为 true；异常或提前退出时保持 false，
 					此范围的事件可能不完整，不能将其视为一次完整扫描。
 			scopes[index].events[index] 的字段（snapshot 属于事件，不是 scope 的直接属性）：
 				type：'enter' 为进入容器；'text' 为遇到一个 Text；'leave' 为正常完成该容器扫描。
@@ -2598,7 +2598,7 @@ var translate = {
 
 		生命周期：普通批次在 whileNodes 首次扫描时创建；空扫描等路径也可能补建空 list。
 			execute 请求及渲染结束后，当前不立即销毁批次，由 recycle 按过期时间定期回收。
-			reset()、setDocuments() 会清空整个 nodeQueue；规划中的 scan 应随所属批次一起回收。
+			reset()、setDocuments() 会清空整个 nodeQueue；scan 随所属批次一起回收。
 	*/
 	nodeQueue:{},
 	//指定要翻译的元素的集合,可传入一个元素或多个元素
@@ -5978,10 +5978,33 @@ var translate = {
 			}
 		},
 		/*
-			向下遍历node
-			其中如果使用了自定义 textarea 、input 的 value 属性，则认为是 node 本身进行挂钩，而非其 value 值（value值并不是个node）
+			向下遍历 node，沿用原属性、正文的扫描和入队逻辑。
+			其中如果使用了自定义 textarea、input 的 value 属性，则与元素本身挂钩，
+			而非与 value 值挂钩（value 值不是一个 DOM 节点）。
+
+			@param uuid 本批翻译任务的标识，对应 translate.nodeQueue[uuid]。
+			@param node 当前要扫描的真实 DOM 节点；递归时为当前子节点。
+				null 或 undefined 直接返回，不建立扫描范围。
+			@param scanScope 可选，仅供内部递归传递的扫描范围对象，不是 group 配置。
+				外部仍按原方式传 uuid、node 两个参数，无需自行构造或传入 scanScope。
+				省略、undefined 或 null 均视为顶层调用：创建一个新范围，加入本批次
+				translate.nodeQueue[uuid].scan.scopes。范围结构为：
+				{
+					root: node,       // 此次顶层调用的扫描根，递归时保持不变。
+					events: [],       // 当前范围的事件数组，本步骤只建容器，尚不写事件。
+					complete: false   // 顶层扫描执行到末尾后置 true；异常或提前退出时保持 false。
+				}
+				递归时传同一个 uuid 和 scanScope 对象，所有子节点归入同一个范围，
+				不会为每个子节点新建范围。以后记录事件时，可据此保留各范围的结构顺序，
+				避免将两次独立扫描的区域误拼在一起；此机制与 group 是否启用无关。
+
+			调用示例：
+				外部开始扫描一个区域（省略第三参，方法内部自动建立范围）：
+				translate.element.whileNodes(uuid, document.getElementById('article'));
+				方法内部递归子节点（将当前范围原样传下去，不自行构造新对象）：
+				translate.element.whileNodes(uuid, childNodes[i], scanScope);
 		*/
-		whileNodes:function(uuid, node){
+		whileNodes:function(uuid, node, scanScope){
 			if(node == null || typeof(node) == 'undefined'){
 				return;
 			}
@@ -5993,6 +6016,23 @@ var translate = {
 				translate.nodeQueue[uuid]['list'] = new Array(); 
 				//console.log('创建 --- ');
 				//console.log(uuid)
+			}
+
+			// 创建本批次的通用扫描记录，与是否启用 group 无关。
+			// 同一 uuid 只初始化一次，后续递归及其他扫描范围共用此容器。
+			var batch = translate.nodeQueue[uuid];
+			if(typeof(batch.scan) === 'undefined'){
+				batch.scan = {
+					scopes: [],
+					snapshots: new Map()
+				};
+			}
+
+			// 顶层调用新建范围，递归调用沿用传入范围，避免为每个子节点重复建范围。
+			var isScanRoot = scanScope == null;
+			if(isScanRoot){
+				scanScope = {root: node, events: [], complete: false};
+				batch.scan.scopes.push(scanScope);
 			}
 
 			//console.log('---'+typeof(node)+', ');
@@ -6082,11 +6122,15 @@ var translate = {
 			}
 			if(childNodes.length > 0){
 				for(var i = 0; i<childNodes.length; i++){
-					translate.element.whileNodes(uuid, childNodes[i]);
+					translate.element.whileNodes(uuid, childNodes[i], scanScope);
 				}
 			}
 			// 子节点扫描后也收集当前节点自身的属性，避免 textarea 有默认文本时漏掉 placeholder。
 			translate.element.findNode(uuid, node);
+			// 仅正常完成顶层扫描后标记；原流程抛异常时保持 false，异常照常向外传播。
+			if(isScanRoot){
+				scanScope.complete = true;
+			}
 		},
 		findNode:function(uuid, node){
 			if(node == null || typeof(node) == 'undefined'){

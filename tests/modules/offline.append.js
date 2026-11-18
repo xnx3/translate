@@ -166,3 +166,48 @@ require('../helpers/module')(__filename, [
     }
   }
 ]);
+  },
+  {
+    remark: '离线词库导入中途达到配额后继续处理各行，包括覆盖此前已落盘的词条',
+    test: function () {
+      const cacheKey = word => 'hash_english_' + translate.util.hash(word);
+      const first = cacheKey('一');
+      const second = cacheKey('二');
+      const third = cacheKey('三');
+      const write = Storage.prototype.setItem;
+      const attempted = [];
+      Storage.prototype.setItem = function (key, value) {
+        attempted.push(key);
+        if (key === second) throw new DOMException('full', 'QuotaExceededError');
+        return write.call(this, key, value);
+      };
+      translate.offline.append('english', '一=First\n二=Second\n一=Updated\n三=Third');
+      return attempted.length === 2 && attempted[0] === first && attempted[1] === second &&
+        localStorage.getItem(first) === 'First' && localStorage.getItem(second) === null && localStorage.getItem(third) === null &&
+        translate.storage.get(first) === 'Updated' && translate.storage.get(second) === 'Second' && translate.storage.get(third) === 'Third';
+    }
+  },
+  {
+    remark: '同一离线词表使用 Windows CRLF 换行时不会把行尾回车写进译文',
+    test: function () {
+      translate.offline.append('english', '春=Spring\r\n夏=Summer\r\n秋=Autumn');
+      const value = original => translate.storage.get('hash_english_' + translate.util.hash(original));
+      const actual = ['春', '夏', '秋'].map(value);
+      if (JSON.stringify(actual) !== JSON.stringify(['Spring', 'Summer', 'Autumn'])) {
+        throw new Error('CRLF 词表导入结果 ' + JSON.stringify(actual));
+      }
+      return true;
+    }
+  },
+  {
+    remark: '导入到自定义存储时只写有效条目，按照文件顺序传递完整的目标键值',
+    test: function () {
+      const writes = [];
+      translate.storage.set = (key, value) => writes.push([key, value]);
+      translate.offline.append('french', '猫=Chat\n无效行\n狗=Chien\n猫=Le chat');
+      return JSON.stringify(writes) === JSON.stringify([
+        ['hash_french_' + translate.util.hash('猫'), 'Chat'],
+        ['hash_french_' + translate.util.hash('狗'), 'Chien'],
+        ['hash_french_' + translate.util.hash('猫'), 'Le chat']
+      ]) && localStorage.getItem(writes[0][0]) === null;
+    }

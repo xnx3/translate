@@ -122,5 +122,48 @@ require('../helpers/module')(__filename, [
       return await translate.storage.IndexedDB.get(1) === 'number' &&
         await translate.storage.IndexedDB.get('1') === 'string';
     }
+  },
+  {
+    remark: '非法键以 DataError 拒绝，后续合法写入和已有记录均可读取',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('existing', 1);
+      for (const key of [undefined, null, false, NaN, {}, ['valid', null], new Date(NaN)]) {
+        try {
+          await db.set(key, 'invalid');
+          return false;
+        } catch (error) {
+          if (error.name !== 'DataError') return false;
+        }
+      }
+      await db.set('after', 2);
+      return await db.get('existing') === 1 && await db.get('after') === 2;
+    }
+  },
+  {
+    remark: '覆盖写入包含不能结构化克隆的值时拒绝并保留旧值',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('stable', { revision: 1 });
+      try {
+        await db.set('stable', { revision: 2, callback: function () {} });
+        return false;
+      } catch (error) {
+        return error.name === 'DataCloneError' && (await db.get('stable')).revision === 1;
+      }
+    }
+  },
+  {
+    remark: '二进制视图按字节作为键并与字符串和数组键分别存储',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      const buffer = Uint8Array.from([9, 1, 2, 8]);
+      await db.set(buffer.subarray(1, 3), 'binary');
+      await db.set('1,2', 'string');
+      await db.set([1, 2], 'array');
+      return await db.get(Uint8Array.of(1, 2).buffer) === 'binary' &&
+        await db.get(buffer) === undefined && await db.get('1,2') === 'string' &&
+        await db.get([1, 2]) === 'array';
+    }
   }
 ]);

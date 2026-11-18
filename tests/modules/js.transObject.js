@@ -77,5 +77,62 @@ require('../helpers/module')(__filename, [
         output[6] === inner && item.title === 'Hello' && item.action === fn && called === 0 &&
         inner.length === 1 && inner[0] === 'World' && texts.length === 2 && texts[0] === '你好' && texts[1] === '世界');
     }, function () { resolve(false); }));
-  } }
+  } },
+  {
+    remark: '异步返回前保留原文，返回后同时更新重复字段并保留原容器',
+    test: function () {
+      const row = { label: '你好' };
+      const input = [row, '你好', '世界'];
+      let finish, request, output;
+      let succeeded = 0, failed = 0;
+      translate.request.translateText = (data, done) => { request = data; finish = done; };
+      translate.js.transObject(input, 'english', value => { succeeded++; output = value; }, () => failed++);
+      if (succeeded !== 0 || failed !== 0 || row.label !== '你好' || input[2] !== '世界' ||
+          JSON.stringify(request.texts) !== JSON.stringify(['你好', '世界'])) return false;
+      finish({ result: 1, text: ['Hello', 'World'], to: 'english' });
+      return succeeded === 1 && failed === 0 && output === input && input[0] === row &&
+        row.label === 'Hello' && input[1] === 'Hello' && input[2] === 'World';
+    }
+  },
+  {
+    remark: '响应缺少 result 时只触发一次失败，全部嵌套字段仍是原值',
+    test: function () {
+      const input = { title: '你好', list: ['世界'] };
+      let succeeded = 0, failed = 0, message;
+      translate.request.translateText = (data, done) => done({ text: ['Hello', 'World'] });
+      translate.js.transObject(input, 'english', () => succeeded++, reason => { failed++; message = reason; });
+      return succeeded === 0 && failed === 1 && typeof message === 'string' && message.length > 0 &&
+        input.title === '你好' && input.list[0] === '世界';
+    }
+  },
+  {
+    remark: '忽略列表中的点和美元按字面保护，重复整段文本仅请求一次',
+    test: function () {
+      translate.ignore.text = ['v1.0', '$9'];
+      const input = { first: '甲v1.0乙$9丙', second: '甲v1.0乙$9丙' };
+      let request, output;
+      translate.request.translateText = (data, done) => {
+        request = data.texts;
+        done({ result: 1, text: ['壹', '贰', '叁'], to: 'chinese_simplified' });
+      };
+      translate.js.transObject(input, 'chinese_simplified', value => { output = value; }, () => {});
+      return JSON.stringify(request) === JSON.stringify(['甲', '乙', '丙']) && output === input &&
+        input.first === '壹v1.0贰$9叁' && input.second === input.first;
+    }
+  },
+  {
+    remark: '整项是忽略文本时，后续字段仍可回填且保持请求与结果下标对应',
+    test: function () {
+      translate.ignore.text = ['KEEP'];
+      const input = { code: 'KEEP', name: '世界' };
+      let request, output;
+      translate.request.translateText = (data, done) => {
+        request = data.texts;
+        done({ result: 1, text: ['World'], to: 'english' });
+      };
+      translate.js.transObject(input, 'english', value => { output = value; }, () => {});
+      return JSON.stringify(request) === JSON.stringify(['世界']) && output === input &&
+        input.code === 'KEEP' && input.name === 'World';
+    }
+  }
 ]);

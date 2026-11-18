@@ -142,5 +142,27 @@ require('../helpers/module')(__filename, [
       return translate.offline.append('english', '你好=Hello') === undefined &&
         translate.storage.get('hash_english_' + translate.util.hash('你好')) === 'Hello';
     }
+  },
+  {
+    remark: '统一缩进只看前十行，后续数量更多的深缩进保留多出的空格',
+    test: function () {
+      const lines = [
+        ...Array.from({ length: 10 }, (_, i) => '  first' + i + '=A'),
+        ...Array.from({ length: 12 }, (_, i) => '    later' + i + '=B')
+      ];
+      translate.offline.append('english', lines.join('\n'));
+      const get = text => translate.storage.get('hash_english_' + translate.util.hash(text));
+      return get('first0') === 'A' && get('first9') === 'A' &&
+        get('  later0') === 'B' && get('  later11') === 'B' && get('later0') === null;
+    }
+  },
+  {
+    remark: '缩进出现次数相同时采用最先出现的缩进，其他缩进保持原样',
+    test: function () {
+      translate.offline.append('english', '\t甲=A\n  乙=B\n  丙=C\n\t丁=D');
+      const get = text => translate.storage.get('hash_english_' + translate.util.hash(text));
+      return get('甲') === 'A' && get('  乙') === 'B' && get('  丙') === 'C' &&
+        get('丁') === 'D' && get('乙') === null;
+    }
   }
 ]);

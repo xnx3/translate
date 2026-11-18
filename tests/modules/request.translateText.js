@@ -82,5 +82,64 @@ require('../helpers/module')(__filename, [
     translate.request.translateText(['甲'], function () {});
     return extracted[0] === translate.util.hash('甲') && extracted[1] === '甲' && extracted[2] === 'english' && extracted[3] === 'A';
   } },
+  { remark: '空或非字符串的 from、to 独立回退到本地语种和当前语种', test: function () {
+    translate.language.setLocal('chinese_simplified');
+    translate.storage.set('to', 'english');
+    const results = [];
+    const options = [
+      { from: '', to: 'french' }, { from: 'japanese', to: '' },
+      { from: null, to: false }, { from: 1, to: [] }
+    ];
+    for (const option of options) {
+      translate.request.translateText({ ...option, texts: [] }, value => results.push([value.from, value.to]));
+    }
+    return JSON.stringify(results) === JSON.stringify([
+      ['chinese_simplified', 'french'], ['japanese', 'english'],
+      ['chinese_simplified', 'english'], ['chinese_simplified', 'english']
+    ]);
+  } },
+  { remark: '响应比未缓存文本短时原位置保留空值，缓存只写入已返回的结果', test: function () {
+    const prefix = 'hash_english_';
+    const cacheKey = text => prefix + translate.util.hash(text);
+    translate.storage.set(cacheKey('甲'), 'A');
+    const stored = [], set = translate.storage.set.bind(translate.storage);
+    translate.storage.set = function (key, value) { stored.push([key, value]); set(key, value); };
+    translate.request.post = function (path, data, success) {
+      success({ result: 1, text: ['B'] }, data);
+    };
+    let response;
+    translate.request.translateText({ to: 'english', texts: ['乙', '甲', '丙'] }, value => { response = value; });
+    return JSON.stringify(response.text) === '["B","A",""]' &&
+      JSON.stringify(stored) === JSON.stringify([[cacheKey('乙'), 'B']]) &&
+      translate.storage.get(cacheKey('丙')) === null;
+  } },
+  { remark: '响应比请求多时忽略多余译文，离线提取与缓存都只保存对应源文本', test: function () {
+    translate.offline.fullExtract.isUse = true;
+    const saved = [], extracted = [];
+    translate.storage.set = function (key, value) { saved.push([key, value]); };
+    translate.offline.fullExtract.set = function (...args) { extracted.push(args); };
+    translate.request.post = function (path, data, success) {
+      success({ result: 1, text: ['Hello', 'extra'] }, data);
+    };
+    let response;
+    translate.request.translateText({ to: 'english', texts: ['你好'] }, value => { response = value; });
+    const hash = translate.util.hash('你好');
+    return JSON.stringify(response.text) === '["Hello"]' &&
+      JSON.stringify(saved) === JSON.stringify([['hash_english_' + hash, 'Hello']]) &&
+      JSON.stringify(extracted) === JSON.stringify([[hash, '你好', 'english', 'Hello']]);
+  } },
+  { remark: '交错完成的两次请求各自保留目标语种、缓存键和结果位置', test: function () {
+    const pending = [], completed = [];
+    translate.request.post = function (path, data, success) { pending.push({ data, success }); };
+    for (const to of ['english', 'french']) {
+      translate.request.translateText({ to, texts: ['你好'] }, result => completed.push([to, result.text[0]]));
+    }
+    pending[1].success({ result: 1, text: ['Bonjour'] }, pending[1].data);
+    pending[0].success({ result: 1, text: ['Hello'] }, pending[0].data);
+    const hash = translate.util.hash('你好');
+    return JSON.stringify(completed) === '[["french","Bonjour"],["english","Hello"]]' &&
+      translate.storage.get('hash_french_' + hash) === 'Bonjour' &&
+      translate.storage.get('hash_english_' + hash) === 'Hello';
+  } },
   ...invalidCases
 ]);

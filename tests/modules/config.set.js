@@ -864,5 +864,21 @@ require('../helpers/module')(__filename, [
         translate.request.api.translate === 'saved-translate.json' &&
         translate.request.api.language === 'saved-language.json' && translate.request.api.ip === 'saved-ip.json';
     }
+  },
+  {
+    remark: '恢复导出的忽略类配置后，原条件及后续新增类名均能参与判定',
+    test: function () {
+      const field = document.createElement('input');
+      const check = element => element === field;
+      translate.ignore.class.push('saved-class', check);
+      const saved = translate.config.get();
+      translate.config.set(saved);
+      field.className = 'saved-class';
+      const savedMatch = translate.ignore.isIgnore(field);
+      translate.ignore.class.push('later-class', null);
+      field.className = 'later-class';
+      return savedMatch === true && translate.ignore.isIgnore(field) === true &&
+        translate.ignore.class.conditionFunction['saved-class'] === check;
+    }
   }
 ]);

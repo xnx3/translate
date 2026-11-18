@@ -96,8 +96,6 @@ require('../helpers/module')(__filename, [
         return error === reason && writes === 0;
       }
     }
-  }
-]);
   },
   {
     remark: '提取写入失败保留旧语种与旧译文，重试成功后只覆盖指定语种',
@@ -123,3 +121,5 @@ require('../helpers/module')(__filename, [
       const latest = await db.get('hash_retry');
       return latest.originalText === '甲' && latest.english === 'First' && latest.french === 'Un';
     }
+  }
+]);

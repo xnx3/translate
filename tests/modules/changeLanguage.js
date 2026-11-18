@@ -1,5 +1,13 @@
 'use strict';
 
+// v1 兼容清单。每个代码都是独立用例，测试期间不从待测实现提取预期值。
+const legacyCodes = (
+  'en de hi lt hr lv ht hu zh-CN hy uk mg id ur mk ml mn af mr uz ms el mt ' +
+  'is it my es et eu ar pt-PT ja ne az fa ro nl en-GB no be fi ru bg fr bs sd ' +
+  'se si sk sl ga sn so gd ca sq sr kk st km ' +
+  'kn sv ko sw gl zh-TW pt-BR co ta gu ky cs pa te tg th la cy pl da tr'
+).split(' ');
+
 require('../helpers/module')(__filename, [
   {
     remark: "现代语种 english 切换后持久化并执行翻译",
@@ -104,6 +112,35 @@ require('../helpers/module')(__filename, [
       translate.execute=()=>{};
       translate.changeLanguage('english');
       return count===0;
+    }
+  },
+  ...legacyCodes.map(code => ({
+    remark: '兼容语种 ' + code + ' 写入原始代码并刷新一次',
+    input: code,
+    test: function (code) {
+      translate.localLanguage = 'zh-CN';
+      let reloads = 0;
+      let executions = 0;
+      translate.refreshCurrentPage = () => { reloads++; };
+      translate.execute = () => { executions++; };
+      translate.changeLanguage(code);
+      return translate.getCookie('googtrans') === '/zh-CN/' + code && reloads === 1 && executions === 0;
+    }
+  })),
+  {
+    remark: '子页面目标相同但尚未渲染时仍触发一次翻译',
+    test: function () {
+      const frame = document.createElement('iframe');
+      document.body.append(frame);
+      const calls = [];
+      frame.contentWindow.translate = {
+        version: 'test', to: 'english', node: { data: new Map() },
+        changeLanguage: language => calls.push(language)
+      };
+      translate.execute = () => {};
+      translate.selectLanguageTag.show = false;
+      translate.changeLanguage('english');
+      return calls.length === 1 && calls[0] === 'english';
     }
   }
 ]);

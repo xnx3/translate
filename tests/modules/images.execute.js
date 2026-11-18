@@ -100,5 +100,23 @@ require('../helpers/module')(__filename, [
       translate.images.execute();
       return element.style.backgroundImage === 'url("' + before + '")';
     }
+  },
+  {
+    remark: '重复执行可翻译新插入的匹配图片，并保留无 src 的图片',
+    test: function () {
+      translate.to = 'english';
+      translate.images.add({ '/favicon.ico?from': '/favicon.ico?{language}' });
+      const first = document.createElement('img');
+      first.src = '/favicon.ico?from';
+      const blank = document.createElement('img');
+      document.body.append(first, blank);
+      translate.images.execute();
+      const second = document.createElement('img');
+      second.src = '/favicon.ico?from';
+      document.body.append(second);
+      translate.images.execute();
+      return first.getAttribute('src') === '/favicon.ico?english' && second.getAttribute('src') === '/favicon.ico?english' &&
+        !blank.hasAttribute('src') && translate.images.queues['/favicon.ico?from'] === '/favicon.ico?{language}';
+    }
   }
 ]);

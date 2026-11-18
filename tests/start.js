@@ -130,7 +130,7 @@ function printSummary() {
   for (const [build, result] of builds) {
     console.log(`\n[${build}] 正常通过 ${result.passed}，已知失败 ${result.known}，跳过 ${result.skipped}，意外失败 ${result.failed}。`);
   }
-  console.log(`\n两份文件合计：正常通过 ${counts.passed}，已知失败 ${counts.known}，跳过 ${counts.skipped}，意外失败 ${counts.failed}。`);
+  console.log(`\n本次合计：正常通过 ${counts.passed}，已知失败 ${counts.known}，跳过 ${counts.skipped}，意外失败 ${counts.failed}。`);
   if (counts.known) console.log('“已知失败”仍是未修复的问题；本次运行只豁免了符合已记录特征的故障。');
   console.log('详细报告：' + REPORT);
 }
@@ -149,12 +149,14 @@ async function main() {
   if (fs.existsSync(REPORT)) fs.unlinkSync(REPORT);
   const args = process.argv.slice(2).filter((arg) => arg !== '--no-pause');
   const strict = args.includes('--strict');
-  const forwarded = args.filter((arg) => arg !== '--strict');
-  console.log('\n将分别测试以下两个发布文件：');
-  for (const build of ['translate.js', 'translate.min.js']) {
+  const sourceOnly = args.includes('--source');
+  const forwarded = args.filter((arg) => arg !== '--strict' && arg !== '--source');
+  console.log('\n本次测试文件：');
+  for (const build of sourceOnly ? ['translate.js'] : ['translate.js', 'translate.min.js']) {
     console.log('  ' + path.resolve(ROOT, '../translate.js', build));
   }
-  const projects = strict ? ['strict', 'strict-minified'] : ['chromium', 'chromium-minified'];
+  const projects = [strict ? 'strict' : 'chromium'];
+  if (!sourceOnly) projects.push(projects[0] + '-minified');
   const code = run(process.execPath, [path.join(ROOT, 'node_modules', '@playwright', 'test', 'cli.js'),
     'test', ...projects.map((project) => '--project=' + project), ...forwarded],
   { ...process.env, ...(executablePath ? { PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: executablePath } : {}) });

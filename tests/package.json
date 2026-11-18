@@ -7,6 +7,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "test:source": "node start.js --source --strict",
+    "test:cases": "node method-inventory.js --cases",
+    "pretest": "node method-inventory.js",
+    "pretest:strict": "node method-inventory.js",
     "test": "playwright test --project=chromium --project=chromium-minified",
     "test:strict": "playwright test --project=strict --project=strict-minified"
   },

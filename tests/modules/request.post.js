@@ -60,5 +60,32 @@ require('../helpers/module')(__filename, [
     translate.service.edge.language.json = list; translate.request.send = function () { xhr++; };
     translate.request.post(translate.request.api.language, {}, function (value) { response = value; });
     return xhr === 0 && response.result === 1 && response.info === 'SUCCESS' && response.list === list;
+  } },
+  { remark: '两个并发翻译请求逆序完成时 SSE 旁路监听与成功响应分别回到原调用方', test: async function () {
+    translate.service.name = 'translate.service';
+    translate.request.sse.use = true;
+    const deliver = new Map(), events = [], completed = [], sent = [];
+    window.fetch = async (url, options) => {
+      const label = new URLSearchParams(options.body).get('text');
+      sent.push(label);
+      return await new Promise(resolve => deliver.set(label, resolve));
+    };
+    const pending = ['one', 'two'].map(label => new Promise((resolve, reject) => {
+      translate.request.post(translate.request.api.translate, { text: label }, result => {
+        completed.push([label, result.text]);
+        resolve();
+      }, reject, {
+        onItem(item, request) { events.push([label, request.text, item]); }
+      });
+    }));
+    for (const index of [1, 0]) {
+      const label = ['one', 'two'][index];
+      deliver.get(label)(new Response('event: item\ndata: "' + label + '"\n\nevent: done\ndata: {"text":"' + label + '"}\n\n',
+        { headers: { 'Content-Type': 'text/event-stream' } }));
+      await pending[index];
+    }
+    return JSON.stringify(sent) === '["one","two"]' &&
+      JSON.stringify(events) === '[["two","two","two"],["one","one","one"]]' &&
+      JSON.stringify(completed) === '[["two","two"],["one","one"]]';
   } }
 ]);

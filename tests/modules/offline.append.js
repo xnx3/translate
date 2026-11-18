@@ -164,8 +164,6 @@ require('../helpers/module')(__filename, [
       return get('甲') === 'A' && get('  乙') === 'B' && get('  丙') === 'C' &&
         get('丁') === 'D' && get('乙') === null;
     }
-  }
-]);
   },
   {
     remark: '离线词库导入中途达到配额后继续处理各行，包括覆盖此前已落盘的词条',
@@ -211,3 +209,5 @@ require('../helpers/module')(__filename, [
         ['hash_french_' + translate.util.hash('猫'), 'Le chat']
       ]) && localStorage.getItem(writes[0][0]) === null;
     }
+  }
+]);

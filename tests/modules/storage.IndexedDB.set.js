@@ -165,5 +165,45 @@ require('../helpers/module')(__filename, [
         await db.get(buffer) === undefined && await db.get('1,2') === 'string' &&
         await db.get([1, 2]) === 'array';
     }
+  },
+  {
+    remark: '[D17] 写请求成功但事务中止时拒绝写入，重读仍为已提交的旧值',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('version', '旧值');
+      const originalPut = IDBObjectStore.prototype.put;
+      let aborted;
+      IDBObjectStore.prototype.put = function (...args) {
+        const request = originalPut.apply(this, args);
+        const transaction = this.transaction;
+        aborted = new Promise(resolve => transaction.addEventListener('abort', resolve, { once: true }));
+        request.addEventListener('success', () => transaction.abort(), { once: true });
+        return request;
+      };
+      let rejected = false;
+      try {
+        await db.set('version', '新值');
+      } catch {
+        rejected = true;
+      } finally {
+        IDBObjectStore.prototype.put = originalPut;
+      }
+      await aborted;
+      const actual = await db.get('version');
+      if (!rejected || actual !== '旧值') throw new Error('事务已回滚；set 是否拒绝=' + rejected + '，重读值=' + actual);
+      return true;
+    }
+  },
+  {
+    remark: '首次并发写入不同键能够全部提交并在重开数据库后读取',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await Promise.all([db.set('p1', false), db.set('p2', ['甲']), db.set('p3', 0)]);
+      db.db.close();
+      db.db = null;
+      const rows = await db.list('p*');
+      return rows.length === 3 && rows[0].key === 'p1' && rows[0].value === false &&
+        rows[1].key === 'p2' && rows[1].value[0] === '甲' && rows[2].key === 'p3' && rows[2].value === 0;
+    }
   }
 ]);

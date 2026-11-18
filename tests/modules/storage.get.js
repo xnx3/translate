@@ -88,5 +88,30 @@ require('../helpers/module')(__filename, [
       localStorage.setItem(' 中文😀:Key ', ' value\n');
       return translate.storage.get(' 中文😀:Key ') === ' value\n';
     }
+  },
+  {
+    remark: '同源新实例读取持久缓存，旧实例故障后的内存变更保持隔离',
+    test: async function () {
+      const key = 'same-origin-cache';
+      translate.storage.set(key, '磁盘');
+      const frame = document.createElement('iframe');
+      document.body.append(frame);
+      try {
+        const script = frame.contentDocument.createElement('script');
+        script.src = Array.from(document.scripts).find(node => /\/translate(?:\.min)?\.js$/.test(node.src)).src;
+        const loaded = new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; });
+        frame.contentDocument.head.append(script);
+        await loaded;
+        const other = frame.contentWindow.translate.storage;
+        if (other.get(key) !== '磁盘') return false;
+        Storage.prototype.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); };
+        translate.storage.set(key, '本页内存');
+        other.set(key, '其他实例');
+        return translate.storage.get(key) === '本页内存' && other.get(key) === '其他实例' &&
+          localStorage.getItem(key) === '其他实例';
+      } finally {
+        frame.remove();
+      }
+    }
   }
 ]);

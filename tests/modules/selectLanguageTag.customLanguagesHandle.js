@@ -88,5 +88,37 @@ require('../helpers/module')(__filename, [
       const result=translate.selectLanguageTag.customLanguagesHandle([{id:'spanish',name:'Español'}]);
       return result.length===0;
     }
+  },
+  {
+    remark: '非对象、缺少 id 和非字符串 id 的条目不会改变有效项的次序',
+    test: function () {
+      const en = Object.freeze({ id: 'english', name: 'English' });
+      const ja = Object.freeze({ id: 'japanese', name: '日本語' });
+      const list = Object.freeze([null, false, {}, { id: 0 }, en, undefined, ja]);
+      translate.selectLanguageTag.languages = 'JAPANESE,unknown,english';
+      const result = translate.selectLanguageTag.customLanguagesHandle(list);
+      return result.length === 2 && result[0] === ja && result[1] === en;
+    }
+  },
+  {
+    remark: '切换服务后相同语种使用新列表的名称与 serviceId',
+    test: function () {
+      translate.selectLanguageTag.languages = 'english';
+      const first = { id: 'english', name: '英文', serviceId: 'en' };
+      const second = { id: 'english', name: 'English', serviceId: 'en-US' };
+      translate.selectLanguageTag.customLanguagesHandle([first]);
+      const result = translate.selectLanguageTag.customLanguagesHandle([second]);
+      return result.length === 1 && result[0] === second;
+    }
+  },
+  {
+    remark: '第一次没有支持语种，稍后收到非空列表时能显示新语种',
+    test: function () {
+      translate.selectLanguageTag.languages = 'japanese';
+      const lang = { id: 'japanese', name: '日本語' };
+      const empty = translate.selectLanguageTag.customLanguagesHandle([]);
+      const ready = translate.selectLanguageTag.customLanguagesHandle([lang]);
+      return empty.length === 0 && ready.length === 1 && ready[0] === lang;
+    }
   }
 ]);

@@ -141,5 +141,25 @@ require('../helpers/module')(__filename, [
       translate.storage.get('hash_french_' + hash) === 'Bonjour' &&
       translate.storage.get('hash_english_' + hash) === 'Hello';
   } },
-  ...invalidCases
+  ...invalidCases,
+  { remark: '网络失败后重试仅补查缺失文本，成功后同一批次全部命中缓存', test: function () {
+    const input = { from: 'chinese_simplified', to: 'english', texts: ['甲', '乙', '丙'] };
+    const key = text => 'hash_english_' + translate.util.hash(text);
+    translate.storage.set(key('乙'), 'B');
+    const sent = [], outcomes = [];
+    translate.request.post = function (path, data, success, failure) {
+      sent.push(JSON.parse(decodeURIComponent(data.text)));
+      if (sent.length === 1) failure({ status: 503 });
+      else success({ result: 1, text: ['A', 'C'] }, data);
+    };
+    const attempt = () => translate.request.translateText(input,
+      response => outcomes.push(response.text), xhr => outcomes.push(xhr.status));
+    attempt();
+    if (translate.storage.get(key('甲')) !== null || translate.storage.get(key('乙')) !== 'B' ||
+      translate.storage.get(key('丙')) !== null) return false;
+    attempt();
+    attempt();
+    return JSON.stringify(sent) === '[["甲","丙"],["甲","丙"]]' &&
+      JSON.stringify(outcomes) === '[503,["A","B","C"],["A","B","C"]]';
+  } }
 ]);

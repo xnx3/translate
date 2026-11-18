@@ -440,5 +440,56 @@ require('../helpers/module')(__filename, [
       entries[0].nodes.filter(function (item) { return item.node === text && item.attribute === ''; }).length === 1 &&
       translate.node.get(placeholder).originalText === '相同原文' && translate.node.get(text).originalText === '相同原文' &&
       node.firstChild === text && node.getAttributeNode('placeholder') === placeholder;
+  } },
+  { remark: '扫描快照按进入和离开顺序记录，纯空白及空 Text 各占一个事件，属性与注释各走原流程', test: function () {
+    const root = document.createElement('div');
+    root.title = '标题';
+    const span = document.createElement('span'), blank = document.createTextNode(' \t'), empty = document.createTextNode('');
+    const comment = document.createComment('注释'), title = root.getAttributeNode('title');
+    span.append(blank, empty); root.append(span, comment); document.body.append(root);
+    translate.element.whileNodes('order', root, null);
+    const { scopes, snapshots } = translate.nodeQueue.order.scan;
+    const scope = scopes[0], nodes = [root, span, blank, empty, span, root];
+    return scopes.length === 1 && scope.root === root && scope.complete &&
+      scope.events.map(event => event.type).join(',') === 'enter,enter,text,text,leave,leave' &&
+      scope.events.every((event, i) => event.snapshot === snapshots.get(nodes[i])) &&
+      snapshots.size === 4 && !snapshots.has(comment) && !snapshots.has(title) &&
+      snapshots.get(blank).parent === span && snapshots.get(blank).text === ' \t' && snapshots.get(empty).text === '';
+  } },
+  { remark: '显式传入的内部扫描范围只追加事件，由顶层负责标记完成', test: function () {
+    const root = document.createElement('p');
+    root.textContent = '内容';
+    const externalScope = { root, events: [], complete: false };
+    translate.element.whileNodes('recursive', root, externalScope);
+    const scan = translate.nodeQueue.recursive.scan;
+    return scan.scopes.length === 0 && externalScope.complete === false &&
+      externalScope.events.map(event => event.type).join(',') === 'enter,text,leave' &&
+      externalScope.events[0].snapshot === scan.snapshots.get(root) &&
+      externalScope.events[1].snapshot === scan.snapshots.get(root.firstChild);
+  } },
+  { remark: '同批次重扫保留首遇文字，另一批次为同一 Text 新建快照', test: function () {
+    const root = document.createElement('div'); root.textContent = '首次'; document.body.append(root);
+    const text = root.firstChild;
+    translate.element.whileNodes('first', root);
+    text.nodeValue = '再次';
+    translate.element.whileNodes('first', text);
+    translate.element.whileNodes('second', text);
+    const first = translate.nodeQueue.first.scan, second = translate.nodeQueue.second.scan;
+    return first.scopes.length === 2 && second.scopes.length === 1 &&
+      first.scopes[1].events[0].snapshot === first.snapshots.get(text) && first.snapshots.get(text).text === '首次' &&
+      second.scopes[0].events[0].snapshot !== first.snapshots.get(text) && second.snapshots.get(text).text === '再次';
+  } },
+  { remark: '属性条件抛错时传播原异常并保留未完成范围，后续范围仍能完成', test: function () {
+    const root = document.createElement('p');
+    root.innerHTML = '已扫描<span data-label="标签">未扫描</span>';
+    const failure = new Error('condition'), span = root.lastChild;
+    translate.element.tagAttribute.span = { attribute: ['data-label'], condition() { throw failure; } };
+    let caught;
+    try { translate.element.whileNodes('interrupted', root); } catch (error) { caught = error; }
+    translate.element.whileNodes('interrupted', root.firstChild);
+    const { scopes, snapshots } = translate.nodeQueue.interrupted.scan;
+    return caught === failure && scopes.length === 2 && !scopes[0].complete && scopes[1].complete &&
+      scopes[0].events.map(event => event.type).join(',') === 'enter,text,enter' &&
+      scopes[0].events[2].snapshot === snapshots.get(span) && !snapshots.has(span.firstChild);
   } }
 ]);

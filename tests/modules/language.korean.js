@@ -10,5 +10,7 @@ require('../helpers/module')(__filename, [
   { remark: '中文不被误判为韩文', args: ['中文'], expected: false },
   { remark: '日文假名不被误判为韩文', args: ['あア'], expected: false },
   { remark: '英文不被误判为韩文', args: ['abc'], expected: false },
-  { remark: '表情符号不被误判为韩文', args: ['😀'], expected: false }
+  { remark: '表情符号不被误判为韩文', args: ['😀'], expected: false },
+  { remark: '现代韩文音节的最后一个字（U+D7A3）', args: ['\uD7A3'], expected: true },
+  { remark: '韩文音节区之前的切罗基文不归入韩语（U+ABBF）', args: ['\uABBF'], expected: false }
 ]);

@@ -162,5 +162,35 @@ require('../helpers/module')(__filename, [
       new Function(value)();
       return translate.storage.get(key) === expected;
     }
+  },
+  {
+    remark: '页面导出使用内存模式最新译文，跨批次保留不同来源并且跳过未缓存词条',
+    test: function () {
+      translate.language.setLocal('chinese_simplified');
+      translate.storage.set('to', 'english');
+      const key = (to, original) => 'hash_' + to + '_' + translate.util.hash(original);
+      const entry = original => ({ [translate.util.hash(original)]: { original } });
+      translate.nodeQueue = {
+        first: { list: { chinese_simplified: entry('早') } },
+        second: { list: { japanese: { ...entry('かな'), ...entry('まだ') } } }
+      };
+      translate.storage.set(key('english', '早'), 'Old');
+      Storage.prototype.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); };
+      translate.offline.append('english', '早=Morning\nかな=Kana');
+      translate.offline.append('french', '早=Bonjour');
+      translate.util.loadMsgJs = () => {};
+      window.msg = { popups: () => {
+        const area = document.createElement('textarea');
+        area.id = 'msgPopupsTextarea';
+        document.body.append(area);
+      } };
+      translate.offline.export();
+      const config = document.querySelector('#msgPopupsTextarea').value;
+      let exported;
+      translate.offline.append = (to, text) => { exported = { to, lines: text.trim().split('\n').sort() }; };
+      new Function(config)();
+      return exported.to === 'english' && JSON.stringify(exported.lines) === JSON.stringify(['かな=Kana', '早=Morning']) &&
+        localStorage.getItem(key('english', '早')) === 'Old';
+    }
   }
 ]);

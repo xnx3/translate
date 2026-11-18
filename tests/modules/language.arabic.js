@@ -10,5 +10,13 @@ require('../helpers/module')(__filename, [
   { remark: 'ASCII 数字不被误判为阿拉伯文', args: ['1'], expected: false },
   { remark: '英文字母不被误判为阿拉伯文', args: ['a'], expected: false },
   { remark: '希伯来字母不被误判为阿拉伯文', args: ['א'], expected: false },
-  { remark: '表情符号不被误判为阿拉伯文', args: ['😀'], expected: false }
+  { remark: '表情符号不被误判为阿拉伯文', args: ['😀'], expected: false },
+  { remark: '阿拉伯文基本区端点（U+0600）', args: ['\u0600'], expected: true },
+  { remark: '阿拉伯文基本区端点（U+06FF）', args: ['\u06FF'], expected: true },
+  { remark: '阿拉伯文补充区端点（U+0750）', args: ['\u0750'], expected: true },
+  { remark: '阿拉伯文补充区端点（U+077F）', args: ['\u077F'], expected: true },
+  { remark: '其他文字区块的字符不归入阿拉伯语（U+05F4）', args: ['\u05F4'], expected: false },
+  { remark: '其他文字区块的字符不归入阿拉伯语（U+0700）', args: ['\u0700'], expected: false },
+  { remark: '其他文字区块的字符不归入阿拉伯语（U+074F）', args: ['\u074F'], expected: false },
+  { remark: '其他文字区块的字符不归入阿拉伯语（U+0780）', args: ['\u0780'], expected: false }
 ]);

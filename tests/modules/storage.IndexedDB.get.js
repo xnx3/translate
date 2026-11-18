@@ -81,5 +81,32 @@ require('../helpers/module')(__filename, [
       translate.storage.IndexedDB.db = null;
       return await translate.storage.IndexedDB.get('reopen') === 'saved';
     }
+  },
+  {
+    remark: '无效查询键以 DataError 拒绝，数据库仍能执行后续有效查询',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('saved', 1);
+      for (const key of [undefined, null, false, NaN, {}, [null]]) {
+        try {
+          await db.get(key);
+          return false;
+        } catch (error) {
+          if (error.name !== 'DataError') return false;
+        }
+      }
+      return await db.get('saved') === 1;
+    }
+  },
+  {
+    remark: 'IDBKeyRange 查询返回范围内第一个键的值，空范围返回 undefined',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set(20, 'second');
+      await db.set(10, 'first');
+      return await db.get(IDBKeyRange.bound(10, 20)) === 'first' &&
+        await db.get(IDBKeyRange.bound(10, 20, true)) === 'second' &&
+        await db.get(IDBKeyRange.lowerBound(20, true)) === undefined;
+    }
   }
 ]);

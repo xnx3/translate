@@ -24,7 +24,8 @@ public class TranslateResultVO extends BaseVO implements java.io.Serializable{
 	// 失败项在原下标回显原文；整批失败时全部回显，单项失败不覆盖其他项的译文。
 	private List<Object> text;
 	// 原样保存解码后的完整任务，包含 context、words、原始 weight，不注入默认值。
-	private List<Object> original;
+	// 接受普通字符串列表或混合列表，直接保留传入列表，不复制。
+	private List<?> original;
 	// prompt_tokens、completion_tokens、total_tokens 三个非负整数；最后一项等于前两项之和。
 	// 由执行流程按普通文本及 words[].text 的 Unicode 码点计算，不计 context 或 JSON 结构。
 	// 此类仅承载计数，不自行计算；旧流程未填充时省略 usage，保留原有响应格式。
@@ -49,10 +50,10 @@ public class TranslateResultVO extends BaseVO implements java.io.Serializable{
 		this.text = text;
 	}
 	
-	public List<Object> getOriginal() {
+	public List<?> getOriginal() {
 		return original;
 	}
-	public void setOriginal(List<Object> original) {
+	public void setOriginal(List<?> original) {
 		this.original = original;
 	}
 	/**

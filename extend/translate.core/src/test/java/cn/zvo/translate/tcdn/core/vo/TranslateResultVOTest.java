@@ -2,6 +2,7 @@ package cn.zvo.translate.tcdn.core.vo;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.beans.Introspector;
@@ -38,7 +39,9 @@ public class TranslateResultVOTest {
         result.setTo("english");
         result.setInfo("success");
         result.setText(Arrays.<Object>asList("Hello", "", " \t ", "😀", "\"\\\n"));
-        result.setOriginal(Arrays.<Object>asList("你好", "", " \t ", "😀", "\"\\\n"));
+        List<String> original = Arrays.asList("你好", "", " \t ", "😀", "\"\\\n");
+        result.setOriginal(original);
+        assertSame(original, result.getOriginal());
 
         assertJson("{\"result\":1,\"info\":\"success\",\"from\":\"chinese_simplified\",\"to\":\"english\","
                 + "\"text\":[\"Hello\",\"\",\" \\t \",\"😀\",\"\\\"\\\\\\n\"],"

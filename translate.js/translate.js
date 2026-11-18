@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.38.20261118',
+	version: '4.1.39.20261118',
 	
 	/*js translate.config start*/
 	/*
@@ -1454,7 +1454,7 @@ var translate = {
 	
 	/*js translate.group start*/
 	/*
-		按段落提取带权重的文本片段，供外部程序整体翻译后，按原位置回填。
+		按段落提取带权重的文本片段，使用支持 group 的 translate.service 接口整体翻译并回填。
 
 		使用示例：
 		var article = document.getElementById('article');
@@ -1462,12 +1462,9 @@ var translate = {
 			// false 表示此子元素及其后代不参与当前区域的 group 分组。
 			return !element.classList.contains('no-group');
 		});
-		if(translate.group.inGroup(paragraph)){
-			var segments = translate.group.analyze(paragraph);
-		}
+		translate.execute([article]); // 扫描区域，按段落分组，同一批次的所有分组发送一次请求。
 
-		analyze 的一个返回数组代表调用方选定的一个翻译单位。建议传入单个段落
-		或句子的容器；区域中有多个段落时，应分别传入各段落，分别进行整体翻译。
+		也可以手动调用 analyze(paragraph) 查看一个段落的片段。execute 会自动按段落拆分。
 		addElements 负责登记区域及过滤函数，inGroup 负责判断归属，analyze 负责读取文本；
 		登记区域本身不会发起翻译请求，也不会自动改写其中的网页内容。
 	*/
@@ -1481,6 +1478,13 @@ var translate = {
 			可以读取本数组查看配置，也可以赋值 [] 清空全部登记区域。
 		*/
 		elements:[],
+
+		// 扫描和回填共用的页面标记，包括登记区域外的祖先。只对真实 Element 调用。
+		_hasIgnoreAttribute:function(element){
+			var value = element.getAttribute('translate');
+			return element.hasAttribute('hidden') || (typeof(value) === 'string' && value.toLowerCase() === 'no') ||
+				/(^|\s)notranslate(\s|$)/.test(element.getAttribute('class') || '');
+		},
 
 		/*
 			读取本批次已完成且有事件记录的扫描范围，供后续 group 分析使用。
@@ -1499,7 +1503,7 @@ var translate = {
 			仅部分重叠或无法完整匹配的范围仍保留，原始 scan.scopes 始终不变。
 			比较依据是已记录事件的 type 与 snapshot 引用，不按文字或实时 DOM 判断，
 			也不表示节点当前值未变化；本方法尚未判断 group 归属、拆分段落或迁移翻译队列。
-			只有读取方法，暂不由 execute 自动调用。
+			_collectGroups 在准备本批任务时读取这里返回的扫描范围。
 		*/
 		_getScanScopes:function(uuid){
 			var batch = translate.nodeQueue[uuid];
@@ -1638,7 +1642,7 @@ var translate = {
 			本方法只识别标签，不生成段落，不判断 group 归属或执行忽略规则。
 			扫描范围的起止、控件及非正文/忽略区域的阻断，由后续事件分析另外处理。
 			只读快照字段，不读取实时 DOM 或 CSS；CSS 改变 display 的布局不在本规则内。
-			供 _splitScanScope 进行候选结构分段使用，尚未接入自动翻译流程。
+			供 _splitScanScope 在准备分组时识别结构边界。
 		*/
 		_isParagraphBoundary:function(snapshot){
 			if(snapshot == null || snapshot.nodeType !== 1 || typeof(snapshot.nodeName) !== 'string'){
@@ -1664,7 +1668,7 @@ var translate = {
 			这些区域仍需后续过滤并继续切分，不能仅删除其文字后拼接两侧正文。
 			本方法不判断 group 归属、不计算 weight、不发请求，也不迁移普通翻译队列。
 			只读扫描记录，不访问实时 DOM 或修改输入；未完成或事件配对异常时返回 []。
-			当前仅新增内部拆分方法，尚未接入自动翻译。
+			由 _collectGroups 在检查区域归属之前调用。
 		*/
 		_splitScanScope:function(scope){
 			if(scope == null || scope.complete !== true || !Array.isArray(scope.events) || scope.events.length === 0){
@@ -1744,7 +1748,7 @@ var translate = {
 			重复 Text 或事件已覆盖的父子关系改变时先切段再跳过，不能把两侧文字直接拼接。
 			仅沿父链补充扫描根外的上下文；不使用可能已过期的 snapshot.parent。
 			整个扫描根搬家但内部结构未变时，使用收集时的外层祖先配置。
-			不修改扫描记录、普通翻译队列或文字，不请求接口，尚未接入 execute。
+			_prepareGroups 用返回的候选段迁移普通任务；收集期间保持扫描记录、队列和 DOM 原样。
 			用户的 ignoreFunction 及忽略条件仍可能被多次调用，应只判断、不修改 DOM。
 		*/
 		_collectGroups:function(uuid){
@@ -1755,10 +1759,7 @@ var translate = {
 			var excludedTags = /^(script|style|link|meta|template|noscript|iframe|object|embed|canvas|svg|math|input|textarea|select|option|optgroup|button|datalist)$/i;
 			var isExcluded = function(snapshot){
 				if(snapshot.nodeType !== 1){ return false; }
-				var node = snapshot.node, value = node.getAttribute('translate');
-				return excludedTags.test(snapshot.nodeName) || node.hasAttribute('hidden') ||
-					(typeof(value) === 'string' && value.toLowerCase() === 'no') ||
-					/(^|\s)notranslate(\s|$)/.test(node.getAttribute('class') || '');
+				return excludedTags.test(snapshot.nodeName) || translate.group._hasIgnoreAttribute(snapshot.node);
 			};
 			// 查找最外层允许的登记根；回调只接收其后代 Element，严格 false 才拒绝。
 			var rootIndex = function(path){
@@ -1972,6 +1973,77 @@ var translate = {
 			return prepared;
 		},
 
+		// reset 后即使再次选择同一目标语种，旧请求也只能结束自身，不能结束新批次。
+		_resetCount:0,
+
+		/*
+			执行同一 uuid 下的所有段落。execute 已按实际请求数登记完成通知数。
+			@param uuid 本次 execute 的标识。
+			@param groups 本次 _prepareGroups 返回的非空数组，所有段落共享目标语种。
+			示例：translate.group._executeGroups(uuid, pendingGroups);
+			在 request.data[uuid].groupBatch.task 单独记录此请求及其 texts、nodes。
+			生命周期的来源语种传空字符串，发给服务端的表单省略 from。
+		*/
+		_executeGroups:function(uuid, groups){
+			var to = groups[0].to, batch = translate.nodeQueue[uuid];
+			var texts = [], nodes = [], pending = new Map();
+			groups.forEach(function(group){
+				texts.push(group.words.map(function(word){ return word.text; }).join(''));
+				group.nodes.forEach(function(node){
+					nodes.push(node);
+					var data = translate.node.get(node);
+					if(data && typeof(data.resultText) !== 'string'){ pending.set(node, data); }
+				});
+			});
+			var task = {executeFinish:0, addtime:Math.floor(Date.now() / 1000), texts:texts, nodes:nodes};
+			translate.request.data[uuid].groupBatch.task = task;
+			translate.listener.execute.renderStartByApiRun(uuid, '', to);
+			translate.lifecycle.execute.translateNetworkBefore_Trigger({uuid:uuid, lang:'', from:'', to:to, texts:texts, nodes:nodes});
+
+			function finish(result, info){
+				if(task.executeFinish){ return; }
+				task.result = result;
+				task.executeFinish = 1;
+				task.stoptime = Math.floor(Date.now() / 1000);
+				// 失败段落原来的待译记录会阻止再次扫描；只释放仍属于本次请求的待译节点。
+				if(result !== 1){
+					pending.forEach(function(data, node){
+						if(translate.node.get(node) === data && typeof(data.resultText) !== 'string'){ translate.node.delete(node); }
+					});
+				}
+				translate.waitingExecute.isAllExecuteFinish(uuid, '', to, result === 1 ? 1 : 0, info, task);
+			}
+			try{
+				var xhr = translate.group._requestGroups(uuid, groups, function(response, context){
+					if(task.executeFinish){ return; }
+					if(translate.nodeQueue[uuid] !== batch || translate.to !== to){
+						finish(2, '页面扫描范围或目标语种已变化');
+						return;
+					}
+					if(response == null || response.result != 1){
+						finish(2, (response && response.info) || 'group 翻译请求失败');
+						return;
+					}
+					// 后端按提交下标返回段落。某一段已被页面修改时，其余段落仍独立回填。
+					var skipped = 0;
+					context.groups.forEach(function(group, i){
+						try{
+							if(!translate.group._renderGroup(group, response.text[i])){ skipped++; }
+						}catch(error){
+							skipped++;
+							translate.log(error);
+						}
+					});
+					finish(skipped ? 2 : 1, skipped ? skipped + ' 个段落未能回填' : '');
+				}, function(xhr){
+					finish(3, 'group 翻译请求失败，HTTP ' + xhr.status + '，' + xhr.requestURL);
+				});
+				if(xhr === null){ finish(3, 'group 翻译请求未发出'); }
+			}catch(error){
+				finish(3, String(error));
+			}
+		},
+
 		/*
 			发送同一批次的所有分组。调用方在每次 execute 中收集完 group 后调用一次。
 			@param uuid 扫描批次标识，仅在本地回调中使用。
@@ -2161,7 +2233,17 @@ var translate = {
 			for(var entry of layout.ranges){
 				if(!translate.group._matchesOrder(entry[0], entry[1].children)){ return false; }
 			}
-			if(!group.nodes.every(function(node, i){ return node.nodeValue === group.words[i].text; })){ return false; }
+			// 等待响应时网页可能撤销登记或改变忽略规则。任一片段已退出，就保留整段当前内容。
+			var checked = new Set();
+			if(!group.nodes.every(function(node, i){
+				if(node.nodeValue !== group.words[i].text || !translate.group.inGroup(node) ||
+					translate.ignore.isIgnore(node, {node: node, attribute: ''})){ return false; }
+				for(var parent = node.parentElement; parent && !checked.has(parent); parent = parent.parentElement){
+					if(translate.group._hasIgnoreAttribute(parent)){ return false; }
+					checked.add(parent);
+				}
+				return true;
+			})){ return false; }
 			var result = translate.group._readGroupResult(group, item);
 			var reordered = result.order.some(function(index, position){ return index !== position; });
 			var plans = reordered ? translate.group._planOrder(group, result.order) : [];
@@ -2332,12 +2414,7 @@ var translate = {
 			var excludedTags = /^(script|style|link|meta|template|noscript|iframe|object|embed|canvas|svg|math)$/;
 			var blockTags = /^(html|body|address|article|aside|blockquote|caption|center|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hgroup|hr|legend|li|main|menu|nav|ol|p|search|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)$/;
 			var isExcluded = function(node){
-				var tagName = node.nodeName.toLowerCase();
-				var translateAttr = node.getAttribute('translate');
-				var className = node.getAttribute('class') || '';
-				return excludedTags.test(tagName) || node.hasAttribute('hidden') ||
-					(typeof(translateAttr) === 'string' && translateAttr.toLowerCase() === 'no') ||
-					/(^|\s)notranslate(\s|$)/.test(className);
+				return excludedTags.test(node.nodeName.toLowerCase()) || translate.group._hasIgnoreAttribute(node);
 			};
 
 			// 单独分析子元素时，也必须遵守其祖先上已声明的隐藏/不翻译规则。
@@ -3227,7 +3304,7 @@ var translate = {
 		list 与 scan 是两份用途独立的数据：list 保存经过忽略判断、术语处理、
 		语种拆分后需要翻译的任务；scan 保存扫描遇到的节点、当时的文本及结构顺序。
 		它们可以由同一次 whileNodes 遍历产生，内部可以引用同一个真实 DOM 节点。
-		放在同一 uuid 下是为了关联本次任务、统一管理生命周期，不表示 scan 已接入翻译。
+		放在同一 uuid 下是为了关联本次任务、统一管理生命周期。已登记的区域使用 scan 生成 group 候选。
 
 		一维：key 为 uuid，即一次 execute 翻译任务的标识，value 为该批次的记录。
 			现有实现多处使用 new Array() 承载命名属性，不能将各层都视为顺序数组。
@@ -4143,14 +4220,16 @@ var translate = {
 			@param to 翻译为的语种
 			@param result 本次网络请求的结果， 1成功， 0失败。  网络不通，翻译结果返回result非1都是记入0
 			@param info 如果result为0，这里是失败信息
+			@param groupRequest 可选。仅 group 请求传入自身的请求记录，以便读取 texts、nodes。
+				普通请求仍通过 from 和 to 查日志，包括 from 为空字符串的普通任务。
 		*/
-		isAllExecuteFinish:function(uuid, from, to, result, info){
+		isAllExecuteFinish:function(uuid, from, to, result, info, groupRequest){
 
 			translate.listener.execute.renderFinishByApiRun(uuid, from, to);
 
 			//通过 uuid、from 取得本次翻译相关的 texts、nodes , 触发 translateNetworkAfter_Trigger 钩子
 			//获取请求日志
-			var requestData = translate.request.data[uuid].list[from][to];
+			var requestData = groupRequest || translate.request.data[uuid].list[from][to];
 			translate.lifecycle.execute.translateNetworkAfter_Trigger({
 				uuid: uuid,
 				from: from,
@@ -4160,6 +4239,18 @@ var translate = {
 				result: result,
 				info: info
 			});
+			if(groupRequest){
+				// 钩子已取得本次请求的 texts、nodes；长期请求日志只保留时间和结果。
+				delete groupRequest.nodes;
+				delete groupRequest.texts;
+			}
+
+			// 混合批次按实际到达的结束通知计数。普通成功通知会延迟 5ms，
+			// 此时其 executeFinish 可能早已为 1，不能据此提前触发整批完成。
+			var groupBatch = translate.request.data[uuid].groupBatch;
+			if(groupBatch && (--groupBatch.pending !== 0 || groupBatch.resetCount !== translate.group._resetCount)){
+				return;
+			}
 
 			//console.log('uuid:'+uuid+', from:'+from+', to:'+to);
 			for(var lang in translate.translateRequest[uuid]){
@@ -4180,7 +4271,12 @@ var translate = {
 			translate.lifecycle.execute.renderFinish_Trigger(uuid, to);
 
 			//都执行完了，那么设置完毕
-			translate.state = 0;
+			// 两批请求只要有一批包含 group，就由当前批次负责解锁；纯普通请求沿用原有收尾。
+			var activeUuid = translate.waitingExecute.activeUuid;
+			var activeRequest = translate.request.data[activeUuid];
+			if(activeUuid === uuid || (!groupBatch && !(activeRequest && activeRequest.groupBatch))){
+				translate.state = 0;
+			}
 			translate.executeNumber++;
 		}
 
@@ -4597,6 +4693,7 @@ var translate = {
 		}
 		
 		
+		translate.waitingExecute.activeUuid = uuid;
 		translate.state = 2;
 		translate.time.log('触发');
 
@@ -5234,6 +5331,8 @@ var translate = {
 			将翻译请求的信息记录到 translate.js 本身中
 			uuid 每次 translate.execute() 触发生成的uuid
 				time: 触发后加入到 data 中的时间,13位时间戳
+				groupBatch: 本批有分组时记录。pending 为尚未结束的请求数（分组一次，加上普通语种数），
+					resetCount 对应启动时的 reset 次数，task 保存单次分组请求的开始、结束时间及结果。
 				list: 记录当前uuid下发起的网络请求
 					from: 从什么语种进行的翻译，如： chinese_simplified 
 						to: 翻译为什么语种，如 ： english
@@ -5252,6 +5351,7 @@ var translate = {
 
 		if(pendingGroups.length > 0){
 			// 一个 uuid 的所有 group 只交给处理器一次。普通任务继续由下方循环按源语种请求。
+			translate.request.data[uuid].groupBatch = {pending:fanyiLangs.length + 1, resetCount:translate.group._resetCount};
 			executeGroups.call(translate.group, uuid, pendingGroups);
 		}
 
@@ -5677,6 +5777,14 @@ var translate = {
 				}
 				
 				if(!isTranslateNodeQueueAvailable()){
+					// reset 或 setDocuments 可在等待响应时移走队列。混合批次仍需结清此普通请求。
+					if(pendingGroups.length > 0){
+						var expired = translate.translateRequest[uuid][requestLang];
+						expired.result = 2;
+						expired.executeFinish = 1;
+						expired.stoptime = Math.floor(Date.now() / 1000);
+						translate.waitingExecute.isAllExecuteFinish(uuid, requestLang, requestTo, 0, '页面扫描范围已变化');
+					}
 					return;
 				}
 				renderTranslateResultItems(responseData, requestData, null, false);
@@ -5704,7 +5812,7 @@ var translate = {
 				}else{
 					info = 'Network connection failed. url: '+xhr.requestURL;
 				}
-				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, translate.to, 0, info);
+				translate.waitingExecute.isAllExecuteFinish(uuid, xhr.data.from, pendingGroups.length ? requestTo : translate.to, 0, info);
 			}, {
 				onBatch:function(eventData, requestData){
 					if(typeof(eventData) != 'object' || eventData == null || typeof(eventData.items) != 'object' || eventData.items == null){
@@ -13039,6 +13147,7 @@ var translate = {
 		}
 		
 		//清除 translate.nodeQueue 的记录
+		if(translate.group){ translate.group._resetCount++; }
 		translate.nodeQueue = {};
 		
 		//清除 time 的记录
@@ -15428,6 +15537,9 @@ var translate = {
 			var expireTime = translate.nodeQueue[uuid].expireTime;
 			// expireTime 小于 0 表示常驻内存，仅对非负过期时间执行原有回收判断。
 			if(expireTime >= 0 && expireTime+120 < currentTime){
+				// 整页的多段翻译可能耗时超过两分钟。保留本批数据直到最后一个请求完成。
+				var request = translate.request.data[uuid];
+				if(request && request.groupBatch && request.groupBatch.pending > 0){ continue; }
 				nodeQueueDeleteArray.push(uuid);
 			}	
 		}

@@ -1299,9 +1299,10 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '登记分组的元素仍可从普通缓存渲染，扫描保留各节点的首遇原文',
+    remark: '关闭翻译接口时，登记分组的元素仍可从普通缓存渲染，扫描保留各节点的首遇原文',
     test: function () {
       translate.selectLanguageTag.show = false;
+      translate.request.api.translate = '';
       translate.language.setLocal('chinese_simplified');
       translate.to = 'english';
       translate.whole.enableAll();

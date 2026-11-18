@@ -10,5 +10,6 @@ require('../helpers/module')(__filename, [
   { remark: '拉丁字母 A 不被误判为相似希腊字母', args: ['A'], expected: false },
   { remark: '俄文字母不被误判为希腊文', args: ['Б'], expected: false },
   { remark: '中文字不被误判为希腊文', args: ['中'], expected: false },
-  { remark: '数字不被误判为希腊文', args: ['1'], expected: false }
+  { remark: '数字不被误判为希腊文', args: ['1'], expected: false },
+  { remark: '科普特字母不归入希腊语（U+03E2）', args: ['\u03E2'], expected: false }
 ]);

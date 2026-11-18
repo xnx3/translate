@@ -13,5 +13,11 @@ require('../helpers/module')(__filename, [
   { remark: 'JSON null 保持空值类型', args: ['data: null'], expected: { name: 'message', data: null, dataText: 'null', dispatch: true } },
   { remark: 'JSON 数组完整解析', args: ['data: [1,"a"]'], expected: { name: 'message', data: [1, 'a'], dataText: '[1,"a"]', dispatch: true } },
   { remark: '无效 JSON 保留原始正文', args: ['data: {broken'], expected: { name: 'message', data: '{broken', dataText: '{broken', dispatch: true } },
-  { remark: '注释与未知字段不污染业务正文', args: [': beat\nunknown: ignored\nevent: done\ndata: ok\n'], expected: { name: 'done', data: 'ok', dataText: 'ok', dispatch: true } }
+  { remark: '注释与未知字段不污染业务正文', args: [': beat\nunknown: ignored\nevent: done\ndata: ok\n'], expected: { name: 'done', data: 'ok', dataText: 'ok', dispatch: true } },
+  { remark: '同一块最后一个 event 字段决定事件名，data 任意换序仍保留顺序与空行',
+    args: ['event: item\ndata: first\ndata\nevent: done\ndata: last'],
+    expected: { name: 'done', data: 'first\n\nlast', dataText: 'first\n\nlast', dispatch: true } },
+  { remark: '字段名区分大小写，类似 Data 的未知字段不派发业务事件',
+    args: ['event: item\nData: ignored\ndata-extra: ignored'],
+    expected: { name: 'item', data: '', dataText: '', dispatch: false } }
 ]);

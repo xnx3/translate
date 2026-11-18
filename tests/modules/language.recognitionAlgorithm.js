@@ -27,5 +27,18 @@ require('../helpers/module')(__filename, [
       return result.languageName === 'french';
     }
   },
-  { remark: '罗曼语族比例等于阈值时仍保持英语', args: ['é', { languageName: 'english', languageArray: {} }, { english: 1000, romance: 8 }, 1008], expected: { languageName: 'english', languageArray: {} } }
+  { remark: '罗曼语族比例等于阈值时仍保持英语', args: ['é', { languageName: 'english', languageArray: {} }, { english: 1000, romance: 8 }, 1008], expected: { languageName: 'english', languageArray: {} } },
+  ...[
+    ['繁体字占简体字恰好 3% 时保持简体', 'chinese_simplified', { chinese_simplified: 100, chinese_traditional: 3 }, 'chinese_simplified'],
+    ['繁体字比 3% 界限多一个时切换到繁体', 'chinese_simplified', { chinese_simplified: 100, chinese_traditional: 4 }, 'chinese_traditional'],
+    ['单看简体和繁体都不足 5% 但两者合计超过时触发中文判定', 'english', { english: 100, chinese_simplified: 3, chinese_traditional: 3 }, 'chinese_traditional'],
+    ['简繁合计正好 5% 时维持英语', 'english', { english: 100, chinese_simplified: 3, chinese_traditional: 2 }, 'english'],
+    ['混合假名、简繁和英语，假名达标时优先判为日语', 'english', { english: 60, chinese_simplified: 20, chinese_traditional: 10, japanese: 10 }, 'japanese'],
+    ['假名恰好 8% 时仍执行后续简繁判定', 'english', { english: 70, chinese_simplified: 20, chinese_traditional: 2, japanese: 8 }, 'chinese_traditional'],
+    ['韩语为主时少量中文和英文不触发面向英语的转换', 'korean', { korean: 30, english: 5, chinese_simplified: 4 }, 'korean']
+  ].map(([remark, initial, sizes, expected]) => ({
+    remark,
+    args: ['', { languageName: initial, languageArray: {} }, sizes, Object.values(sizes).reduce((a, b) => a + b)],
+    expected: { languageName: expected, languageArray: {} }
+  }))
 ]);

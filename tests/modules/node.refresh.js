@@ -105,5 +105,56 @@ require('../helpers/module')(__filename, [
       translate.node.refresh();
       return translate.node.data.size === 1 && translate.node.get(kept) === record;
     }
+  },
+  {
+    remark: '同名 Attr 被替换后清除旧属性，并保留新属性的独立记录',
+    test: function () {
+      const element = document.createElement('input');
+      element.placeholder = '原提示'; document.body.append(element);
+      const original = element.getAttributeNode('placeholder'), next = document.createAttribute('placeholder');
+      next.value = '新提示';
+      const currentRecord = { originalText: next.value };
+      translate.node.set(original, { originalText: original.value });
+      element.setAttributeNode(next); translate.node.set(next, currentRecord);
+      translate.node.refresh();
+      return original.ownerElement === null && !translate.node.find(original) &&
+        translate.node.get(next) === currentRecord && next.ownerElement === element;
+    }
+  },
+  {
+    remark: '将原 Attr 转移给另一个已连接元素时保留其历史身份',
+    test: function () {
+      const first = document.createElement('p'), next = document.createElement('b');
+      first.title = '标题'; document.body.append(first, next);
+      const title = first.getAttributeNode('title'), record = { originalText: '标题' };
+      translate.node.set(title, record);
+      first.removeAttributeNode(title); next.setAttributeNode(title);
+      translate.node.refresh();
+      return translate.node.get(title) === record && next.getAttributeNode('title') === title;
+    }
+  },
+  {
+    remark: '正文移入已连接的 ShadowRoot 保留历史，移除宿主后清理同一个 Text',
+    test: function () {
+      const host = document.createElement('article'), text = document.createTextNode('原文');
+      document.body.append(host, text);
+      const shadow = host.attachShadow({ mode: 'open' }), record = { originalText: '原文' };
+      translate.node.set(text, record); shadow.append(text); translate.node.refresh();
+      if (translate.node.get(text) !== record) return false;
+      host.remove(); translate.node.refresh();
+      return !translate.node.find(text);
+    }
+  },
+  {
+    remark: '跨同源文档收养元素后，子文本及属性的原记录仍跟随真实节点',
+    test: function () {
+      const frame = document.createElement('iframe'), root = document.createElement('p');
+      document.body.append(frame, root);
+      root.textContent = '正文'; root.title = '标题';
+      const nodes = [root, root.firstChild, root.getAttributeNode('title')], records = nodes.map(() => ({}));
+      nodes.forEach((node, i) => translate.node.set(node, records[i]));
+      frame.contentDocument.body.append(root); translate.node.refresh();
+      return nodes.every((node, i) => node.ownerDocument === frame.contentDocument && translate.node.get(node) === records[i]);
+    }
   }
 ]);

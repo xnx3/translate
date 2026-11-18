@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.37.20261117',
+	version: '4.1.38.20261118',
 	
 	/*js translate.config start*/
 	/*
@@ -1872,7 +1872,8 @@ var translate = {
 			但仍须未命中忽略文本、术语和忽略正则，不能因此把受保护内容重新提交翻译。
 			words 保留源片段，to 固定为准备时的目标语种，不由后续响应原地覆盖。
 			只允许在本批全部扫描完成后调用；新增扫描或切换语言应使用新批次。
-			当前不由 execute 调用；group 请求和回填接通后，再接入缓存读取前的位置。
+			execute 在全部扫描完成后、读取缓存前调用本方法。仅当已登记区域且内部处理器
+			可以接手整批 group 的请求、回填和收尾时才迁移，否则由普通 list 完成本批翻译。
 		*/
 		_prepareGroups:function(uuid){
 			var batch = translate.nodeQueue[uuid];
@@ -1946,7 +1947,8 @@ var translate = {
 				prepared.push({
 					to: translate.to,
 					words: group.words.map(function(word){ return {text: word.text, weight: word.weight}; }),
-					nodes: group.nodes.slice()
+					nodes: group.nodes.slice(),
+					layout: translate.group._captureLayout(group.nodes)
 				});
 				group.nodes.forEach(function(node){ movedNodes.add(node); });
 			}
@@ -1968,6 +1970,220 @@ var translate = {
 			});
 			batch.groups = prepared;
 			return prepared;
+		},
+
+		/*
+			发送同一批次的所有分组。调用方在每次 execute 中收集完 group 后调用一次。
+			@param uuid 扫描批次标识，仅在本地回调中使用。
+			@param groups _prepareGroups(uuid) 返回的数组，各项的 to 相同。
+			@param func HTTP 200 回调。JSON 响应传入 (responseData, context, xhr)；
+				context.groups[i] 对应 responseData.text[i]，组内的 nodes 供后续回填。
+				非 JSON 响应按现有 send 约定只传回原始正文。
+			@param abnormalFunc 可选的非 200 回调 function(xhr)。
+			@return 已发出的 XMLHttpRequest；批次为空或参数无效时返回 null。
+			示例：translate.group._requestGroups(uuid, pendingGroups, onResponse, onError);
+
+			一个段落对应 text 数组的一项，整个数组只发送一次。表单使用准备时的 to，
+			省略 from 交给服务端识别。普通 list 仍按源语种请求，DOM 节点只存在本地。
+			公共参数、请求头和响应钩子沿用 request.send 的配置及覆盖规则。
+		*/
+		_requestGroups:function(uuid, groups, func, abnormalFunc){
+			if(!Array.isArray(groups) || groups.length === 0 || groups[0] == null ||
+				typeof(func) !== 'function' || (abnormalFunc != null && typeof(abnormalFunc) !== 'function')){
+				return null;
+			}
+			var to = groups[0].to;
+			if(typeof(to) !== 'string' || to.trim().length === 0 || translate.service.name !== 'translate.service' ||
+				typeof(translate.request.api.translate) !== 'string' || translate.request.api.translate.trim().length === 0){
+				return null;
+			}
+			var texts = [];
+			for(var i = 0; i < groups.length; i++){
+				var group = groups[i];
+				if(group == null || group.to !== to || !Array.isArray(group.words) || group.words.length === 0 ||
+					!Array.isArray(group.nodes) || group.nodes.length !== group.words.length){
+					return null;
+				}
+				// words 由 _prepareGroups 创建，每项只有 text 和 weight，按原顺序提交。
+				texts.push({words: group.words});
+			}
+			var data = {to: encodeURIComponent(to), text: encodeURIComponent(JSON.stringify(texts))};
+			var context = {uuid: uuid, to: to, groups: groups.slice()};
+			return translate.request.send(translate.request.api.translate, data, context, func, 'post', true,
+				{'content-type': 'application/x-www-form-urlencoded'}, abnormalFunc, true);
+		},
+
+		/*
+			按接口约定读取一个段落的译文和显示顺序，供后续回填。
+			@param group 本次请求 context.groups[i]，保存原片段与 Text 节点的对应关系。
+			@param item 成功响应中同下标的 responseData.text[i]。
+			@return {texts, order}。texts[j] 属于原节点 group.nodes[j]，可为空串。
+				order[k] 是第 k 个显示位置对应的原节点下标；省略时采用 0,1,... 的原序。
+			示例：原节点 A、B，返回 order:[1,0] 时先显示 B 的译文，再显示 A 的译文。
+		*/
+		_readGroupResult:function(group, item){
+			var texts = item.words.map(function(word){ return word.text; });
+			var order = item.order ? item.order.slice() : group.nodes.map(function(node, index){ return index; });
+			return {texts: texts, order: order};
+		},
+
+		/*
+			在准备请求时记录段落占用的 DOM 位置。nodes 是按原文顺序排列的 Text 数组。
+			每个父节点只记录首末参与节点之间的兄弟序列；即使正文里夹着图片也保留它的位置。
+			ancestry 保存共同容器到文档根的原路径，使回包时能识别整段被移走的情况。
+			这些引用只在本地使用，接口仍只接收 words。
+		*/
+		_captureLayout:function(nodes){
+			var container = nodes[0].parentNode;
+			nodes.forEach(function(node){
+				while(!container.contains(node)){ container = container.parentNode; }
+			});
+			var ancestry = [];
+			for(var node = container; node != null; node = node.parentNode){ ancestry.push(node); }
+			var ranges = new Map();
+			nodes.forEach(function(node){
+				while(node !== container){
+					var parent = node.parentNode, range = ranges.get(parent);
+					if(!range){ range = {first: node}; ranges.set(parent, range); }
+					range.last = node;
+					node = parent;
+				}
+			});
+			ranges.forEach(function(range){
+				range.children = [];
+				for(var child = range.first; child != null; child = child.nextSibling){
+					range.children.push(child);
+					if(child === range.last){ break; }
+				}
+			});
+			return {container: container, ancestry: ancestry, ranges: ranges};
+		},
+
+		// 仅比较这段连续的原生兄弟，父节点的其他段落可以独立增删或调序。
+		_matchesOrder:function(parent, children){
+			return children.every(function(child, i){
+				return child.parentNode === parent && (i === 0 || children[i-1].nextSibling === child);
+			});
+		},
+
+		/*
+			按目标叶节点顺序，求每层行内标签需要怎样移动。返回兄弟调序列表，或 null。
+			例如 <a><b>甲</b>乙</a>丙 可以整体移动 a，也可在 a 内交换甲乙；
+			若要求甲、丙、乙交错，则同一 a 必须被拆成两份，放弃本段回填以保留链接身份。
+			不会把段落外的内容或夹在正文里的图片、控件随译文挪走。
+		*/
+		_planOrder:function(group, order){
+			var layout = group.layout, branches = new Map(), plans = [];
+			for(var i = 0; i < order.length; i++){
+				for(var node = group.nodes[order[i]]; node !== layout.container; node = node.parentNode){
+					var parent = node.parentNode, branch = branches.get(parent);
+					if(!branch){
+						branch = {order: [], seen: new Set()};
+						branches.set(parent, branch);
+					}
+					if(branch.order[branch.order.length-1] === node){ continue; }
+					if(branch.seen.has(node)){ return null; }
+					branch.seen.add(node);
+					branch.order.push(node);
+				}
+			}
+			// 只有完整属于本段的分支才能跨兄弟移动；检查包含的各层，遇到未参与的子树就停止。
+			var isWhole = function(node){
+				if(node.nodeType === 3){ return true; }
+				var branch = branches.get(node);
+				return branch != null && branch.order.length === node.childNodes.length && branch.order.every(isWhole);
+			};
+			for(var entry of branches){
+				var parent = entry[0], branch = entry[1], source = layout.ranges.get(parent).children;
+				var changed = source.filter(function(child){ return branch.seen.has(child); });
+				if(changed.every(function(child, i){ return child === branch.order[i]; })){ continue; }
+				// 已就位的前后缀不需要移动，尤其可能属于跨段的同一个行内标签。
+				var first = 0, last = changed.length - 1;
+				while(changed[first] === branch.order[first]){ first++; }
+				while(changed[last] === branch.order[last]){ last--; }
+				var before = changed.slice(first, last+1);
+				if(!translate.group._matchesOrder(parent, before) || !before.every(isWhole)){ return null; }
+				plans.push({parent: parent, before: before, after: branch.order.slice(first, last+1)});
+			}
+			return plans;
+		},
+
+		/*
+			移动一段连续的原节点。anchor 是这段之后的兄弟，位于末尾时为 null。
+			监听已启动时，insertBefore 会产生移除和插入通知。仅过滤此次移动本身，
+			将原本已排队的网页变化以及移动期间的其他变化交回同一个 observer 的回调。
+		*/
+		_setOrder:function(parent, children, anchor){
+			var observer = translate.listener.isStart && translate.listener.observer;
+			var pending = [];
+			for(var i = children.length - 1; i >= 0; i--){
+				var child = children[i];
+				if(child.nextSibling !== anchor){
+					if(observer){ pending = pending.concat(observer.takeRecords()); }
+					parent.insertBefore(child, anchor);
+					if(observer){
+						var external = observer.takeRecords().filter(function(record){
+							if(record.type !== 'childList' || record.target !== parent){ return true; }
+							var added = record.addedNodes, removed = record.removedNodes;
+							return !(added.length + removed.length === 1 && (added[0] === child || removed[0] === child));
+						});
+						pending = pending.concat(external);
+					}
+				}
+				anchor = child;
+			}
+			if(pending.length > 0){
+				if(!observer.groupPending){
+					observer.groupPending = [];
+					Promise.resolve().then(function(){
+						if(observer.groupPending && translate.listener.isStart && translate.listener.observer === observer){
+							translate.listener.callback([], observer);
+						}
+					});
+				}
+				observer.groupPending = observer.groupPending.concat(pending);
+			}
+		},
+
+		// 保留实际调过序的兄弟段，直到 reset。请求批次可能在用户切换语言前就已回收。
+		_orderHistory:[],
+
+		/*
+			将一个成功响应中的段落写回原 DOM。例：_renderGroup(context.groups[i], response.text[i])。
+			texts[j] 始终写入原 Text[j]；order 只改变显示顺序。先检查整段，再开始写入。
+			返回 true 表示完成；页面已更换目标语种、修改原段，或新顺序需要拆开标签时返回 false。
+		*/
+		_renderGroup:function(group, item){
+			var layout = group.layout;
+			if(translate.to !== group.to || !layout.ancestry.every(function(node, i, path){
+				return node.parentNode === (path[i+1] || null);
+			})){ return false; }
+			for(var entry of layout.ranges){
+				if(!translate.group._matchesOrder(entry[0], entry[1].children)){ return false; }
+			}
+			if(!group.nodes.every(function(node, i){ return node.nodeValue === group.words[i].text; })){ return false; }
+			var result = translate.group._readGroupResult(group, item);
+			var reordered = result.order.some(function(index, position){ return index !== position; });
+			var plans = reordered ? translate.group._planOrder(group, result.order) : [];
+			if(plans === null){ return false; }
+			plans.forEach(function(plan){
+				translate.group._setOrder(plan.parent, plan.after, plan.before[plan.before.length-1].nextSibling);
+				translate.group._orderHistory.push(plan);
+			});
+			group.nodes.forEach(function(node, i){
+				var data = translate.node.get(node) || {};
+				data.attribute = '';
+				data.originalText = group.words[i].text;
+				data.whole = true;
+				data.resultText = result.texts[i];
+				// 普通扫描可能跳过了空白片段；按已有节点历史格式补齐本地记录。
+				data.translateTexts = data.translateTexts || {};
+				data.translateResults = data.translateResults || {};
+				data.lastTranslateRenderTime = Date.now();
+				translate.node.set(node, data);
+				if(node.nodeValue !== data.resultText){ node.nodeValue = data.resultText; }
+			});
+			return true;
 		},
 
 		/*
@@ -3052,9 +3268,10 @@ var translate = {
 			words：[{text: 原片段, weight: 0或1}, ...]，保留空白，供后续包装为 {words} 请求。
 			nodes：[Text, ...]，是原生节点数组，nodes[i] 与 words[i] 对应；不是普通 list 的目标对象。
 				只在浏览器保存，不提交接口；相同文字的不同 Text 不合并。
+			layout：准备请求时保存的共同容器、祖先路径和各层兄弟序列，用于响应回填及安全调序。
 			迁入 groups 的正文目标会从本批 list 中按节点引用迁出；同文本的其他节点及属性仍保留。
-			groups 不复用普通字符串缓存，不改变 translate.node 的原文及历史；请求和回填尚未接通，
-			因此 _prepareGroups 还不能由 execute 自动调用。groups 随批次一起回收或清空。
+			execute 仅为已登记区域且有完整 group 处理器的批次调用 _prepareGroups。
+			groups 随批次一起回收或清空；没有登记区域时，普通请求仍按源语种生成。
 
 		scan 结构（范围、节点快照和扫描事件均由 whileNodes 记录）：
 			{
@@ -3374,6 +3591,10 @@ var translate = {
 			translate.listener.config = { attributes: true, childList: true, subtree: true, characterData: true, attributeOldValue:true, characterDataOldValue:true };
 			// 当观察到变动时执行的回调函数
 			translate.listener.callback = function(mutationsList, observer) {
+				if(observer && observer.groupPending){
+					mutationsList = observer.groupPending.concat(mutationsList);
+					delete observer.groupPending;
+				}
 				var documents = []; //有变动的元素
 				//console.log('--------- lisetner 变动');
 				//console.log(mutationsList);
@@ -4533,6 +4754,26 @@ var translate = {
 			translate.log('您使用translate.js时可能放的位置不对，不要吧 translate.js 放在网页最顶部，这样当 translate.js 进行执行，也就是 translate.execute() 执行时，因为网页是从上往下加载，它放在网页最顶部，那么它执行时网页后面的内容都还没加载出来，这个是不会获取到网页任何内容的，也就是它是不起任何作用的');
 		}
 
+		// whileNodes 的全部扫描根已处理，现在从各语种的普通候选 list 中分出 group。
+		// addElements 登记区域即为启用；elements 为空时沿用下方原有语种、缓存和请求流程。
+		var pendingGroups = [];
+		var executeGroups;
+		if(translate.group && Array.isArray(translate.group.elements) && translate.group.elements.length > 0 &&
+			translate.service.name === 'translate.service' &&
+			typeof(translate.request.api.translate) === 'string' && translate.request.api.translate.trim().length > 0){
+			// 迁移会移除普通任务。仅在负责整批发送、回填及结束通知的内部处理器已就绪时接管。
+			executeGroups = translate.group._executeGroups;
+			if(typeof(executeGroups) === 'function'){
+				try{
+					pendingGroups = translate.group._prepareGroups(uuid);
+				}catch(error){
+					// 收集阶段的自定义忽略回调可能抛错；此时尚未迁移普通目标。
+					translate.log('分组准备失败，批次 ' + uuid);
+					translate.log(error);
+				}
+			}
+		}
+
 		/***** translate.language.translateLanguagesRange 开始 *****/
 		if(translate.language.translateLanguagesRange.length > 0){
 			//如果大于0，则是有设置，那么只翻译有设置的语种，不在设置中的语种不会参与翻译
@@ -4963,8 +5204,8 @@ var translate = {
 		*/
 
 		//console.log(translate.nodeQueue[uuid]['list'])
-		if(fanyiLangs.length == 0){
-			//没有需要翻译的，直接退出
+		if(fanyiLangs.length === 0 && pendingGroups.length === 0){
+			// 普通队列和 group 队列都没有待请求任务，本批次才可以直接结束。
 
 			//生命周期触发事件
 			translate.lifecycle.execute.renderFinish_Trigger(uuid, translate.to);
@@ -5008,6 +5249,11 @@ var translate = {
 		// 当前 translate.execute 内部专用的 SSE 进度遮罩状态。
 		// 只传给 translate.request.sse.collectSafeProgressElements 使用，不作为全局状态保存。
 		let sseProgressState = {};
+
+		if(pendingGroups.length > 0){
+			// 一个 uuid 的所有 group 只交给处理器一次。普通任务继续由下方循环按源语种请求。
+			executeGroups.call(translate.group, uuid, pendingGroups);
+		}
 
 		//进行掉接口翻译
 		for(var lang_index in fanyiLangs){ //一维数组，取语言
@@ -12739,6 +12985,14 @@ var translate = {
 
 		//清除 translate.listener 
 		translate.listener.reset();
+
+		// 先逆序撤销 group 的兄弟调序，再由下方的节点历史还原原文。网页自行更换过的结构保留现状。
+		while(translate.group && translate.group._orderHistory && translate.group._orderHistory.length > 0){
+			var plan = translate.group._orderHistory.pop();
+			if(translate.group._matchesOrder(plan.parent, plan.after)){
+				translate.group._setOrder(plan.parent, plan.before, plan.after[plan.after.length-1].nextSibling);
+			}
+		}
 
 		//translate.temp_listenerStartInterval = undefined; //设置为尚未启动
 		translate.init_first_trigger_execute = undefined; //translate.init 的 execute钩子，设置为未初始化状态

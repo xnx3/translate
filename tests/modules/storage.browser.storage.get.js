@@ -126,5 +126,25 @@ require('../helpers/module')(__filename, [
       translate.storage.browser.storage.set('old', 'new');
       return translate.storage.browser.storage.get('old') === 'new';
     }
+  },
+  {
+    remark: '读故障切换后同时保留已读键、已同步删除和冷键的不同状态',
+    test: function () {
+      const store = translate.storage.browser.storage;
+      localStorage.setItem('warm', '旧值');
+      localStorage.setItem('removed', '已删除');
+      localStorage.setItem('cold', '未读');
+      store.get('warm');
+      store.get('removed');
+      localStorage.setItem('warm', '');
+      localStorage.removeItem('removed');
+      if (store.get('warm') !== '' || store.get('removed') !== null) return false;
+      let accesses = 0;
+      Storage.prototype.getItem = function () {
+        accesses++;
+        throw new DOMException('blocked', 'SecurityError');
+      };
+      return store.get('cold') === null && store.get('warm') === '' && store.get('removed') === null && accesses === 1;
+    }
   }
 ]);

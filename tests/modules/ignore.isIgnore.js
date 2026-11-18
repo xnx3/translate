@@ -163,5 +163,38 @@ require('../helpers/module')(__filename, [
     test: function () {
       return translate.ignore.isIgnore(document.createElement('span')) === false;
     }
+  },
+  {
+    remark: '祖先 class 中由制表符和换行分隔的标准 HTML 类名也能忽略子节点',
+    test: function () {
+      const outer = document.createElement('section');
+      outer.className = 'before\tignore\nafter';
+      const child = document.createElement('span');
+      outer.append(child);
+      return translate.ignore.isIgnore(child) === true;
+    }
+  },
+  {
+    remark: '同一祖先的条件按当前属性决定，前一次判定不会缓存到另一个属性',
+    test: function () {
+      const outer = document.createElement('div');
+      const field = document.createElement('input');
+      outer.className = 'selective';
+      outer.append(field);
+      field.setAttribute('title', '标题');
+      field.setAttribute('placeholder', '提示');
+      const examined = [];
+      translate.ignore.class.push('selective', (element, data) => {
+        examined.push([element, data.node, data.attribute]);
+        return data.attribute === 'title';
+      });
+      const title = field.getAttributeNode('title');
+      const placeholder = field.getAttributeNode('placeholder');
+      const first = translate.ignore.isIgnore(title, { attribute: 'title' });
+      const second = translate.ignore.isIgnore(placeholder, { attribute: 'placeholder' });
+      return first === true && second === false && examined.length === 2 &&
+        examined[0][0] === field && examined[0][1] === title && examined[0][2] === 'title' &&
+        examined[1][0] === field && examined[1][1] === placeholder && examined[1][2] === 'placeholder';
+    }
   }
 ]);

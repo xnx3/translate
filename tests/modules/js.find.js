@@ -15,5 +15,17 @@ require('../helpers/module')(__filename, [
     const object = { value: 'hello', nested: { action: fn }, list: [fn] };
     const result = translate.js.find(object);
     return result.functionResult['nested.action'] === fn && result.functionResult['list[0]'] === fn && called === 0 && object.nested.action === fn && result.stringResult.hello[0] === 'value';
-  } }
+  } },
+  {
+    remark: '稀疏数组保留真实下标，跨层重复文本按原路径顺序汇总',
+    test: function () {
+      const values = [];
+      values[2] = ['重复', null];
+      values[5] = { label: '重复', blank: '' };
+      const { stringResult, functionResult } = translate.js.find(values, 'root');
+      return Object.keys(stringResult).length === 2 && Object.keys(functionResult).length === 0 &&
+        JSON.stringify(stringResult['重复']) === JSON.stringify(['root[2][0]', 'root[5].label']) &&
+        JSON.stringify(stringResult['']) === JSON.stringify(['root[5].blank']) && !(0 in values);
+    }
+  }
 ]);

@@ -238,5 +238,72 @@ require('../helpers/module')(__filename, [
       new Function(text)();
       return translate.storage.get(key) === expected;
     }
+  },
+  {
+    remark: '连续导出两个语种并按相反顺序导入，保留各自词条、最新译文和原有其他缓存',
+    test: async function () {
+      const save = translate.offline.fullExtract.set;
+      await save('one', '早', 'english', 'Old');
+      await save('one', '早', 'french', 'Bonjour');
+      await save('one', '早', 'english', 'Morning');
+      await save('two', '晚', 'english', 'Evening');
+      const downloads = [];
+      const blobs = new Map();
+      URL.createObjectURL = blob => {
+        const url = 'blob:extract-' + blobs.size;
+        blobs.set(url, blob);
+        return url;
+      };
+      URL.revokeObjectURL = () => {};
+      HTMLAnchorElement.prototype.click = function () {
+        downloads.push({ name: this.download, blob: blobs.get(this.getAttribute('href')) });
+      };
+      await translate.offline.fullExtract.export('english');
+      await translate.offline.fullExtract.export('french');
+      if (downloads.length !== 2 || downloads[0].name !== 'english.txt' || downloads[1].name !== 'french.txt') return false;
+      const key = (to, original) => 'hash_' + to + '_' + translate.util.hash(original);
+      translate.storage.set(key('japanese', '早'), '別');
+      for (const { blob } of downloads.reverse()) new Function(await blob.text())();
+      return translate.storage.get(key('english', '早')) === 'Morning' && translate.storage.get(key('english', '晚')) === 'Evening' &&
+        translate.storage.get(key('french', '早')) === 'Bonjour' && translate.storage.get(key('french', '晚')) === null &&
+        translate.storage.get(key('japanese', '早')) === '別';
+    }
+  },
+  {
+    remark: '提取查询失败时不创建下载，恢复底层查询后同一份记录可再次导出',
+    test: async function () {
+      await translate.offline.fullExtract.set('retry', '春', 'english', 'Spring');
+      const db = translate.storage.IndexedDB;
+      const list = db.list;
+      let requests = 0, blob;
+      URL.createObjectURL = value => { blob = value; return 'blob:retry'; };
+      URL.revokeObjectURL = () => {};
+      HTMLAnchorElement.prototype.click = () => { requests++; };
+      const failure = new Error('read failed');
+      db.list = async () => { throw failure; };
+      let reason;
+      try { await translate.offline.fullExtract.export('english'); }
+      catch (error) { reason = error; }
+      finally { db.list = list; }
+      if (reason !== failure || requests !== 0 || blob !== undefined) return false;
+      await translate.offline.fullExtract.export('english');
+      return requests === 1 && (await blob.text()).includes('春=Spring');
+    }
+  },
+  {
+    remark: '下载点击抛错也清理已挂入的链接和 Blob URL',
+    test: async function () {
+      let anchor, revoked;
+      const failure = new Error('download cancelled');
+      URL.createObjectURL = () => 'blob:cancelled-export';
+      const cleaned = new Promise(resolve => { URL.revokeObjectURL = url => { revoked = url; resolve(); }; });
+      HTMLAnchorElement.prototype.click = function () { anchor = this; throw failure; };
+      let reason;
+      try { await translate.offline.fullExtract.export('english'); }
+      catch (error) { reason = error; }
+      await cleaned;
+      return reason === failure && anchor.download === 'english.txt' && !anchor.isConnected &&
+        revoked === 'blob:cancelled-export';
+    }
   }
 ]);

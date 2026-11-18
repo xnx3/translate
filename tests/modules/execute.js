@@ -1320,5 +1320,78 @@ require('../helpers/module')(__filename, [
         batch.scan.snapshots.get(first).text === '你好世界' && batch.scan.snapshots.get(second).text === '标题' &&
         batch.scan.scopes.some(scope => scope.root === root && scope.complete === true);
     }
-  }
+  },
+  ...[
+    ['old-first', '切换语言后旧响应先到，新请求保持进行中直到其自身渲染'],
+    ['new-first', '新语言已渲染后旧响应才到，页面和目标语种缓存仍属于新请求'],
+    ['reset', '公开 reset 后旧的成功响应到达，页面保持源文且可以继续翻译']
+  ].map(([input, remark]) => ({
+    remark, input,
+    test: async function (order) {
+      const source = '你好世界', translated = { english: 'Hello world', spanish: 'Hola mundo' };
+      const root = document.createElement('p');
+      root.textContent = source; document.body.append(root);
+      const node = root.firstChild;
+      translate.setDocuments([root]);
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.request.sse.use = false;
+      const requests = new Map(), finished = [], errors = [];
+      translate.lifecycle.execute.renderFinish.push((uuid, language) => finished.push({ uuid, language }));
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        abort() { this.aborted = true; }
+        send() { requests.set(this.data.to, this); }
+      };
+      async function deliver(language) {
+        const xhr = requests.get(language);
+        if (!xhr) throw new Error('未发起预期请求 ' + language);
+        if (xhr.aborted) return;
+        xhr.status = 200; xhr.readyState = 4;
+        xhr.response = xhr.responseText = JSON.stringify({ result: 1, from: xhr.data.from, to: language, text: [translated[language]] });
+        // HTTP 成功回调还会安排延迟的渲染收尾。用浏览器自己的计时器执行，并等待这次响应安排的回调。
+        const originalTimer = window.setTimeout, followups = [];
+        window.setTimeout = function (callback, delay, ...args) {
+          let timer;
+          followups.push(new Promise((resolve, reject) => {
+            timer = originalTimer(() => {
+              try { callback(...args); resolve(); } catch (error) { reject(error); }
+            }, delay);
+          }));
+          return timer;
+        };
+        try { xhr.onreadystatechange(); }
+        catch (e) { errors.push(language + ' 响应抛出 ' + e); }
+        finally { window.setTimeout = originalTimer; }
+        await Promise.all(followups);
+      }
+      function expectState(condition, message) { if (!condition) errors.push(message); }
+      translate.changeLanguage('english');
+      if (!requests.has('english') || node.nodeValue !== source) throw new Error('旧请求未进入等待状态');
+      if (order === 'reset') {
+        translate.reset({ selectLanguageRefreshRender: false });
+        await deliver('english');
+        expectState(translate.state === 0 && translate.to == null && node.nodeValue === source &&
+          translate.node.get(node) == null, 'reset 后被旧响应重新激活');
+      }
+      translate.changeLanguage('spanish');
+      if (!requests.has('spanish')) throw new Error('新语种未发起请求');
+      if (order === 'old-first') {
+        const pendingState = translate.state;
+        await deliver('english');
+        expectState(translate.state === pendingState && pendingState !== 0 && node.nodeValue === source &&
+          finished.every(event => event.language !== 'spanish'), '旧响应提前结束或渲染当前任务');
+      }
+      await deliver('spanish');
+      if (order === 'new-first') await deliver('english');
+      const cacheKey = 'hash_spanish_' + translate.util.hash(source);
+      expectState(root.firstChild === node && node.nodeValue === translated.spanish && translate.to === 'spanish' &&
+        translate.language.getCurrent() === 'spanish' && translate.state === 0, '页面或任务状态未停留在新语种');
+      expectState(translate.storage.get(cacheKey) === translated.spanish, '新语种缓存缺失或被其他语种覆盖');
+      expectState(finished.filter(event => event.language === 'spanish').length === 1, '新语种应只完成一次渲染');
+      if (errors.length) throw new Error(errors.join('；'));
+      return true;
+    }
+  }))
 ]);

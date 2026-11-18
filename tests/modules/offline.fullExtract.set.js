@@ -65,5 +65,36 @@ require('../helpers/module')(__filename, [
       delete translate.storage.IndexedDB;
       return await translate.offline.fullExtract.set('hash', '原文', 'english', 'Result') === undefined;
     }
+  },
+  {
+    remark: '同一原文并发保存不同目标语种时两个译文均可读回',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.initDB();
+      await Promise.all([
+        translate.offline.fullExtract.set(42, '你好', 'english', 'Hello'),
+        translate.offline.fullExtract.set(42, '你好', 'french', 'Bonjour')
+      ]);
+      const record = await db.get('hash_42');
+      if (record?.originalText !== '你好' || record.english !== 'Hello' || record.french !== 'Bonjour') {
+        throw new Error('并发完成后应同时保留 Hello 和 Bonjour，实际记录为 ' + JSON.stringify(record));
+      }
+      return true;
+    }
+  },
+  {
+    remark: '底层读取失败时拒绝本次提取且不继续写入',
+    test: async function () {
+      const db = translate.storage.IndexedDB, reason = new Error('unavailable');
+      let writes = 0;
+      db.get = async function () { throw reason; };
+      db.set = async function () { writes++; };
+      try {
+        await translate.offline.fullExtract.set(42, '你好', 'english', 'Hello');
+        return false;
+      } catch (error) {
+        return error === reason && writes === 0;
+      }
+    }
   }
 ]);

@@ -10,5 +10,8 @@ require('../helpers/module')(__filename, [
   { remark: 'ASCII 数字不被误判为泰文', args: ['0'], expected: false },
   { remark: '英文字母不被误判为泰文', args: ['a'], expected: false },
   { remark: '中文字不被误判为泰文', args: ['中'], expected: false },
-  { remark: '泰文区间之前的字符不被误判', args: ['\u0e00'], expected: false }
+  { remark: '泰文区间之前的字符不被误判', args: ['\u0e00'], expected: false },
+  { remark: '泰文组合声调标记（U+0E48）', args: ['\u0E48'], expected: true },
+  { remark: '泰文组合声调标记（U+0E4B）', args: ['\u0E4B'], expected: true },
+  { remark: '老挝文字母不归入泰语（U+0E81）', args: ['\u0E81'], expected: false }
 ]);

@@ -98,3 +98,28 @@ require('../helpers/module')(__filename, [
     }
   }
 ]);
+  },
+  {
+    remark: '提取写入失败保留旧语种与旧译文，重试成功后只覆盖指定语种',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      const save = translate.offline.fullExtract.set;
+      await save('retry', '甲', 'english', 'One');
+      await save('retry', '甲', 'french', 'Un');
+      const write = db.set;
+      const failure = new Error('write failed');
+      db.set = async () => { throw failure; };
+      let reason;
+      try {
+        await save('retry', '甲', 'english', 'First');
+      } catch (error) {
+        reason = error;
+      } finally {
+        db.set = write;
+      }
+      const old = await db.get('hash_retry');
+      if (reason !== failure || old.english !== 'One' || old.french !== 'Un') return false;
+      await save('retry', '甲', 'english', 'First');
+      const latest = await db.get('hash_retry');
+      return latest.originalText === '甲' && latest.english === 'First' && latest.french === 'Un';
+    }

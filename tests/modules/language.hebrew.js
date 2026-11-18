@@ -10,5 +10,9 @@ require('../helpers/module')(__filename, [
   { remark: '英文字母不被误判为希伯来文', args: ['a'], expected: false },
   { remark: '中文字不被误判为希伯来文', args: ['中'], expected: false },
   { remark: '数字不被误判为希伯来文', args: ['1'], expected: false },
-  { remark: '表情符号不被误判为希伯来文', args: ['😀'], expected: false }
+  { remark: '表情符号不被误判为希伯来文', args: ['😀'], expected: false },
+  { remark: '希伯来区的重音或标点（U+0591）', args: ['\u0591'], expected: true },
+  { remark: '希伯来区的重音或标点（U+05F4）', args: ['\u05F4'], expected: true },
+  { remark: '相邻区块字符不归入希伯来语（U+058F）', args: ['\u058F'], expected: false },
+  { remark: '相邻区块字符不归入希伯来语（U+0600）', args: ['\u0600'], expected: false }
 ]);

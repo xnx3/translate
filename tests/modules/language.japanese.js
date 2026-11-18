@@ -10,5 +10,11 @@ require('../helpers/module')(__filename, [
   { remark: '纯英文不包含日语', args: ['Hello'], expected: false },
   { remark: '共用汉字本身不能证明包含日语', args: ['世界'], expected: false },
   { remark: '韩文字母不被误判为日语', args: ['한'], expected: false },
-  { remark: '表情符号不被误判为日语', args: ['😀'], expected: false }
+  { remark: '表情符号不被误判为日语', args: ['😀'], expected: false },
+  { remark: '假名区块末端字符（U+309F）', args: ['\u309F'], expected: true },
+  { remark: '假名区块末端字符（U+30FF）', args: ['\u30FF'], expected: true },
+  { remark: '假名组合浊点标记（U+3099）', args: ['\u3099'], expected: true },
+  { remark: '假名组合浊点标记（U+309A）', args: ['\u309A'], expected: true },
+  { remark: '训点或注音字母不归入假名（U+3190）', args: ['\u3190'], expected: false },
+  { remark: '训点或注音字母不归入假名（U+3105）', args: ['\u3105'], expected: false }
 ]);

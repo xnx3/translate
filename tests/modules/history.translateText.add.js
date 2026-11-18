@@ -82,5 +82,16 @@ require('../helpers/module')(__filename, [
       return translate.history.translateText.originalMap.get('你好') === 'Hello' &&
         translate.history.translateText.originalMap.get('世界') === 'World';
     }
+  },
+  {
+    remark: '两个原文译成同一结果时保留各自正向记录，反查返回最近记录',
+    test: function () {
+      const history = translate.history.translateText;
+      history.add('你好', 'Hello');
+      history.add('您好', 'Hello');
+      return history.originalMap.size === 2 && history.resultMap.size === 1 &&
+        history.originalMap.get('你好') === 'Hello' && history.originalMap.get('您好') === 'Hello' &&
+        history.resultMap.get('Hello') === '您好';
+    }
   }
 ]);

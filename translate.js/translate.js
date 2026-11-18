@@ -1483,6 +1483,494 @@ var translate = {
 		elements:[],
 
 		/*
+			读取本批次已完成且有事件记录的扫描范围，供后续 group 分析使用。
+			@param uuid 本批翻译任务的标识，对应 translate.nodeQueue[uuid]，不是 DOM 节点。
+			@return 新数组，每项引用原来的 {root, events, complete} 范围对象，
+				结构详见 nodeQueue 定义；本方法不复制事件、快照或 DOM 节点。
+				批次不存在、尚无扫描记录或没有完整范围时返回 []。
+			示例：var scopes = translate.group._getScanScopes(uuid);
+				后续按 scopes[i].events 分析结构，不再递归扫描网页子树。
+
+			这是内部读取方法，只接受 complete === true 且 events 非空的范围，
+			按原顺序返回，不改动原记录；使用方也不应修改返回的范围及事件对象。
+			根节点相同且完整事件序列相同的范围仅保留首次记录。
+			某范围的完整子流已被另一个完整范围记录时，不再重复返回该范围。
+			例如先扫 p 再扫外层 div，若 div 中的 p 子流完全相同，则只返回 div 范围；
+			仅部分重叠或无法完整匹配的范围仍保留，原始 scan.scopes 始终不变。
+			比较依据是已记录事件的 type 与 snapshot 引用，不按文字或实时 DOM 判断，
+			也不表示节点当前值未变化；本方法尚未判断 group 归属、拆分段落或迁移翻译队列。
+			只有读取方法，暂不由 execute 自动调用。
+		*/
+		_getScanScopes:function(uuid){
+			var batch = translate.nodeQueue[uuid];
+			if(batch == null || batch.scan == null || !Array.isArray(batch.scan.scopes)){
+				return [];
+			}
+			var scopes = [];
+			// 临时按真实 root 引用索引，只比较同根范围；不修改原扫描记录。
+			var scopesByRoot = new Map();
+			for(var i = 0; i < batch.scan.scopes.length; i++){
+				var scope = batch.scan.scopes[i];
+				if(scope != null && scope.complete === true && Array.isArray(scope.events) && scope.events.length > 0){
+					var sameRootScopes = scopesByRoot.get(scope.root) || [];
+					var duplicate = false;
+					for(var j = 0; j < sameRootScopes.length; j++){
+						var previousEvents = sameRootScopes[j].events;
+						if(previousEvents.length !== scope.events.length){
+							continue;
+						}
+						var sameEvents = true;
+						for(var k = 0; k < scope.events.length; k++){
+							// 每次扫描会新建事件对象，因此比较 type 和共享的 snapshot 引用。
+							if(previousEvents[k].type !== scope.events[k].type || previousEvents[k].snapshot !== scope.events[k].snapshot){
+								sameEvents = false;
+								break;
+							}
+						}
+						if(sameEvents){
+							duplicate = true;
+							break;
+						}
+					}
+					if(!duplicate){
+						scopes.push(scope);
+						sameRootScopes.push(scope);
+						scopesByRoot.set(scope.root, sameRootScopes);
+					}
+				}
+			}
+			// 同根去重后，再比较全部候选；后扫描的父范围也可以覆盖先扫描的子范围。
+			// 只过滤返回数组，不删除 scan.scopes，也不修改其中的事件及快照。
+			var uncoveredScopes = [];
+			for(var i = 0; i < scopes.length; i++){
+				var covered = false;
+				for(var j = 0; j < scopes.length; j++){
+					if(translate.group._isScanScopeCovered(scopes[i], scopes[j])){
+						covered = true;
+						break;
+					}
+				}
+				if(!covered){
+					uncoveredScopes.push(scopes[i]);
+				}
+			}
+			return uncoveredScopes;
+		},
+
+		/*
+			判断子扫描范围的完整事件记录，是否已被另一个扫描范围完整覆盖。
+			@param scope 待判断的子范围对象 {root, events, complete}，来自 scan.scopes。
+			@param parentScope 可能覆盖它的范围对象，结构同 scope；不是 DOM 父元素。
+			@return boolean。两个范围必须完整、根节点不同，且父事件中存在与子范围
+				逐项 type、snapshot 引用相同的一段完整子流，才返回 true。
+			示例：translate.group._isScanScopeCovered(paragraphScope, articleScope);
+				paragraphScope 对应段落扫描记录，articleScope 对应整篇文章扫描记录。
+
+			只使用已有事件，不读取实时 DOM 的 contains、parentNode 或 childNodes。
+			enter/leave 必须按快照引用正确配对，Text 对应单条 text；父流不完整或
+			配对异常时返回 false，保守保留子范围。父流更长，避免相互覆盖形成循环。
+			不修改两份范围、事件或快照；由 _getScanScopes 筛选被完整覆盖的范围时调用。
+		*/
+		_isScanScopeCovered:function(scope, parentScope){
+			if(scope == null || parentScope == null || scope.complete !== true || parentScope.complete !== true || scope.root === parentScope.root){
+				return false;
+			}
+			var events = scope.events;
+			var parentEvents = parentScope.events;
+			if(!Array.isArray(events) || events.length === 0 || !Array.isArray(parentEvents) || parentEvents.length <= events.length){
+				return false;
+			}
+			var stack = []; // 保存尚未配对的 enter 事件下标，遇到 leave 时取出。
+			var covered = false;
+			for(var i = 0; i < parentEvents.length; i++){
+				var event = parentEvents[i];
+				if(event == null || event.snapshot == null || (i === 0 && event.snapshot.node !== parentScope.root)){
+					return false;
+				}
+				if(event.type === 'enter'){
+					if(stack.length === 0 && i !== 0){
+						return false; // 同一个范围不能有两个独立的顶层容器。
+					}
+					stack.push(i);
+					continue;
+				}
+				var start = i; // Text 的子流只有当前事件；容器子流从对应 enter 开始。
+				if(event.type === 'leave'){
+					start = stack.pop();
+					if(typeof(start) === 'undefined' || parentEvents[start].snapshot !== event.snapshot){
+						return false;
+					}
+				}else if(event.type !== 'text' || stack.length === 0){
+					return false;
+				}
+				if(event.snapshot.node !== scope.root || i - start + 1 !== events.length){
+					continue;
+				}
+				var sameEvents = true;
+				for(var j = 0; j < events.length; j++){
+					var childEvent = events[j];
+					var parentEvent = parentEvents[start + j];
+					if(childEvent == null || childEvent.type !== parentEvent.type || childEvent.snapshot !== parentEvent.snapshot){
+						sameEvents = false;
+						break;
+					}
+				}
+				if(sameEvents){
+					covered = true;
+				}
+			}
+			// 即使已找到相同子流，也须验证父流剩余事件正常闭合后再确认覆盖。
+			return stack.length === 0 && covered;
+		},
+
+		/*
+			判断节点快照中的标签是否是段落切分的候选边界。
+			@param snapshot 已有扫描事件的 snapshot，例如 scope.events[i].snapshot；
+				使用其中的 nodeType、nodeName，不传实时 DOM 节点作为参数。
+			@return boolean。块级容器及 br/hr 返回 true；行内标签、Text、Document、
+				DocumentFragment 和无效参数返回 false，不表示这些节点应被忽略。
+			示例：translate.group._isParagraphBoundary({nodeType: 1, nodeName: 'P'});
+				返回 true；真实分析时应传入事件中已有的快照，不需重新构造。
+
+			沿用 analyze 的块级容器标签名单，并将 br 也作为边界；本方法不修改 analyze。
+			后续消费事件时，div/p 等容器的 enter 和 leave 两侧都应结束当前段，
+			防止“前<p>中</p>后”被拼成一段；br/hr 仅在 enter 时切分，避免重复产生空段。
+			本方法只识别标签，不生成段落，不判断 group 归属或执行忽略规则。
+			扫描范围的起止、控件及非正文/忽略区域的阻断，由后续事件分析另外处理。
+			只读快照字段，不读取实时 DOM 或 CSS；CSS 改变 display 的布局不在本规则内。
+			供 _splitScanScope 进行候选结构分段使用，尚未接入自动翻译流程。
+		*/
+		_isParagraphBoundary:function(snapshot){
+			if(snapshot == null || snapshot.nodeType !== 1 || typeof(snapshot.nodeName) !== 'string'){
+				return false;
+			}
+			return /^(html|body|address|article|aside|blockquote|br|caption|center|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hgroup|hr|legend|li|main|menu|nav|ol|p|search|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)$/i.test(snapshot.nodeName);
+		},
+
+		/*
+			按已有扫描事件的块级边界，将一个完整范围拆成候选段落。
+			@param scope scan.scopes 中的完整范围 {root, events, complete}，不是 DOM 元素。
+			@return 新数组，每项为 {events: [], ancestors: []}；没有非空白 Text 时返回 []。
+				events：本段按原顺序保留的事件，引用原事件及快照，不复制节点或文字。
+				ancestors：本段第一条事件发生前尚未闭合的容器快照，按外到内排列。
+				它不是段内所有文字共同的祖先；后续从该上下文继续回放 enter/leave，
+				即可还原每个 Text 在扫描事件中的祖先路径，不依赖首遇 snapshot.parent。
+			示例：var paragraphs = translate.group._splitScanScope(scope);
+				对于“前<p><b>中</b>间</p>后”，三段的 Text 分别为“前”、“中间”、“后”。
+
+			容器在 enter 和 leave 两侧切分；br/hr 仅在 enter 时切分。
+			只输出含非空白 Text 的候选段，但保留该段中的全部空白及结构事件。
+			保留结构事件是为了后续识别无文字控件、非正文及忽略分支的阻断位置；
+			这些区域仍需后续过滤并继续切分，不能仅删除其文字后拼接两侧正文。
+			本方法不判断 group 归属、不计算 weight、不发请求，也不迁移普通翻译队列。
+			只读扫描记录，不访问实时 DOM 或修改输入；未完成或事件配对异常时返回 []。
+			当前仅新增内部拆分方法，尚未接入自动翻译。
+		*/
+		_splitScanScope:function(scope){
+			if(scope == null || scope.complete !== true || !Array.isArray(scope.events) || scope.events.length === 0){
+				return [];
+			}
+			var paragraphs = [], stack = [], current = null, hasText = false;
+			var flush = function(){
+				if(current != null && hasText){
+					paragraphs.push(current);
+				}
+				current = null;
+				hasText = false;
+			};
+			for(var i = 0; i < scope.events.length; i++){
+				var event = scope.events[i];
+				if(event == null || event.snapshot == null || (i === 0 && event.snapshot.node !== scope.root)){
+					return [];
+				}
+				var snapshot = event.snapshot;
+				if(event.type === 'enter'){
+					if(stack.length === 0 && i !== 0){
+						return [];
+					}
+				}else if(event.type === 'leave'){
+					if(stack.length === 0 || stack[stack.length - 1] !== snapshot){
+						return [];
+					}
+				}else if(event.type !== 'text' || snapshot.nodeType !== 3 || typeof(snapshot.text) !== 'string' ||
+					(stack.length === 0 && scope.events.length !== 1)){
+					return [];
+				}
+				var boundary = translate.group._isParagraphBoundary(snapshot);
+				if(event.type === 'enter' && boundary){
+					flush();
+				}
+				if(current == null){
+					current = {events: [], ancestors: stack.slice()};
+				}
+				current.events.push(event);
+				if(event.type === 'enter'){
+					stack.push(snapshot);
+				}else if(event.type === 'leave'){
+					stack.pop();
+				}else if(/\S/.test(snapshot.text)){
+					hasText = true;
+				}
+				if(event.type === 'leave' && boundary && !/^(br|hr)$/i.test(snapshot.nodeName)){
+					flush();
+				}
+			}
+			if(stack.length !== 0){
+				return [];
+			}
+			flush();
+			return paragraphs;
+		},
+
+		/*
+			将本批次的候选段落收集为实际 group，保留文本与回填节点的一一对应。
+			@param uuid translate.nodeQueue[uuid] 的批次标识，不是 DOM 元素。
+			@return 新数组，每项为 {words: [{text, weight}, ...], nodes: [Text, ...]}。
+				words[i] 与 nodes[i] 始终对应；只有 words 可提交接口，nodes 留在浏览器。
+				text 使用扫描快照，保留空白，不合并同权重或相同文字的不同 Text；
+				快照是本批次首遇文本，不保证是页面初始原文，详见 nodeQueue.scan。
+			示例：var groups = translate.group._collectGroups(uuid);
+				<p><b>我们</b>是<b>全世界</b>最好的</p> 生成一个四片段 group。
+
+			使用 _getScanScopes 和 _splitScanScope 的事件顺序，不重新扫描 DOM 子树。
+			结构和权重按事件祖先计算；group 配置、属性及忽略条件按收集时的状态判断。
+			登记根自身权重为 0，其后任一行内祖先使文字权重为 1；切段不重置祖先权重。
+			多个登记区域同时允许时采用最外层允许区域，避免重复登记内层把同一句切碎。
+			离开该区域或遇到拒绝分支时结束当前组，内层独立登记仍可重新允许 group。
+			脚本、嵌入内容、控件及 hidden/translate=no/notranslate 子树不能被重新允许。
+			命中 ignore 标签、id、class 配置的元素同时作为分隔点，包括无文字的空元素；
+			这只是保守切段，不剪枝，条件忽略仍逐 Text 调用现有 isIgnore 接口判断。
+			候选段之间不拼接，纯空白组不输出。同一 Text 首次合格分组优先，避免重复回填；
+			重复 Text 或事件已覆盖的父子关系改变时先切段再跳过，不能把两侧文字直接拼接。
+			仅沿父链补充扫描根外的上下文；不使用可能已过期的 snapshot.parent。
+			整个扫描根搬家但内部结构未变时，使用收集时的外层祖先配置。
+			不修改扫描记录、普通翻译队列或文字，不请求接口，尚未接入 execute。
+			用户的 ignoreFunction 及忽略条件仍可能被多次调用，应只判断、不修改 DOM。
+		*/
+		_collectGroups:function(uuid){
+			var groups = [], usedNodes = new Set(), entries = translate.group.elements;
+			if(!Array.isArray(entries) || entries.length === 0){
+				return groups;
+			}
+			var excludedTags = /^(script|style|link|meta|template|noscript|iframe|object|embed|canvas|svg|math|input|textarea|select|option|optgroup|button|datalist)$/i;
+			var isExcluded = function(snapshot){
+				if(snapshot.nodeType !== 1){ return false; }
+				var node = snapshot.node, value = node.getAttribute('translate');
+				return excludedTags.test(snapshot.nodeName) || node.hasAttribute('hidden') ||
+					(typeof(value) === 'string' && value.toLowerCase() === 'no') ||
+					/(^|\s)notranslate(\s|$)/.test(node.getAttribute('class') || '');
+			};
+			// 查找最外层允许的登记根；回调只接收其后代 Element，严格 false 才拒绝。
+			var rootIndex = function(path){
+				for(var i = 0; i < path.length; i++){
+					for(var j = 0; j < entries.length; j++){
+						var entry = entries[j];
+						if(entry == null || entry.element !== path[i].node || path[i].nodeType !== 1){ continue; }
+						var allowed = true;
+						for(var k = i + 1; k < path.length; k++){
+							if(path[k].nodeType === 1 && typeof(entry.ignoreFunction) === 'function' && entry.ignoreFunction(path[k].node) === false){
+								allowed = false;
+								break;
+							}
+						}
+						if(allowed){ return i; }
+					}
+				}
+				return -1;
+			};
+			var isIgnoreBoundary = function(snapshot){
+				if(snapshot.nodeType !== 1){ return false; }
+				var node = snapshot.node, classes = (node.getAttribute('class') || '').split(/\s+/);
+				return translate.ignore.tag.indexOf(snapshot.nodeName.toLowerCase()) >= 0 ||
+					(node.id.length > 0 && translate.ignore.id.indexOf(node.id) >= 0) ||
+					classes.some(function(name){ return name.length > 0 && translate.ignore.class.data.indexOf(name) >= 0; });
+			};
+			var current = null, currentRoot = null, hasText = false;
+			var flush = function(){
+				if(current != null && hasText){
+					groups.push(current);
+					current.nodes.forEach(function(node){ usedNodes.add(node); });
+				}
+				current = null;
+				currentRoot = null;
+				hasText = false;
+			};
+			var scopes = translate.group._getScanScopes(uuid);
+			for(var si = 0; si < scopes.length; si++){
+				var scope = scopes[si], outer = [], parent = scope.root.parentNode;
+				while(parent != null){
+					outer.unshift({node: parent, nodeType: parent.nodeType, nodeName: parent.nodeName});
+					parent = parent.parentNode;
+				}
+				var paragraphs = translate.group._splitScanScope(scope);
+				for(var pi = 0; pi < paragraphs.length; pi++){
+					var paragraph = paragraphs[pi], path = outer.concat(paragraph.ancestors);
+					for(var ei = 0; ei < paragraph.events.length; ei++){
+						var event = paragraph.events[ei], snapshot = event.snapshot, node = snapshot.node;
+						if(event.type !== 'text'){
+							if(event.type === 'enter'){ path.push(snapshot); }
+							if(isExcluded(snapshot) || isIgnoreBoundary(snapshot)){ flush(); }
+							if(event.type === 'leave'){ path.pop(); }
+							var index = rootIndex(path);
+							if(index < 0 || (currentRoot != null && currentRoot !== path[index].node)){ flush(); }
+							continue;
+						}
+						// 已记录的父子关系发生变化时跳过该 Text，留给后续重新扫描处理。
+						var validPath = path.length > 0 && node.parentNode === path[path.length - 1].node;
+						for(var di = 1; validPath && di < path.length; di++){
+							validPath = path[di].node.parentNode === path[di - 1].node;
+						}
+						var index = validPath ? rootIndex(path) : -1;
+						if(index < 0 || path.some(isExcluded) || translate.ignore.isIgnore(node, {node: node, attribute: ''})){
+							flush();
+							continue;
+						}
+						if(currentRoot != null && currentRoot !== path[index].node){ flush(); }
+						if(usedNodes.has(node) || (current != null && current.nodes.indexOf(node) >= 0)){
+							flush();
+							continue;
+						}
+						if(snapshot.text.length === 0){ continue; }
+						var weight = 0;
+						for(var wi = index + 1; wi < path.length; wi++){
+							if(path[wi].nodeType === 1 && !translate.group._isParagraphBoundary(path[wi])){ weight = 1; }
+						}
+						if(current == null){
+							current = {words: [], nodes: []};
+							currentRoot = path[index].node;
+						}
+						current.words.push({text: snapshot.text, weight: weight});
+						current.nodes.push(node);
+						hasText = hasText || /\S/.test(snapshot.text);
+					}
+					flush();
+				}
+			}
+			return groups;
+		},
+
+		/*
+			将扫描后收集的 group 准备为本批次的独立翻译队列，并迁出对应的普通正文任务。
+			@param uuid 已完成扫描的 translate.nodeQueue[uuid] 批次标识。
+			@return 本批次的 groups 数组，每项 {to, words, nodes}，详见 nodeQueue 注释。
+				批次或目标语种无效时返回 []；已准备过时直接返回原 groups，不重复迁移。
+			示例：var groups = translate.group._prepareGroups(uuid);
+
+			普通 list 的 translateText 仍是字符串；group 单独放在同级 groups，避免被旧缓存、
+			二次扫描及字符串回填逻辑误处理。只按真实 Text 引用迁移，保留同 hash 的其他目标，
+			不迁移真实 Attr、元素属性或 input/textarea 的实时 value，也不清空节点历史。
+			先完成全部候选的检查，再迁移任务；条件不满足时保留整个候选的原普通翻译任务。
+			同一组及同一 Text 可混合多种语言，不保存 from，由后端对整句自动识别。
+			普通队列仅用于确认是否有当前任务及迁移目标，不按其语种拆分 group。
+			空白、数字、纯标点和已有目标语种文字可作为上下文；整组至少有一个
+			有当前任务且含非目标语种的片段，纯目标语种或纯符号不单独触发 group 翻译。
+			配置了 translateLanguagesRange 时，含范围外非目标语种的候选整组保留原流程，
+			即使该语种的普通任务已被过滤，也不借 group 把其原文重新提交翻译。
+			文本已变化、正文已有翻译结果、命中局部术语/忽略文本或特殊队列项时，整组回退。
+			无待翻译任务的上下文允许已有原样结果（originalText === resultText === 当前片段）；
+			普通扫描会将纯符号及目标语种直接标记完成，既往批次的同样原样记录也适用此例外，
+			但仍须未命中忽略文本、术语和忽略正则，不能因此把受保护内容重新提交翻译。
+			words 保留源片段，to 固定为准备时的目标语种，不由后续响应原地覆盖。
+			只允许在本批全部扫描完成后调用；新增扫描或切换语言应使用新批次。
+			当前不由 execute 调用；group 请求和回填接通后，再接入缓存读取前的位置。
+		*/
+		_prepareGroups:function(uuid){
+			var batch = translate.nodeQueue[uuid];
+			if(batch == null || batch.list == null || typeof(translate.to) !== 'string' || translate.to.length === 0){
+				return [];
+			}
+			if(Array.isArray(batch.groups)){ return batch.groups; }
+			var protectedTexts = translate.ignore.text.slice(), localTerms = translate.nomenclature.data[translate.language.getLocal()];
+			if(localTerms != null && localTerms[translate.to] != null){
+				protectedTexts = protectedTexts.concat(Object.keys(localTerms[translate.to]));
+			}
+			var pendingNodes = new Set(), blocked = new Set(), queues = [];
+			Object.keys(batch.list).forEach(function(lang){
+				var queue = batch.list[lang];
+				if(queue == null || typeof(queue) !== 'object'){ return; }
+				Object.keys(queue).forEach(function(hash){
+					var item = queue[hash];
+					if(item == null || !Array.isArray(item.nodes)){ return; }
+					queues.push({lang: lang, hash: hash, item: item});
+					item.nodes.forEach(function(target){
+						if(target == null || target.node == null || target.node.nodeType !== 3 ||
+							(target.attribute != null && target.attribute !== '')){ return; }
+						if(typeof(item.type) !== 'undefined'){
+							blocked.add(target.node);
+							return;
+						}
+						pendingNodes.add(target.node);
+					});
+				});
+			});
+			var prepared = [], movedNodes = new Set(), candidates = translate.group._collectGroups(uuid);
+			for(var i = 0; i < candidates.length; i++){
+				var group = candidates[i], hasPending = false, valid = true;
+				for(var j = 0; valid && j < group.nodes.length; j++){
+					var node = group.nodes[j], text = group.words[j].text, data = translate.node.get(node);
+					if(node.nodeValue !== text || blocked.has(node) || (data != null &&
+						(data.whole === false || (typeof(data.originalText) === 'string' && data.originalText !== text)))){
+						valid = false;
+						break;
+					}
+					// 按完整片段检查范围及是否仍需翻译，不依赖普通队列选出的单一主语种。
+					var range = translate.language.translateLanguagesRange;
+					var languages = Object.keys(translate.language.recognition(text).languageArray);
+					if(range.length > 0){
+						valid = languages.every(function(language){
+							return language === translate.to || range.indexOf(language) >= 0;
+						});
+						if(!valid){ break; }
+					}
+					if(!pendingNodes.has(node)){
+						// 原样的目标语种及纯符号可保留为句子上下文，不单独触发翻译。
+						valid = languages.every(function(language){ return language === translate.to; });
+						if(valid && data != null && (typeof(data.resultText) === 'string' || typeof(data.lastTranslateRenderTime) === 'number')){
+							// 普通扫描也会将符号和目标语种记为“完成”；仅允许未命中保护规则的原样上下文。
+							valid = data.originalText === text && data.resultText === text &&
+								!protectedTexts.some(function(value){ return value.trim().length > 0 && text.indexOf(value) >= 0; }) &&
+								!translate.ignore.textRegex.some(function(rule){ return new RegExp(rule.source, rule.flags).test(text); });
+						}
+						continue;
+					}
+					if(data == null || data.originalText !== text ||
+						typeof(data.resultText) === 'string' || typeof(data.lastTranslateRenderTime) === 'number'){
+						valid = false;
+						break;
+					}
+					hasPending = hasPending || languages.some(function(language){ return language !== translate.to; });
+				}
+				if(!valid || !hasPending){
+					continue;
+				}
+				prepared.push({
+					to: translate.to,
+					words: group.words.map(function(word){ return {text: word.text, weight: word.weight}; }),
+					nodes: group.nodes.slice()
+				});
+				group.nodes.forEach(function(node){ movedNodes.add(node); });
+			}
+			// 全部候选检查完成后，再按节点迁移所有语种的任务；不按文本或 hash 删除整项。
+			queues.forEach(function(entry){
+				var targets = entry.item.nodes, changed = false;
+				for(var i = targets.length - 1; i >= 0; i--){
+					var target = targets[i];
+					if(target != null && target.node != null && target.node.nodeType === 3 && movedNodes.has(target.node) &&
+						(target.attribute == null || target.attribute === '')){
+						targets.splice(i, 1);
+						changed = true;
+					}
+				}
+				if(changed && targets.length === 0){
+					delete batch.list[entry.lang][entry.hash];
+					if(Object.keys(batch.list[entry.lang]).length === 0){ delete batch.list[entry.lang]; }
+				}
+			});
+			batch.groups = prepared;
+			return prepared;
+		},
+
+		/*
 			登记一个启用 group 的区域；成功返回 true，参数无效则不修改配置并返回 false。
 			@param element 一个真实 Element，区域根自身及通过过滤的后代参与分组。
 			@param ignoreFunction 可选的 function(element)；省略或为 null 时，保存一个
@@ -2517,8 +3005,8 @@ var translate = {
 	},
 	/*
 		页面翻译任务按 uuid 保存的批次记录，对应 translate.nodeQueue[uuid]。
-		当前批次包含 expireTime、list 和 whileNodes 创建的 scan 扫描范围记录。
-		scan 已记录各次顶层调用的范围及完成状态，事件及节点快照尚未写入。
+		当前批次包含 expireTime、list 和 whileNodes 创建的 scan；group 准备后另有 groups 队列。
+		scan 记录各次顶层调用的范围、完成状态、节点首遇快照及扫描事件顺序。
 
 		list 与 scan 是两份用途独立的数据：list 保存经过忽略判断、术语处理、
 		语种拆分后需要翻译的任务；scan 保存扫描遇到的节点、当时的文本及结构顺序。
@@ -2531,7 +3019,10 @@ var translate = {
 			expireTime：过期时间，单位为毫秒时间戳，普通扫描创建时默认为当前时间加两分钟。
 				非负值由 recycle 定期检查并回收；负值表示免于自动回收，仍可被 reset 清空。
 			list：现有翻译队列，按源语种和文本 hash 组织，结构见下方三至七维。
-			scan：通用扫描记录，与 list 同级；scopes 保存范围，snapshots 暂为空 Map。
+			scan：通用扫描记录，与 list 同级；scopes 保存范围，snapshots 保存节点首遇快照。
+			groups：_prepareGroups 在全部扫描完成后创建的独立 group 队列，与 list、scan 同级。
+				字段不存在表示尚未准备；[] 表示已准备但没有合格分组，同批次不重复迁移。
+				每项结构为 {to, words, nodes}，详见下方；不是普通 list 的字符串翻译项。
 		三维：仅针对 list，key 为源语种，如 english、chinese_simplified。
 		四维：针对 list[lang]，普通翻译项的 key 为入队文本的 hash，value 为一个翻译项，
 			不是直接的节点数组；节点数组保存在该翻译项的 nodes 字段中。
@@ -2555,7 +3046,17 @@ var translate = {
 		与 nodes 按下标对应，使用独立 hash 命名空间；该辅助入口尚未接入自动扫描和完整翻译链路。
 		它与下方规划的通用 scan 记录是不同结构，不能将其分段目标当作普通共享译文目标。
 
-		scan 结构（当前已记录 scopes 的 root、complete，events 和 snapshots 的写入待实现）：
+		groups[index] 的字段（仅在 _prepareGroups 显式调用后存在）：
+			不设置 from：同组及同一 Text 均可混合多种语言，由后端对完整句子自动识别。
+			to：准备时固定的目标语种，如 english，不随之后 translate.to 的变化而变化。
+			words：[{text: 原片段, weight: 0或1}, ...]，保留空白，供后续包装为 {words} 请求。
+			nodes：[Text, ...]，是原生节点数组，nodes[i] 与 words[i] 对应；不是普通 list 的目标对象。
+				只在浏览器保存，不提交接口；相同文字的不同 Text 不合并。
+			迁入 groups 的正文目标会从本批 list 中按节点引用迁出；同文本的其他节点及属性仍保留。
+			groups 不复用普通字符串缓存，不改变 translate.node 的原文及历史；请求和回填尚未接通，
+			因此 _prepareGroups 还不能由 execute 自动调用。groups 随批次一起回收或清空。
+
+		scan 结构（范围、节点快照和扫描事件均由 whileNodes 记录）：
 			{
 				scopes: [
 					{
@@ -5991,11 +6492,11 @@ var translate = {
 				translate.nodeQueue[uuid].scan.scopes。范围结构为：
 				{
 					root: node,       // 此次顶层调用的扫描根，递归时保持不变。
-					events: [],       // 当前范围的事件数组，本步骤只建容器，尚不写事件。
+					events: [],       // 依扫描顺序记录 enter/text/leave 事件，事件引用节点快照。
 					complete: false   // 顶层扫描执行到末尾后置 true；异常或提前退出时保持 false。
 				}
 				递归时传同一个 uuid 和 scanScope 对象，所有子节点归入同一个范围，
-				不会为每个子节点新建范围。以后记录事件时，可据此保留各范围的结构顺序，
+				不会为每个子节点新建范围。事件追加到对应范围，保留各范围的结构顺序，
 				避免将两次独立扫描的区域误拼在一起；此机制与 group 是否启用无关。
 
 			调用示例：
@@ -6033,6 +6534,34 @@ var translate = {
 			if(isScanRoot){
 				scanScope = {root: node, events: [], complete: false};
 				batch.scan.scopes.push(scanScope);
+			}
+
+			// 保存当前节点在本批次首次进入 whileNodes 时的快照，供扫描事件引用。
+			// 仅记录 Element、Text、Document、DocumentFragment/ShadowRoot；Attr 和注释仍走原流程。
+			var snapshot = null;
+			if(node.nodeType === 1 || node.nodeType === 3 || node.nodeType === 9 || node.nodeType === 11){
+				snapshot = batch.scan.snapshots.get(node);
+				if(typeof(snapshot) === 'undefined'){
+					// 同一 uuid 再次遇到该节点时复用快照，不以新值覆盖；相同文字的不同节点各自记录。
+					// 在当前节点的原有处理前保存；不保证早于祖先回调，也不保证是页面初始原文。
+					snapshot = {
+						node: node,                 // 真实节点引用，后续按节点身份对应。
+						nodeType: node.nodeType,     // 节点类型，例如 Text 为 3。
+						nodeName: node.nodeName,     // 原生节点名称，例如 DIV、#text。
+						parent: node.parentNode,     // 首遇时的父节点引用，无父节点为 null。
+						text: node.nodeType === 3 ? node.nodeValue : null // Text 保留空字符串和全部空白。
+					};
+					batch.scan.snapshots.set(node, snapshot);
+				}
+			}
+
+			// 在当前节点的原有处理之前记录进入位置；Text 只记录一次 text，不配 leave。
+			// snapshot 引用上面的同一份节点快照；重复扫描时仍追加事件，保留本范围的完整顺序。
+			if(snapshot != null){
+				scanScope.events.push({
+					type: snapshot.nodeType === 3 ? 'text' : 'enter',
+					snapshot: snapshot
+				});
 			}
 
 			//console.log('---'+typeof(node)+', ');
@@ -6127,6 +6656,11 @@ var translate = {
 			}
 			// 子节点扫描后也收集当前节点自身的属性，避免 textarea 有默认文本时漏掉 placeholder。
 			translate.element.findNode(uuid, node);
+			// 容器及其子节点正常处理结束后记录 leave，与前面的 enter 引用同一份快照。
+			// 异常或提前退出不会补写 leave；调用方可通过 complete 识别不完整的范围。
+			if(snapshot != null && snapshot.nodeType !== 3){
+				scanScope.events.push({type: 'leave', snapshot: snapshot});
+			}
 			// 仅正常完成顶层扫描后标记；原流程抛异常时保持 false，异常照常向外传播。
 			if(isScanRoot){
 				scanScope.complete = true;

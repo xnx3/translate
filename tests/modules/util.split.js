@@ -50,5 +50,13 @@ require('../helpers/module')(__filename, [
       translate.util.split(input, 10, 1);
       return input.length === 2 && input[0] === 'abcdef' && input[1] === 'ghijkl';
     }
-  }
+  },
+  ...[
+    ['超出序列化长度一位时保留两个完整条目', ['abc', 'def'], 12, [['abc'], ['def']]],
+    ['超出序列化长度两位时保留两个完整条目', ['abc', 'def'], 11, [['abc'], ['def']]],
+    ['空项和重复条目按数量分组，位置与个数保持一致', ['', '甲', '', '甲'], 100, [['', '甲'], ['', '甲']]],
+    ['含 JSON 转义符的元素按真实编码长度分包', ['a"b', 'c\\d'], 13, [['a"b'], ['c\\d']]],
+    ['单项中出现数组分隔符字面文本时保持值边界', ['a","b', 'z'], 12, [['a","b'], ['z']]],
+    ['表情按 JSON 的实际长度计算但保留完整字符', ['😀', '🚀'], 10, [['😀'], ['🚀']]]
+  ].map(([remark, input, size, expected]) => ({ remark, args: [input, size, 2], expected }))
 ]);

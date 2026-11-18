@@ -108,5 +108,22 @@ require('../helpers/module')(__filename, [
         await db.get(IDBKeyRange.bound(10, 20, true)) === 'second' &&
         await db.get(IDBKeyRange.lowerBound(20, true)) === undefined;
     }
+  },
+  {
+    remark: '读取结构化数据后修改副本，再次读取和枚举仍返回原对象及二进制数据',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      const value = { stamp: new Date(123456789), bytes: new Uint8Array([0, 255]), tags: new Map([['kind', 'a']]) };
+      await db.set('record', value);
+      const first = await db.get('record');
+      first.bytes[1] = 3;
+      first.tags.set('kind', 'b');
+      first.stamp.setTime(0);
+      const second = await db.get('record');
+      const [listed] = await db.list('record');
+      return second.stamp instanceof Date && second.stamp.getTime() === 123456789 &&
+        second.bytes instanceof Uint8Array && second.bytes[1] === 255 && second.tags.get('kind') === 'a' &&
+        listed.key === 'record' && listed.value.bytes[1] === 255 && listed.value.tags.get('kind') === 'a';
+    }
   }
 ]);

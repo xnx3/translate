@@ -57,5 +57,36 @@ require('../helpers/module')(__filename, [
       const result = translate.nomenclature.dispose('你好', '你好', 'Hello', { node });
       return result.find === true && result.resultText[0] === 'Hello' && node.nodeValue === 'Hello';
     }
+  },
+  {
+    remark: '批量术语结果保留空项与重复项的位置，只去重剩余待译文本',
+    args: [['', 'X', '甲X乙', '', '甲X乙'], 'X', '', null],
+    expected: { find: true, texts: ['', '甲', '乙'], resultText: ['', '', '甲乙', '', '甲乙'] }
+  },
+  {
+    remark: '批量术语保留美元与反斜杠字面值，译文含原词时不递归替换',
+    args: [['{ID}，{ID}', '{ID}'], '{ID}', '$&\\{ID}', null],
+    expected: { find: true, texts: ['，'], resultText: ['$&\\{ID}，$&\\{ID}', '$&\\{ID}'] }
+  },
+  {
+    remark: '批量术语写入控件指定属性时，正文和未命中的文本各自保留',
+    test: function () {
+      const node = document.createElement('input');
+      node.title = '您好';
+      node.value = '初始值';
+      translate.to = 'chinese_simplified';
+      const output = translate.nomenclature.dispose(['您好', '另一条'], '您', '你', { node, attribute: 'title' });
+      return output.find === true && JSON.stringify(output.resultText) === JSON.stringify(['你好', '另一条']) &&
+        JSON.stringify(output.texts) === JSON.stringify(['好', '另一条']) && node.title === '你好' && node.value === '初始值';
+    }
+  },
+  {
+    remark: '批量术语通过对象传入的 node 为 null 时保持原数组可复用',
+    test: function () {
+      const input = Object.freeze(['甲X', 'X', '甲X']);
+      const result = translate.nomenclature.dispose(input, 'X', '乙', { node: null });
+      return JSON.stringify(result.resultText) === JSON.stringify(['甲乙', '乙', '甲乙']) &&
+        result.find === true && result.texts.length === 1 && result.texts[0] === '甲';
+    }
   }
 ]);

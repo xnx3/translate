@@ -44,5 +44,24 @@ require('../helpers/module')(__filename, [
     translate.storage.set('speedDetectionControl_lasttime', Date.now());
     translate.request.speedDetectionControl.checkResponseSpeed = function () { calls++; };
     return translate.request.speedDetectionControl.getHostQueue().length === 1 && calls === 0;
+  } },
+  { remark: '测速记录在 59999、60000、60001 毫秒分别保留、保留和过期', test: function () {
+    const control = translate.request.speedDetectionControl, now = 100000;
+    const getTime = Date.prototype.getTime;
+    const checks = [];
+    let age;
+    control.checkResponseSpeed = function () { checks.push(age); };
+    Date.prototype.getTime = () => now;
+    try {
+      for (age of [59999, 60000, 60001]) {
+        control.hostQueue = [];
+        translate.storage.set('speedDetectionControl_lasttime', now - age);
+        const queue = control.getHostQueue();
+        if (queue.length !== 1 || queue[0].host !== location.origin + '/') return false;
+      }
+      return checks.length === 1 && checks[0] === 60001;
+    } finally {
+      Date.prototype.getTime = getTime;
+    }
   } }
 ]);

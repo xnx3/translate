@@ -38,5 +38,32 @@ require('../helpers/module')(__filename, [
     translate.request.speedDetectionControl.checkResponseSpeed();
     const queue = translate.request.speedDetectionControl.hostQueue;
     return queue.length === 1 && queue[0].host === 'https://failed.example/' && queue[0].time === translate.request.speedDetectionControl.disableTime && translate.request.speedDetectionControl.state === 2;
+  } },
+  { remark: '测速响应逆序完成时各节点分别计时，仅主节点扣减优先时间', test: function () {
+    const control = translate.request.speedDetectionControl;
+    translate.request.api.host = ['https://main.example/', 'https://other.example/'];
+    translate.request.api.connectTest = 'ping';
+    control.hostMasterNodeCutTime = 20;
+    const responses = new Map();
+    let now = 1000;
+    const getTime = Date.prototype.getTime;
+    Date.prototype.getTime = () => now;
+    translate.request.send = function (url, data, attached, success) { responses.set(data.host, success); };
+    try {
+      control.checkResponseSpeed();
+      if (control.state !== 1 || responses.size !== 2) return false;
+      now = 1050;
+      responses.get('https://other.example/')({ info: 'https://other.example/' });
+      now = 1060;
+      responses.get('https://main.example/')({ info: 'https://main.example/' });
+      const expected = [
+        { host: 'https://main.example/', time: 40 },
+        { host: 'https://other.example/', time: 50 }
+      ];
+      return control.state === 2 && JSON.stringify(control.hostQueue) === JSON.stringify(expected) &&
+        translate.storage.get('speedDetectionControl_hostQueue') === JSON.stringify(expected);
+    } finally {
+      Date.prototype.getTime = getTime;
+    }
   } }
 ]);

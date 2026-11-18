@@ -341,5 +341,70 @@ require('../helpers/module')(__filename, [
       text.parentNode === target && text.nodeValue === 'Hello' && record.originalText === '你好' && record.resultText === 'Hello' &&
       target.className === targetClasses && !oldParent.classList.contains('translatejs-text-element-hidden') &&
       !oldParent.classList.contains('translate_api_in_progress');
+  } },
+  { remark: 'UTF-8 BOM 与四字节字符逐字节到达时，多行 data 在 EOF 正确组装', test: async function () {
+    const bytes = new TextEncoder().encode('\uFEFFevent: done\ndata: {"result":1,\ndata: "text":["𠮷😀"]}');
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const byte of bytes) controller.enqueue(Uint8Array.of(byte));
+        controller.close();
+      }
+    });
+    window.fetch = async () => new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } });
+    return await new Promise(resolve => {
+      translate.request.sse.post('translate.json', {}, (value, data, xhr) => {
+        resolve(value.result === 1 && value.text[0] === '𠮷😀' && JSON.parse(xhr.responseText).text[0] === '𠮷😀');
+      }, () => resolve(false), () => resolve(false));
+    });
+  } },
+  { remark: '[D06] 重复终结事件及其后的 item 不再产生第二次业务完成或增量更新', test: async function () {
+    const wire = 'event: done\ndata: "first"\n\nevent: item\ndata: "late"\n\nevent: error\ndata: "second"\n\n';
+    window.fetch = async () => new Response(wire, { headers: { 'Content-Type': 'text/event-stream' } });
+    const completed = [], events = [], errors = [];
+    const first = new Promise(resolve => {
+      translate.request.sse.post('translate.json', {}, data => { completed.push(data); resolve(); },
+        () => { errors.push('abnormal'); resolve(); }, () => { errors.push('retry'); resolve(); },
+        { onEvent: name => events.push(name) });
+    });
+    await first;
+    // 所有块来自一个已关闭的内存响应；下一任务执行时已处理完同批数据。
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (completed.join(',') !== 'first' || events.join(',') !== 'done' || errors.length !== 0) {
+      throw new Error('事件=' + events + '，完成=' + completed + '，异常=' + errors);
+    }
+    return true;
+  } },
+  { remark: '[D06] done 已交付后底层读取失败不得再调用失败回调或切换 XHR', test: async function () {
+    let controller;
+    const stream = new ReadableStream({ start(c) {
+      controller = c;
+      c.enqueue(new TextEncoder().encode('event: done\ndata: {"result":1}\n\n'));
+    } });
+    window.fetch = async () => new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } });
+    const calls = [];
+    translate.request.response = () => calls.push('response');
+    await new Promise(resolve => translate.request.sse.post('translate.json', {}, data => {
+      calls.push('done ' + data.result);
+      controller.error(new Error('connection lost after done'));
+      resolve();
+    }, () => { calls.push('abnormal'); resolve(); }, () => { calls.push('retry'); resolve(); }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (calls.join(',') !== 'response,done 1') throw new Error('实际回调顺序为 ' + calls);
+    return true;
+  } },
+  { remark: '普通 JSON 响应体读取失败时只降级一次且不派发任何业务结果', test: async function () {
+    const calls = [];
+    window.fetch = async () => ({
+      status: 200, headers: new Headers({ 'Content-Type': 'application/json' }),
+      text: async () => { throw new Error('response body interrupted'); }
+    });
+    translate.request.response = () => calls.push('response');
+    await new Promise(resolve => {
+      const record = name => { calls.push(name); resolve(); };
+      translate.request.sse.post('translate.json', {}, () => record('complete'),
+        () => record('abnormal'), () => record('fallback'), { onEvent: () => record('event') });
+    });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return calls.join(',') === 'fallback';
   } }
 ]);

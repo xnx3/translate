@@ -24,7 +24,7 @@ module.exports = function registerModule(filename, cases) {
   cases.forEach((item, index) => {
     const title = `${method} / ${index + 1}. ${item.remark}`;
     const custom = Object.hasOwn(item, 'test');
-    const fields = custom ? ['remark', 'test'] : ['remark', 'args', 'expected'];
+    const fields = custom ? ['remark', 'test', 'input'] : ['remark', 'args', 'expected'];
     // 检查字段存在性，不能把 false、0、空字符串或 undefined 的预期误当缺失。
     // 同时拒绝约定之外的字段，避免旧 name/id 或拼错的字段被悄悄忽略。
     if (typeof item.remark !== 'string' || !item.remark.trim() ||
@@ -55,7 +55,7 @@ module.exports = function registerModule(filename, cases) {
       if (custom) {
         // Playwright 在浏览器执行函数并等待 Promise；只有布尔 true 通过。
         // false、漏写 return、其他类型、抛错和超时都保留为真实失败。
-        expect(await page.evaluate(item.test)).toBe(true);
+        expect(await page.evaluate(item.test, item.input)).toBe(true);
       } else {
         const actual = await page.evaluate(async ({ method, args }) => {
           const parts = method.split('.');

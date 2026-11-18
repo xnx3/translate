@@ -40,5 +40,35 @@ require('../helpers/module')(__filename, [
       const result = translate.nomenclature.replace('你好', '你好', 'Hello');
       return result.find === true && result.resultText === 'Hello' && result.texts.length === 0;
     }
-  }
+  },
+  {
+    remark: '替换 Attr 术语只更新目标属性，保留元素正文及相邻属性',
+    test: function () {
+      translate.to = 'chinese_simplified';
+      const element = document.createElement('button');
+      element.title = '欢迎用户';
+      element.textContent = '正文用户';
+      element.setAttribute('aria-label', '用户');
+      document.body.append(element);
+      const result = translate.nomenclature.replace('欢迎用户', '用户', '访客', { node: element.getAttributeNode('title') });
+      return element.title === '欢迎访客' && element.textContent === '正文用户' &&
+        element.getAttribute('aria-label') === '用户' && result.resultText === '欢迎访客' &&
+        result.find === true && JSON.stringify(result.texts) === JSON.stringify(['欢迎']);
+    }
+  },
+  {
+    remark: '替换控件实时 value 时保留独立的默认 value 属性',
+    test: function () {
+      translate.to = 'chinese_simplified';
+      const field = document.createElement('input');
+      field.setAttribute('value', '默认');
+      field.value = '当前用户';
+      document.body.append(field);
+      const result = translate.nomenclature.replace(field.value, '用户', '访客', { node: field, attribute: 'value' });
+      return field.value === '当前访客' && field.defaultValue === '默认' &&
+        result.resultText === '当前访客' && result.texts.length === 1 && result.texts[0] === '当前';
+    }
+  },
+  { remark: '节点信息对象为空时仍返回完整替换结果', args: ['甲乙甲', '甲', '丁', {}], expected: { find: true, texts: ['乙'], resultText: '丁乙丁' } },
+  { remark: '节点信息明确为 null 时仍可替换到空字符串', args: ['甲乙甲', '甲', '', { node: null }], expected: { find: true, texts: ['乙'], resultText: '乙' } }
 ]);

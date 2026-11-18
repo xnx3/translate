@@ -1393,5 +1393,53 @@ require('../helpers/module')(__filename, [
       if (errors.length) throw new Error(errors.join('；'));
       return true;
     }
+  })),
+  ...[
+    ['mixed', '启用分组时登记区域交给处理器，其他节点分别命中缓存和普通请求'],
+    ['missing', '未安装分组处理器时登记区与区域外正文均走普通翻译'],
+    ['disabled', '禁用翻译接口时登记区域沿用普通缓存且不派发分组'],
+    ['throw', '分组准备期间的用户条件抛错后普通缓存与请求仍可完成']
+  ].map(([input, remark]) => ({
+    remark, input,
+    test: function (mode) {
+      const root = document.createElement('div');
+      root.innerHTML = '<p>分组<b>强调</b></p><aside>缓存</aside><section>请求</section>';
+      document.body.append(root);
+      const [region, cached, requested] = root.children, first = region.firstChild, second = region.lastChild.firstChild;
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified'); translate.to = 'english';
+      translate.request.sse.use = false;
+      translate.whole.enableAll();
+      if (mode === 'throw') translate.group.addElements(region, () => { throw new Error('用户区域筛选出错'); });
+      else translate.group.addElements(region);
+      const groups = [], requests = [];
+      if (mode === 'missing') translate.group._executeGroups = undefined;
+      else translate.group._executeGroups = (uuid, batch) => groups.push(...batch);
+      const words = { '分组': 'Group', '强调': 'Bold', '缓存': 'Cache', '请求': 'Request' };
+      const cache = original => translate.storage.set('hash_english_' + translate.util.hash(original), words[original]);
+      cache('缓存');
+      if (mode !== 'mixed') { cache('分组'); cache('强调'); }
+      if (mode === 'disabled') translate.request.api.translate = '';
+      window.XMLHttpRequest = class {
+        open() {}
+        setRequestHeader() {}
+        send() { requests.push(this); }
+      };
+      translate.execute(root);
+      if (cached.textContent !== 'Cache') throw new Error('普通内容未命中缓存');
+      if (mode === 'disabled') return !groups.length && !requests.length && requested.textContent === '请求' &&
+        first.nodeValue.trim() === 'Group' && second.nodeValue === 'Bold' && translate.state === 0;
+      if (requests.length !== 1) throw new Error('普通请求数量 ' + requests.length);
+      const xhr = requests[0], sent = JSON.parse(decodeURIComponent(xhr.data.text));
+      if (JSON.stringify(sent) !== JSON.stringify(['请求'])) throw new Error('普通请求收到 ' + JSON.stringify(sent));
+      xhr.readyState = 4; xhr.status = 200;
+      xhr.response = xhr.responseText = JSON.stringify({ result: 1, from: xhr.data.from, to: 'english', text: ['Request'] });
+      xhr.onreadystatechange();
+      if (requested.textContent !== 'Request') return false;
+      if (mode !== 'mixed') return !groups.length && first.nodeValue.trim() === 'Group' && second.nodeValue === 'Bold';
+      return groups.length === 1 && groups[0].to === 'english' && groups[0].nodes[0] === first &&
+        groups[0].nodes[1] === second && JSON.stringify(groups[0].words) ===
+        JSON.stringify([{ text: '分组', weight: 0 }, { text: '强调', weight: 1 }]);
+    }
   }))
 ]);

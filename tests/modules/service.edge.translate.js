@@ -92,5 +92,34 @@ require('../helpers/module')(__filename, [
       translate.service.edge.translate('translate.json', { from: 'auto', to: 'english', text: encodeURIComponent('["text"]') }, function (data) { result = data; });
       return result.text.length === 1 && result.text[0] === '';
     }
+  },
+  {
+    remark: '序列化正文在 40000 字符时原批发送，多一字符时分批且保留原始全文',
+    test: function () {
+      const calls = [];
+      translate.request.send = function (url, body) { calls.push(JSON.parse(body)); };
+      const first = '甲'.repeat(20000);
+      const second = '乙'.repeat(19993);
+      const send = texts => translate.service.edge.translate('translate.json', {
+        from: 'auto', to: 'english', text: encodeURIComponent(JSON.stringify(texts))
+      }, function () {});
+      send([first, second]);
+      if (calls.length !== 1 || JSON.stringify(calls[0]) !== JSON.stringify([first, second])) return false;
+      calls.length = 0;
+      send([first, second + '丙']);
+      return JSON.stringify(calls) === JSON.stringify([[first], [second + '丙']]);
+    }
+  },
+  {
+    remark: '恰好 900 项只发送一批，非 BMP 字符和重复项保留全部位置',
+    test: function () {
+      const input = Array.from({ length: 900 }, (_, i) => i % 2 === 0 ? '😀' : '中文');
+      const calls = [];
+      translate.request.send = function (url, body) { calls.push(JSON.parse(body)); };
+      translate.service.edge.translate('translate.json', {
+        from: 'auto', to: 'english', text: encodeURIComponent(JSON.stringify(input))
+      }, function () {});
+      return calls.length === 1 && JSON.stringify(calls[0]) === JSON.stringify(input);
+    }
   }
 ]);

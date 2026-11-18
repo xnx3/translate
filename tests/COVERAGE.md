@@ -1,6 +1,43 @@
 # 方法测试覆盖及验证记录
 
-最近更新：2026-11-16（北京时间）。每次实际验证与历史分批基线分别记录，后续代码或用例变化后需要重新运行并更新结果。
+最近更新于 2026-11-18（北京时间）。
+
+## 当前源码严格回归
+
+分组源码提交为 `62c946e`，测试快照为 `058bf06f`。为避免工作区的并行编辑影响结果，使用固定源码、本地模拟接口和独立 Chromium 页面执行。按 Playwright 实际发现的用例对照 `26c7dfd3`，原 3,138 项全部保留。本次纳入工作区原有的 102 项分组测试，另编写 272 项，合计 282 个具名入口、3,512 项方法用例。方法与实参的逐项说明可用 `npm --prefix tests run test:cases` 查看。用例按输入等价类、边界、状态和可观察结果组织。
+
+| 源码测试 | 总数 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: | ---: |
+| 逐方法测试 | 3,512 | 3,480 | 32 | 0 |
+| 浏览器场景 | 48 | 43 | 4 | 1 |
+
+六个分组辅助方法共 180 项全部通过。其中 42 项验证 `_collectGroups` 的范围、文本、权重、顺序和节点身份，36 项验证 `_prepareGroups` 的队列迁移、重入和数据保留。其余 102 项验证扫描范围、覆盖判定和段落边界。
+
+首次全量运行后，以单个 worker、每项 45 秒的上限复跑全部 32 个失败方法用例，失败项逐条一致，两次均无 Playwright 超时。下表的编号对应测试标题中的序号。运行 `npm --prefix tests run test:source -- "modules/selectionTranslate\.callTranslate"` 可单独复跑相应模块。全量命令为 `npm --prefix tests run test:source`。严格模式保留每项失败的退出状态。
+
+| 方法模块 | 失败编号 | 实测现象 |
+| --- | --- | --- |
+| [config.set](modules/config.set.js) | 108 | 恢复导出的配置后，追加忽略类的能力丢失。 |
+| [element.iframe.iframeJsInjector.injectJs](modules/element.iframe.iframeJsInjector.injectJs.js) | 4 | 子文档为 null 时继续读取 readyState。 |
+| [element.whileNodes](modules/element.whileNodes.js) | 4 | 自定义 input.value 的扫描目标不符合实时值用例预期。 |
+| [ignore.isIgnore](modules/ignore.isIgnore.js) | 20 | 祖先类名使用制表符或换行分隔时漏判。 |
+| [js.find](modules/js.find.js) | 12 | 未保留预期的嵌套函数引用。 |
+| [js.transObject](modules/js.transObject.js) | 14 | 首个字段被完全忽略后，后续字段回填时读取 undefined。 |
+| [language.textTranslateReplace](modules/language.textTranslateReplace.js) | 14 | 译文中的 `$&` 被解释成匹配原文。 |
+| [listener.callback](modules/listener.callback.js) | 5 | 节点移动导致批次中出现重复记录时漏处理后续节点。 |
+| [network.fetch.hookFetch](modules/network.fetch.hookFetch.js) | 11、12 | 改写请求后，进行中的 GET 取消和预先取消的 POST 都未得到保留。 |
+| [network.RequestHandler.handleForm](modules/network.RequestHandler.handleForm.js) | 1、2、3、4 | 表单字段的选择性替换和其他字段保留未达到预期。 |
+| [network.RequestHandler.handleJson](modules/network.RequestHandler.handleJson.js) | 1、4 | 指定的 JSON 字符串字段未按预期替换。 |
+| [offline.export](modules/offline.export.js) | 8、9、10 | 含反斜杠、反引号或模板表达式的文字导出后无法原样导入。 |
+| [offline.fullExtract.export](modules/offline.fullExtract.export.js) | 15、16、17 | 全量提取导出也无法往返保留这三类字面文本。 |
+| [offline.fullExtract.set](modules/offline.fullExtract.set.js) | 9 | 同一原文并发保存两种译文后，只能读回一种。 |
+| [request.sse.post](modules/request.sse.post.js) | 15 | CR 和 LF 恰好分属两个网络块时，事件解析不符合预期。 |
+| [selectionTranslate.callTranslate](modules/selectionTranslate.callTranslate.js) | 7、8 | 跨节点选区两端偏移相等时，正反向选词均漏发请求。 |
+| [selectLanguageTag.customLanguagesHandle](modules/selectLanguageTag.customLanguagesHandle.js) | 10、12、13 | 更换列表或服务后仍使用初次缓存的语言项。 |
+| [util.participleIndexFind](modules/util.participleIndexFind.js) | 11 | 单字符分词命中后未在用例限定时间内返回位置结果。 |
+| [util.split](modules/util.split.js) | 12、13 | 含双引号、反斜杠或换行的文本拆分后无法还原原文。 |
+
+4 个失败场景分别为父页面晚启动时已载入的 iframe、srcdoc iframe、初始 open Shadow DOM 和动态插入的 open Shadow DOM，实际页面均保留原文。1 个跳过项为尚未提供的 `clearCache` 接口。[iframe 场景](scenarios/iframe.spec.js) · [页面场景](scenarios/run.js)
 
 ## 术语处理结束后读取当前真实属性结果（4.1.36.20261116）
 

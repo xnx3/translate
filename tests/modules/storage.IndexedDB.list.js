@@ -284,5 +284,22 @@ require('../helpers/module')(__filename, [
       const rows = await translate.storage.IndexedDB.list('*');
       return rows.length === 1 && rows[0].key === 'ordinary' && rows[0].value === '普通值';
     }
+  },
+  {
+    remark: '非字符串查询模式拒绝后可继续枚举有效记录',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('saved', 1);
+      for (const pattern of [null, 0, false, {}, [], /saved/]) {
+        try {
+          await db.list(pattern);
+          return false;
+        } catch (error) {
+          if (!(error instanceof TypeError)) return false;
+        }
+      }
+      const rows = await db.list('*');
+      return rows.length === 1 && rows[0].key === 'saved' && rows[0].value === 1;
+    }
   }
 ]);

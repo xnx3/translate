@@ -307,5 +307,81 @@ require('../helpers/module')(__filename, [
       translate.listener.callback([{ type: 'characterData', target: node }, { type: 'characterData', target: node }]);
       return calls.length === 1 && calls[0].length === 1 && calls[0][0] === node;
     }
+  },
+  ...['text', 'element'].map(kind => ({
+    remark: (kind === 'text' ? '移动已翻译 Text' : '移动含已翻译 Text 的元素') + '后原文历史仍可用于还原',
+    input: kind,
+    test: function (kind) {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+      const root = document.createElement('div');
+      root.innerHTML = '<p><b>你好世界</b></p><aside></aside>';
+      document.body.append(root);
+      const element = root.querySelector('b'), text = element.firstChild;
+      translate.execute(root);
+      if (text.nodeValue !== 'Hello world') throw new Error('移动前的缓存翻译未完成');
+      translate.listener.addListener();
+      const observer = translate.listener.observer;
+      observer.disconnect();
+      observer.observe(root, { childList: true, subtree: true });
+      root.lastChild.append(kind === 'text' ? text : element);
+      const records = observer.takeRecords();
+      observer.disconnect();
+      translate.listener.callback(records, observer);
+      translate.reset({ selectLanguageRefreshRender: false });
+      if (text.nodeValue !== '你好世界') throw new Error('移动后还原得到 ' + JSON.stringify(text.nodeValue));
+      return root.lastChild.contains(text) && translate.node.get(text) == null;
+    }
+  })),
+  ...[
+    ['title', 'p'], ['placeholder', 'input'], ['alt', 'img'], ['data-label', 'span']
+  ].map(([attribute, tag]) => ({
+    remark: attribute + ' 连续编辑两次后翻译最终值，reset 还原最后一次用户输入',
+    input: { attribute, tag },
+    test: function ({ attribute, tag }) {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      const element = document.createElement(tag);
+      if (attribute === 'data-label') translate.element.tagAttribute[tag] = { attribute: [attribute] };
+      element.setAttribute(attribute, '原始内容'); document.body.append(element);
+      translate.storage.set('hash_english_' + translate.util.hash('原始内容'), 'Original');
+      translate.storage.set('hash_english_' + translate.util.hash('最终内容'), 'Final');
+      translate.execute(element);
+      const target = element.getAttributeNode(attribute);
+      if (target.value !== 'Original') throw new Error('首次属性翻译未完成');
+      translate.listener.addListener();
+      const observer = translate.listener.observer;
+      observer.disconnect();
+      observer.observe(element, { attributes: true, attributeOldValue: true });
+      element.setAttribute(attribute, '中间内容');
+      element.setAttribute(attribute, '最终内容');
+      const records = observer.takeRecords(); observer.disconnect();
+      translate.listener.callback(records, observer);
+      if (target.value !== 'Final') throw new Error('动态编辑后的属性值为 ' + JSON.stringify(target.value));
+      translate.reset({ selectLanguageRefreshRender: false });
+      return element.getAttributeNode(attribute) === target && target.value === '最终内容';
+    }
+  })),
+  {
+    remark: '真实记录中同一时刻替换 title Attr 再修改新值，只提交当前属性',
+    test: function () {
+      const element = document.createElement('div');
+      element.title = '原始内容'; document.body.append(element);
+      const old = element.getAttributeNode('title'), next = document.createAttribute('title');
+      next.value = '替换内容';
+      translate.listener.addListener();
+      const observer = translate.listener.observer; observer.disconnect();
+      observer.observe(element, { attributes: true, attributeOldValue: true });
+      element.setAttributeNode(next); element.title = '最终内容';
+      const records = observer.takeRecords(); observer.disconnect();
+      const calls = [];
+      translate.execute = docs => calls.push(docs);
+      translate.listener.callback(records, observer);
+      return records.length === 2 && old.ownerElement === null && next.value === '最终内容' &&
+        calls.length === 1 && calls[0].length === 1 && calls[0][0] === next;
+    }
   }
 ]);

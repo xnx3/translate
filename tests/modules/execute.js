@@ -1297,5 +1297,28 @@ require('../helpers/module')(__filename, [
         element.firstChild === text && text.nodeValue === 'Hello world' &&
         translate.node.get(text).originalText === '你好世界' && document.querySelector('aside').textContent === '不翻译';
     }
+  },
+  {
+    remark: '登记分组的元素仍可从普通缓存渲染，扫描保留各节点的首遇原文',
+    test: function () {
+      translate.selectLanguageTag.show = false;
+      translate.language.setLocal('chinese_simplified');
+      translate.to = 'english';
+      translate.whole.enableAll();
+      translate.storage.set('hash_english_' + translate.util.hash('你好世界'), 'Hello world');
+      translate.storage.set('hash_english_' + translate.util.hash('标题'), 'Title');
+      const root = document.createElement('p');
+      root.innerHTML = '你好世界<b>标题</b>';
+      document.body.append(root);
+      translate.group.addElements(root);
+      const first = root.firstChild, second = root.lastChild.firstChild;
+      let requests = 0;
+      translate.lifecycle.execute.translateNetworkBefore.push(() => { requests++; });
+      translate.execute(root);
+      const batch = Object.values(translate.nodeQueue).find(item => item.scan?.snapshots.has(first));
+      return requests === 0 && translate.state === 0 && first.nodeValue === 'Hello world\u00a0' && second.nodeValue === 'Title' &&
+        batch.scan.snapshots.get(first).text === '你好世界' && batch.scan.snapshots.get(second).text === '标题' &&
+        batch.scan.scopes.some(scope => scope.root === root && scope.complete === true);
+    }
   }
 ]);

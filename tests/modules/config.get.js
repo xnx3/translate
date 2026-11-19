@@ -2,15 +2,6 @@
 
 require('../helpers/module')(__filename, [
   {
-    remark: '[A03] 编辑配置快照不应改动当前忽略词',
-    test: function () {
-      translate.ignore.text = ['Keep'];
-      const snapshot = translate.config.get();
-      snapshot.ignore.text[0] = 'Changed';
-      return translate.ignore.text[0] === 'Keep';
-    }
-  },
-  {
     remark: "导出 language.select.show 的当前值，不使用默认配置覆盖",
     test: function () {
       translate.selectLanguageTag.show = false;

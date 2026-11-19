@@ -11,6 +11,7 @@ npm --prefix tests run test:source -- --grep C15
 
 ## 覆盖边界
 
+- **A02** 2026-11-19 按维护者确认的接口约定调整：不再要求直接导入配置时禁止跨文档 DOM。`element.iframe.use({url, setConfig})` 提供配置传递前的同步钩子，由调用者选择是否删除 `config.documents`。当前两个 A02 场景分别验证显式钩子下的首次自动注入与无 src 子页重新同步；未配置钩子时保留原有传递行为。上方及表格的固定源码计数保留历史实测。
 - **A09** 验证显式来源名单中允许及拒绝来源的判断。默认信任策略、实际发送窗口身份仍需结合对外兼容约定复核。
 - **A41** 固定无目标语言及显式指定其他语言时的现有返回值。文档应如何表述由维护者确认。
 - **F19** 验证 reset 会清空会话历史。长期运行期间是否需要容量上限、上限是多少，尚无产品约定，这个通过结果不能判断长期内存增长。
@@ -24,7 +25,7 @@ npm --prefix tests run test:source -- --grep C15
 | 编号 | 测试契约与文件 | 固定源码实测 |
 | --- | --- | --- |
 | A01 | [配置回导后仍可追加忽略类](modules/config.set.js) | 1 失败 |
-| A02 | [同源子页继承设置后只扫描本页范围](scenarios/audit-config.spec.js) | 1 失败 |
+| A02 | [显式配置钩子下的自动注入与重新同步范围](scenarios/audit-config.spec.js) | 旧用例 1 失败，现按接口约定调整，见覆盖边界 |
 | A03 | [编辑配置快照不应改动当前忽略词](modules/config.get.js) | 1 失败 |
 | A04 | [导入空语种范围清除旧筛选](modules/config.set.js)<br>[导入 false 关闭自动识别](modules/config.set.js) | 2 失败 |
 | A05 | [禁用 URL 控制时恢复自定义参数名且不消费 URL](modules/config.set.js) | 1 失败 |

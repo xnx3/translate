@@ -32,5 +32,27 @@ require('../helpers/module')(__filename, [
     iframe.contentDocument.documentElement.appendChild = function () { throw new Error('Document destroyed'); };
     var injector = new translate.element.iframe.iframeJsInjector(iframe, '/selected.js'); injector.importJsAndTranslateExecute();
     return iframe.contentDocument.querySelectorAll('script').length === 0;
+  } },
+  { remark: '首次注入在导入前以目标窗口调用配置钩子，原地修改无需返回值', test: function () {
+    var iframe = document.createElement('iframe'); document.body.append(iframe);
+    var script, received, target, order = [], config = { documents: [document.body], marker: 'parent' };
+    translate.element.iframe.use({ url: '/selected.js', setConfig: function (value, iframeWindow) {
+      target = iframeWindow;
+      order.push('hook');
+      delete value.documents;
+      value.marker = 'child';
+    } });
+    translate.config.get = function () { return config; };
+    iframe.contentWindow.translate = {
+      config: { set: function (value) { order.push('set'); received = value; } },
+      language: { getCurrent: function () { return 'english'; } },
+      execute: function () { order.push('execute'); }
+    };
+    iframe.contentDocument.documentElement.appendChild = function (node) { script = node; return node; };
+    window.setTimeout = function (callback, delay) { if (delay === 10) callback(); return 1; };
+    new translate.element.iframe.iframeJsInjector(iframe, '/selected.js').importJsAndTranslateExecute();
+    script.onload();
+    return target === iframe.contentWindow && received === config && !Object.hasOwn(received, 'documents') &&
+      received.marker === 'child' && JSON.stringify(order) === '["hook","set","execute"]';
   } }
 ]);

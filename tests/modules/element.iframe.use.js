@@ -8,5 +8,20 @@ require('../helpers/module')(__filename, [
     var map = translate.element.iframe.iframeMap;
     translate.element.iframe.use('/first.js'); translate.element.iframe.use('/second.js');
     return translate.element.iframe.isUse === true && translate.element.iframe.translateJsUrl === '/second.js' && translate.element.iframe.iframeMap === map;
+  } },
+  { remark: '对象形式读取 url 并保留配置钩子及扩展选项', test: function () {
+    var hook = function () {};
+    var options = { url: '/custom.js', setConfig: hook, futureOption: 'keep' };
+    translate.element.iframe.use(options);
+    return translate.element.iframe.isUse === true && translate.element.iframe.translateJsUrl === '/custom.js' &&
+      translate.element.iframe.options === options && translate.element.iframe.options.setConfig === hook &&
+      translate.element.iframe.options.futureOption === 'keep';
+  } },
+  { remark: '对象形式后重新使用字符串地址时清除旧配置钩子', test: function () {
+    var calls = 0;
+    translate.element.iframe.use({ url: '/custom.js', setConfig: function () { calls++; } });
+    translate.element.iframe.use('/legacy.js');
+    return translate.element.iframe.translateJsUrl === '/legacy.js' &&
+      typeof translate.element.iframe.options.setConfig === 'undefined' && calls === 0;
   } }
 ]);

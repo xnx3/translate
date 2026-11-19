@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.40.20261119',
+	version: '4.1.41.20261119',
 	
 	/*js translate.config start*/
 	/*
@@ -6585,14 +6585,21 @@ var translate = {
 		iframe:{
 			isUse:false, //是否启用，对非跨域的iframe的页面也进行自动翻译。true则是启用。默认是false为不启用
 			translateJsUrl: '', //设置载入的 translate.js 这个文件的url， iframe 中会自动
+			options:{}, //use 传入的配置；setConfig 在配置传给子页前同步调用
 			//启用对同域的iframe也进行翻译（即使页面中没有引入 translate.js）
-			use: function(translateJsUrl){
+			//兼容脚本地址字符串；对象形式为 {url: '脚本地址', setConfig: function(config, iframeWindow){...}}
+			use: function(options){
 				if(typeof(window.location.protocol) === 'string' && window.location.protocol.toLowerCase() === 'file:'){
 					console.log('ERROR: 您当前设置了 translate.element.iframe.use(...); 但是您当前的协议是file协议访问的，这个协议访问会存在跨域问题，所以您的设置没有生效。 您可以通过本地开一个访问服务，以 http、https 等正常请求的方式进行访问。');
 					return;
 				}
+				if(typeof(options) === 'string'){
+					options = {url: options};
+				}
+				options = options || {};
 				translate.element.iframe.isUse = true;
-				translate.element.iframe.translateJsUrl = translateJsUrl;
+				translate.element.iframe.translateJsUrl = options.url;
+				translate.element.iframe.options = options;
 			},
 			/*
 				用于记录已经操作过的iframe
@@ -6694,6 +6701,9 @@ var translate = {
 							//onload 回调创建于当前注入窗口，应将该窗口的配置传给目标 iframe。
 							//当前窗口也可能处于 iframe 中，其 parent 可能没有加载本库或使用不同配置。
 							var parentConfigData = translate.config.get();
+							if(typeof(translate.element.iframe.options.setConfig) === 'function'){
+								translate.element.iframe.options.setConfig(parentConfigData, iframeContentWindow);
+							}
 							iframeContentWindow.translate.config.set(parentConfigData);
 							iframeContentWindow.translate.to = iframeContentWindow.translate.language.getCurrent();
 							//iframeContentWindow.translate.time.use = true;
@@ -6792,7 +6802,11 @@ var translate = {
 					var iframeWindow = iframeTag.contentWindow;
 					if(iframeTag.contentDocument && typeof(iframeWindow.translate) === 'object' && typeof(iframeWindow.translate.version) === 'string'){
 						//沿用原注入成功后的配置同步、目标语种设置和延迟翻译，保证再次扫描仍能翻译新内容。
-						iframeWindow.translate.config.set(translate.config.get());
+						var parentConfigData = translate.config.get();
+						if(typeof(translate.element.iframe.options.setConfig) === 'function'){
+							translate.element.iframe.options.setConfig(parentConfigData, iframeWindow);
+						}
+						iframeWindow.translate.config.set(parentConfigData);
 						iframeWindow.translate.to = iframeWindow.translate.language.getCurrent();
 						setTimeout(function(){
 							iframeWindow.translate.execute();

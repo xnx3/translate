@@ -52,5 +52,30 @@ require('../helpers/module')(__filename, [
     translate.element.iframe.isUse = true; translate.element.iframe.iframeJsInjector = class { injectJs() { injected++; } };
     translate.element.iframe.execute(iframe);
     return injected === 0 && !translate.element.iframe.iframeMap.has(iframe);
+  } },
+  { remark: '复用已加载的无 src 子页时每次同步均先调用配置钩子且不重新注入', test: function () {
+    var iframe = document.createElement('iframe'); document.body.append(iframe);
+    var targets = [], received = [], order = [], injected = 0;
+    translate.element.iframe.use({ url: '/selected.js', setConfig: function (config, iframeWindow) {
+      targets.push(iframeWindow);
+      order.push('hook');
+      delete config.documents;
+      config.marker = 'child-' + targets.length;
+    } });
+    translate.config.get = function () { return { documents: [document.body], marker: 'parent' }; };
+    iframe.contentWindow.translate = {
+      version: 'v-test',
+      config: { set: function (value) { order.push('set'); received.push(value); } },
+      language: { getCurrent: function () { return 'english'; } },
+      execute: function () { order.push('execute'); }
+    };
+    translate.element.iframe.iframeJsInjector = class { injectJs() { injected++; } };
+    window.setTimeout = function (callback, delay) { if (delay === 10) callback(); return 1; };
+    translate.element.iframe.execute(iframe);
+    translate.element.iframe.execute(iframe);
+    return injected === 0 && targets.length === 2 && targets[0] === iframe.contentWindow && targets[1] === iframe.contentWindow &&
+      received.length === 2 && received[0].marker === 'child-1' && received[1].marker === 'child-2' &&
+      !Object.hasOwn(received[0], 'documents') && !Object.hasOwn(received[1], 'documents') &&
+      JSON.stringify(order) === '["hook","set","execute","hook","set","execute"]';
   } }
 ]);

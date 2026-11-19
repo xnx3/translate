@@ -2,11 +2,47 @@
 
 const { test, expect } = require('../helpers/audit');
 
-test('[A02] 同源子页继承设置后只扫描本页范围', async ({ page }) => {
-  const actual = await page.evaluate(async () => {
+test('[A02] 自动注入前通过 setConfig 省略父页 DOM 范围', async ({ page }) => {
+  await page.evaluate(() => {
+    const parentArea = document.body.appendChild(document.createElement('article'));
+    parentArea.id = 'a02-parent-area';
+    translate.setDocuments([parentArea]);
+    window.__a02ParentDocuments = translate.getDocuments();
+    translate.request.appendParams = { a02Marker: 'injected' };
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    frame.id = 'a02-child';
+    translate.element.iframe.use({
+      url: document.querySelector('script[src*="translate"]').src,
+      setConfig(config, iframeWindow) {
+        window.__a02HookTarget = iframeWindow;
+        delete config.documents;
+      }
+    });
+    translate.element.iframe.execute(frame);
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const instance = document.querySelector('#a02-child').contentWindow.translate;
+    return instance && instance.executeTriggerNumber > 0 && instance.request.appendParams.a02Marker;
+  })).toBe('injected');
+  expect(await page.evaluate(() => {
+    const frame = document.querySelector('#a02-child');
+    const scopes = frame.contentWindow.translate.getDocuments();
+    return {
+      hookTarget: window.__a02HookTarget === frame.contentWindow,
+      childScope: scopes.length === 1 && scopes[0] === frame.contentDocument.documentElement,
+      parentScope: translate.getDocuments() === window.__a02ParentDocuments &&
+        translate.getDocuments()[0] === document.querySelector('#a02-parent-area')
+    };
+  })).toEqual({ hookTarget: true, childScope: true, parentScope: true });
+});
+
+test('[A02] 无 src 子页重同步前通过 setConfig 保留自身 DOM 范围', async ({ page }) => {
+  await page.evaluate(async () => {
     const parentArea = document.body.appendChild(document.createElement('article'));
     translate.setDocuments([parentArea]);
+    window.__a02ParentDocuments = translate.getDocuments();
     const frame = document.body.appendChild(document.createElement('iframe'));
+    frame.id = 'a02-child';
     const child = frame.contentDocument;
     const script = child.createElement('script');
     script.src = document.querySelector('script[src*="translate"]').src;
@@ -15,11 +51,34 @@ test('[A02] 同源子页继承设置后只扫描本页范围', async ({ page }) 
       script.onerror = reject;
       child.head.append(script);
     });
-    const instance = frame.contentWindow.translate;
-    instance.config.set(translate.config.get());
-    return Array.from(instance.getDocuments()).every(node => node.ownerDocument === child);
+    const childArea = child.body.appendChild(child.createElement('section'));
+    frame.contentWindow.translate.setDocuments([childArea]);
+    window.__a02ChildDocuments = frame.contentWindow.translate.getDocuments();
+    translate.request.appendParams = { a02Marker: 'resynchronized' };
+    translate.element.iframe.use({
+      url: script.src,
+      setConfig(config, iframeWindow) {
+        window.__a02HookTarget = iframeWindow;
+        delete config.documents;
+      }
+    });
+    translate.element.iframe.execute(frame);
   });
-  expect(actual).toEqual(true);
+  await expect.poll(() => page.evaluate(() => {
+    const instance = document.querySelector('#a02-child').contentWindow.translate;
+    return instance.executeTriggerNumber > 0 && instance.request.appendParams.a02Marker;
+  })).toBe('resynchronized');
+  expect(await page.evaluate(() => {
+    const frame = document.querySelector('#a02-child');
+    const scopes = frame.contentWindow.translate.getDocuments();
+    return {
+      hookTarget: window.__a02HookTarget === frame.contentWindow,
+      childScope: scopes === window.__a02ChildDocuments && scopes.length === 1 &&
+        scopes[0].ownerDocument === frame.contentDocument,
+      parentScope: translate.getDocuments() === window.__a02ParentDocuments,
+      scripts: frame.contentDocument.querySelectorAll('script[src*="translate"]').length
+    };
+  })).toEqual({ hookTarget: true, childScope: true, parentScope: true, scripts: 1 });
 });
 
 test('[A08] 有待处理的列表请求时刷新只保留一个选择框', async ({ page }) => {

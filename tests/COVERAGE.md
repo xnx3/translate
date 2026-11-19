@@ -1,6 +1,21 @@
 # 方法测试覆盖及验证记录
 
-最近更新于 2026-11-18（北京时间）。
+最近更新于 2026-11-19（北京时间）。
+
+## iframe 可选配置处理钩子（4.1.41.20261119）
+
+`translate.element.iframe.use()` 兼容原脚本地址字符串，也支持 `{url, setConfig}`。首次注入与已加载无 src 子页重新同步前，均同步调用 `setConfig(config, iframeWindow)`，由调用者决定是否省略父页 DOM 范围。不提供钩子时保持原有传递行为。用法及引用语义见 [iframe 文档](../doc/translate.element.iframe.md)。
+
+三个 iframe 方法模块保留原用例，追加四项独立回归，覆盖对象参数、字符串重设清除旧钩子、两条同步路径的调用顺序及目标窗口。原 A02 的直接导入断言按维护者确认的约定调整为真实自动注入，并新增无 src 子页重同步场景；两项显式配置钩子，检查父页范围不变、子页范围与其他配置正常继承。
+
+本轮源码严格模式分两批实跑：配置导入导出、全部 iframe 方法及 iframe 浏览器场景共 220 项，214 通过、6 项原有失败；A02 两项全部通过。合计 222 项，216 通过、6 项失败，无跳过、重试或超时。第一批 220 项中的四项新增方法测试均通过，其余 216 项与此前源码基线逐条比较结果一致。六项失败仍为 config.set 的 A04 两项及 A05、iframeJsInjector.injectJs 的 B16，以及已加载 src 和 srcdoc 的两个注入场景，未作豁免。
+
+```shell
+npm --prefix tests run test:source -- modules/config.get modules/config.set modules/element.iframe scenarios/iframe.spec.js --workers=3
+npm --prefix tests run test:source -- --grep A02
+```
+
+方法清点通过：291 个入口、3,751 项方法用例。仅复测上述源码范围，压缩文件未更新，也未重跑全量测试。
 
 ## 追加的参数与状态回归
 

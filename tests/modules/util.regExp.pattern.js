@@ -18,5 +18,9 @@ require('../helpers/module')(__filename, [
       const regex = new RegExp('^' + pattern + '$');
       return regex.test(value) && !regex.test('abbbc0');
     }
-  }
+  },
+  { remark: '[C13] 转义后的句点只匹配字面句点', test: function () {
+    const pattern = new RegExp('^' + translate.util.regExp.pattern('a.b') + '$');
+    return pattern.test('a.b') && !pattern.test('axb');
+  } }
 ]);

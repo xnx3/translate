@@ -10,5 +10,14 @@ require('../helpers/module')(__filename, [
     const input = [a, b];
     const actual = translate.visual.coordinateSort(input);
     return actual[0] === b && actual[1] === a && input[0] === a && input[1] === b;
-  } }
+  } },
+  {
+    remark: '参数组合：同一行的负坐标与零坐标相遇时按水平位置排序，下一行独立',
+    test: function () {
+      const left = {top: -4, left: -1}, right = {top: -1, left: 0};
+      const next = {top: 6, left: -20};
+      const ordered = translate.visual.coordinateSort([next, right, left]);
+      return ordered[0] === left && ordered[1] === right && ordered[2] === next;
+    }
+  }
 ]);

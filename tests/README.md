@@ -6,6 +6,10 @@
 
 ## 当前源码回归
 
+针对 11 月 18 日审查的问题，运行 `npm --prefix tests run test:audit`。单项可用 `npm --prefix tests run test:source -- --grep C15` 这样的编号筛选。完整编号、对应测试文件和覆盖边界见 [审查回归索引](AUDIT-1118.md)。
+
+后续的参数组合用例也在对应的同名方法模块中。运行 `npm --prefix tests run test:source -- --grep "参数组合："` 可单独检查这批输入。省略筛选时，完整源码测试会一并执行这些用例。
+
 在仓库根目录运行。源码命令会准备测试依赖和浏览器，先比对方法签名及 Playwright 实际发现的用例，再执行严格模式。方法或场景出现失败即返回非零退出码。
 
 ```shell

@@ -51,5 +51,24 @@ require('../helpers/module')(__filename, [
       const result = translate.lifecycle.execute.translateNetworkAfter_Trigger(data);
       return result === undefined && count === 2 && received === data;
     }
-  }
+  },
+  ...[
+    { label: '网络失败后同目标重试成功', firstResult: 0, secondResult: 1 },
+    { label: '成功请求后另一语种请求失败', firstResult: 1, secondResult: 0 }
+  ].map(input => ({
+    remark: '参数组合：' + input.label + '分别交付对应请求的节点、原文及结果',
+    input,
+    test: function ({ firstResult, secondResult }) {
+      const events = translate.lifecycle.execute;
+      const one = document.createTextNode('one'), two = document.createTextNode('two');
+      const first = { uuid: 'u', from: 'english', to: 'french', nodes: [one], texts: ['one'], result: firstResult, info: firstResult ? '' : 'offline' };
+      const second = { uuid: 'v', from: firstResult ? 'deutsch' : 'english', to: 'french', nodes: [two], texts: ['two'], result: secondResult, info: secondResult ? '' : 'offline' };
+      const received = [];
+      events.translateNetworkAfter = [data => received.push(data)];
+      events.translateNetworkAfter_Trigger(first); events.translateNetworkAfter_Trigger(second);
+      return received.length === 2 && received[0] === first && received[1] === second &&
+        received[0].nodes[0] === one && received[1].nodes[0] === two &&
+        received[0].result === firstResult && received[1].result === secondResult;
+    }
+  }))
 ]);

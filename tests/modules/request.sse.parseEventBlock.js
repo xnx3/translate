@@ -19,5 +19,15 @@ require('../helpers/module')(__filename, [
     expected: { name: 'done', data: 'first\n\nlast', dataText: 'first\n\nlast', dispatch: true } },
   { remark: '字段名区分大小写，类似 Data 的未知字段不派发业务事件',
     args: ['event: item\nData: ignored\ndata-extra: ignored'],
-    expected: { name: 'item', data: '', dataText: '', dispatch: false } }
+    expected: { name: 'item', data: '', dataText: '', dispatch: false } },
+  {
+    remark: '参数组合：多行 JSON 中混入注释和重试字段时只拼接 data 行',
+    args: ['event: item\ndata: [0,\n:still here\nretry: 3000\ndata: false,\ndata: null]'],
+    expected: { name: 'item', data: [0, false, null], dataText: '[0,\nfalse,\nnull]', dispatch: true }
+  },
+  {
+    remark: '参数组合：显式空事件名与带冒号的 JSON 字符串分别保留默认类型和正文',
+    args: ['event: done\nid: 7\nevent:\ndata: "book: two"'],
+    expected: { name: 'message', data: 'book: two', dataText: '"book: two"', dispatch: true }
+  }
 ]);

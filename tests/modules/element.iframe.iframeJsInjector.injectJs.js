@@ -20,7 +20,7 @@ require('../helpers/module')(__filename, [
     injector.injectJs();
     return calls === 0;
   } },
-  { remark: '浏览器不允许访问 iframe 文档而返回 null 时安全跳过，不造成页面异常', test: function () {
+  { remark: '[B16] 浏览器不允许访问 iframe 文档而返回 null 时安全跳过，不造成页面异常', test: function () {
     var iframe = document.createElement('iframe'); document.body.append(iframe);
     Object.defineProperty(iframe, 'contentDocument', { get: function () { return null; } });
     var injector = new translate.element.iframe.iframeJsInjector(iframe, '/selected.js'), calls = 0;

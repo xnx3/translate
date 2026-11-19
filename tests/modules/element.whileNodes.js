@@ -386,7 +386,7 @@ require('../helpers/module')(__filename, [
     translate.element.whileNodes('unit', root);
     return JSON.stringify(calls) === '["正文"]';
   } },
-  { remark: '自定义 input value 使用实时值且绑定元素本身，不使用过期的 HTML Attr', test: function () {
+  { remark: '[B27] 自定义 input value 使用实时值且绑定元素本身，不使用过期的 HTML Attr', test: function () {
     var root = document.createElement('div'), input = document.createElement('input'); input.setAttribute('value', '旧值'); input.value = '当前值'; root.append(input); document.body.append(root);
     translate.element.tagAttribute.input = { attribute: ['value'], condition: function () { return true; } }; var calls = [];
     translate.addNodeToQueue = function () { calls.push(Array.from(arguments)); };
@@ -491,5 +491,19 @@ require('../helpers/module')(__filename, [
     return caught === failure && scopes.length === 2 && !scopes[0].complete && scopes[1].complete &&
       scopes[0].events.map(event => event.type).join(',') === 'enter,text,enter' &&
       scopes[0].events[2].snapshot === snapshots.get(span) && !snapshots.has(span.firstChild);
-  } }
+  } },
+  { remark: '参数组合：没有宿主的 title 不入队，绑定到元素后可以重新扫描同一属性',
+    test: function () {
+      const attr = document.createAttribute('title');
+      attr.value = '标题';
+      const host = document.body.appendChild(document.createElement('span'));
+      const requests = [];
+      translate.addNodeToQueue = (uuid, node, text) => requests.push({uuid, node, text});
+      translate.element.whileNodes('detached', attr);
+      if (requests.length) return false;
+      host.setAttributeNode(attr);
+      translate.element.whileNodes('attached', attr);
+      return requests.length === 1 && requests[0].uuid === 'attached' &&
+        requests[0].node === attr && requests[0].text === '标题' && attr.ownerElement === host;
+    } }
 ]);

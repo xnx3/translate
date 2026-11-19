@@ -2,6 +2,13 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A33] 读取 Windows 换行不在译文尾部留下回车',
+    test: function () {
+      translate.offline.append('english', '甲=First\r\n乙=Second');
+      return translate.storage.get('hash_english_' + translate.util.hash('甲')) === 'First';
+    }
+  },
+  {
     remark: "单条离线术语写入目标语种缓存",
     test: function () {
       translate.offline.append('english', "你好=Hello");

@@ -16,5 +16,6 @@ require('../helpers/module')(__filename, [
       translate.util.arrayFindMaxNumber(input);
       return input.length === 3 && input[0] === 'b' && input[1] === 'a' && input[2] === 'b';
     }
-  }
+  },
+  { remark: '[G04] 普通文本 constructor 可参与正常计数', args: [['constructor', 'label', 'constructor']], expected: ['constructor'] }
 ]);

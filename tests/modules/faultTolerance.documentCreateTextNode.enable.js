@@ -75,5 +75,17 @@ require('../helpers/module')(__filename, [
       const node=document.createTextNode('original');
       return translate.faultTolerance.documentCreateTextNode.node.get(node).originalText==='original' && translate.node.get(node).resultText==='translated';
     }
-  }
+  },
+  { remark: '[G03] 已有历史译文也要保留忽略区域中新插入的原文', test: async function () {
+    const ignored = document.createElement('code');
+    document.body.append(ignored);
+    translate.faultTolerance.documentCreateTextNode.use();
+    translate.executeTriggerNumber = 1;
+    translate.history.translateText.originalMap.set('Print', 'Imprimer');
+    translate.faultTolerance.documentCreateTextNode.enable();
+    ignored.append(document.createTextNode('Print'));
+    // 允许延迟到节点挂载后才判断其翻译范围的实现。
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return ignored.textContent === 'Print';
+  } }
 ]);

@@ -42,5 +42,13 @@ require('../helpers/module')(__filename, [
     translate.request.appendParams = { extra: 'value' };
     translate.enterprise.key = 'key';
     return translate.request.buildPostParams('raw=body', { stream: 1 }) === 'raw=body';
+  } },
+  { remark: '参数组合：全局值、企业设置和本次传输重叠时显式的空值与 false 仍最高优先', test: function () {
+    translate.request.appendParams = { key: 'general', stream: 1, constant: 0 };
+    translate.enterprise.key = 'fixture';
+    const data = { key: 'local', stream: 2 };
+    const result = new URLSearchParams(translate.request.buildPostParams(data, { key: '', stream: false }));
+    return result.has('key') && result.get('key') === '' && result.get('stream') === 'false' &&
+      result.get('constant') === '0' && result.getAll('key').length === 1;
   } }
 ]);

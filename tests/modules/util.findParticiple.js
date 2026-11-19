@@ -34,5 +34,9 @@ require('../helpers/module')(__filename, [
       translate.util.findParticiple('你好，你', '你', words);
       return words.length === 2 && words[0] === '你好' && words[1] === '再见';
     }
-  }
+  },
+  { remark: '[C10] 305 个独立命中保留全部位置', test: function () {
+    const positions = translate.util.findParticiple('x '.repeat(305), 'x', []);
+    return positions.length === 305 && positions.every((position, i) => position === i * 2);
+  } }
 ]);

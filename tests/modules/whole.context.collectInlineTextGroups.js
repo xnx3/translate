@@ -42,5 +42,17 @@ require('../helpers/module')(__filename, [
     var root = document.createElement('p'); root.innerHTML = '甲<span title="标题">乙</span>'; document.body.append(root);
     var html = root.innerHTML, queueKeys = Object.keys(translate.nodeQueue).join(','), first = translate.whole.context.collectInlineTextGroups(root), second = translate.whole.context.collectInlineTextGroups(root);
     return root.innerHTML === html && Object.keys(translate.nodeQueue).join(',') === queueKeys && first.length === 1 && second.length === 1 && first[0].nodes.every(function (node, index) { return node === second[0].nodes[index]; });
-  } }
+  } },
+  { remark: '参数组合：相同文本分属不同节点，边界后的单片段不影响先前完整组',
+    test: function () {
+      translate.whole.context.use();
+      translate.whole.tag = ['p'];
+      const root = document.body.appendChild(document.createElement('p'));
+      root.innerHTML = '<b>相同</b><i>相同</i><br>孤立';
+      const first = root.firstChild.firstChild, second = root.children[1].firstChild;
+      const groups = translate.whole.context.collectInlineTextGroups(root);
+      return groups.length === 1 && groups[0].texts.length === 2 && groups[0].nodes.length === 2 &&
+        groups[0].texts[0] === '相同' && groups[0].texts[1] === '相同' &&
+        groups[0].nodes[0] === first && groups[0].nodes[1] === second && root.lastChild.data === '孤立';
+    } }
 ]);

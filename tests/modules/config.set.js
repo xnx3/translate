@@ -2,6 +2,40 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A01] 配置回导后仍可追加忽略类',
+    test: function () {
+      translate.config.set(translate.config.get());
+      translate.ignore.class.push('new-rule', null);
+      return translate.ignore.class.data.includes('new-rule');
+    }
+  },
+  {
+    remark: '[A04] 导入空语种范围清除旧筛选',
+    test: function () {
+      translate.config.set({language: {range: ['english']}});
+      translate.config.set({language: {range: []}});
+      return translate.language.translateLanguagesRange.length === 0;
+    }
+  },
+  {
+    remark: '[A04] 导入 false 关闭自动识别',
+    test: function () {
+      translate.setAutoDiscriminateLocalLanguage();
+      translate.config.set({language: {autoDiscriminateLocalLanguage: false}});
+      return translate.autoDiscriminateLocalLanguage === false;
+    }
+  },
+  {
+    remark: '[A05] 禁用 URL 控制时恢复自定义参数名且不消费 URL',
+    test: function () {
+      history.replaceState(null, '', '?lang=spanish');
+      translate.to = 'english';
+      translate.config.set({language: {urlParamControl: {name: 'lang', use: false}}});
+      return !translate.language.setUrlParamControl_use &&
+        translate.language.setUrlParamControl_name === 'lang' && translate.to === 'english';
+    }
+  },
+  {
     remark: "只配置 language.select.languages 时设置对应值",
     test: function () {
       translate.config.set({ language: { select: { languages: 'english,spanish' } } });

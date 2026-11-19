@@ -25,38 +25,45 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '函数回调按引用保存以供 PONG 调用',
+    remark: '函数回调接收对应 iframe 的 PONG',
     test: function () {
       const iframe = document.createElement('iframe');
       document.body.appendChild(iframe);
-      translate.postMessage.send = function () {};
-      const callback = function () {};
-      translate.postMessage.ping(iframe, callback);
-      return translate.postMessage._pingCallback === callback;
+      let request, received;
+      translate.postMessage.send = (_, type, payload) => { request = payload; };
+      translate.postMessage.ping(iframe, reply => { received = reply; });
+      const data = {...request, type: translate.postMessage.TYPES.PONG, version: 'test'};
+      translate.postMessage.handleMessage({source: iframe.contentWindow, origin: location.origin, data});
+      return received === data;
     }
   },
   {
-    remark: 'null 回调不会被保存为可调用处理器',
+    remark: 'null 回调不妨碍发送心跳及处理应答',
     test: function () {
       const iframe = document.createElement('iframe');
       document.body.appendChild(iframe);
-      translate.postMessage.send = function () {};
-      translate.postMessage._pingCallback = null;
+      let request;
+      translate.postMessage.send = (_, type, payload) => { request = {type, payload}; };
       translate.postMessage.ping(iframe, null);
-      return translate.postMessage._pingCallback === null;
+      translate.postMessage.handleMessage({source: iframe.contentWindow, origin: location.origin,
+        data: {...request.payload, type: translate.postMessage.TYPES.PONG}});
+      return request.type === translate.postMessage.TYPES.PING;
     }
   },
   {
-    remark: '后一次有效心跳回调替换先前回调',
+    remark: '同一 iframe 顺序完成的两个心跳互不干扰',
     test: function () {
       const iframe = document.createElement('iframe');
       document.body.appendChild(iframe);
-      translate.postMessage.send = function () {};
-      const first = function () {};
-      const second = function () {};
-      translate.postMessage.ping(iframe, first);
-      translate.postMessage.ping(iframe, second);
-      return translate.postMessage._pingCallback === second;
+      let request;
+      const results = [];
+      translate.postMessage.send = (_, type, payload) => { request = payload; };
+      for (const version of ['one','two']) {
+        translate.postMessage.ping(iframe, reply => results.push(reply.version));
+        translate.postMessage.handleMessage({source: iframe.contentWindow, origin: location.origin,
+          data: {...request, type: translate.postMessage.TYPES.PONG, version}});
+      }
+      return JSON.stringify(results) === '["one","two"]';
     }
   }
 ]);

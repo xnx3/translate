@@ -205,5 +205,21 @@ require('../helpers/module')(__filename, [
       return rows.length === 3 && rows[0].key === 'p1' && rows[0].value === false &&
         rows[1].key === 'p2' && rows[1].value[0] === '甲' && rows[2].key === 'p3' && rows[2].value === 0;
     }
+  },
+  {
+    remark: '参数组合：含日期的复合键按日期值覆盖，Map 中的二进制值保存独立快照',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      const timestamp = 1700000000000;
+      const key = () => ['edition', new Date(timestamp)];
+      await db.set(key(), 'old');
+      const bytes = new Uint8Array([3, 5]);
+      await db.set(key(), new Map([['flags', bytes]]));
+      bytes[0] = 99;
+      const stored = await db.get(key());
+      return stored instanceof Map && stored.get('flags') instanceof Uint8Array &&
+        stored.get('flags')[0] === 3 && stored.get('flags')[1] === 5 &&
+        await db.get(['edition', timestamp]) === undefined;
+    }
   }
 ]);

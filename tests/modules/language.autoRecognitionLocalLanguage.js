@@ -36,5 +36,14 @@ require('../helpers/module')(__filename, [
       translate.documents = [document.querySelector('#target')];
       return translate.language.autoRecognitionLocalLanguage() === 'korean';
     }
-  }
+  },
+  { remark: '[C05] 纯数字页保留有效的默认源语种', test: function () {
+    translate.language.local = '';
+    const root = document.createElement('div');
+    root.textContent = '12345';
+    document.body.append(root);
+    translate.setDocuments([root]);
+    const detected = translate.language.autoRecognitionLocalLanguage();
+    return typeof detected === 'string' && detected.length > 0 && translate.language.getLocal() === detected;
+  } }
 ]);

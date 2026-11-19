@@ -9,5 +9,14 @@ require('../helpers/module')(__filename, [
     const a = { top: 0 }, b = { top: 10 }, input = [a, b];
     const actual = translate.visual.groupRectsByLine(input);
     return actual[0][0] === a && actual[1][0] === b && input.length === 2 && input[0] === a;
-  } }
+  } },
+  {
+    remark: '参数组合：负数小数坐标到零的恰好五像素行差保留两行',
+    test: function () {
+      const first = {top: -5.5}, same = {top: -5}, next = {top: 0};
+      const lines = translate.visual.groupRectsByLine([first, same, next]);
+      return lines.length === 2 && lines[0].length === 2 && lines[0][0] === first &&
+        lines[0][1] === same && lines[1].length === 1 && lines[1][0] === next;
+    }
+  }
 ]);

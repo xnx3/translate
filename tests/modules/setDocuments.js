@@ -2,6 +2,15 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A22] 新设置的单一节点替换整组旧范围',
+    test: function () {
+      const [a,b,c] = ['p','p','p'].map(tag => document.createElement(tag));
+      translate.setDocuments([a,b]);
+      translate.setDocuments(c);
+      return translate.getDocuments().length === 1 && translate.getDocuments()[0] === c;
+    }
+  },
+  {
     remark: "缺参不修改现有区域及待翻译队列",
     test: function () {
       const node = document.createElement('section');

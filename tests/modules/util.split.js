@@ -27,7 +27,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '拆分包含双引号的文本时保留原始内容',
+    remark: '[C15] 拆分包含双引号的文本时保留原始内容',
     test: function () {
       const input = ['a"b"c"d"e"f', 'tail'];
       const result = translate.util.split(input, 12, 2);
@@ -36,7 +36,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '拆分包含反斜杠和换行的文本时保留原始内容',
+    remark: '[C15] 拆分包含反斜杠和换行的文本时保留原始内容',
     test: function () {
       const result = translate.util.split(['a\\b\\c\nd\ne', 'tail'], 12, 2);
       return result.every(group => group.length <= 2 && JSON.stringify(group).length <= 12) &&
@@ -58,5 +58,9 @@ require('../helpers/module')(__filename, [
     ['含 JSON 转义符的元素按真实编码长度分包', ['a"b', 'c\\d'], 13, [['a"b'], ['c\\d']]],
     ['单项中出现数组分隔符字面文本时保持值边界', ['a","b', 'z'], 12, [['a","b'], ['z']]],
     ['表情按 JSON 的实际长度计算但保留完整字符', ['😀', '🚀'], 10, [['😀'], ['🚀']]]
-  ].map(([remark, input, size, expected]) => ({ remark, args: [input, size, 2], expected }))
+  ].map(([remark, input, size, expected]) => ({ remark, args: [input, size, 2], expected })),
+  { remark: '[C15] 单个字符串比序列化上限多一个字符时无损分组', test: function () {
+    const groups = translate.util.split(['abcdef'], 9);
+    return groups.flat().join('') === 'abcdef' && groups.every(group => JSON.stringify(group).length <= 9);
+  } }
 ]);

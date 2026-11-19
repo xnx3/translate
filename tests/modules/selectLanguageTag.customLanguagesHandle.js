@@ -2,6 +2,22 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A06] 服务变化只使用当前服务的语种数据',
+    test: function () {
+      translate.selectLanguageTag.languages = 'english';
+      const filter = translate.selectLanguageTag.customLanguagesHandle;
+      filter([{id: 'english', name: 'Old name'}]);
+      return filter([{id: 'english', name: 'New name'}])[0].name === 'New name';
+    }
+  },
+  {
+    remark: '[A06] 逗号后的空白不改变所选语种',
+    test: function () {
+      translate.selectLanguageTag.languages = 'english, korean';
+      return translate.selectLanguageTag.customLanguagesHandle([{id:'english'}, {id:'korean'}]).length === 2;
+    }
+  },
+  {
     remark: "保持原列表",
     test: function () {
       const list=[{id:'english',name:'English'},{id:'spanish',name:'Español'},{id:'chinese_simplified',name:'简体中文'}];
@@ -120,5 +136,24 @@ require('../helpers/module')(__filename, [
       const ready = translate.selectLanguageTag.customLanguagesHandle([lang]);
       return empty.length === 0 && ready.length === 1 && ready[0] === lang;
     }
-  }
+  },
+  ...[
+    { label: '先不过滤再指定新增的日语和英语', first: '', next: 'japanese,english', ids: ['japanese', 'english'] },
+    { label: '先过滤再清空配置，返回第二次服务的完整列表', first: 'english', next: '', ids: ['english', 'japanese'] },
+    { label: '先仅英语再按日语、未知项和英语筛选更新后的列表', first: 'english', next: 'japanese,unknown,english', ids: ['japanese', 'english'] }
+  ].map(input => ({
+    remark: '参数组合：' + input.label,
+    input,
+    test: function ({ first, next, ids }) {
+      const tag = translate.selectLanguageTag;
+      tag.languages = first;
+      tag.customLanguagesHandle([{ id: 'english', serviceId: 'old-en' }]);
+      const current = [{ id: 'english', serviceId: 'new-en' }, { id: 'japanese', serviceId: 'new-ja' }];
+      tag.languages = next;
+      const returned = tag.customLanguagesHandle(current);
+      return returned.length === ids.length && returned.every((item, index) =>
+        item === current.find(language => language.id === ids[index])) &&
+        (next !== '' || returned === current);
+    }
+  }))
 ]);

@@ -2,6 +2,16 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A39] 省略可选条件时不产生异常诊断',
+    test: function () {
+      const messages = [];
+      translate.log = message => messages.push(message);
+      translate.ignore.class.push('ordinary');
+      return translate.ignore.class.data.includes('ordinary') &&
+        !messages.some(message => /异常|error|invalid/i.test(message));
+    }
+  },
+  {
     remark: '新增类名且省略条件时默认忽略该类名元素',
     test: function () {
       const result = translate.ignore.class.push('custom-ignore');

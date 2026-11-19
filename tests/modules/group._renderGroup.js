@@ -21,6 +21,12 @@ function checkGroupRender(change) {
     case 'outer-hidden': article.hidden = true; break;
     case 'ignore-class': translate.ignore.class.push('keep-source'); second.className = 'keep-source'; break;
     case 'edited': second.firstChild.nodeValue = '网页已修改'; break;
+    case 'target-changed': translate.to = 'french'; break;
+    case 'ancestor-moved': {
+      const newContainer = document.body.appendChild(document.createElement('main'));
+      newContainer.append(article);
+      break;
+    }
     case 're-enabled':
       translate.group.addElements(paragraph, el => el !== second);
       translate.group.addElements(second);
@@ -42,5 +48,7 @@ require('../helpers/module')(__filename, [
   ['登记根外的祖先变为隐藏时保留整个原段落', 'outer-hidden'],
   ['新加入的全局忽略 class 在回填前生效', 'ignore-class'],
   ['响应到达前页面自行修改的文字保持最新状态', 'edited'],
-  ['外层过滤后仍由独立登记的内层允许翻译', 're-enabled']
+  ['外层过滤后仍由独立登记的内层允许翻译', 're-enabled'],
+  ['参数组合：请求期间切换目标语种，旧响应不回写也不调序', 'target-changed'],
+  ['参数组合：完整段落连同直属父级搬入新容器后，旧布局不得写回', 'ancestor-moved']
 ].map(([remark, input]) => ({ remark, input, test: checkGroupRender })));

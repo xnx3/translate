@@ -35,5 +35,12 @@ require('../helpers/module')(__filename, [
     translate.service.name = 'translate.service';
     translate.request.appendHeaders = { currentpage: 'incorrect' };
     return translate.request.buildHeaders({ currentpage: 'also incorrect' }).currentpage === location.href;
+  } },
+  { remark: '参数组合：空的追加头覆盖非空调用值，其他标头和两份输入均保持原样', test: function () {
+    const local = Object.freeze({ 'X-Edition': 'hardback', Accept: 'text/plain' });
+    translate.request.appendHeaders = Object.freeze({ 'X-Edition': '', 'X-Locale': 'it' });
+    const out = translate.request.buildHeaders(local);
+    return Object.hasOwn(out, 'X-Edition') && out['X-Edition'] === '' &&
+      out.Accept === 'text/plain' && out['X-Locale'] === 'it' && local['X-Edition'] === 'hardback';
   } }
 ]);

@@ -18,5 +18,17 @@ require('../helpers/module')(__filename, [
   { remark: '日语目标采用全角标点候选', args: ['你好:', 'japanese'], expected: ['你好:', '你好：'] },
   { remark: '韩语目标采用全角标点候选', args: [':你好', 'korean'], expected: [':你好', '：你好'] },
   { remark: '内部标点不生成边界候选', args: ['你，好', 'english'], expected: ['你，好'] },
-  { remark: '已有半角标点在英文目标下不重复生成候选', args: [',你好.', 'english'], expected: [',你好.'] }
+  { remark: '已有半角标点在英文目标下不重复生成候选', args: [',你好.', 'english'], expected: [',你好.'] },
+  ...[
+    ['英文首尾为不同全角标点', '：A，', 'english', ['：A，', ': A, ', ': A,', '：A,', ': A，']],
+    ['日语同时存在首标点后的空格和尾标点', ', A:', 'japanese', [', A:', '， A：', '，A：', '，A:', ', A：']],
+    ['标点中间的表情保持完整', '，😀。', 'french', ['，😀。', ', 😀. ', ', 😀.', '，😀.', ', 😀。']]
+  ].map(([label, text, target, required]) => ({
+    remark: '参数组合：' + label + '保留原文与两端独立及同时转换的候选',
+    input: { text, target, required },
+    test: function ({ text, target, required }) {
+      const candidates = translate.util.text_full_half_width_generate(text, target);
+      return candidates[0] === text && required.every(candidate => candidates.includes(candidate));
+    }
+  }))
 ]);

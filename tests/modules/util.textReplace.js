@@ -83,5 +83,6 @@ require('../helpers/module')(__filename, [
   { remark: '英文空译文删除同段文字中的全角原文及半角变体，不丢失两者之间的文字', args: ['甲，你好。乙, 你好. 丙', '，你好。', '', 'english'], expected: '甲乙丙' },
   { remark: '英文空译文适配半角变体时仍保留包含原文的保护分词', args: ['你好，世界。你好, ', '你好，', '', 'english', ['你好，世界']], expected: '你好，世界。' },
   { remark: '英文空译文通过公开入口删除表情之间的文字，不拆分两侧表情', args: ['😀你好🚀', '你好', '', 'english'], expected: '😀🚀' },
-  { remark: '英文空译文通过公开入口保留不属于匹配的相邻全角冒号和逗号', args: ['甲：你好，乙', '你好', '', 'english'], expected: '甲：，乙' }
+  { remark: '英文空译文通过公开入口保留不属于匹配的相邻全角冒号和逗号', args: ['甲：你好，乙', '你好', '', 'english'], expected: '甲：，乙' },
+  { remark: '[C12] 分段插入的美元和与号保持字面译文', args: ['a xx b', 'xx', 'USD $&', 'english', []], expected: 'a USD $& b' }
 ]);

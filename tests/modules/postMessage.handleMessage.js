@@ -224,25 +224,24 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: 'PONG 只调用心跳回调一次并先清空回调引用',
+    remark: '同一心跳重复交付应答时回调只执行一次',
     test: function () {
       let count = 0;
       let received;
-      let cleared;
-      translate.postMessage._pingCallback = function (data) {
-        count++; received = data; cleared = translate.postMessage._pingCallback === null;
-      };
-      const data = { type: translate.postMessage.TYPES.PONG, language: 'english', version: 'test' };
-      const event = { source: null, origin: location.origin, data };
+      const frame = document.body.appendChild(document.createElement('iframe'));
+      let request;
+      translate.postMessage.send = (_, type, payload) => { request = payload; };
+      translate.postMessage.ping(frame, data => { count++; received = data; });
+      const data = {...request, type: translate.postMessage.TYPES.PONG, language: 'english', version: 'test'};
+      const event = {source: frame.contentWindow, origin: location.origin, data};
       translate.postMessage.handleMessage(event);
       translate.postMessage.handleMessage(event);
-      return count === 1 && received === data && cleared === true;
+      return count === 1 && received === data;
     }
   },
   {
     remark: 'PONG 没有回调时保持无异常且不触发切换',
     test: function () {
-      translate.postMessage._pingCallback = null;
       let calls = 0;
       translate.postMessage.onReceiveChangeLanguage = function () { calls++; };
       const result = translate.postMessage.handleMessage({ source: null, origin: location.origin, data: { type: translate.postMessage.TYPES.PONG } });
@@ -264,9 +263,15 @@ require('../helpers/module')(__filename, [
   {
     remark: '心跳回调抛异常时被消息处理器捕获且不保留回调',
     test: function () {
-      translate.postMessage._pingCallback = function () { throw new Error('callback failure'); };
-      const result = translate.postMessage.handleMessage({ source: null, origin: location.origin, data: { type: translate.postMessage.TYPES.PONG } });
-      return result === undefined && translate.postMessage._pingCallback === null;
+      const frame = document.body.appendChild(document.createElement('iframe'));
+      let request, calls = 0;
+      translate.postMessage.send = (_, type, payload) => { request = payload; };
+      translate.postMessage.ping(frame, () => { calls++; throw new Error('callback failure'); });
+      const event = {source: frame.contentWindow, origin: location.origin,
+        data: {...request, type: translate.postMessage.TYPES.PONG}};
+      translate.postMessage.handleMessage(event);
+      translate.postMessage.handleMessage(event);
+      return calls === 1;
     }
   }
 ]);

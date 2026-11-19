@@ -12,5 +12,6 @@ require('../helpers/module')(__filename, [
   { remark: '葡萄牙语 ã 的特征决定葡萄牙语分类', args: ['amanhã'], expected: 'portuguese' },
   { remark: '葡萄牙语 õ 的特征决定葡萄牙语分类', args: ['põe'], expected: 'portuguese' },
   { remark: '西班牙语双字符特征忽略大小写', args: ['LL'], expected: 'spanish' },
-  { remark: '多个语种特征按更高权重分类', args: ['éãõ'], expected: 'portuguese' }
+  { remark: '多个语种特征按更高权重分类', args: ['éãõ'], expected: 'portuguese' },
+  { remark: '[C07] 没有任何语言特征时返回未识别', args: ['XYZ'], expected: '' }
 ]);

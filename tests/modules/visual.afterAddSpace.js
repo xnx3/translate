@@ -31,5 +31,17 @@ require('../helpers/module')(__filename, [
     const a = document.createElement('span'), b = document.createElement('span');
     a.textContent = 'Hello'; b.textContent = '\tworld'; document.body.append(a, b);
     return translate.visual.afterAddSpace([{ before: { node: a }, after: { node: b } }]).length === 0;
-  } }
+  } },
+  {
+    remark: '参数组合：同一批相邻对中，已有非断行空格的文本跳过而另一个前节点仍入选',
+    test: function () {
+      const parent = document.createElement('span');
+      const a = document.createTextNode('One\u00a0'), b = document.createTextNode('two'), c = document.createTextNode('three');
+      parent.append(a, b, c); document.body.append(parent);
+      const result = translate.visual.afterAddSpace([
+        {before: {node: a}, after: {node: b}}, {before: {node: b}, after: {node: c}}
+      ]);
+      return result.length === 1 && result[0] === b;
+    }
+  }
 ]);

@@ -40,5 +40,27 @@ require('../helpers/module')(__filename, [
     const a = { left: 30, top: 0, right: 40, bottom: 10 }, b = { left: 0, top: 0, right: 10, bottom: 10 }, c = { left: 3, top: 3, right: 7, bottom: 7 };
     const actual = translate.visual.rectsSpaceEliminateOverlap([a, b, c]);
     return actual.rects.length === 2 && actual.rects[0] === a && actual.rects[1] === b && actual.removes[0] === c;
-  } }
+  } },
+  {
+    remark: '参数组合：有面积的矩形包住零宽光标矩形时两者没有交叠面积',
+    test: function () {
+      const area = {left: -6, right: 6, top: -4, bottom: 4};
+      const caret = {left: 0, right: 0, top: -3, bottom: 3};
+      const {rects, removes} = translate.visual.rectsSpaceEliminateOverlap([caret, area]);
+      return rects.length === 2 && rects[0] === caret && rects[1] === area && removes.length === 0;
+    }
+  },
+  ...[
+    ['零宽线超出上边界但穿过矩形', { left: 0, right: 0, top: -9, bottom: 3 }],
+    ['零高线完全位于矩形下方', { left: -2, right: 2, top: 9, bottom: 9 }]
+  ].map(([label, line]) => ({
+    remark: '参数组合：' + label + '时无面积交叠，保留两项与输入顺序',
+    input: line,
+    test: function (line) {
+      const area = { left: -6, right: 6, top: -4, bottom: 4 };
+      const result = translate.visual.rectsSpaceEliminateOverlap([line, area]);
+      return result.rects.length === 2 && result.rects[0] === line && result.rects[1] === area &&
+        result.removes.length === 0;
+    }
+  }))
 ]);

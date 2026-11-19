@@ -99,5 +99,13 @@ require('../helpers/module')(__filename, [
       const ar = result.languageArray.arabic;
       return result.languageName === 'arabic' && ar.number === 3 && ar.list.length === 1 && ar.list[0].text === raw;
     }
-  }
+  },
+  { remark: '[C06] 增补平面汉字经过完整分词仍识别为中文', test: function () {
+    translate.language.setLocal('chinese_simplified');
+    return ['chinese_simplified', 'chinese_traditional'].includes(translate.language.recognition('𠮷').languageName);
+  } },
+  { remark: '[C08] 英文混排只有繁体字时保留实际中文类型', test: function () {
+    translate.language.setLocal('english');
+    return translate.language.recognition('Hello 愛').languageName === 'chinese_traditional';
+  } }
 ]);

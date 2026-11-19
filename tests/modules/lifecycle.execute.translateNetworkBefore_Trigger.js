@@ -2,6 +2,16 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A29] 保留旧四参数入口的源语种目标语种和文本列表',
+    test: function () {
+      let received;
+      translate.lifecycle.execute.translateNetworkBefore.push(data => { received = data; });
+      translate.lifecycle.execute.translateNetworkBefore_Trigger('batch', 'italian', 'english', ['Ciao']);
+      return received.uuid === 'batch' && received.from === 'italian' && received.to === 'english' &&
+        JSON.stringify(received.texts) === '["Ciao"]';
+    }
+  },
+  {
     remark: '未注册网络请求前回调时正常返回',
     test: function () {
       translate.lifecycle.execute.translateNetworkBefore = [];
@@ -60,5 +70,27 @@ require('../helpers/module')(__filename, [
       translate.lifecycle.execute.translateNetworkBefore_Trigger({ uuid: 'u', from: 'english', to: 'japanese', texts: [] });
       return reached && logs.length === 2 && logs[0] === modern && logs[1] === legacy;
     }
-  }
+  },
+  ...[
+    { label: '对象入口、首次批次含多项原文', legacyEntry: false, from: 'english', to: 'french', texts: ['one', 'two'] },
+    { label: '旧四参数入口、空文本数组', legacyEntry: true, from: 'english', to: 'french', texts: [] },
+    { label: '旧四参数入口、连续重复原文保留下标', legacyEntry: true, from: 'french', to: 'english', texts: ['un', 'un'] }
+  ].map(input => ({
+    remark: '参数组合：' + input.label + '时两种回调形式收到同一份有效载荷',
+    input,
+    test: function ({ legacyEntry, from, to, texts }) {
+      const events = translate.lifecycle.execute;
+      const data = { uuid: 'batch', from, to, texts };
+      const received = [];
+      events.translateNetworkBefore = [
+        function (uuid, source, target, words) { received.push({ uuid, from: source, to: target, texts: words }); },
+        function (event) { received.push(event); }
+      ];
+      if (legacyEntry) events.translateNetworkBefore_Trigger(data.uuid, from, to, texts);
+      else events.translateNetworkBefore_Trigger(data);
+      return received.length === 2 && received.every(event =>
+        event.uuid === data.uuid && event.from === from && event.to === to && event.texts === texts) &&
+        (legacyEntry || received[1] === data);
+    }
+  }))
 ]);

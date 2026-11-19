@@ -60,5 +60,9 @@ require('../helpers/module')(__filename, [
       document.cookie = 'key=lower';
       return translate.getCookie('Key') === 'upper' && translate.getCookie('key') === 'lower';
     }
-  }
+  },
+  { remark: '[G05] 保留 cookie 值中的等号', test: function () {
+    document.cookie = 'review_token=abc==; path=/';
+    return translate.getCookie('review_token') === 'abc==';
+  } }
 ]);

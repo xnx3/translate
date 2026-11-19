@@ -122,5 +122,22 @@ require('../helpers/module')(__filename, [
       translate.storage.browser.memory.set('memory-only', 'temporary');
       return localStorage.getItem('memory-only') === null;
     }
-  }
+  },
+  ...[
+    { name: '数值零与字符零', key: 0, alias: '0', neighbor: '00', first: false, last: '' },
+    { name: '布尔键与同名字符串', key: false, alias: 'false', neighbor: 'False', first: '', last: 0 },
+    { name: '空键与空格键', key: '', alias: '', neighbor: ' ', first: 0, last: false }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '连续写入后最新值可由两种键读回，相似键独立',
+    input,
+    test: function ({ key, alias, neighbor, first, last }) {
+      const memory = translate.storage.browser.memory;
+      memory.set(key, first);
+      memory.set(neighbor, 'neighbor');
+      if (memory.get(alias) !== String(first)) return false;
+      memory.set(alias, last);
+      return memory.get(key) === String(last) && memory.get(alias) === String(last) &&
+        memory.get(neighbor) === 'neighbor';
+    }
+  }))
 ]);

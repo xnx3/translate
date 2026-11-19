@@ -92,7 +92,7 @@ require('../helpers/module')(__filename, [
     translate.request.response = function () { intercepted++; };
     return await new Promise(function (resolve) { translate.request.sse.post('translate.json', {}, function () { resolve(false); }, function (xhr) { resolve(fallback === 0 && items === 1 && intercepted === 1 && xhr.status === 200 && xhr.readyState === 4 && xhr.info.indexOf('read failed') >= 0); }, function () { fallback++; resolve(false); }, { onItem: function () { items++; } }); });
   } },
-  { remark: 'CRLF 行结束符恰好分隔在两个网络块之间时仍作为一个换行解析', test: async function () {
+  { remark: '[D05] CRLF 行结束符恰好分隔在两个网络块之间时仍作为一个换行解析', test: async function () {
     var chunks = ['event: done\r', '\ndata: {"result":1,"text":["A"]}\r', '\n\r', '\n'], events = [];
     window.fetch = function () { return Promise.resolve(new Response(new ReadableStream({ start: function (controller) { chunks.forEach(function (part) { controller.enqueue(new TextEncoder().encode(part)); }); controller.close(); } }), { headers: { 'content-type': 'text/event-stream' } })); };
     return await new Promise(function (resolve) { translate.request.sse.post('translate.json', {}, function (value) { resolve(value.result === 1 && value.text[0] === 'A' && JSON.stringify(events) === '["done"]'); }, function () { resolve(false); }, function () { resolve(false); }, { onEvent: function (name) { events.push(name); } }); });
@@ -406,5 +406,32 @@ require('../helpers/module')(__filename, [
     });
     await new Promise(resolve => setTimeout(resolve, 0));
     return calls.join(',') === 'fallback';
+  } },
+  { remark: '参数组合：两个并发流按相反顺序结束，监听器和响应对象仍属于各自请求', test: async function () {
+    const releases = new Map(), completions = [], events = [], responseStates = [];
+    window.fetch = (url, options) => new Promise(resolve => {
+      releases.set(new URLSearchParams(options.body).get('batch'), resolve);
+    });
+    const post = batch => new Promise((resolve, reject) => {
+      translate.request.sse.post('translate.json', { batch }, (data, input, state) => {
+        completions.push([batch, input.batch, data.text[0]]);
+        responseStates.push(state);
+        resolve();
+      }, reject, () => reject(Error('unexpected fallback')), {
+        onDone: (data, input) => events.push([batch, input.batch, data.text[0]])
+      });
+    });
+    const first = post('a'), second = post('b');
+    function finish(batch) {
+      const body = 'event: done\ndata: ' + JSON.stringify({ result: 1, text: [batch] }) + '\n\n';
+      releases.get(batch)(new Response(body, { headers: { 'Content-Type': 'text/event-stream' } }));
+    }
+    finish('b');
+    await second;
+    finish('a');
+    await first;
+    const expected = '[["b","b","b"],["a","a","a"]]';
+    return JSON.stringify(completions) === expected && JSON.stringify(events) === expected &&
+      responseStates[0] !== responseStates[1] && responseStates.every(state => state.readyState === 4);
   } }
 ]);

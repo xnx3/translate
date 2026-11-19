@@ -27,7 +27,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '单字符分词命中后应返回有限的位置结果，不得陷入死循环',
+    remark: '[C11] 单字符分词命中后应返回有限的位置结果，不得陷入死循环',
     test: async function () {
       const script = Array.from(document.scripts).find(node => /\/translate(?:\.min)?\.js$/.test(node.src));
       if (!script) return false;

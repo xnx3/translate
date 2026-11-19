@@ -16,5 +16,28 @@ require('../helpers/module')(__filename, [
       return result.flat().join(',') === 'a,b,c,d,e' && result.every(group => group.length <= 2) &&
         input[0].join(',') === 'a,b,c' && input[1].join(',') === 'd,e';
     }
-  }
+  },
+  { remark: '[G06] 单项超长时处理余项必须取得进展', test: function () {
+    const split = translate.util._splitMaxSize;
+    const original = [['abcdef']];
+    const repeated = new Set();
+    // 用小样本检测相同的递归余项，避免挂起或实际耗尽栈空间。
+    const noProgress = new Error('相同余项被再次交给分片函数');
+    translate.util._splitMaxSize = function (groups, limit, count) {
+      const key = JSON.stringify([groups, limit, count]);
+      if (repeated.has(key)) throw noProgress;
+      repeated.add(key);
+      return split.call(this, groups, limit, count);
+    };
+    try {
+      const groups = translate.util._splitMaxSize(original, 6, 1);
+      return groups.flat().join('') === 'abcdef' &&
+        groups.every(group => group.length > 0 && group.length <= 1 && JSON.stringify(group).length <= 6);
+    } catch (error) {
+      // 明确拒绝不支持的上限也是有效行为；重复分片或调用栈溢出均不是有效处理。
+      return error !== noProgress && error instanceof RangeError && !/stack/i.test(error.message);
+    } finally {
+      translate.util._splitMaxSize = split;
+    }
+  } }
 ]);

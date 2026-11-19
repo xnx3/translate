@@ -36,5 +36,17 @@ require('../helpers/module')(__filename, [
     document.body.append(div);
     const result = translate.visual.getRects([div, null, div.firstChild]);
     return result.length === 3 && result[0][0].node === div && result[1].length === 0 && result[2][0].node === div.firstChild;
-  } }
+  } },
+  {
+    remark: '参数组合：脱离页面的文本和可见元素一起测量时保持位置对应',
+    test: function () {
+      const detached = document.createTextNode('offscreen');
+      const visible = document.createElement('div');
+      visible.style.cssText = 'position:fixed;left:-6px;top:0;width:12px;height:10px;';
+      document.body.append(visible);
+      const rows = translate.visual.getRects([detached, visible]);
+      return rows.length === 2 && rows[0].length === 0 && rows[1].length === 1 &&
+        rows[1][0].node === visible && rows[1][0].left === -6 && rows[1][0].right === 6;
+    }
+  }
 ]);

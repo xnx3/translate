@@ -301,5 +301,19 @@ require('../helpers/module')(__filename, [
       const rows = await db.list('*');
       return rows.length === 1 && rows[0].key === 'saved' && rows[0].value === 1;
     }
+  },
+  {
+    remark: '参数组合：字符组与通配组合查找只返回匹配键，并保留覆盖后的 falsy 值和游标顺序',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set('sku-b2', 'old');
+      await db.set('sku-a1', 0);
+      await db.set('sku-b2', false);
+      await db.set('sku-c1', 'outside');
+      await db.set('prefix-sku-a1', 'outside');
+      const rows = await db.list('sku-[ab]*');
+      return rows.length === 2 && rows[0].key === 'sku-a1' && rows[0].value === 0 &&
+        rows[1].key === 'sku-b2' && rows[1].value === false;
+    }
   }
 ]);

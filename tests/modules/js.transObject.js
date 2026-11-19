@@ -121,7 +121,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '整项是忽略文本时，后续字段仍可回填且保持请求与结果下标对应',
+    remark: '[E17] 整项是忽略文本时，后续字段仍可回填且保持请求与结果下标对应',
     test: function () {
       translate.ignore.text = ['KEEP'];
       const input = { code: 'KEEP', name: '世界' };
@@ -133,6 +133,23 @@ require('../helpers/module')(__filename, [
       translate.js.transObject(input, 'english', value => { output = value; }, () => {});
       return JSON.stringify(request) === JSON.stringify(['世界']) && output === input &&
         input.code === 'KEEP' && input.name === 'World';
+    }
+  },
+  {
+    remark: '参数组合：共享子对象与数值形字符串按返回位置回填，数字和只读兄弟字段不变',
+    test: async function () {
+      const shared = { text: '20' };
+      const unchanged = Object.freeze({ count: 20, active: false });
+      const input = { card: shared, rows: [shared, unchanged, { text: '3' }] };
+      const requests = [];
+      translate.request.translateText = (data, done) => {
+        requests.push(data.texts.slice());
+        queueMicrotask(() => done({ result: 1, to: data.to, text: data.texts.map(s => 'T' + s) }));
+      };
+      const output = await new Promise((resolve, reject) => translate.js.transObject(input, 'french', resolve, reject));
+      return requests.length === 1 && JSON.stringify(requests[0].slice().sort()) === '["20","3"]' &&
+        output === input && output.card === output.rows[0] && shared.text === 'T20' &&
+        output.rows[2].text === 'T3' && output.rows[1] === unchanged && unchanged.count === 20;
     }
   }
 ]);

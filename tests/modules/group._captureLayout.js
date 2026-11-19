@@ -23,5 +23,19 @@ require('../helpers/module')(__filename, [
       document.body.append(node);
       return layout.container === host && layout.ancestry.length === 1 && layout.ancestry[0] === host &&
         layout.ranges.get(host).children[0] === node;
+    } },
+  { remark: '参数组合：片段来自 DocumentFragment 中两个内联分支，快照保留中间注释及两个同字节点的身份',
+    test: function () {
+      const root = document.createDocumentFragment();
+      const first = document.createElement('b'), last = document.createElement('i');
+      const marker = document.createComment('保留');
+      first.textContent = last.textContent = '相同';
+      root.append(first, marker, last);
+      const layout = translate.group._captureLayout([first.firstChild, last.firstChild]);
+      const outer = layout.ranges.get(root).children;
+      return layout.container === root && layout.ancestry.length === 1 && layout.ancestry[0] === root &&
+        outer.length === 3 && outer[0] === first && outer[1] === marker && outer[2] === last &&
+        layout.ranges.get(first).children[0] === first.firstChild &&
+        layout.ranges.get(last).children[0] === last.firstChild;
     } }
 ]);

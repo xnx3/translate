@@ -1,6 +1,19 @@
 'use strict';
 
 require('../helpers/module')(__filename, [
+  {
+    remark: '[A34] 分段渲染后外部立即写入不同文本时应重新翻译',
+    test: function () {
+      const text = document.createTextNode('Business update');
+      translate.node.set(text, {
+        whole: false,
+        resultText: 'Just translated',
+        translateResults: {'Just translated': 1},
+        lastTranslateRenderTime: Date.now()
+      });
+      return translate.listener.nodeValueChangeNeedTranslate(text);
+    }
+  },
   { remark: '省略节点时不触发翻译', args: [], expected: false },
   { remark: '明确传 undefined 不触发翻译', args: [undefined], expected: false },
   { remark: '传 null 不触发翻译', args: [null], expected: false },

@@ -39,5 +39,10 @@ require('../helpers/module')(__filename, [
       translate.language.generateLanguageNameObject();
       return translate.language.systems.test.languages.join(',') === 'one,two';
     }
-  }
+  },
+  { remark: '[C01] 接口语言标识可直接查到书写体系', test: function () {
+    const systems = translate.language.generateLanguageNameObject();
+    return systems.get('russian')?.system === 'cyrillic' &&
+      systems.get('arabic')?.system === 'arabic' && systems.get('dutch')?.system === 'latin';
+  } }
 ]);

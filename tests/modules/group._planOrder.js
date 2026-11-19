@@ -28,5 +28,17 @@ require('../helpers/module')(__filename, [
       const plan = translate.group._planOrder({ nodes, layout: translate.group._captureLayout(nodes) }, order);
       return plan === null && root.innerHTML === html;
     }
-  }))
+  })),
+  { remark: '参数组合：组中存在未翻译图片时，允许只交换图片同侧的两个片段',
+    test: function () {
+      const root = document.createElement('p');
+      root.innerHTML = '前<img><b>同</b><i>同</i>后';
+      const [prefix, image, first, second, suffix] = root.childNodes;
+      const nodes = [prefix, first.firstChild, second.firstChild, suffix];
+      const plans = translate.group._planOrder({nodes, layout: translate.group._captureLayout(nodes)}, [0, 2, 1, 3]);
+      return plans.length === 1 && plans[0].parent === root &&
+        plans[0].before.length === 2 && plans[0].before[0] === first && plans[0].before[1] === second &&
+        plans[0].after[0] === second && plans[0].after[1] === first &&
+        prefix.nextSibling === image && image.nextSibling === first && second.nextSibling === suffix;
+    } }
 ]);

@@ -125,5 +125,19 @@ require('../helpers/module')(__filename, [
         second.bytes instanceof Uint8Array && second.bytes[1] === 255 && second.tags.get('kind') === 'a' &&
         listed.key === 'record' && listed.value.bytes[1] === 255 && listed.value.tags.get('kind') === 'a';
     }
+  },
+  {
+    remark: '参数组合：复合键范围的开闭端点决定首条记录，值为 false 时仍能返回',
+    test: async function () {
+      const db = translate.storage.IndexedDB;
+      await db.set(['book', 1], 'hardback');
+      await db.set(['book', 2], false);
+      await db.set(['magazine', 1], 'monthly');
+      const inclusive = IDBKeyRange.bound(['book', 1], ['book', 2]);
+      const excludeFirst = IDBKeyRange.bound(['book', 1], ['book', 2], true, false);
+      const excludeBoth = IDBKeyRange.bound(['book', 1], ['book', 2], true, true);
+      return await db.get(inclusive) === 'hardback' && await db.get(excludeFirst) === false &&
+        await db.get(excludeBoth) === undefined;
+    }
   }
 ]);

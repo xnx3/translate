@@ -59,5 +59,24 @@ require('../helpers/module')(__filename, [
       translate.lifecycle.execute.start_Trigger({ uuid: '', to: '' });
       return reached && logged.length === 2 && logged[0] === modern && logged[1] === legacy;
     }
-  }
+  },
+  ...[
+    { label: '旧回调在前', legacyFirst: true, to: 'english' },
+    { label: '新回调在前，目标为空', legacyFirst: false, to: '' }
+  ].map(input => ({
+    remark: '参数组合：' + input.label + '，两次执行独立保留本轮标识及对象身份',
+    input,
+    test: function ({ legacyFirst, to }) {
+      const events = translate.lifecycle.execute;
+      const modern = [], legacy = [], order = [];
+      function objectHook(data) { modern.push(data); order.push('new'); }
+      function pairHook(uuid, target) { legacy.push([uuid, target]); order.push('old'); }
+      events.start = legacyFirst ? [pairHook, objectHook] : [objectHook, pairHook];
+      const first = { uuid: 'first', to }, second = { uuid: 'second', to: 'french' };
+      events.start_Trigger(first); events.start_Trigger(second);
+      const expectedOrder = legacyFirst ? 'old,new,old,new' : 'new,old,new,old';
+      return order.join(',') === expectedOrder && modern[0] === first && modern[1] === second &&
+        legacy[0][0] === 'first' && legacy[0][1] === to && legacy[1][0] === 'second' && legacy[1][1] === 'french';
+    }
+  }))
 ]);

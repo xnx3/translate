@@ -88,5 +88,15 @@ require('../helpers/module')(__filename, [
       return JSON.stringify(result.resultText) === JSON.stringify(['甲乙', '乙', '甲乙']) &&
         result.find === true && result.texts.length === 1 && result.texts[0] === '甲';
     }
+  },
+  {
+    remark: '参数组合：同一术语出现在两个相邻数组元素的边界时不能跨元素匹配',
+    args: [['前半', '句后', '半句半句', '前半'], '半句', '', null],
+    expected: { find: true, texts: ['前半', '句后'], resultText: ['前半', '句后', '', '前半'] }
+  },
+  {
+    remark: '参数组合：字面术语与译文相同，含换行和制表符的剩余片段按首现去重',
+    args: [['A\t◆\nB', 'A\t◆', '◆\nB'], '◆', '◆'],
+    expected: { find: true, texts: ['A\t', '\nB'], resultText: ['A\t◆\nB', 'A\t◆', '◆\nB'] }
   }
 ]);

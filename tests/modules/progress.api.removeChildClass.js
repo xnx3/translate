@@ -62,5 +62,18 @@ require('../helpers/module')(__filename, [
       translate.progress.api.removeChildClass(root,1);
       return root.firstChild===child && child.classList.contains('keep');
     }
+  },
+  {
+    remark: '参数组合：只移除子节点的完整进度类，保留含相同片段的业务类和根类',
+    test: function () {
+      const root = document.createElement('div'), child = document.createElement('span');
+      root.className = 'translate_api_in_progress';
+      child.className = 'app-translate_api_in_progress-row translate_api_in_progress';
+      root.append(child);
+      translate.progress.api.removeChildClass(root, 1);
+      return root.classList.contains('translate_api_in_progress') &&
+        child.classList.contains('app-translate_api_in_progress-row') &&
+        !child.classList.contains('translate_api_in_progress');
+    }
   }
 ]);

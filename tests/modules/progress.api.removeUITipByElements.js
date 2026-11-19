@@ -59,5 +59,18 @@ require('../helpers/module')(__filename, [
       translate.progress.api.removeUITipByElements([a,b]);
       return !a.classList.contains('translate_api_in_progress') && !b.classList.contains('translate_api_in_progress') && a.firstChild.classList.contains('translate_api_in_progress');
     }
+  },
+  {
+    remark: '参数组合：同一批包含重复节点与相似业务类时只删除两种完整提示类',
+    test: function () {
+      const first = document.createElement('span'), second = document.createElement('span');
+      first.className = 'translatejs-text-element-hidden-old translatejs-text-element-hidden';
+      second.className = 'translate_api_in_progress-note translate_api_in_progress';
+      translate.progress.api.removeUITipByElements([first, null, second, first]);
+      return first.classList.contains('translatejs-text-element-hidden-old') &&
+        !first.classList.contains('translatejs-text-element-hidden') &&
+        second.classList.contains('translate_api_in_progress-note') &&
+        !second.classList.contains('translate_api_in_progress');
+    }
   }
 ]);

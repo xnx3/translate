@@ -146,5 +146,29 @@ require('../helpers/module')(__filename, [
       translate.storage.browser.storage.set('after-read-failure', 'value');
       return writes === 0 && translate.storage.browser.memory.get('after-read-failure') === 'value';
     }
-  }
+  },
+  ...[
+    { name: '零更新为空串', initial: 0, failedWrite: '', latest: false },
+    { name: '空串更新为 false', initial: '', failedWrite: false, latest: 0 }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '遇到写入失败时，只更新内存且保留其他已同步键',
+    input,
+    test: function ({ initial, failedWrite, latest }) {
+      const store = translate.storage.browser.storage;
+      store.set('edition', initial);
+      store.set('Edition', false);
+      const original = Storage.prototype.setItem;
+      let writes = 0;
+      Storage.prototype.setItem = () => { writes++; throw new DOMException('full', 'QuotaExceededError'); };
+      try {
+        store.set('edition', failedWrite);
+        if (store.get('edition') !== String(failedWrite)) return false;
+        store.set('edition', latest);
+        return writes === 1 && store.get('edition') === String(latest) &&
+          store.get('Edition') === 'false' && localStorage.getItem('edition') === String(initial);
+      } finally {
+        Storage.prototype.setItem = original;
+      }
+    }
+  }))
 ]);

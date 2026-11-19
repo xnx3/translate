@@ -146,5 +146,29 @@ require('../helpers/module')(__filename, [
       };
       return store.get('cold') === null && store.get('warm') === '' && store.get('removed') === null && accesses === 1;
     }
-  }
+  },
+  ...[
+    { name: '首次读取空串后磁盘改成零', before: '', after: 0 },
+    { name: '首次读取 false 后磁盘改成空串', before: false, after: '' }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '，等价键的最后同步值在另一键触发读故障后仍可取回',
+    input,
+    test: function ({ before, after }) {
+      const store = translate.storage.browser.storage;
+      localStorage.setItem('0', before);
+      localStorage.setItem('00', 'neighbor');
+      if (store.get(0) !== String(before) || store.get('00') !== 'neighbor') return false;
+      localStorage.setItem('0', after);
+      if (store.get('0') !== String(after)) return false;
+      const original = Storage.prototype.getItem;
+      Storage.prototype.getItem = () => { throw new DOMException('blocked', 'SecurityError'); };
+      try {
+        if (store.get('unread') !== null) return false;
+      } finally {
+        Storage.prototype.getItem = original;
+      }
+      localStorage.setItem('0', 'disk-only');
+      return store.get(0) === String(after) && store.get('00') === 'neighbor';
+    }
+  }))
 ]);

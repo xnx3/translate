@@ -56,5 +56,9 @@ require('../helpers/module')(__filename, [
       history.replaceState(null, '', '#language=english');
       return translate.util.getUrlParam('language') === '';
     }
-  }
+  },
+  { remark: '[C14] 字面参数名与 UTF-8 查询值一起解码', test: function () {
+    history.replaceState({}, '', '?viewXlang=wrong&view.lang=caf%C3%A9');
+    return translate.util.getUrlParam('view.lang') === 'café';
+  } }
 ]);

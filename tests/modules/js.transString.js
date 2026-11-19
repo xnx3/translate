@@ -31,5 +31,28 @@ require('../helpers/module')(__filename, [
     let received; translate.js.transObject = function (object) { received = object; };
     translate.js.transString('{"text":"first\\n\\\"second\\\""}', 'english', function () {}, function () {});
     return received.text === 'first\n"second"';
-  } }
+  } },
+  ...[
+    { label: '顶层字符串中的转义引号与表情', value: '第 "2" 页 😀' },
+    { label: '嵌套空数组与同名内层键', value: { items: [[], { items: [''] }] } },
+    { label: '根数组中的空容器和多个假值', value: [{}, [], '', false, 0, null] }
+  ].map(({ label, value }) => ({
+    remark: '参数组合：标准 JSON 的' + label + '逐值交给翻译回调',
+    input: value,
+    test: function (value) {
+      let delegated = 0;
+      let success = 0;
+      let failed = 0;
+      let received;
+      translate.js.transObject = (parsed, target, done) => {
+        delegated++;
+        received = { parsed, target };
+        done(parsed);
+      };
+      translate.js.transString(' \n' + JSON.stringify(value) + '\t', 'french',
+        () => { success++; }, () => { failed++; });
+      return delegated === 1 && received.target === 'french' && success === 1 && failed === 0 &&
+        JSON.stringify(received.parsed) === JSON.stringify(value);
+    }
+  }))
 ]);

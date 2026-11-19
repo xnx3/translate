@@ -74,5 +74,23 @@ require('../helpers/module')(__filename, [
     const sibling = { keep: true }, object = { '[name]': 'old', sibling: sibling };
     translate.js.setValueByPath(object, '[name]', 'new');
     return object['[name]'] === 'new' && object.sibling === sibling && !Object.hasOwn(object, 'name');
-  } }
+  } },
+  ...[
+    { label: 'null', value: null },
+    { label: '空数组', value: [] },
+    { label: '含空字符串的对象', value: { name: '' } }
+  ].map(({ label, value }) => ({
+    remark: '参数组合：给稀疏数组中已有对象的数字字段写入' + label + '，保留空位和兄弟身份',
+    input: value,
+    test: function (replacement) {
+      const rows = new Array(12);
+      const target = { '0': 'old' };
+      const sibling = { keep: 1 };
+      rows[10] = target;
+      rows[11] = sibling;
+      translate.js.setValueByPath({ rows }, 'rows[10].0', replacement);
+      return rows.length === 12 && !(0 in rows) && rows[10] === target &&
+        target['0'] === replacement && rows[11] === sibling && sibling.keep === 1;
+    }
+  }))
 ]);

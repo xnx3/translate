@@ -41,5 +41,17 @@ require('../helpers/module')(__filename, [
     translate.whole.context.use(); translate.whole.enableAll(); translate.whole.tag = []; translate.whole.class = []; translate.whole.id = [];
     return translate.whole.context.isRootElement(document.body) === false;
   } },
-  ...invalidCases
+  ...invalidCases,
+  { remark: '参数组合：同源 iframe 的元素按自身配置命中，与父文档同名元素独立',
+    test: function () {
+      translate.whole.context.use();
+      translate.whole.id = ['article'];
+      const frame = document.body.appendChild(document.createElement('iframe'));
+      const doc = frame.contentDocument;
+      const inner = doc.body.appendChild(doc.createElement('section'));
+      const outer = document.body.appendChild(document.createElement('section'));
+      inner.id = 'article';
+      const matches = translate.whole.context.isRootElement;
+      return matches(inner) && !matches(outer) && !matches(inner.appendChild(doc.createElement('b')));
+    } }
 ]);

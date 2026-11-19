@@ -86,5 +86,13 @@ require('../helpers/module')(__filename, [
       Object.defineProperty(navigator, 'userLanguage', { configurable: true, value: '' });
       return translate.util.browserDefaultLanguage() === '';
     }
-  }
+  },
+  ...[['fr-FR', 'french'], ['si', 'sinhala']].map(([locale, expected]) => ({
+    remark: '[C17] 浏览器语言 ' + locale + ' 映射为 ' + expected,
+    input: { locale, expected },
+    test: function ({ locale, expected }) {
+      Object.defineProperty(navigator, 'language', { configurable: true, value: locale });
+      return translate.util.browserDefaultLanguage() === expected;
+    }
+  }))
 ]);

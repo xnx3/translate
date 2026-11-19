@@ -62,5 +62,29 @@ require('../helpers/module')(__filename, [
       select.dispatchEvent(new Event('change'));
       return language==='spanish';
     }
-  }
+  },
+  ...[
+    { label: '支持列表有缓存语种', target: 'french', value: 'french' },
+    { label: '缓存语种不在支持列表', target: 'spanish', value: 'english' }
+  ].map(({ label, target, value }) => ({
+    remark: '参数组合：自定义容器中混有无效项且' + label + '时保留显示顺序和选择',
+    input: { target, value },
+    test: function ({ target, value }) {
+      const mount = document.createElement('section');
+      mount.id = 'header-languages';
+      document.body.append(mount);
+      translate.selectLanguageTag.documentId = mount.id;
+      translate.language.setLocal('english');
+      translate.storage.set('to', target);
+      const languages = Object.freeze([
+        null, Object.freeze({ id: 'english', name: 'English' }), {},
+        Object.freeze({ id: 'french', name: 'Français' }), { id: 3, name: 'invalid' }
+      ]);
+      translate.selectLanguageTag.customUI(languages);
+      const select = mount.querySelector('select');
+      const options = Array.from(select.options, option => [option.value, option.textContent]);
+      return select.id === 'header-languagesSelectLanguage' && select.value === value &&
+        JSON.stringify(options) === JSON.stringify([['english', 'English'], ['french', 'Français']]);
+    }
+  }))
 ]);

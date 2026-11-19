@@ -40,5 +40,16 @@ require('../helpers/module')(__filename, [
     translate.request.sse.triggerEvent('item', {}, {}, { onEvent: 'invalid', onItem: true });
     translate.request.sse.triggerEvent('item', {}, {});
     return calls === 2;
+  } },
+  { remark: '参数组合：连续请求独立分发 item 与显式空的 done，保留各自上下文', test: function () {
+    const received = [];
+    const sse = translate.request.sse;
+    const first = { id: 'a' }, second = { id: 'b' };
+    sse.onEvent = (kind, value, request) => received.push(['global', kind, value, request.id]);
+    sse.triggerEvent('item', 0, first, { onItem: (value, request) => received.push(['first', value, request.id]) });
+    sse.triggerEvent('done', null, second, { onDone: (value, request) => received.push(['second', value, request.id]) });
+    return JSON.stringify(received) === JSON.stringify([
+      ['first', 0, 'a'], ['global', 'item', 0, 'a'], ['second', null, 'b'], ['global', 'done', null, 'b']
+    ]);
   } }
 ]);

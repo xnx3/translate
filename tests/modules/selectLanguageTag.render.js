@@ -2,6 +2,19 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A07] 语言接口失败后可在下一次正常渲染重试',
+    test: function () {
+      let requests = 0;
+      translate.request.post = function (path, data, done) {
+        requests++;
+        done(requests === 1 ? {result: 0} : {result: 1, list: [{id: 'english', name: 'English'}]});
+      };
+      translate.selectLanguageTag.render();
+      translate.selectLanguageTag.render();
+      return document.querySelectorAll('#translateSelectLanguage option').length === 1;
+    }
+  },
+  {
     remark: "隐藏配置不创建选择框或请求语言列表",
     test: function () {
       translate.selectLanguageTag.show=false;

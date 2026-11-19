@@ -2,7 +2,7 @@
 
 require('../helpers/module')(__filename, [
   {
-    remark: "没有目标语种且省略参数",
+    remark: "[A41] 没有目标语种且省略参数",
     test: function () {
       translate.to = "";
       translate.language.local = "chinese_simplified";
@@ -42,7 +42,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: "显式检查另一语种",
+    remark: "[A41] 显式检查另一语种",
     test: function () {
       translate.to = "";
       translate.language.local = "chinese_simplified";

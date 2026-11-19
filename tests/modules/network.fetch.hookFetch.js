@@ -78,7 +78,7 @@ require('../helpers/module')(__filename, [
     return processed.length === 1 && processed[0] === 1999 &&
       sent.length === 2 && sent[0] === 'q=translated' && sent[1] === larger;
   } },
-  { remark: '翻译 GET 查询参数后仍响应调用方在请求进行中的取消信号', test: async function () {
+  { remark: '[F08] 翻译 GET 查询参数后仍响应调用方在请求进行中的取消信号', test: async function () {
     const controller = new AbortController();
     translate.network.rules = [{ url: /\/search/, methods: ['GET'], params: ['q'] }];
     translate.network._translateText = async () => ({ result: 1, text: ['translated'] });
@@ -99,7 +99,7 @@ require('../helpers/module')(__filename, [
     await pending;
     return new URL(forwarded.url).searchParams.get('q') === 'translated' && wasActive && wasAborted;
   } },
-  { remark: 'POST 翻译处理后仍传递调用时已经取消的 Request 信号', test: async function () {
+  { remark: '[F08] POST 翻译处理后仍传递调用时已经取消的 Request 信号', test: async function () {
     const controller = new AbortController();
     const input = new Request(location.origin + '/search', {
       method: 'POST', body: 'q=source', signal: controller.signal

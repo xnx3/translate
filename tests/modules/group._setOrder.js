@@ -33,5 +33,24 @@ require('../helpers/module')(__filename, [
       } finally {
         translate.listener.reset();
       }
-    } }
+    } },
+  ...['comment', 'end'].map(position => ({
+    remark: '参数组合：目标顺序已经满足时不重复移动节点，锚点为' + (position === 'comment' ? '注释' : '末尾'),
+    input: position,
+    test: function (position) {
+      const host = document.createElement('span');
+      const a = document.createTextNode('同'), b = document.createTextNode('同');
+      host.append(a, b);
+      const anchor = position === 'comment' ? host.appendChild(document.createComment('后界')) : null;
+      const observer = new MutationObserver(() => {});
+      observer.observe(host, {childList: true});
+      try {
+        translate.group._setOrder(host, [a, b], anchor);
+        return observer.takeRecords().length === 0 && host.firstChild === a &&
+          a.nextSibling === b && b.nextSibling === anchor;
+      } finally {
+        observer.disconnect();
+      }
+    }
+  }))
 ]);

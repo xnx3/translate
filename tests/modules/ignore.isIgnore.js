@@ -1,6 +1,54 @@
 'use strict';
 
 require('../helpers/module')(__filename, [
+  {
+    remark: '[A11] 无宿主的文本和属性均能判为未忽略',
+    test: function () {
+      const attr = document.createAttribute('title');
+      return !translate.ignore.isIgnore(document.createTextNode('text')) && !translate.ignore.isIgnore(attr);
+    }
+  },
+  {
+    remark: '[A12] 检查普通文本后保留宿主自定义属性',
+    test: function () {
+      const host = document.createElement('p');
+      host.textContent = 'Hello';
+      document.body.append(host);
+      host.element = 'app-element';
+      host.attribute = 'app-attribute';
+      host.node = 'app-node';
+      translate.ignore.isIgnore(host.firstChild);
+      return host.element === 'app-element' && host.attribute === 'app-attribute' && host.node === 'app-node';
+    }
+  },
+  {
+    remark: '[A13] 挂在 body 上的忽略类对后代生效',
+    test: function () {
+      document.body.classList.add('ignore');
+      const text = document.createTextNode('Text');
+      document.body.append(text);
+      return translate.ignore.isIgnore(text);
+    }
+  },
+  {
+    remark: '[A13] 深层 DOM 仍遵循祖先忽略规则',
+    test: function () {
+      const root = document.createElement('section');
+      root.className = 'ignore';
+      document.body.append(root);
+      let leaf = root;
+      for (let i = 0; i < 104; i++) leaf = leaf.appendChild(document.createElement('span'));
+      return translate.ignore.isIgnore(leaf.appendChild(document.createTextNode('Text')));
+    }
+  },
+  {
+    remark: '[A15] 内层条件返回 false 时继续检查外层忽略规则',
+    test: function () {
+      document.body.innerHTML = '<section class="ignore"><p class="conditional">Text</p></section>';
+      translate.ignore.class.push('conditional', () => false);
+      return translate.ignore.isIgnore(document.querySelector('p').firstChild);
+    }
+  },
   { remark: '省略节点返回 false', args: [], expected: false },
   { remark: 'undefined 节点返回 false', args: [undefined], expected: false },
   { remark: 'null 节点返回 false', args: [null], expected: false },
@@ -165,7 +213,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '祖先 class 中由制表符和换行分隔的标准 HTML 类名也能忽略子节点',
+    remark: '[A14] 祖先 class 中由制表符和换行分隔的标准 HTML 类名也能忽略子节点',
     test: function () {
       const outer = document.createElement('section');
       outer.className = 'before\tignore\nafter';

@@ -52,5 +52,25 @@ require('../helpers/module')(__filename, [
       translate.documents = [null, node];
       return translate.language.getTranslateAreaText() === '有效文本';
     }
-  }
+  },
+  { remark: '[C03] 采样仅保留范围中可见且未忽略的正文', test: function () {
+    const source = document.createElement('section');
+    source.innerHTML = 'Hello<span class="ignore">隐藏</span><b hidden>secret</b>';
+    document.body.append(source);
+    translate.setDocuments([source]);
+    return translate.language.getTranslateAreaText() === 'Hello';
+  } },
+  { remark: '[C04] 采样支持直接指定的 Text 根', test: function () {
+    const text = document.createTextNode('Bonjour');
+    document.body.append(text);
+    translate.setDocuments([text]);
+    return translate.language.getTranslateAreaText() === 'Bonjour';
+  } },
+  { remark: '[C05] 空区域采样不覆盖手动设置的源语种', test: function () {
+    translate.language.setLocal('french');
+    const empty = document.createElement('section');
+    document.body.append(empty);
+    translate.setDocuments([empty]);
+    return translate.language.getTranslateAreaText() === '' && translate.language.getLocal() === 'french';
+  } }
 ]);

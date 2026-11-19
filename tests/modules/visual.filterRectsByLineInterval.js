@@ -20,5 +20,16 @@ require('../helpers/module')(__filename, [
   { remark: '无效矩形被过滤且小数顶部按同一行归组', test: function () {
     const actual = translate.visual.filterRectsByLineInterval([null, {}, { top: 0.1, id: 'first' }, { top: 0.4, id: 'same' }, { top: 10, id: 'next' }], 1);
     return actual.map(r => r.id).join(',') === 'first,next';
-  } }
+  } },
+  {
+    remark: '参数组合：跨原点的三行按间隔取样，同一负数行保留首次输入',
+    test: function () {
+      const rectangles = [
+        {top: 2, id: 'bottom'}, {top: -2.2, id: 'first'},
+        {top: 0, id: 'middle'}, {top: -1.9, id: 'same'}
+      ];
+      const result = translate.visual.filterRectsByLineInterval(rectangles, 2);
+      return result.map(rect => rect.id).join(',') === 'first,bottom';
+    }
+  }
 ]);

@@ -86,7 +86,7 @@ require('../helpers/module')(__filename, [
     }
   },
   ...[
-    { label: '跨节点首尾偏移相同', anchor: 1, focus: 1, reverse: false, expected: '乙丙' },
+    { label: '[E06] 跨节点首尾偏移相同', anchor: 1, focus: 1, reverse: false, expected: '乙丙' },
     { label: '反向选中跨节点文本', anchor: 1, focus: 1, reverse: true, expected: '乙丙' },
     { label: '跨节点选中含 emoji 和保留字符的全文', anchor: 0, focus: 7, reverse: false, expected: '甲乙丙&+% 😀' }
   ].map(input => ({
@@ -116,6 +116,26 @@ require('../helpers/module')(__filename, [
       translate.request.post = () => { sent++; };
       translate.selectionTranslate.callTranslate();
       return window.getSelection().isCollapsed && sent === 0;
+    }
+  },
+  {
+    remark: '参数组合：连续选择两个词且响应反序时提示保留最近选中的词',
+    test: function () {
+      translate.selectionTranslate.start();
+      const first = document.createTextNode('first'), second = document.createTextNode('second');
+      document.body.append(first, second);
+      const pending = [], selection = window.getSelection();
+      translate.request.post = (url, data, complete) => pending.push({data, complete});
+      window.selectionX = 0; window.selectionY = 0;
+      for (const node of [first, second]) {
+        selection.setBaseAndExtent(node, 0, node, node.length);
+        translate.selectionTranslate.callTranslate(new MouseEvent('mouseup'));
+      }
+      if (pending.length !== 2) return false;
+      pending[1].complete({result: 1, text: ['第二个']}, pending[1].data);
+      pending[0].complete({result: 1, text: ['第一个']}, pending[0].data);
+      return selection.toString() === 'second' &&
+        document.getElementById('translateTooltip').textContent === '第二个';
     }
   }
 ]);

@@ -1,6 +1,13 @@
 'use strict';
 
 require('../helpers/module')(__filename, [
+  {
+    remark: '[A17] 重叠的术语一次只消费一个完整命中',
+    test: function () {
+      const result = translate.nomenclature.replace('aaa', 'aa', 'X', null);
+      return result.resultText === 'Xa' && JSON.stringify(result.texts) === '["a"]';
+    }
+  },
   { remark: '没有匹配项时保留文本和未匹配片段', args: ['你好', '世界', 'World', null], expected: { find: false, texts: ['你好'], resultText: '你好' } },
   { remark: '空原文没有匹配项时保留空文本', args: ['', '世界', 'World', null], expected: { find: false, texts: [''], resultText: '' } },
   { remark: '空术语键不执行替换', args: ['你好', '', 'World', null], expected: { find: false, texts: ['你好'], resultText: '你好' } },

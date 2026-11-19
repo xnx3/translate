@@ -10,14 +10,14 @@ require('../helpers/module')(__filename, [
   { remark: '默认空名单允许有效外部来源', args: ['https://external.example'], expected: true },
   { remark: '默认空名单允许字符串 null 不透明来源', args: ['null'], expected: true },
   {
-    remark: '配置非空名单后允许精确匹配的来源',
+    remark: '[A09] 配置非空名单后允许精确匹配的来源',
     test: function () {
       translate.postMessage.allowedOrigins = ['https://allowed.example'];
       return translate.postMessage.isOriginAllowed('https://allowed.example') === true;
     }
   },
   {
-    remark: '配置非空名单后拒绝其他外部来源',
+    remark: '[A09] 配置非空名单后拒绝其他外部来源',
     test: function () {
       translate.postMessage.allowedOrigins = ['https://allowed.example'];
       return translate.postMessage.isOriginAllowed('https://denied.example') === false;

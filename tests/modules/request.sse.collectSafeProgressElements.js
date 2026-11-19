@@ -107,5 +107,28 @@ require('../helpers/module')(__filename, [
     return result.length === 1 && result[0] === element && state.elementPendingMap.size === 0 &&
       fragmentText.parentNode === fragment && fragmentText.nodeValue === '片段原文' &&
       element.firstChild === text && text.nodeValue === '正常原文';
+  } },
+  { remark: '参数组合：共享元素跨两种语言，独立元素先完成且重复索引不会提前解除共享元素', test: function () {
+    translate.progress.api.use = true;
+    translate.progress.api.isTip = true;
+    const shared = document.createElement('span'), separate = document.createElement('span');
+    shared.append('中文', 'English');
+    separate.append('another');
+    document.body.append(shared, separate);
+    const entry = node => ({ nodes: [{ node }] });
+    translate.nodeQueue.combo = { list: {
+      chinese: { a: entry(shared.firstChild) },
+      english: { b: entry(shared.lastChild), c: entry(separate.firstChild) }
+    } };
+    const state = {};
+    const collect = (renderLang, renderedIndexes) => translate.request.sse.collectSafeProgressElements(state, {
+      uuid: 'combo', fanyiLangs: ['chinese', 'english'], translateHashArray: { chinese: ['a'], english: ['b', 'c'] },
+      renderLang, renderedIndexes
+    });
+    const standalone = collect('english', [1, 1, 0]);
+    const repeated = collect('english', [0]);
+    const last = collect('chinese', [0]);
+    return standalone.length === 1 && standalone[0] === separate && repeated.length === 0 &&
+      last.length === 1 && last[0] === shared && state.elementPendingMap.size === 0;
   } }
 ]);

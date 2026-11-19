@@ -2,6 +2,17 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A21] 并发保存两个目标语种后均可读回',
+    test: async function () {
+      await Promise.all([
+        translate.offline.fullExtract.set('shared', 'Hello', 'italian', 'Ciao'),
+        translate.offline.fullExtract.set('shared', 'Hello', 'spanish', 'Hola')
+      ]);
+      const item = await translate.storage.IndexedDB.get('hash_shared');
+      return item.italian === 'Ciao' && item.spanish === 'Hola';
+    }
+  },
+  {
     remark: '首次记录保存原文和目标语种译文，完成后返回 undefined',
     test: async function () {
       const result = await translate.offline.fullExtract.set('first', '你好', 'english', 'Hello');
@@ -121,5 +132,24 @@ require('../helpers/module')(__filename, [
       const latest = await db.get('hash_retry');
       return latest.originalText === '甲' && latest.english === 'First' && latest.french === 'Un';
     }
-  }
+  },
+  ...[
+    { name: '大小写近似的两个 hash', first: 'edition', second: 'Edition', original: 'book', other: 'Book' },
+    { name: '零与带前导零的 hash', first: 0, second: '00', original: 'book', other: 'book ' }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '交错追加并清空同一语种时，其他语种与相似原文记录保持独立',
+    input,
+    test: async function ({ first, second, original, other }) {
+      const save = translate.offline.fullExtract.set;
+      await save(first, original, 'english', 'First');
+      await save(second, other, 'english', 'Second');
+      await save(first, original, 'french', 'Un');
+      await save(first, original, 'english', '');
+      const db = translate.storage.IndexedDB;
+      const a = await db.get('hash_' + first);
+      const b = await db.get('hash_' + second);
+      return a.originalText === original && a.english === '' && a.french === 'Un' &&
+        b.originalText === other && b.english === 'Second' && !Object.hasOwn(b, 'french');
+    }
+  }))
 ]);

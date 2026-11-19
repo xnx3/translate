@@ -61,5 +61,22 @@ require('../helpers/module')(__filename, [
       translate.language.setUrlParamControl();
       return translate.to === 'korean';
     }
-  }
+  },
+  ...[
+    ['改为新参数名且有目标', 'locale=french', 'french'],
+    ['改为新参数名但 URL 只有旧参数', 'language=italian', 'english'],
+    ['改为新参数名但目标为空', 'locale=', 'english'],
+    ['查询串只有片段里含目标', 'page=2#locale=french', 'english']
+  ].map(([label, query, expected]) => ({
+    remark: '参数组合：' + label + '时内存目标与已存目标一致',
+    input: { query, expected },
+    test: function ({ query, expected }) {
+      history.replaceState(null, '', '?language=english');
+      translate.language.setUrlParamControl();
+      history.replaceState(null, '', '?' + query);
+      translate.language.setUrlParamControl('locale');
+      return translate.language.setUrlParamControl_name === 'locale' &&
+        translate.to === expected && translate.storage.get('to') === expected;
+    }
+  }))
 ]);

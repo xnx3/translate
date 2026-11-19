@@ -93,5 +93,20 @@ require('../helpers/module')(__filename, [
         history.originalMap.get('你好') === 'Hello' && history.originalMap.get('您好') === 'Hello' &&
         history.resultMap.get('Hello') === '您好';
     }
-  }
+  },
+  ...[
+    { name: '有空格和无空格的原文', first: 'book', second: 'book ', output: '', updated: 'Book' },
+    { name: '组合重音与预组合字符', first: 'e\u0301', second: '\u00e9', output: 'same', updated: '' }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '先共享译文再更新其中一项，两个方向按最近一次写入取值',
+    input,
+    test: function ({ first, second, output, updated }) {
+      const index = translate.history.translateText;
+      index.add(first, output);
+      index.add(second, output);
+      index.add(first, updated);
+      return index.originalMap.get(first) === updated && index.originalMap.get(second) === output &&
+        index.resultMap.get(output) === second && index.resultMap.get(updated) === first;
+    }
+  }))
 ]);

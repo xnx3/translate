@@ -31,5 +31,11 @@ require('../helpers/module')(__filename, [
         again.texts[0] === '甲' && again.texts[1] === '' && again.texts[2] === '😀\n乙' &&
         again.order.join(',') === '2,0,1' && item.order.join(',') === '2,0,1' &&
         item.words[0].text === '甲' && nodes.map(node => node.data).join(',') === '原甲,原乙,原丙';
-    } }
+    } },
+  { remark: '参数组合：同字节点含不同权重及空译文时，显示顺序不改变原下标的译文',
+    args: [
+      {nodes: ['first', 'second'], words: [{text: '甲', weight: 0}, {text: '甲', weight: 1}]},
+      {words: [{text: '', weight: 0}, {text: 'Second', weight: 1}], order: [1, 0]}
+    ],
+    expected: {texts: ['', 'Second'], order: [1, 0]} }
 ]);

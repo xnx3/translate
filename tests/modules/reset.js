@@ -122,7 +122,7 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: '清除翻译目标和双向历史记录，保留无关存储与翻译缓存',
+    remark: '[F19] 清除翻译目标和双向历史记录，保留无关存储与翻译缓存',
     test: function () {
       translate.to = 'english';
       translate.storage.set('to', 'english');

@@ -10,7 +10,7 @@ require('../helpers/module')(__filename, [
   { remark: '数字布尔和空值不混入字符串映射', args: [{ number: 0, flag: false, nil: null, text: 'ok' }], expected: { stringResult: { ok: ['text'] }, functionResult: {} } },
   { remark: 'null 本身返回空映射', args: [null], expected: { stringResult: {}, functionResult: {} } },
   { remark: 'undefined 本身返回空映射', args: [undefined], expected: { stringResult: {}, functionResult: {} } },
-  { remark: '嵌套函数保留引用且不会执行函数', test: function () {
+  { remark: '[G08] 嵌套函数保留引用且不会执行函数', test: function () {
     let called = 0; const fn = function () { called++; };
     const object = { value: 'hello', nested: { action: fn }, list: [fn] };
     const result = translate.js.find(object);
@@ -27,5 +27,21 @@ require('../helpers/module')(__filename, [
         JSON.stringify(stringResult['重复']) === JSON.stringify(['root[2][0]', 'root[5].label']) &&
         JSON.stringify(stringResult['']) === JSON.stringify(['root[5].blank']) && !(0 in values);
     }
+  },
+  {
+    remark: '参数组合：两个属性共享同一子对象时保留两条有效路径，且不修改只读输入',
+    test: function () {
+      const label = Object.freeze({ title: '阅读' });
+      const input = Object.freeze({ header: label, cards: Object.freeze([null, label]) });
+      const found = translate.js.find(input, 'page[2]');
+      return JSON.stringify(found.stringResult['阅读']) ===
+        JSON.stringify(['page[2].header.title', 'page[2].cards[1].title']) &&
+        Object.keys(found.stringResult).length === 1 && Object.keys(found.functionResult).length === 0;
+    }
+  },
+  {
+    remark: '参数组合：字面相同的数值、布尔与字符串中只记录字符串的位置',
+    args: [[0, '0', false, 'false', null, 'null', '', []], 'items'],
+    expected: { stringResult: { '0': ['items[1]'], false: ['items[3]'], null: ['items[5]'], '': ['items[6]'] }, functionResult: {} }
   }
 ]);

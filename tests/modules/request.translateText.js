@@ -161,5 +161,22 @@ require('../helpers/module')(__filename, [
     attempt();
     return JSON.stringify(sent) === '[["甲","丙"],["甲","丙"]]' &&
       JSON.stringify(outcomes) === '[503,["A","B","C"],["A","B","C"]]';
+  } },
+  { remark: '参数组合：启用离线提取时交错的缓存命中仍保持顺序，仅为新回包提取原文', test: function () {
+    const to = 'french', cached = 'bonjour', fresh = 'café';
+    const extracted = [], sent = [];
+    translate.storage.set('hash_' + to + '_' + translate.util.hash(cached), 'salut');
+    translate.offline.fullExtract.isUse = true;
+    translate.offline.fullExtract.set = (hash, original, target, result) => {
+      extracted.push([original, target, result]);
+    };
+    translate.request.post = (path, data, complete) => {
+      sent.push(JSON.parse(decodeURIComponent(data.text)));
+      complete({ result: 1, text: ['boisson'] }, data);
+    };
+    let text;
+    translate.request.translateText({ from: 'english', to, texts: [cached, fresh, cached] }, result => { text = result.text; });
+    return JSON.stringify(sent) === '[["café"]]' && JSON.stringify(extracted) === '[["café","french","boisson"]]' &&
+      JSON.stringify(text) === '["salut","boisson","salut"]';
   } }
 ]);

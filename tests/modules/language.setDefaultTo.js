@@ -43,5 +43,10 @@ require('../helpers/module')(__filename, [
       translate.language.setDefaultTo('french');
       return translate.language.defaultTo === 'french' && translate.storage.get('to') === 'english' && translate.to === 'english';
     }
-  }
+  },
+  { remark: '[C02] 跳过无效默认语种后仍可正常初始化目标', test: function () {
+    translate.language.setDefaultTo();
+    translate.language.setDefaultTo('french');
+    return translate.storage.get('to') === 'french' && translate.to === 'french';
+  } }
 ]);

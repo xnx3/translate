@@ -2,6 +2,14 @@
 
 require('../helpers/module')(__filename, [
   {
+    remark: '[A16] length 可作普通术语且不影响后一词条',
+    test: function () {
+      translate.nomenclature.append('english', 'italian', 'length=lunghezza\nwidth=larghezza');
+      const terms = translate.nomenclature.get().english.italian;
+      return terms.length === 'lunghezza' && terms.width === 'larghezza';
+    }
+  },
+  {
     remark: "单条术语配置写入对应语种映射",
     test: function () {
       translate.nomenclature.append('chinese_simplified', 'english', "你好=Hello");
@@ -211,5 +219,22 @@ require('../helpers/module')(__filename, [
       const keys = Object.keys(translate.nomenclature.get().chinese_simplified.english);
       return keys[0] === '你好世界' && keys[1] === '你好' && keys[2] === '你';
     }
-  }
+  },
+  ...[
+    { label: '省略来源', source: undefined }, { label: 'null 来源', source: null },
+    { label: 'auto 来源', source: 'auto' }
+  ].map(({ label, source }) => ({
+    remark: '参数组合：' + label + '与显式来源合并同词条，并隔离另一目标语种',
+    input: { source },
+    test: function ({ source }) {
+      translate.language.setLocal('english');
+      translate.nomenclature.append('english', 'french', 'Book=Livre\nPage=Page');
+      translate.nomenclature.append('english', 'spanish', 'Book=Libro');
+      translate.nomenclature.append(source, 'french', '\r\n Book = Ouvrage \r\ninvalid line\r\nChapter=Chapitre');
+      const maps = translate.nomenclature.get().english;
+      return maps.french.Book === 'Ouvrage' && maps.french.Page === 'Page' &&
+        maps.french.Chapter === 'Chapitre' && Object.keys(maps.french).length === 3 &&
+        maps.spanish.Book === 'Libro' && Object.keys(maps.spanish).length === 1;
+    }
+  }))
 ]);

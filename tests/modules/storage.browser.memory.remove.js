@@ -76,5 +76,22 @@ require('../helpers/module')(__filename, [
       return translate.storage.browser.memory.get('disk') === null &&
         localStorage.getItem('disk') === 'persistent';
     }
-  }
+  },
+  ...[
+    { name: '空字符串与空格', key: '', alias: '', neighbor: ' ', replacement: 0 },
+    { name: '布尔 false 与同名字符串', key: false, alias: 'false', neighbor: 'FALSE', replacement: '' }
+  ].map(input => ({
+    remark: '参数组合：' + input.name + '删除与重写均不会改写近似键或同名磁盘记录',
+    input,
+    test: function ({ key, alias, neighbor, replacement }) {
+      const memory = translate.storage.browser.memory;
+      localStorage.setItem(alias, 'disk');
+      memory.set(key, 0);
+      memory.set(neighbor, false);
+      memory.remove(alias);
+      if (memory.get(key) !== null || memory.get(neighbor) !== 'false') return false;
+      memory.set(alias, replacement);
+      return memory.get(key) === String(replacement) && localStorage.getItem(alias) === 'disk';
+    }
+  }))
 ]);

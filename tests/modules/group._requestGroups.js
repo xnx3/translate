@@ -81,5 +81,29 @@ require('../helpers/module')(__filename, [
         ? failures.length === 0 && successes.length === 1 && successes[0].length === 1 && successes[0][0] === body
         : successes.length === 0 && failures.length === 1 && failures[0][0] === xhr;
     }
-  }))
+  })),
+  { remark: '参数组合：一组对应数量不符时整批无副作用，修正映射后同一输入可重试',
+    test: function () {
+      const a = document.createTextNode('甲'), b = document.createTextNode('乙');
+      const groups = [
+        {to: 'english', words: [{text: '甲', weight: 0}], nodes: [a]},
+        {to: 'english', words: [{text: '乙', weight: 1}], nodes: []}
+      ];
+      const callbacks = [];
+      const sends = [];
+      const ticket = {};
+      translate.request.send = function (path, data, context) {
+        sends.push({data, context});
+        return ticket;
+      };
+      const done = () => callbacks.push('done'), fail = () => callbacks.push('error');
+      const first = translate.group._requestGroups('retry', groups, done, fail);
+      if (first !== null || sends.length || callbacks.length || groups[1].nodes.length) return false;
+      groups[1].nodes.push(b);
+      const retry = translate.group._requestGroups('retry', groups, done, fail);
+      if (retry !== ticket || sends.length !== 1 || callbacks.length) return false;
+      const payload = JSON.parse(decodeURIComponent(sends[0].data.text));
+      return payload.length === 2 && payload[0].words[0].text === '甲' && payload[1].words[0].text === '乙' &&
+        sends[0].context.groups[0].nodes[0] === a && sends[0].context.groups[1].nodes[0] === b;
+    } }
 ]);

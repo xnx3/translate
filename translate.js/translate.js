@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.39.20261118',
+	version: '4.1.40.20261119',
 	
 	/*js translate.config start*/
 	/*
@@ -308,7 +308,12 @@ var translate = {
 				translate.ignore.id = ignore.id;
 			}
 			if(ignore.class != null && typeof(ignore.class) === 'object'){
-				translate.ignore.class = ignore.class;
+				if(Array.isArray(ignore.class.data)){
+					translate.ignore.class.data = ignore.class.data;
+				}
+				if(ignore.class.conditionFunction != null && typeof(ignore.class.conditionFunction) === 'object'){
+					translate.ignore.class.conditionFunction = ignore.class.conditionFunction;
+				}
 			}
 			if(ignore.tag != null && typeof(ignore.tag) === 'object'){
 				translate.ignore.tag = ignore.tag;

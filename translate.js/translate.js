@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.41.20261119',
+	version: '4.1.42.20261119',
 	
 	/*js translate.config start*/
 	/*
@@ -277,7 +277,7 @@ var translate = {
 			if(typeof(language.autoDiscriminateLocalLanguage) === 'boolean' && language.autoDiscriminateLocalLanguage === true){
 				translate.setAutoDiscriminateLocalLanguage();
 			}
-			if(language.range != null && typeof(language.range) === 'object' && language.range.length > 0){
+			if(Array.isArray(language.range)){
 				translate.language.translateLanguagesRange = language.range;
 			}
 			if(typeof(languageUrlParamControl.use) === 'boolean'){

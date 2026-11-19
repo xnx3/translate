@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-19（北京时间）。
 
+## 导入空语种范围时清除旧筛选（4.1.42.20261119）
+
+按维护者确认的 diff，仅将 `config.set()` 的 `language.range` 导入条件改为 `Array.isArray(language.range)`。空数组按已有约定恢复翻译所有语种，非空数组仍限制源语种；两者继续保留输入引用，省略、undefined、null 不覆盖原设置。复用已有 A04 回归，没有新增测试或修改预期。
+
+配置导入导出及默认值、execute、group._prepareGroups 五个源码模块严格复测共 262 项：260 通过、2 项原有失败，无跳过、重试、超时或运行器错误。与此前相应用例逐条比较，仅 A04 的空范围用例恢复通过，其余 261 项结果一致。剩余失败为 A04 的 false 关闭自动识别及 A05 的 URL 控制，留待逐项确认。
+
+```shell
+npm --prefix tests run test:source -- modules/config.set modules/config.get modules/config.data modules/execute.js modules/group._prepareGroups --workers=3
+```
+
+源码版本更新为 `4.1.42.20261119`；压缩文件未更新，本轮未重跑全量测试。
+
 ## iframe 可选配置处理钩子（4.1.41.20261119）
 
 `translate.element.iframe.use()` 兼容原脚本地址字符串，也支持 `{url, setConfig}`。首次注入与已加载无 src 子页重新同步前，均同步调用 `setConfig(config, iframeWindow)`，由调用者决定是否省略父页 DOM 范围。不提供钩子时保持原有传递行为。用法及引用语义见 [iframe 文档](../doc/translate.element.iframe.md)。

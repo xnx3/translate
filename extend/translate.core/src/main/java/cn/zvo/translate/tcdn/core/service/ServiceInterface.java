@@ -36,7 +36,7 @@ public interface ServiceInterface {
 	 * @param set 更多自定义参数。 注意不要进行set，只获取，免得影响了其他的同步翻译
 	 * @return 翻译结果
 	 */
-	public TranslateResultVO api(String from, String to, List<String> textArray, Set set);
+	public TranslateResultVO<String> api(String from, String to, List<String> textArray, Set set);
 	
 	
 }

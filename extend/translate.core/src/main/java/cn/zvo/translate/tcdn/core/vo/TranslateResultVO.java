@@ -11,7 +11,7 @@ import com.xnx3.BaseVO;
  * 成功整组只包含 words 和可选 order；原始 context、weight 保留在 original 中。</p>
  * @author 管雷鸣
  */
-public class TranslateResultVO extends BaseVO implements java.io.Serializable{
+public class TranslateResultVO<T> extends BaseVO implements java.io.Serializable{
 	/**
 	 * giteeai 添加，当还未购买按量套餐时，返回这个提示，表示账户未激活
 	 */
@@ -22,7 +22,7 @@ public class TranslateResultVO extends BaseVO implements java.io.Serializable{
 	// 与输入任务等长、顺序一致；普通项为字符串，整组项为对象。
 	// 成功组的 words 仍按源节点下标排列，仅重排时在该组内附带 order，不增加顶层 order。
 	// 失败项在原下标回显原文；整批失败时全部回显，单项失败不覆盖其他项的译文。
-	private List<Object> text;
+	private List<T> text;
 	// 原样保存解码后的完整任务，包含 context、words、原始 weight，不注入默认值。
 	// 接受普通字符串列表或混合列表，直接保留传入列表，不复制。
 	private List<?> original;
@@ -43,10 +43,10 @@ public class TranslateResultVO extends BaseVO implements java.io.Serializable{
 	public void setTo(String to) {
 		this.to = to;
 	}
-	public List<Object> getText() {
+	public List<T> getText() {
 		return text;
 	}
-	public void setText(List<Object> text) {
+	public void setText(List<T> text) {
 		this.text = text;
 	}
 	

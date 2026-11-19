@@ -29,16 +29,18 @@ public class TranslateResultVOTest {
     @Test
     public void defaultResponseKeepsLegacyNullFields() throws Exception {
         assertJson("{\"result\":1,\"info\":\"成功\",\"from\":null,\"to\":null,"
-                + "\"text\":null,\"original\":null}", new TranslateResultVO());
+                + "\"text\":null,\"original\":null}", new TranslateResultVO<>());
     }
 
     @Test
     public void ordinarySuccessKeepsStringsAndEscapes() throws Exception {
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<String> result = new TranslateResultVO<>();
         result.setFrom("chinese_simplified");
         result.setTo("english");
         result.setInfo("success");
-        result.setText(Arrays.<Object>asList("Hello", "", " \t ", "😀", "\"\\\n"));
+        List<String> translated = Arrays.asList("Hello", "", " \t ", "😀", "\"\\\n");
+        result.setText(translated);
+        assertSame(translated, result.getText());
         List<String> original = Arrays.asList("你好", "", " \t ", "😀", "\"\\\n");
         result.setOriginal(original);
         assertSame(original, result.getOriginal());
@@ -50,12 +52,12 @@ public class TranslateResultVOTest {
 
     @Test
     public void failureKeepsOriginalStringArrays() throws Exception {
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<String> result = new TranslateResultVO<>();
         result.setFrom("auto");
         result.setTo("english");
         result.setBaseVO(0, "翻译失败");
-        result.setText(Arrays.<Object>asList("你好", "原文"));
-        result.setOriginal(Arrays.<Object>asList("你好", "原文"));
+        result.setText(Arrays.asList("你好", "原文"));
+        result.setOriginal(Arrays.asList("你好", "原文"));
 
         assertJson("{\"result\":0,\"info\":\"翻译失败\",\"from\":\"auto\",\"to\":\"english\","
                 + "\"text\":[\"你好\",\"原文\"],\"original\":[\"你好\",\"原文\"]}", result);
@@ -63,9 +65,9 @@ public class TranslateResultVOTest {
 
     @Test
     public void emptyArraysRemainArrays() throws Exception {
-        TranslateResultVO result = new TranslateResultVO();
-        result.setText(Collections.<Object>emptyList());
-        result.setOriginal(Collections.<Object>emptyList());
+        TranslateResultVO<String> result = new TranslateResultVO<>();
+        result.setText(Collections.emptyList());
+        result.setOriginal(Collections.emptyList());
 
         assertJson("{\"result\":1,\"info\":\"成功\",\"from\":null,\"to\":null,"
                 + "\"text\":[],\"original\":[]}", result);
@@ -73,11 +75,11 @@ public class TranslateResultVOTest {
 
     @Test
     public void controllerClearedOriginalRemainsPresentAndNull() throws Exception {
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<String> result = new TranslateResultVO<>();
         result.setFrom("auto");
         result.setTo("english");
-        result.setText(Arrays.<Object>asList("Hello"));
-        result.setOriginal(Arrays.<Object>asList("你好"));
+        result.setText(Arrays.asList("Hello"));
+        result.setOriginal(Arrays.asList("你好"));
         // 普通 translate.json 的 Controller 会在返回前清除此字段。
         result.setOriginal(null);
 
@@ -88,7 +90,7 @@ public class TranslateResultVOTest {
     @Test
     public void accountNotActivatedCodeRemains401() throws Exception {
         assertEquals(401, TranslateResultVO.ERROR_ACCOUNT_NOT_ACTIVATED);
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<String> result = new TranslateResultVO<>();
         result.setBaseVO(TranslateResultVO.ERROR_ACCOUNT_NOT_ACTIVATED, "账户未激活");
 
         assertJson("{\"result\":401,\"info\":\"账户未激活\",\"from\":null,\"to\":null,"
@@ -97,7 +99,7 @@ public class TranslateResultVOTest {
 
     @Test
     public void usageIsOptionalAndPreservesLongIntegers() throws Exception {
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<String> result = new TranslateResultVO<>();
         assertFalse(json(result).has("usage"));
 
         Map<String, Long> usage = new LinkedHashMap<String, Long>();
@@ -122,7 +124,7 @@ public class TranslateResultVOTest {
                 + "\"words\":[{\"text\":\"早上\",\"weight\":1},{\"text\":\"好\",\"weight\":0}]}]";
         String translated = "[\"Hello\",{\"words\":[{\"text\":\"morning\"},{\"text\":\"Good\"}],"
                 + "\"order\":[1,0]}]";
-        TranslateResultVO result = new TranslateResultVO();
+        TranslateResultVO<Object> result = new TranslateResultVO<>();
         result.setFrom("auto");
         result.setTo("english");
         result.setOriginal(JSON.readValue(original, new TypeReference<List<Object>>() { }));
@@ -139,17 +141,17 @@ public class TranslateResultVOTest {
 
     @Test
     public void debugIsNotAResponseProperty() throws Exception {
-        assertFalse(json(new TranslateResultVO()).has("debug"));
+        assertFalse(json(new TranslateResultVO<>()).has("debug"));
         for (PropertyDescriptor property : Introspector.getBeanInfo(TranslateResultVO.class).getPropertyDescriptors()) {
             assertFalse("debug must not be a bean property", "debug".equals(property.getName()));
         }
     }
 
-    private static JsonNode json(TranslateResultVO result) throws Exception {
+    private static JsonNode json(TranslateResultVO<?> result) throws Exception {
         return JSON.readTree(JSON.writeValueAsString(result));
     }
 
-    private static void assertJson(String expected, TranslateResultVO result) throws Exception {
+    private static void assertJson(String expected, TranslateResultVO<?> result) throws Exception {
         assertEquals(JSON.readTree(expected), json(result));
     }
 }

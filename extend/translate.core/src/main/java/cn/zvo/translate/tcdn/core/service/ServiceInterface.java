@@ -32,11 +32,11 @@ public interface ServiceInterface {
 	 * 				<li>english : English</li>
 	 * 				<li>...... 具体可传入哪些，还要看该服务api接口支持哪些</li>
 	 * 			</ul>
-	 * @param textArray 要转换的语言的json数组，传入的如 ["你好","探索星辰大海"] 
+	 * @param textArray 待翻译任务列表，元素可以是普通字符串，也可以是通道支持的整组对象
 	 * @param set 更多自定义参数。 注意不要进行set，只获取，免得影响了其他的同步翻译
 	 * @return 翻译结果
 	 */
-	public TranslateResultVO<String> api(String from, String to, List<String> textArray, Set set);
+	public TranslateResultVO<?> api(String from, String to, List<?> textArray, Set set);
 	
 	
 }

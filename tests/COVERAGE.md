@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 局部替换按字面插入译文（4.1.45.20261120）
+
+按维护者确认的 diff，`util.replaceFromIndex()` 将 `String.replace()` 的译文参数改为同步回调返回，避免 `$&`、`$$` 等字符被当成替换指令展开。首次匹配、起始下标、未命中处理及结束位置计算保持原逻辑。复用已有回归，没有新增测试或修改预期。
+
+位置替换、两层文本替换、兼容入口及 renderTask.execute 五个源码模块严格复测共 168 项，全部通过，无跳过、重试、超时或运行器错误。与修改前相应用例逐条比较，美元字符相关的三项由失败恢复通过，其余 165 项结果一致。另以实际源码执行 `translate.execute()`，仅模拟翻译接口回包，确认局部译文 `USD $&` 在页面上按字面保留；11 种字符组合的插入结果及结束下标均通过核对。
+
+```shell
+npm --prefix tests run test:source -- modules/util.replaceFromIndex.js modules/util.textReplace_service.js modules/util.textReplace.js modules/language.textTranslateReplace.js modules/renderTask.execute.js --workers=3
+```
+
+源码版本更新为 `4.1.45.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 显式关闭 URL 控制时仅恢复自定义参数名（4.1.44.20261120）
 
 按维护者确认的 diff，`config.set()` 导入自定义 URL 参数名时，若显式配置 `use:false`，只保存参数名，不调用会重新启用并读取 URL 的 `setUrlParamControl()`。只传参数名或传入 `use:true` 时仍调用原方法。复用已有 A05 回归，没有新增测试或修改预期。

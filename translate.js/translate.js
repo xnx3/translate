@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.44.20261120',
+	version: '4.1.45.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -10229,7 +10229,7 @@ var translate = {
 		    const after = text.slice(index);
 		    const originalTextIndex = after.indexOf(originalText);
 		    if(originalTextIndex > -1){
-		    	const replacedAfter = after.replace(originalText, replaceText);
+				const replacedAfter = after.replace(originalText, function(){ return replaceText; });
 		    	return {
 		    		text: before + replacedAfter, 
 		    		replaceEndIndex: index + originalTextIndex + replaceText.length

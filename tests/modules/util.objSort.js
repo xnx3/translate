@@ -1,7 +1,7 @@
 'use strict';
 
 require('../helpers/module')(__filename, [
-  { remark: '空对象排序后没有元素', args: [{}], expected: [] },
+  { remark: '空对象排序后没有元素', args: [{}], expected: {} },
   {
     remark: '字符串键按长度从长到短排列并保留各自的值',
     test: function () {

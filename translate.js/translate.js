@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.45.20261120',
+	version: '4.1.46.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -2784,7 +2784,7 @@ var translate = {
 				translate.nomenclature.data[from] = new Array();
 			}
 			if(typeof(translate.nomenclature.data[from][to]) == 'undefined'){
-				translate.nomenclature.data[from][to] = new Array();
+				translate.nomenclature.data[from][to] = {};
 			}
 			
 			//将properties进行分析
@@ -10432,7 +10432,7 @@ var translate = {
 			});
 
 			// 定义一个新的对象数组，用来存储排序后的结果
-			var sortedObj = new Array();
+			var sortedObj = {};
 
 			// 遍历排序后的 key 数组，将对应的值复制到新的对象数组中，并删除原来的对象数组中的键值对
 			for (var key of keys) {

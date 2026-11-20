@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 普通术语 length 可正常导入及执行（4.1.46.20261120）
+
+按维护者确认的 diff，`nomenclature.append()` 的词条容器及 `util.objSort()` 的排序结果容器均由数组改为普通对象，避免将英文术语 `length` 当作数组长度赋值而抛出 RangeError。沿用既有 A16 回归，仅将空对象排序用例的结果类型预期由 `[]` 改为 `{}`，没有新增测试；词条表及排序结果现在返回普通对象。
+
+术语导入、读取及批量替换、对象排序、配置导入导出六个源码模块严格复测共 221 项，全部通过，无跳过、重试、超时或运行器错误。与修改前相应用例逐条比较，A16 由失败恢复通过；其余 220 项通过结果保持，其中包含上述已确认的空结果类型预期调整。另以实际源码先配置 `length=lunghezza`、`width=larghezza` 再执行 `translate.execute()`，页面正常显示 `lunghezza larghezza`，无浏览器异常且没有调用翻译接口。
+
+```shell
+npm --prefix tests run test:source -- modules/nomenclature.append.js modules/nomenclature.get.js modules/nomenclature.dispose.js modules/util.objSort.js modules/config.get.js modules/config.set.js --workers=3
+```
+
+源码版本更新为 `4.1.46.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 局部替换按字面插入译文（4.1.45.20261120）
 
 按维护者确认的 diff，`util.replaceFromIndex()` 将 `String.replace()` 的译文参数改为同步回调返回，避免 `$&`、`$$` 等字符被当成替换指令展开。首次匹配、起始下标、未命中处理及结束位置计算保持原逻辑。复用已有回归，没有新增测试或修改预期。

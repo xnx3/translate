@@ -1,6 +1,18 @@
 # 方法测试覆盖及验证记录
 
-最近更新于 2026-11-19（北京时间）。
+最近更新于 2026-11-20（北京时间）。
+
+## 导入 false 关闭自动语种识别（4.1.43.20261120）
+
+按维护者确认的 diff，`config.set()` 在 `typeof(language.autoDiscriminateLocalLanguage) === 'boolean'` 内分别处理 true、false：true 继续调用既有设置方法，false 将自动识别开关设为 false。省略或非布尔值继续跳过，不重置已有目标语种、存储或译文。复用已有 A04 回归，没有新增测试或修改预期。
+
+配置导入导出及默认值、自动识别设置、execute、executeByLocalLanguage 六个源码模块严格复测共 239 项：238 通过、1 项原有失败，无跳过、重试、超时或运行器错误。与此前相应用例逐条比较，仅 A04 的 false 关闭用例恢复通过，其余 238 项结果一致；原 true 启用用例通过。剩余失败为 A05 的 URL 控制，留待下一项单独确认。
+
+```shell
+npm --prefix tests run test:source -- modules/config.set modules/config.get modules/config.data modules/setAutoDiscriminateLocalLanguage modules/execute.js modules/executeByLocalLanguage --workers=3
+```
+
+源码版本更新为 `4.1.43.20261120`；压缩文件未更新，本轮未重跑全量测试。
 
 ## 导入空语种范围时清除旧筛选（4.1.42.20261119）
 

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.42.20261119',
+	version: '4.1.43.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -274,8 +274,12 @@ var translate = {
 			if(typeof(language.defaultTo) === 'string' && language.defaultTo.trim().length>0){
 				translate.language.setDefaultTo(language.defaultTo);
 			}
-			if(typeof(language.autoDiscriminateLocalLanguage) === 'boolean' && language.autoDiscriminateLocalLanguage === true){
-				translate.setAutoDiscriminateLocalLanguage();
+			if(typeof(language.autoDiscriminateLocalLanguage) === 'boolean'){
+				if(language.autoDiscriminateLocalLanguage){
+					translate.setAutoDiscriminateLocalLanguage();
+				}else{
+					translate.autoDiscriminateLocalLanguage = false;
+				}
 			}
 			if(Array.isArray(language.range)){
 				translate.language.translateLanguagesRange = language.range;

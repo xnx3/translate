@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 离线词库兼容 Windows CRLF 换行（4.1.47.20261120）
+
+按维护者确认的 diff，`offline.append()` 的分行方式由 `split('\n')` 改为 `split(/\r?\n/)`，避免将 CRLF 行结束符中的回车作为译文写入缓存及页面。继续保留词条真实空格、既有缩进处理及换行占位符还原规则，单独出现的回车仍视为内容。复用已有 A33 回归，没有新增测试或修改预期。
+
+离线导入、旧版 office.append 包装及 renderTask.execute 三个源码模块严格复测共 49 项，全部通过，无跳过、重试、超时或运行器错误。与修改前相应用例逐条比较，两项 CRLF 回归由失败恢复通过，其余 47 项结果一致。另用实际源码通过 `fetch(...).text()` 读取 CRLF 词库再执行 `translate.execute()`，确认缓存和页面文本均不含多余回车，无浏览器异常且没有调用翻译接口；末尾换行、混合换行、真实空格、换行占位符、空译文及单独回车六种边界核对均通过。
+
+```shell
+npm --prefix tests run test:source -- modules/offline.append.js modules/office.append.js modules/renderTask.execute.js --workers=3
+```
+
+源码版本更新为 `4.1.47.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 普通术语 length 可正常导入及执行（4.1.46.20261120）
 
 按维护者确认的 diff，`nomenclature.append()` 的词条容器及 `util.objSort()` 的排序结果容器均由数组改为普通对象，避免将英文术语 `length` 当作数组长度赋值而抛出 RangeError。沿用既有 A16 回归，仅将空对象排序用例的结果类型预期由 `[]` 改为 `{}`，没有新增测试；词条表及排序结果现在返回普通对象。

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.46.20261120',
+	version: '4.1.47.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -3150,7 +3150,7 @@ var translate = {
 			//console.log(properties)
 			//将properties进行分析
 			//按行拆分
-			var line = properties.split('\n');
+			var line = properties.split(/\r?\n/);
 			//console.log(line)
 
 			//计算前10行，判定当前配置文件的行开头缩进方式

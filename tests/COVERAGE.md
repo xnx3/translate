@@ -2,6 +2,19 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 默认语言选择框重绘时以新节点替换旧节点（4.1.49.20261120）
+
+按维护者确认的 diff，仅在默认 `selectLanguageTag.customUI()` 追加新选择框前移除同 ID 的旧选择框，解决语言列表请求在途时刷新导致重复选择框的问题。`render()` 仍正常调用用户自定义 `customUI()`，后续回调可继续更新自定义界面；容器其他内容保留。复用已有 A08 回归，没有新增测试或修改预期。
+
+选择框渲染、刷新、自定义界面及 request.post 四个源码模块严格复测 29 项，加上 A08 场景共 30 项全部通过，无跳过、重试、超时或运行器错误。与修改前相应用例比较，29 项模块结果一致，A08 由失败恢复通过。另以实际源码核对刷新、切换语种及 reset 在默认/自定义界面、两种回包顺序下的 12 种组合；真实 XHR 验证默认/自定义界面的两种回包顺序，共 4 种组合，均只显示一个选择框且继续调用自定义渲染、显示后一次回调的内容并选中当前目标语种。重复直接调用默认 customUI 时也能替换节点、保留容器其他内容及正常响应 change 事件；以上检查均无浏览器异常。
+
+```shell
+node tests/start.js --source --strict modules/selectLanguageTag.render.js modules/selectLanguageTag.refreshRender.js modules/selectLanguageTag.customUI.js modules/request.post.js --workers=3
+node tests/start.js --source --strict scenarios/audit-config.spec.js --grep A08 --workers=1
+```
+
+源码版本更新为 `4.1.49.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 语言列表请求失败后允许下次正常渲染重试（4.1.48.20261120）
 
 按维护者确认的 diff，`selectLanguageTag.render()` 在接口返回 `result:0` 及请求异常回调中释放 `alreadyRender` 标记，允许后续正常调用 `execute()` 或 `render()` 重新请求语种列表。请求在途时继续保持标记，成功后仍缓存列表；不新增自动重试。复用已有 A07 回归，没有新增测试或修改预期。

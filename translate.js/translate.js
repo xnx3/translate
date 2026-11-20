@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.48.20261120',
+	version: '4.1.49.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -604,6 +604,10 @@ var translate = {
 			} 
 
 			//将select加入进网页显示
+			var oldSelectLanguage = document.getElementById(selectLanguage.id);
+			if(oldSelectLanguage != null){
+				oldSelectLanguage.parentNode.removeChild(oldSelectLanguage);
+			}
 			document.getElementById(translate.selectLanguageTag.documentId).appendChild(selectLanguage);
 				
 		},

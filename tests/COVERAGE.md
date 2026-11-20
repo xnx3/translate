@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 显式关闭 URL 控制时仅恢复自定义参数名（4.1.44.20261120）
+
+按维护者确认的 diff，`config.set()` 导入自定义 URL 参数名时，若显式配置 `use:false`，只保存参数名，不调用会重新启用并读取 URL 的 `setUrlParamControl()`。只传参数名或传入 `use:true` 时仍调用原方法。复用已有 A05 回归，没有新增测试或修改预期。
+
+配置导入导出及默认值、URL 控制与清除语种缓存、自动识别设置、execute、executeByLocalLanguage 八个源码模块严格复测共 255 项，全部通过，无跳过、重试、超时或运行器错误。与此前相应用例逐条比较，仅 A05 由失败恢复通过，其余 254 项结果一致。另对实际源码验证 8 种 URL 配置组合，确认显式关闭时目标语种及存储保持原值，启用及仅设置参数名等路径保持原行为。
+
+```shell
+npm --prefix tests run test:source -- modules/config.set modules/config.get modules/config.data modules/language.setUrlParamControl modules/language.clearCacheLanguage modules/setAutoDiscriminateLocalLanguage modules/execute.js modules/executeByLocalLanguage --workers=3
+```
+
+源码版本更新为 `4.1.44.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 导入 false 关闭自动语种识别（4.1.43.20261120）
 
 按维护者确认的 diff，`config.set()` 在 `typeof(language.autoDiscriminateLocalLanguage) === 'boolean'` 内分别处理 true、false：true 继续调用既有设置方法，false 将自动识别开关设为 false。省略或非布尔值继续跳过，不重置已有目标语种、存储或译文。复用已有 A04 回归，没有新增测试或修改预期。

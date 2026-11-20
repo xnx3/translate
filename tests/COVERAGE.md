@@ -2,6 +2,18 @@
 
 最近更新于 2026-11-20（北京时间）。
 
+## 语言列表请求失败后允许下次正常渲染重试（4.1.48.20261120）
+
+按维护者确认的 diff，`selectLanguageTag.render()` 在接口返回 `result:0` 及请求异常回调中释放 `alreadyRender` 标记，允许后续正常调用 `execute()` 或 `render()` 重新请求语种列表。请求在途时继续保持标记，成功后仍缓存列表；不新增自动重试。复用已有 A07 回归，没有新增测试或修改预期。
+
+选择框渲染、刷新、自定义界面及 request.post 四个源码模块严格复测共 29 项，全部通过，无跳过、重试、超时或运行器错误。与修改前相应用例逐条比较，仅 A07 由失败恢复通过，其余 28 项结果一致。另以实际源码和真实 XHR 验证业务失败、HTTP 500、网络失败（status 0）后下一次 `execute()` 均能恢复一个选择框；请求在途时连续执行仍只发送一次，首次成功后再次执行不重复请求，均无浏览器异常。
+
+```shell
+npm --prefix tests run test:source -- modules/selectLanguageTag.render.js modules/selectLanguageTag.refreshRender.js modules/selectLanguageTag.customUI.js modules/request.post.js --workers=3
+```
+
+源码版本更新为 `4.1.48.20261120`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 离线词库兼容 Windows CRLF 换行（4.1.47.20261120）
 
 按维护者确认的 diff，`offline.append()` 的分行方式由 `split('\n')` 改为 `split(/\r?\n/)`，避免将 CRLF 行结束符中的回车作为译文写入缓存及页面。继续保留词条真实空格、既有缩进处理及换行占位符还原规则，单独出现的回车仍视为内容。复用已有 A33 回归，没有新增测试或修改预期。

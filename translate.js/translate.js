@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.47.20261120',
+	version: '4.1.48.20261120',
 	
 	/*js translate.config start*/
 	/*
@@ -642,13 +642,16 @@ var translate = {
 				//从接口加载语种
 				translate.request.post(translate.request.api.language, {}, function(responseData, requestData){
 					if(responseData.result == 0){
+						translate.selectLanguageTag.alreadyRender = false;
 						translate.log('load language list error : '+responseData.info);
 						return;
 					}
 					//console.log(data.list);
 					translate.request.api.language = responseData.list; //进行缓存，下一次切换语言渲染的时候直接从缓存取，就不用在通过网络加载了
 					translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(responseData.list));
-				}, null);
+				}, function(){
+					translate.selectLanguageTag.alreadyRender = false;
+				});
 			}else if(translate.request.api.language != null && typeof(translate.request.api.language) == 'object'){
 				//无网络环境下，自定义显示语种
 				translate.selectLanguageTag.customUI(translate.selectLanguageTag.customLanguagesHandle(translate.request.api.language));

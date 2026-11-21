@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.53.20261121',
+	version: '4.1.54.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -2544,8 +2544,8 @@ var translate = {
 				var nodename = translate.element.getNodeName(parentNode).toLowerCase(); //tag名字，小写
 				if(nodename.length > 0){
 					//有nodename
-					if(nodename == 'body' || nodename == 'html' || nodename == '#document'){
-						//上层元素已经是顶级元素了，那肯定就不是了
+					if(nodename == '#document'){
+						//已到文档节点，结束祖先忽略规则检查
 						return false;
 					}
 					if(translate.ignore.tag.indexOf(nodename) > -1){

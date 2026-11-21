@@ -2,6 +2,21 @@
 
 最近更新于 2026-11-21（北京时间）。
 
+## body/html 正常参与祖先忽略规则判断（4.1.54.20261121）
+
+按维护者确认的两行 diff，`ignore.isIgnore()` 的顶级停止条件仅保留 `#document`，同步更新注释，使 `body/html` 上的 tag、class、id 及自定义条件按已有规则判断，避免提前返回“不忽略”而将其后代正文和属性发送到翻译接口。复用已有 A13 回归，没有新增测试或修改预期。
+
+正式源码的忽略判断、类注册、节点收集与扫描、整体判断、execute 及三个分组模块严格复测共 295 项：289 通过、6 项原有失败。与修改前 295 项结果逐条比较，仅 A13 的 body 用例恢复通过，其余状态和失败诊断一致；无新增失败、跳过、重试、超时或运行器错误。剩余失败为 B27、A39、A11、A12、A13 的深层 DOM 用例及 A15，留待逐项审查。9 项真实页面场景全部通过，覆盖静态翻译、语言选择器、默认忽略、属性及 input value、动态文本、语言切换、缓存和跨域消息。
+
+批准前另对同一逻辑改动进行 84 组原始/候选对照，共 168 个隔离页面，覆盖普通、整体及分组翻译，body/html、整页/指定子区域，以及默认、自定义条件、id/tag 和未命中规则；请求、渲染及分组结果均符合预期。`body` 规则只影响其后代，`html` 规则也覆盖 head；根上的条件函数开始按实际节点和属性执行，传参沿用现有接口。iframe 文档及 ShadowRoot 边界保持原行为，100 次祖先查找上限及条件返回 false 后的既有短路行为仍保留。
+
+```shell
+node tests/start.js --source --strict modules/ignore.isIgnore.js modules/ignore.class.push.js modules/element.findNode.js modules/element.whileNodes.js modules/whole.isWhole.js modules/execute.js modules/group._collectGroups.js modules/group._prepareGroups.js modules/group._splitScanScope.js --workers=3
+node tests/start.js --source --strict scenarios/run.js --grep "static translation, language selector and local API request|ignore rules and default attribute translation|input value translation can be enabled through tagAttribute|dynamic childList insertion is translated|dynamic characterData changes are translated|language switches to Spanish and back without reloading|cache reload restores translated content without a translation request|cross-origin language messages follow the documented permissive default|an explicit origin allowlist rejects and permits cross-origin messages" --workers=1
+```
+
+源码版本更新为 `4.1.54.20261121`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 删除 iframe PING/PONG 心跳功能（4.1.53.20261121）
 
 按维护者要求删除未被内部翻译流程调用的 iframe 心跳功能：移除 `postMessage.ping()`、`TYPES.PING/PONG` 及消息应答分支。语言切换请求、完成通知和来源判断保持原有逻辑。本次为功能删除，不是修复 A10 的回调冲突。

@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.52.20261121',
+	version: '4.1.53.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -797,10 +797,7 @@ var translate = {
 			// 语言切换请求
 			CHANGE_LANGUAGE: 'translate-js-iframe-changeLanguage',
 			// 语言切换完成通知
-			LANGUAGE_CHANGED: 'translate-js-iframe-languageChanged',
-			// 心跳检测
-			PING: 'translate-js-iframe-ping',
-			PONG: 'translate-js-iframe-pong'
+			LANGUAGE_CHANGED: 'translate-js-iframe-languageChanged'
 		},
 
 		/**
@@ -1028,9 +1025,7 @@ var translate = {
 				var type = data.type;
 				if(
 					type !== translate.postMessage.TYPES.CHANGE_LANGUAGE &&
-					type !== translate.postMessage.TYPES.LANGUAGE_CHANGED &&
-					type !== translate.postMessage.TYPES.PING &&
-					type !== translate.postMessage.TYPES.PONG
+					type !== translate.postMessage.TYPES.LANGUAGE_CHANGED
 				){
 					return;
 				}
@@ -1043,25 +1038,6 @@ var translate = {
 				if(type === translate.postMessage.TYPES.CHANGE_LANGUAGE){
 					if(typeof data.language === 'string' && data.language.trim().length > 0){
 						translate.postMessage.onReceiveChangeLanguage(data.language, data.fromParent);
-					}
-				}
-
-				if(type === translate.postMessage.TYPES.PING){
-					var source = event.source;
-					if(source){
-						translate.postMessage.send(source, translate.postMessage.TYPES.PONG, {
-							version: translate.version,
-							language: translate.to
-						}, event.origin);
-					}
-				}
-
-				if(type === translate.postMessage.TYPES.PONG){
-					translate.log('[postMessage] Received PONG from iframe, version: ' + data.version + ', language: ' + data.language);
-					if(typeof translate.postMessage._pingCallback === 'function'){
-						var callback = translate.postMessage._pingCallback;
-						translate.postMessage._pingCallback = null;
-						callback(data);
 					}
 				}
 
@@ -1236,24 +1212,6 @@ var translate = {
 					}, translate.postMessage.getIframeOrigin(iframe));
 				}
 			}
-		},
-
-		/**
-		 * 向指定 iframe 发送心跳检测
-		 * @param {HTMLIFrameElement} iframe - iframe 元素
-		 * @param {function} callback - 回调函数
-		 */
-		ping: function(iframe, callback){
-			if(!iframe || !iframe.contentWindow){
-				return;
-			}
-
-			// 存储回调
-			if(typeof callback === 'function'){
-				this._pingCallback = callback;
-			}
-
-			translate.postMessage.send(iframe.contentWindow, translate.postMessage.TYPES.PING, {}, translate.postMessage.getIframeOrigin(iframe));
 		}
 	},
 	/*js translate.postMessage end*/

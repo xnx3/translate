@@ -13,6 +13,7 @@ npm --prefix tests run test:source -- --grep C15
 
 - **A02** 2026-11-19 按维护者确认的接口约定调整：不再要求直接导入配置时禁止跨文档 DOM。`element.iframe.use({url, setConfig})` 提供配置传递前的同步钩子，由调用者选择是否删除 `config.documents`。当前两个 A02 场景分别验证显式钩子下的首次自动注入与无 src 子页重新同步；未配置钩子时保留原有传递行为。上方及表格的固定源码计数保留历史实测。
 - **A09** 验证显式来源名单中允许及拒绝来源的判断。默认信任策略、实际发送窗口身份仍需结合对外兼容约定复核。
+- **A10** 2026-11-21 按维护者要求删除 iframe PING/PONG 心跳功能及对应场景，不再作为待修复项；固定源码的历史实测结果保留。
 - **A41** 固定无目标语言及显式指定其他语言时的现有返回值。文档应如何表述由维护者确认。
 - **F19** 验证 reset 会清空会话历史。长期运行期间是否需要容量上限、上限是多少，尚无产品约定，这个通过结果不能判断长期内存增长。
 - **C09、A38、B19、B20、F22** 检查可定位的多余操作、引用或相对增长。C09 使用作用域分析检查循环内只写不读的数组。真实页面的响应时间和内存峰值仍需在代表性设备上测量。
@@ -33,7 +34,7 @@ npm --prefix tests run test:source -- --grep C15
 | A07 | [语言接口失败后可在下一次正常渲染重试](modules/selectLanguageTag.render.js) | 1 失败 |
 | A08 | [有待处理的列表请求时刷新只保留一个选择框](scenarios/audit-config.spec.js) | 1 失败 |
 | A09 | [配置非空名单后允许精确匹配的来源](modules/postMessage.isOriginAllowed.js)<br>[配置非空名单后拒绝其他外部来源](modules/postMessage.isOriginAllowed.js) | 2 通过 |
-| A10 | [两个同源子页的心跳应答各自到达原回调](scenarios/audit-config.spec.js) | 1 失败 |
+| A10 | iframe 心跳功能及对应测试已删除，见覆盖边界 | 历史 1 失败，现已移除 |
 | A11 | [无宿主的文本和属性均能判为未忽略](modules/ignore.isIgnore.js) | 1 失败 |
 | A12 | [检查普通文本后保留宿主自定义属性](modules/ignore.isIgnore.js) | 1 失败 |
 | A13 | [挂在 body 上的忽略类对后代生效](modules/ignore.isIgnore.js)<br>[深层 DOM 仍遵循祖先忽略规则](modules/ignore.isIgnore.js) | 2 失败 |

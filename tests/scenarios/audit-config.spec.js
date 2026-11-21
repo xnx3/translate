@@ -93,25 +93,6 @@ test('[A08] 有待处理的列表请求时刷新只保留一个选择框', async
   expect(actual).toEqual(1);
 });
 
-test('[A10] 两个同源子页的心跳应答各自到达原回调', async ({ page }) => {
-  const actual = await page.evaluate(async () => {
-    const frames = ['one', 'two'].map(() => document.body.appendChild(document.createElement('iframe')));
-    const replies = [];
-    translate.postMessage.send = function (target, type, payload) {
-      const index = frames.findIndex(frame => frame.contentWindow === target);
-      replies.push(() => translate.postMessage.handleMessage({
-        source: target, origin: location.origin,
-        data: {...payload, type: translate.postMessage.TYPES.PONG, version: String(index)}
-      }));
-    };
-    const results = [];
-    frames.forEach((frame, index) => translate.postMessage.ping(frame, data => results.push(index + ':' + data.version)));
-    replies.reverse().forEach(reply => reply());
-    return results.sort();
-  });
-  expect(actual).toEqual(["0:0","1:1"]);
-});
-
 test('[A20] 初次导出且无缓存时能显示空结果提示', async ({ page }) => {
   const actual = await page.evaluate(async () => {
     translate.language.setLocal('italian');

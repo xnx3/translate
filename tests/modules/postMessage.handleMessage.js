@@ -203,52 +203,6 @@ require('../helpers/module')(__filename, [
     }
   },
   {
-    remark: 'PING 回复到事件来源窗口并带当前版本和语种',
-    test: function () {
-      const source = {};
-      translate.to = 'english';
-      let received;
-      translate.postMessage.send = function (target, type, payload, origin) { received = [target, type, payload, origin]; };
-      translate.postMessage.handleMessage({ source, origin: location.origin, data: { type: translate.postMessage.TYPES.PING } });
-      return received[0] === source && received[1] === translate.postMessage.TYPES.PONG &&
-        received[2].version === translate.version && received[2].language === 'english' && received[3] === location.origin;
-    }
-  },
-  {
-    remark: 'PING 没有来源窗口时不尝试发送回复',
-    test: function () {
-      let calls = 0;
-      translate.postMessage.send = function () { calls++; };
-      translate.postMessage.handleMessage({ source: null, origin: location.origin, data: { type: translate.postMessage.TYPES.PING } });
-      return calls === 0;
-    }
-  },
-  {
-    remark: '同一心跳重复交付应答时回调只执行一次',
-    test: function () {
-      let count = 0;
-      let received;
-      const frame = document.body.appendChild(document.createElement('iframe'));
-      let request;
-      translate.postMessage.send = (_, type, payload) => { request = payload; };
-      translate.postMessage.ping(frame, data => { count++; received = data; });
-      const data = {...request, type: translate.postMessage.TYPES.PONG, language: 'english', version: 'test'};
-      const event = {source: frame.contentWindow, origin: location.origin, data};
-      translate.postMessage.handleMessage(event);
-      translate.postMessage.handleMessage(event);
-      return count === 1 && received === data;
-    }
-  },
-  {
-    remark: 'PONG 没有回调时保持无异常且不触发切换',
-    test: function () {
-      let calls = 0;
-      translate.postMessage.onReceiveChangeLanguage = function () { calls++; };
-      const result = translate.postMessage.handleMessage({ source: null, origin: location.origin, data: { type: translate.postMessage.TYPES.PONG } });
-      return result === undefined && calls === 0;
-    }
-  },
-  {
     remark: 'LANGUAGE_CHANGED 确认消息不会再次触发语言切换',
     test: function () {
       let calls = 0;
@@ -258,20 +212,6 @@ require('../helpers/module')(__filename, [
         data: { type: translate.postMessage.TYPES.LANGUAGE_CHANGED, language: 'english' }
       });
       return calls === 0;
-    }
-  },
-  {
-    remark: '心跳回调抛异常时被消息处理器捕获且不保留回调',
-    test: function () {
-      const frame = document.body.appendChild(document.createElement('iframe'));
-      let request, calls = 0;
-      translate.postMessage.send = (_, type, payload) => { request = payload; };
-      translate.postMessage.ping(frame, () => { calls++; throw new Error('callback failure'); });
-      const event = {source: frame.contentWindow, origin: location.origin,
-        data: {...request, type: translate.postMessage.TYPES.PONG}};
-      translate.postMessage.handleMessage(event);
-      translate.postMessage.handleMessage(event);
-      return calls === 1;
     }
   }
 ]);

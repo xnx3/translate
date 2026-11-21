@@ -2,6 +2,19 @@
 
 最近更新于 2026-11-21（北京时间）。
 
+## 删除 iframe PING/PONG 心跳功能（4.1.53.20261121）
+
+按维护者要求删除未被内部翻译流程调用的 iframe 心跳功能：移除 `postMessage.ping()`、`TYPES.PING/PONG` 及消息应答分支。语言切换请求、完成通知和来源判断保持原有逻辑。本次为功能删除，不是修复 A10 的回调冲突。
+
+同步删除 7 条 ping 方法用例、5 条消息处理心跳用例及 1 条 A10 场景，并更新方法登记与审查记录。保留的 17 个 postMessage 模块共 165 项源码严格测试全部通过；与删除前 177 项结果逐条比较，仅少了上述 12 条心跳方法用例，其余结果一致。另有 3 项真实页面场景通过，覆盖注入后反复切换 iframe 语种、跨域默认来源策略及显式来源名单的拒绝和允许。
+
+```shell
+node tests/start.js --source --strict modules/postMessage --workers=3
+node tests/start.js --source --strict scenarios/iframe.spec.js scenarios/run.js --grep "iframe language switches repeatedly after injection without reloading|cross-origin language messages follow the documented permissive default|an explicit origin allowlist rejects and permits cross-origin messages" --workers=1
+```
+
+当前方法登记共 290 个，均有对应模块，方法用例共 3,739 条。源码版本更新为 `4.1.53.20261121`；压缩文件未更新，本轮未重跑全量测试。
+
 ## 术语匹配从完整命中的末尾继续查找（4.1.52.20261121）
 
 按维护者确认的 diff，仅将 `nomenclature.replace()` 查找下次命中的起点由 `pos + 1` 改为 `pos + nomenclatureKey.length`，同步更新注释，避免同一术语的重叠命中导致错误计算剩余待译文本。解决已被术语覆盖或忽略的字符误发翻译、以及真实剩余字符漏译的问题。复用已有 A17 回归，没有新增测试或修改预期。
@@ -1450,7 +1463,7 @@ util.textReplace 当前 65 条独立用例，其中前 14 条来自原验证页�
 | [postMessage.notifyChildren](modules/postMessage.notifyChildren.js) | `language` | 7 | 7 / 0 | 7 / 0 |
 | [postMessage.notifyParent](modules/postMessage.notifyParent.js) | `language` | 4 | 4 / 0 | 4 / 0 |
 | [postMessage.onReceiveChangeLanguage](modules/postMessage.onReceiveChangeLanguage.js) | `language, fromParent` | 6 | 6 / 0 | 6 / 0 |
-| [postMessage.ping](modules/postMessage.ping.js) | `iframe, callback` | 7 | 7 / 0 | 7 / 0 |
+| postMessage.ping（4.1.53 已删除；本行为历史结果） | `iframe, callback` | 7 | 7 / 0 | 7 / 0 |
 | [postMessage.reset](modules/postMessage.reset.js) | 无参数 | 5 | 5 / 0 | 5 / 0 |
 | [postMessage.resolveTargetOrigin](modules/postMessage.resolveTargetOrigin.js) | `origin` | 15 | 15 / 0 | 15 / 0 |
 | [postMessage.send](modules/postMessage.send.js) | `targetWindow, type, payload, targetOrigin` | 12 | 12 / 0 | 12 / 0 |

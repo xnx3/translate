@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.49.20261120',
+	version: '4.1.50.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -2605,7 +2605,7 @@ var translate = {
 					}
 					//console.log('className:'+typeof(classNames));
 					//console.log(classNames);
-					classNames = classNames.trim().split(' ');
+					classNames = classNames.trim().split(/[\t\n\f\r ]+/);
 					for(var c_index = 0; c_index < classNames.length; c_index++){
 						if(classNames[c_index] != null && classNames[c_index].trim().length > 0){
 							//有效的class name，进行判断

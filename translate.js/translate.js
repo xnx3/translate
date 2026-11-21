@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.54.20261121',
+	version: '4.1.55.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -2532,7 +2532,7 @@ var translate = {
 			currentElement.attribute = data.attribute;
 			currentElement.node = data.node;
 			
-			var maxnumber = 100;	//最大循环次数，避免死循环
+			var maxnumber = 300;	//最大循环次数，避免死循环
 			while(maxnumber-- > 0){
 				if(parentNode == null || typeof(parentNode) == 'undefined'){
 					//没有父元素了

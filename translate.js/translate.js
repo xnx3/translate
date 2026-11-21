@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.50.20261121',
+	version: '4.1.51.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -13746,12 +13746,12 @@ var translate = {
 
 				//判断是否有过分割
 				if(translate.ignore.text.length > 0){ //有过分割，进行合并
-					translatedTexts = new Array();
+					translatedTexts = new Array(texts.length);
 
 					for(var i = 0; i < data.text.length; i++){
 						var originalTextIndex = originalArrayIndexMap[i].index; //最初分割前的原数组下标
-						if(translatedTexts.length < originalTextIndex+1){
-							translatedTexts.push(texts[originalTextIndex]);
+						if(!Object.prototype.hasOwnProperty.call(translatedTexts, originalTextIndex)){
+							translatedTexts[originalTextIndex] = texts[originalTextIndex];
 						}
 						translatedTexts[originalTextIndex] = translate.util.textReplace(translatedTexts[originalTextIndex], originalArrayIndexMap[i].original, data.text[i], data.to);
 					}
@@ -13761,6 +13761,9 @@ var translate = {
 
 				if (translatedTexts && translatedTexts.length === texts.length) {
 					texts.forEach((originalText, index) => {
+						if(!Object.prototype.hasOwnProperty.call(translatedTexts, index)){
+							return;
+						}
 						const translatedText = translatedTexts[index]; // 根据索引获取翻译结果
 						const paths = kvs[originalText]; // 获取该文本的路径数组
 						if (paths && paths.length > 0) {

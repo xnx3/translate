@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.51.20261121',
+	version: '4.1.52.20261121',
 	
 	/*js translate.config start*/
 	/*
@@ -2896,8 +2896,8 @@ var translate = {
 		        // 当找到 key的文字时继续查找
 		        while (pos !== -1) {
 		            positions.push(pos);
-		            // 从当前位置的下一个字符开始继续查找
-		            pos = text.indexOf(nomenclatureKey, pos + 1);
+		            // 从当前命中术语的末尾继续查找，避免重叠匹配
+		            pos = text.indexOf(nomenclatureKey, pos + nomenclatureKey.length);
 		        }
 		        // 遍历所有找到的位置，判断是否是已经自定义术语替换后的，如果全部都是替换后的，那么就不需要继续替换了，直接 return 退出，避免重复替换。
 		        //但是如果只要有一次是没有被替换的，那么都会往下执行，可能会存在重复替换。

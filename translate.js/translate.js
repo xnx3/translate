@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.55.20261121',
+	version: '4.1.56.20261123',
 	
 	/*js translate.config start*/
 	/*
@@ -1776,10 +1776,10 @@ var translate = {
 			};
 			var scopes = translate.group._getScanScopes(uuid);
 			for(var si = 0; si < scopes.length; si++){
-				var scope = scopes[si], outer = [], parent = scope.root.parentNode;
+				var scope = scopes[si], outer = [], parent = translate.element.getParentNode(scope.root);
 				while(parent != null){
 					outer.unshift({node: parent, nodeType: parent.nodeType, nodeName: parent.nodeName});
-					parent = parent.parentNode;
+					parent = translate.element.getParentNode(parent);
 				}
 				var paragraphs = translate.group._splitScanScope(scope);
 				for(var pi = 0; pi < paragraphs.length; pi++){
@@ -1797,7 +1797,7 @@ var translate = {
 						// 已记录的父子关系发生变化时跳过该 Text，留给后续重新扫描处理。
 						var validPath = path.length > 0 && node.parentNode === path[path.length - 1].node;
 						for(var di = 1; validPath && di < path.length; di++){
-							validPath = path[di].node.parentNode === path[di - 1].node;
+							validPath = translate.element.getParentNode(path[di].node) === path[di - 1].node;
 						}
 						var index = validPath ? rootIndex(path) : -1;
 						if(index < 0 || path.some(isExcluded) || translate.ignore.isIgnore(node, {node: node, attribute: ''})){
@@ -2086,14 +2086,14 @@ var translate = {
 		_captureLayout:function(nodes){
 			var container = nodes[0].parentNode;
 			nodes.forEach(function(node){
-				while(!container.contains(node)){ container = container.parentNode; }
+				while(!container.contains(node)){ container = translate.element.getParentNode(container); }
 			});
 			var ancestry = [];
-			for(var node = container; node != null; node = node.parentNode){ ancestry.push(node); }
+			for(var node = container; node != null; node = translate.element.getParentNode(node)){ ancestry.push(node); }
 			var ranges = new Map();
 			nodes.forEach(function(node){
 				while(node !== container){
-					var parent = node.parentNode, range = ranges.get(parent);
+					var parent = translate.element.getParentNode(node), range = ranges.get(parent);
 					if(!range){ range = {first: node}; ranges.set(parent, range); }
 					range.last = node;
 					node = parent;
@@ -2112,7 +2112,7 @@ var translate = {
 		// 仅比较这段连续的原生兄弟，父节点的其他段落可以独立增删或调序。
 		_matchesOrder:function(parent, children){
 			return children.every(function(child, i){
-				return child.parentNode === parent && (i === 0 || children[i-1].nextSibling === child);
+				return translate.element.getParentNode(child) === parent && (i === 0 || children[i-1].nextSibling === child);
 			});
 		},
 
@@ -2125,8 +2125,8 @@ var translate = {
 		_planOrder:function(group, order){
 			var layout = group.layout, branches = new Map(), plans = [];
 			for(var i = 0; i < order.length; i++){
-				for(var node = group.nodes[order[i]]; node !== layout.container; node = node.parentNode){
-					var parent = node.parentNode, branch = branches.get(parent);
+				for(var node = group.nodes[order[i]]; node !== layout.container; node = translate.element.getParentNode(node)){
+					var parent = translate.element.getParentNode(node), branch = branches.get(parent);
 					if(!branch){
 						branch = {order: [], seen: new Set()};
 						branches.set(parent, branch);
@@ -2206,7 +2206,7 @@ var translate = {
 		_renderGroup:function(group, item){
 			var layout = group.layout;
 			if(translate.to !== group.to || !layout.ancestry.every(function(node, i, path){
-				return node.parentNode === (path[i+1] || null);
+				return translate.element.getParentNode(node) === (path[i+1] || null);
 			})){ return false; }
 			for(var entry of layout.ranges){
 				if(!translate.group._matchesOrder(entry[0], entry[1].children)){ return false; }
@@ -2328,7 +2328,7 @@ var translate = {
 				var current = element.nodeType === 3 ? element.parentNode : element;
 				while(current != null && current !== root){
 					path.push(current);
-					current = current.parentNode;
+					current = translate.element.getParentNode(current);
 				}
 				var allowed = true;
 				if(typeof(entry.ignoreFunction) === 'function'){
@@ -2401,7 +2401,7 @@ var translate = {
 				if(isExcluded(ancestor)){
 					return result;
 				}
-				ancestor = ancestor.parentNode;
+				ancestor = translate.element.getParentNode(ancestor);
 			}
 
 			// 使用显式栈做深度优先遍历，避免层级很深的网页耗尽递归调用栈。
@@ -2589,7 +2589,7 @@ var translate = {
 				}
 
 				//赋予判断的元素向上一级
-				parentNode = parentNode.parentNode;
+				parentNode = translate.element.getParentNode(parentNode);
 			}
 
 			return false;
@@ -6801,6 +6801,13 @@ var translate = {
 		},
 		/*js translate.element.iframe end*/
 
+		// 表单的同名控件会成为表单自身的属性，遮蔽 Node 原型上的 parentNode。
+		getParentNode:function(node){
+			if(Object.prototype.hasOwnProperty.call(node, 'parentNode')){
+				return Object.getOwnPropertyDescriptor(Node.prototype, 'parentNode').get.call(node);
+			}
+			return node.parentNode;
+		},
 		//获取这个node元素的node name ,如果未发现，则返回''空字符串
 		getNodeName:function(node){
 			if(node == null || typeof(node) == 'undefined'){

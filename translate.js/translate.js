@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.56.20261123',
+	version: '4.1.57.20261124',
 	
 	/*js translate.config start*/
 	/*
@@ -2527,11 +2527,6 @@ var translate = {
 
 			var parentNode = currentElement;
 
-			//为自定义忽略 function 传入参数进行的整理
-			currentElement.element = currentElement;
-			currentElement.attribute = data.attribute;
-			currentElement.node = data.node;
-			
 			var maxnumber = 300;	//最大循环次数，避免死循环
 			while(maxnumber-- > 0){
 				if(parentNode == null || typeof(parentNode) == 'undefined'){
@@ -2570,6 +2565,10 @@ var translate = {
 							if(translate.ignore.class.data.indexOf(classNames[c_index]) > -1){
 								//发现ignore.class 当前是处于被忽略的 class, 在判定它的 conditionFunction 是否正常
 								if(typeof(translate.ignore.class.conditionFunction[classNames[c_index]]) === 'function'){
+									//为自定义忽略 function 传入参数进行的整理
+									currentElement.element = currentElement;
+									currentElement.attribute = data.attribute;
+									currentElement.node = data.node;
 									return translate.ignore.class.conditionFunction[classNames[c_index]](currentElement, data);
 								}else{
 									return true;	

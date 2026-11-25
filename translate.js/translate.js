@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.59.20261125',
+	version: '4.1.60.20261125',
 	
 	/*js translate.config start*/
 	/*
@@ -12366,15 +12366,13 @@ var translate = {
 					texts = obj;
 				}else if(type == '[object Object]'){
 					//案例三
-					if(typeof(obj.texts) == 'undefined'){
-						translate.log('translate.request.translateText 传入的值类型异常，因为你没有传入 obj.texts 要翻译的具体文本！ 请查阅文档： https://translate.zvo.cn/4077.html');	
-					}
-					if(typeof(obj.texts) == 'string'){
+					texts = obj.texts;
+					if(typeof(texts) == 'string'){
 						//单个字符串
-						texts = [obj.texts];
-					}else{
-						//多个字符串，数组形态
-						texts = obj.texts;
+						texts = [texts];
+					}else if(!Array.isArray(texts)){
+						translate.log('translate.request.translateText 的 obj.texts 必须是字符串或文本数组，请查阅文档： https://translate.zvo.cn/4077.html');
+						return;
 					}
 					if(typeof(obj.from) == 'string' && obj.from.length > 0){
 						from = obj.from;

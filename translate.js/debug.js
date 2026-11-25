@@ -259,16 +259,9 @@ translate.debug = {
 					}
 		*/
 		sendTranslateRequest: function(url, data){
-			var xhr = translate.request.send(url, data, data, function(result, response, xhr){
-				//console.log(result)
-				//console.log(response)
-				//console.log(xhr.getResponseHeader('Server'))
-				
-			}, 'post', false, {
+			var xhr = translate.request.send(url, data, {}, null, 'post', false, {
 				'Content-Type':'application/x-www-form-urlencoded'
-			}, function(xhr){
-				console.log(xhr);
-			}, true);
+			}, null, false);
 
 
 			var result = true; //是否成功，true是

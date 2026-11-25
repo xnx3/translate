@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.57.20261124',
+	version: '4.1.58.20261125',
 	
 	/*js translate.config start*/
 	/*
@@ -12242,13 +12242,15 @@ var translate = {
 		    	}
 				xhr.setRequestHeader(headerIndex,requestHeaders[headerIndex]);
 			}
-			xhr.send(params);
 			//4.请求状态改变事件
 			xhr.onreadystatechange=function(){
 			    if(xhr.readyState==4){
 			    	translate.request.response(xhr); //自定义响应的拦截
 
 			        if(xhr.status==200){
+			            if(typeof func !== 'function'){
+			                return;
+			            }
 			        	//请求正常，响应码 200
 			        	var json = null;
 			        	if(typeof(xhr.responseText) == 'undefined' || xhr.responseText == null){
@@ -12300,6 +12302,7 @@ var translate = {
 			        }
 			    }
 			}
+			xhr.send(params);
 			return xhr;
 		},
 		/*

@@ -67,12 +67,15 @@ require('../helpers/module')(__filename, [
     translate.request.translateText('乙', function () {}, 'invalid');
     return calls === 2;
   } },
-  { remark: '接口业务失败时记录错误，不写入缓存或调用成功回调', test: function () {
-    var success = 0, logs = 0; translate.language.setLocal('chinese_simplified'); translate.storage.set('to', 'english');
+  { remark: '接口业务失败时原样交付业务响应一次，记录错误且不写入缓存', test: function () {
+    translate.language.setLocal('chinese_simplified'); translate.storage.set('to', 'english');
+    const response = { result: 0, info: '额度不足' };
+    const completed = []; let failed = 0, logs = 0;
     translate.log = function () { logs++; };
-    translate.request.post = function (path, data, callback) { callback({ result: 0, info: '额度不足' }, data); };
-    translate.request.translateText('甲', function () { success++; });
-    return success === 0 && logs > 0 && translate.storage.get('hash_english_' + translate.util.hash('甲')) == null;
+    translate.request.post = function (path, data, callback) { callback(response, data); };
+    translate.request.translateText('甲', data => completed.push(data), () => failed++);
+    return completed.length === 1 && completed[0] === response && failed === 0 && logs > 0 &&
+      translate.storage.get('hash_english_' + translate.util.hash('甲')) == null;
   } },
   { remark: '开启离线全量提取时同时保存原文、目标语言和译文', test: function () {
     var extracted;

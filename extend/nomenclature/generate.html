@@ -37,7 +37,7 @@ function generateJsCodeByLanguage(language){
 	var from = document.getElementById('sourceLanguage').value;
 	console.log({ from:from, to:language, texts: texts });
 	translate.request.translateText({ from:from, to:language, texts: texts }, function(data){
-			if(data.result == 0){
+			if(data.result != 1){
 				alert(data.info);
 				return;
 			}

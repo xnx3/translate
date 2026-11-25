@@ -21,10 +21,14 @@ require('../helpers/module')(__filename, [
     translate.request.translateText = function (data, done) { done({ result: 1, text: ['Hello'], to: data.to }); };
     return await new Promise(resolve => translate.js.transObject(input, 'english', function (output) { resolve(output.title === 'Hello' && output.nested.action === fn && output.nested.action() === 'unchanged'); }, function () { resolve(false); }));
   } },
-  { remark: '翻译失败调用失败回调且不改原文', test: async function () {
-    const input = { title: '你好' }; let succeeded = false;
-    translate.request.translateText = function (data, done) { done({ result: 0, info: 'failure' }); };
-    return await new Promise(resolve => translate.js.transObject(input, 'english', function () { succeeded = true; resolve(false); }, function (info) { resolve(succeeded === false && typeof info === 'string' && input.title === '你好'); }));
+  { remark: '接口业务失败时报告原始原因且不改原文', test: function () {
+    const input = { title: '你好' };
+    const failures = []; let succeeded = 0;
+    for (const [result, info] of [[0, '额度不足'], [401, '账户未激活']]) {
+      translate.request.post = (path, data, done) => done({ result, info, text: ['你好'] }, data);
+      translate.js.transObject(input, 'english', () => succeeded++, reason => failures.push(reason));
+    }
+    return succeeded === 0 && failures.join(',') === '额度不足,账户未激活' && input.title === '你好';
   } },
   { remark: '忽略文本从待翻译片段中排除并保留在最终结果中', test: async function () {
     translate.ignore.text = ['KEEP'];

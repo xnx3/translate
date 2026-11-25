@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.58.20261125',
+	version: '4.1.59.20261125',
 	
 	/*js translate.config start*/
 	/*
@@ -12450,6 +12450,9 @@ var translate = {
 					translate.log('translate text array : '+texts);
 					translate.log('response error info: '+responseData.info);
 					translate.log('=======ERROR END  =======');
+					if(typeof(responseData.result) != 'undefined' && typeof(func) == 'function'){
+						func(responseData);
+					}
 					return;
 				}
 
@@ -13699,12 +13702,10 @@ var translate = {
 			translate.request.translateText(obj, function (data) {
 				//打印翻译结果
 				//console.log(data);
-				if(typeof(data.result) == 'undefined' || data.result == 0){
-					failureFunction('network connect failure');
-					return;
-				}
-				if(data.result == 0){
-					failureFunction(data.info);
+				if(data.result != 1){
+					if(typeof(failureFunction) == 'function'){
+						failureFunction(data.info || 'network connect failure');
+					}
 					return;
 				}
 

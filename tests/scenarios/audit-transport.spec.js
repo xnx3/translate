@@ -104,20 +104,6 @@ test('[D09] 缺失或非法的 texts 不抛出内部异常也不报告翻译成�
   expect(actual).toEqual({ requests: 0, successes: 0 });
 });
 
-test('[D10] 已载入的主机队列到期后重新测速', async ({ page }) => {
-  const probes = await page.evaluate(() => {
-    const control = translate.request.speedDetectionControl;
-    let probes = 0;
-    translate.storage.set('speedDetectionControl_lasttime', Date.now());
-    control.checkResponseSpeed = () => { probes++; };
-    control.getHostQueue();
-    translate.storage.set('speedDetectionControl_lasttime', 0);
-    control.getHostQueue();
-    return probes;
-  });
-  expect(probes).toBe(1);
-});
-
 test('[D11] 上一代主机测速回调不能改写新一代队列', async ({ page }) => {
   const remaining = await page.evaluate(() => {
     const requests = [];

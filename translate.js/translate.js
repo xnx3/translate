@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.61.20261126',
+	version: '4.1.62.20261126',
 	
 	/*js translate.config start*/
 	/*
@@ -12122,6 +12122,12 @@ var translate = {
 			for(var ahindex in translate.request.appendHeaders){
 				if (!translate.request.appendHeaders.hasOwnProperty(ahindex)) {
 					continue;
+				}
+				var appendHeaderName = ahindex.toLowerCase();
+				for(var requestHeaderIndex in requestHeaders){
+					if(requestHeaderIndex.toLowerCase() === appendHeaderName){
+						delete requestHeaders[requestHeaderIndex];
+					}
 				}
 				requestHeaders[ahindex] = translate.request.appendHeaders[ahindex];
 			}

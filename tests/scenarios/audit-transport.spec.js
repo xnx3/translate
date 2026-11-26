@@ -154,12 +154,29 @@ test('[D13] 过期损坏的缓存队列回退到当前配置的主机', async ({
   expect(valid).toEqual([true, true]);
 });
 
-test('[D14] 附加表单键值中的保留字符往返无损', async ({ page }) => {
-  const actual = await page.evaluate(() => {
-    translate.request.appendParams = { 'product code': 'A&B+C=3' };
-    return new URLSearchParams(translate.request.buildPostParams({})).get('product code');
+test('[D14] 附加参数值含有会影响表单解析的字符时打印提示', async ({ page }) => {
+  const outcomes = await page.evaluate(() => {
+    const logs = [];
+    translate.log = message => logs.push(message);
+    return ['A&B', 'A+B', '100%', '%2', '%ZZ', 'A=B==', 'A%26B%2BC%3D3', '100%25', '', 0, false]
+      .map(value => {
+        logs.length = 0;
+        translate.request.appendParams = { custom: value };
+        const body = translate.request.buildPostParams({});
+        return {
+          unchanged: body.includes('&custom=' + value),
+          messages: logs.slice()
+        };
+      });
   });
-  expect(actual).toBe('A&B+C=3');
+  for (const { unchanged, messages } of outcomes.slice(0, 5)) {
+    expect(unchanged).toBe(true);
+    expect(messages).toEqual([expect.stringContaining('translate.request.appendParams["custom"]')]);
+  }
+  for (const { unchanged, messages } of outcomes.slice(5)) {
+    expect(unchanged).toBe(true);
+    expect(messages).toEqual([]);
+  }
 });
 
 test('[D15] 默认页面标识剔除仅对页面有意义的查询与片段', async ({ page }) => {

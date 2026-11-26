@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.60.20261125',
+	version: '4.1.61.20261126',
 	
 	/*js translate.config start*/
 	/*
@@ -12063,7 +12063,11 @@ var translate = {
 					if (!translate.request.appendParams.hasOwnProperty(apindex)) {
 						continue;
 					}
-					data[apindex] = translate.request.appendParams[apindex];
+					var appendValue = translate.request.appendParams[apindex];
+					if(typeof(appendValue) == 'string' && /[&+]|%(?![0-9a-f]{2})/i.test(appendValue)){
+						translate.log('translate.request.appendParams['+JSON.stringify(apindex)+'] 的值含有未编码的 &、+ 或无效的 % 转义，请用 encodeURIComponent 编码原始值。');
+					}
+					data[apindex] = appendValue;
 				}
 
 				if(typeof(translate.enterprise) != 'undefined'){

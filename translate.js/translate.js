@@ -14,7 +14,7 @@ var translate = {
 	 * 格式：major.minor.patch.date
 	 */
 	// AUTO_VERSION_START
-	version: '4.1.62.20261126',
+	version: '4.1.63.20261128',
 	
 	/*js translate.config start*/
 	/*
@@ -12918,6 +12918,7 @@ var translate = {
 	},
 	//针对图片进行相关的语种图片替换
 	images:{
+		srcHistory:null,
 		/* 要替换的图片队列，数组形态，其中某个数组的：
 			key："/uploads/allimg/160721/2-160H11URA25-lp.jpg"; //旧图片，也就是原网站本身的图片。也可以绝对路径，会自动匹配 img src 的值，匹配时会进行完全匹配
 			value："https://xxx.com/abc_{language}.jpg" //新图片，要被替换为的新图片。新图片路径需要为绝对路径，能直接访问到的。其中 {language} 会自动替换为当前要显示的语种。比如你要将你中文网站翻译为繁体中文，那这里会自动替换为：https://xxx.com/abc_chinese_traditional.jpg  有关{language}的取值，可查阅 http://api.translate.zvo.cn/doc/language.json.html 其中的语言标识id便是
@@ -12959,39 +12960,30 @@ var translate = {
 				return;
 			}
 			
-			/*** 寻找img标签中的图片 ***/
+			var srcHistory = translate.images.srcHistory;
+			if(srcHistory === null){
+				srcHistory = translate.images.srcHistory = new WeakMap();
+			}
 			var imgs = document.getElementsByTagName('img');
-			for(var i = 0; i < imgs.length; i ++){
+			for(var i = 0; i < imgs.length; i++){
 				var img = imgs[i];
-				if(typeof(img.src) == 'undefined' || img.src == null || img.src.length == 0){
+				var currentSrc = img.getAttribute('src');
+				var previous = srcHistory.get(img);
+				if(previous && currentSrc !== previous.translatedSrc){
+					srcHistory.delete(img);
+					previous = undefined;
+				}
+				var originalSrc = previous ? previous.originalSrc : currentSrc;
+				var template = translate.images.queues[originalSrc];
+				if(!originalSrc || typeof(template) !== 'string'){
 					continue;
 				}
-				var imgSrc = img.getAttribute('src');  //这样获取到的才是src原始的值，不然 img.src 是拿到一个绝对路径
-
-				for(var key in translate.images.queues){
-					var oldImage = key; //原本的图片src
-					var newImage = translate.images.queues[key]; //新的图片src，要替换为的
-					//console.log('queue : '+oldImage + ' , img.src: '+imgSrc);
-					if(oldImage == imgSrc){
-						//console.log('发现匹配图片:'+imgSrc);
-						/*
-						//判断当前元素是否在ignore忽略的tag、id、class name中
-						if(translate.ignore.isIgnore(node)){
-							console.log('node包含在要忽略的元素中：');
-							console.log(node);
-							continue;
-						}
-						*/
-						
-						//没在忽略元素里，可以替换
-						newImage = newImage.replace(new RegExp('{language}','g'), translate.to);
-						img.src = newImage;
-					}
+				var translatedSrc = template.replace(/{language}/g, translate.to);
+				if(currentSrc !== translatedSrc){
+					srcHistory.set(img, {originalSrc:originalSrc, translatedSrc:translatedSrc});
+					img.setAttribute('src', translatedSrc);
 				}
-				
 			}
-			
-			
 			/********** 还要替换style中的背景图 */
 			// 获取当前网页中所有的元素
 			var elems = document.getElementsByTagName("*");
@@ -13105,6 +13097,21 @@ var translate = {
 
 		//清除 translate.listener 
 		translate.listener.reset();
+
+		var srcHistory = translate.images.srcHistory;
+		if(srcHistory !== null){
+			var imgs = document.getElementsByTagName('img');
+			for(var i = 0; i < imgs.length; i++){
+				var img = imgs[i];
+				var previous = srcHistory.get(img);
+				if(previous){
+					srcHistory.delete(img);
+					if(img.getAttribute('src') === previous.translatedSrc){
+						img.setAttribute('src', previous.originalSrc);
+					}
+				}
+			}
+		}
 
 		// 先逆序撤销 group 的兄弟调序，再由下方的节点历史还原原文。网页自行更换过的结构保留现状。
 		while(translate.group && translate.group._orderHistory && translate.group._orderHistory.length > 0){
